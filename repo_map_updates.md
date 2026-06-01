@@ -219,6 +219,12 @@ Roadmap for step-23 (candy-forms/sugar-prompt/candy-core migrate to candy-async)
   - Branch: ai/async-adopters
   - Note: sugar-tick's flock() issue (§157) OUT OF SCOPE per step-30 audit — did not touch file locking
 
+- [2026-06-01 | step-35 | shipper] sugar-tick + sugar-post + candy-serve: adopt candy-async — MERGED PR #915:
+  - Branch ai/async-adopters merged to master
+  - 13 files changed, 132 insertions(+), 2 deletions(-)
+  - Created CALIBER_LEARNINGS.md in sugar-post and sugar-tick
+  - Commit SHA: 30ea7afa
+
 - [2026-05-31 | step-32 | coder] candy-tetris + candy-mines: adopt candy-buffer + candy-mouse + candy-testing:
   - Added `sugarcraft/candy-buffer` + `sugarcraft/candy-mouse` to require + path-repos in candy-tetris/composer.json and candy-mines/composer.json; `sugarcraft/candy-testing` (dev) added to both
   - candy-tetris/Renderer.php: playfield interior refactored to Buffer (10×20 cells) with per-tetromino background style (block) and faint foreground style (ghost); Sprinkles border wraps Buffer::toAnsi() interior
@@ -311,3 +317,19 @@ Roadmap for step-23 (candy-forms/sugar-prompt/candy-core migrate to candy-async)
   - Path-repo closure: clean (55 libs scanned)
   - Branch: ai/filter-consumers
   - Note: `highlightLine()` re-matches displayLine against filter needle to get indices aligned with the rendered text; applies ANSI bold+cyan (sgr 1,36) on matched grapheme clusters
+
+- [2026-06-01 | step-36 | shipper] candy-flip + candy-kit + honey-bounce + honey-flap: adopt candy-testing — MERGED PR #916:
+  - Branch ai/testing-rollout merged to master
+  - 25 files changed, 571 insertions(+), 5 deletions(-)
+  - Added `GoldenRenderTest.php` snapshot tests to all 4 libs via candy-testing
+  - Added golden fixtures: candy-flip (density-3x3), candy-kit (stage-step, stage-substep), honey-bounce (projectile-trajectory, spring-trajectory), honey-flap (game-state-5ticks, game-state-crash)
+  - candy-kit: added new CALIBER_LEARNINGS.md
+  - Updated READMEs and composer.json (added candy-testing dev dep + path-repos) for all 4 libs
+  - Commit SHA: 0995878a
+
+- [2026-06-01 | step-37 | shipper] NO-OP — step-37 catch-all: deferral sweep complete, no remaining actionable libs — MERGED PR #917:
+  - Branch ai/sweep-catchall merged to master
+  - 1 file changed, 8 insertions(+) in docs/repo_map_update_followups.md (DEFERRED notes only, no source code changes)
+  - All 4 remaining libs from step-30 audit have DEFERRED status in followups (candy-pty, candy-zone, candy-metrics, candy-log, candy-mold)
+  - No source code changes; PR is documentation-only marker for end of actionable migration work
+  - Commit SHA: 237fad86

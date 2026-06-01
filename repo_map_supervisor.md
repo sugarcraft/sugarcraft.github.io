@@ -120,9 +120,9 @@ Mark `[x]` only after the shipper returns clean and master is updated.
 - [x] [Step 37 — Catch-all: any remaining lib from the audit](repo_map_step_37.md) — branch: `ai/sweep-catchall`, PR #917
 
 ### Phase 7 — Final documentation & CI (3)
-- [ ] [Step 38 — Root docs sweep](repo_map_step_38.md) — branch: `ai/docs-root`
-- [ ] [Step 39 — Public site docs](repo_map_step_39.md) — branch: `ai/docs-site`
-- [ ] [Step 40 — CI/workflow updates](repo_map_step_40.md) — branch: `ai/docs-ci`
+- [x] [Step 38 — Root docs sweep](repo_map_step_38.md) — branch: `ai/docs-root`, PR #918
+- [x] [Step 39 — Public site docs](repo_map_step_39.md) — branch: `ai/docs-site`, PR #919
+- [x] [Step 40 — CI/workflow updates](repo_map_step_40.md) — branch: `ai/docs-ci`, PR #920
 
 ### Phase 8 — Plan retrospective (1)
 - [ ] [Step 41 — Plan retrospective](repo_map_step_41.md) — branch: `ai/plan-retrospective`

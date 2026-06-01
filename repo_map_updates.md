@@ -333,3 +333,28 @@ Roadmap for step-23 (candy-forms/sugar-prompt/candy-core migrate to candy-async)
   - All 4 remaining libs from step-30 audit have DEFERRED status in followups (candy-pty, candy-zone, candy-metrics, candy-log, candy-mold)
   - No source code changes; PR is documentation-only marker for end of actionable migration work
   - Commit SHA: 237fad86
+
+- [2026-06-01 | step-38 | shipper] docs: root sweep — 8 new packages + consumer migrations — MERGED PR #918:
+  - Branch ai/docs-root merged to master
+  - 4 files changed, 16 insertions(+), 13 deletions(-)
+  - Updated AGENTS.md, CONTRIBUTING.md, README.md, docs/MATCHUPS.md
+  - Commit SHA: eaafed14
+
+- [2026-06-01 | step-39 | shipper] docs: public site for 8 new shared foundation libs — MERGED PR #919:
+  - Branch ai/docs-site merged to master
+  - 17 files changed, 47 insertions(+)
+  - docs/repo_map_update.md: +47 lines status section for 8 new shared foundation libs
+  - docs/img/icons/: 8 new placeholder PNG icons (candy-ansi, candy-async, candy-buffer, candy-fuzzy, candy-input, candy-layout, candy-mouse, candy-testing)
+  - media/icons/: 8 new placeholder PNG icons (same 8 libs)
+  - Commit SHA: 218695bd
+
+- [2026-06-01 | step-40 | shipper] ci: codecov + vhs.yml audit for 8 new shared foundation libs — MERGED PR #920:
+  - Branch ai/docs-ci merged to master
+  - All acceptance criteria already met — NO source code changes
+  - codecov.yml: 8 new flags already present
+  - vhs.yml: all=(...) already has all 31-36 visual libs; 8 new foundations are non-visual (no tapes)
+  - scripts/affected-libs.php --all: auto-discovers all 8 new libs
+  - tools/check-path-repos.php: exits 0
+  - .github/workflows/tests.yml: file does not exist (SVN creds item is N/A — pre-existing state)
+  - Empty commit created to document verification: 52aeb8dd
+  - Commit SHA: 854062c9 (merge commit)

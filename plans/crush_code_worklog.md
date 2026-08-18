@@ -3396,18 +3396,14 @@ refuses to run with a dirty tree, and the tree held two lanes' uncommitted work.
 
 Two ADVERSARIAL REVIEWERS, both read-only, both told to report and stop:
 
-- **lane E round-2 review** against `165f5874`. Briefed to attack the `?` decision
-  by driving it, the footer's 1-column width margin (63 vs `KEY_HELP_COLS = 64`),
-  F-1's negative claim that seven other direction rows "were already asymmetric",
-  the 1520-press sweep's 760/712/48, the six newly-covered rows' mutations,
-  `picker.branch`'s `git init` + `chdir` hygiene, `token()`'s narrowed parser, and
-  every figure for a missing domain.
-- **lane B round-15 review** against `48e0690c` plus `de15ee6d`'s edit to that
-  test's header. Briefed to recompute the 192-byte glue set, re-verify BOTH oracles
-  independently, hunt a third kind-vs-text gate after the two `skipSpeedSuffix()`
-  survivors, look for a fourth time unit and a sixth divergence class, check the N1
-  honesty claim by mutating each byte class, actually RUN the four new examples, and
-  verify the header's claim that the collected glob is unchanged by the vhs.yml fix.
+- **lane E round-2 review** — **REPORTED**, findings written up at the end of this
+  file. Six findings, one HIGH: the round replaced a false `/keys` mitigation with a
+  different false `/keys` mitigation. Behaviour of the `?` decision itself held under
+  keystroke-level driving.
+- **lane B round-15 review** — **REPORTED**, findings written up at the end of this
+  file. Four findings, one MEDIUM (a third kind-vs-text gate, unpinned, in the same
+  method the round was fixing). Behaviour clean; the model held against three
+  reviewer-built corpora and a rebuilt Go oracle.
 
 If either notification is lost, both rounds are re-runnable from the worklog
 sections named in their briefs.
@@ -3431,44 +3427,57 @@ where no agent is running the suite — it has been waiting only for that.
 
 ### Tracker inventory
 
-Closed today:
+CAUTION on IDs: an earlier draft of this section cited tracker numbers that do not
+exist. The seven items created for the open worklog trackers are **#78-#84** and
+they are the list below. The things closed today were NOT tracker items under those
+numbers — do not re-map them.
 
-- **#78** — `McpClientTest` racing its own MCP server (`c56602f0`, now `f37591b9`).
-- **#83** — `README.md`'s stale `4,337/12,587` → measured `6,402/45,552` with its
-  run command beside it (lane D).
-- **#84** — `SkillLoader::contained()`; closed by `Support\ContainedPath` (lane D).
+Closed today, by commit rather than by tracker ID:
+
+- `McpClientTest` racing its own MCP server (`c56602f0`, rebuilt as `f37591b9`).
+- `README.md`'s stale `4,337/12,587` → measured `6,402/45,552` with the run command
+  beside it, so the figure carries its provenance (lane D).
+- `SkillLoader::contained()`, superseded by `Support\ContainedPath` (lane D).
 - **#44 / P8.12** — the `Write` tool: it existed, was tested, was named in the
   README, and `Bootstrap::tools()` never listed it. Now wired.
+- **#13 / P2.3** — `WorkflowEngine`/`WorkflowRegistry` constructed in
+  `Bootstrap::chat()`.
 - The GIF pipeline (`de15ee6d`) and the CI `--version` assertion (`76c506fc`).
 
-Still open:
+Still open, with their REAL tracker numbers:
 
+- **#78** — `Doctor::name()` returns lowercase `'doctor'` where the other nine tools
+  are TitleCase. Deliberately not renamed by a review round: the model already knows
+  the name. Belongs to whoever owns the tool schema.
 - **#79** — `/workflow run` freezes the TUI. Now DOCUMENTED in `Chat.php` with the
   fix named (`EngineBackend::completeAsync()`'s fork-plus-socket pattern); the fix
   itself is its own change-set.
 - **#80** — `ProcessExecutor::createInlineWorkerScript()` is still the P1.S5
-  simulation, so no workflow stage reaches a live model.
+  simulation, so no workflow stage reaches a live model. Note the trap: a WIRED tier
+  over a SIMULATED executor reads as working.
 - **#81** — port the vhs grammar into `candy-vcr/src/Tape/Lexer.php`. Round 15 adds
   four portable facts: tab is whitespace, there are THREE time units not two, the
   JSON closer is synthesized, and both the keyword gate and the suffix gate are on
   token KIND not text.
 - **#82** — `MenuBar.php:362-368` orphaned docblock.
-- **#85** — `Ctrl+P`/`Ctrl+K` opens a hosted-Chat palette the shell's agent
+- **#83** — `Ctrl+P`/`Ctrl+K` opens a hosted-Chat palette the shell's agent
   dashboard never paints and never drives.
-- **NEW #86** — `Doctor::name()` returns lowercase `'doctor'` where the other nine
-  tools are TitleCase. Flagged, deliberately not renamed by a review round: the
-  model already knows the name. Belongs to whoever owns the tool schema.
-- **NEW #87** — the Finding-2 containment residual: a repo can still commit
+- **#84** — the containment residual: a repo can still commit
   `.sugar-crush/workflows -> <another directory inside the checkout>` and disclose
   that directory's `*.yaml` basenames. Closing it would refuse the ordinary
   `-> tools/workflows` layout. Documented as a reduction, not an elimination.
 
+Lanes B and E are tracker **#37** and **#38**, both still `in_progress` — they stay
+that way until their fix rounds review clean.
+
 ### Method notes worth carrying forward
 
-- **The dominant defect class, five rounds running, is a number or a claim that
+- **The dominant defect class, now SIX rounds running, is a number or a claim that
   travelled without its domain** — and it has appeared inside the fix round meant
   to remove it EVERY time. Every figure written into code must state what it was
-  measured over, in the code.
+  measured over, in the code. Lane B round 15 is the sharpest instance yet: it
+  closed two kind-vs-text gates and left a third unpinned three lines below, then
+  wrote a false zero into the paragraph asserting no claim had changed.
 - **Partial static reset** is now a named shape, four instances: lane D's
   `PermissionGate` strike counter, `MenuBar::$activeMenu`/`$activeItem`,
   `resetMenuBarState()` resetting one of two, and `KeyBindingRegistry`'s two memos.
@@ -3488,3 +3497,2359 @@ Still open:
   sets `force_all=true` and re-renders ~49 libs, recommitting essentially all ~300
   tracked GIFs. `AGENTS.md`'s "don't commit GIFs" addresses us; `CLAUDE.md`'s
   "GIFs are committed" describes CI. Both are correct.
+
+## Lane B round-15 review — 4 findings, and the fixed defect class survived THREE lines down
+
+Reviewer verdict on `48e0690c` + `de15ee6d`'s header edit: *"the model is the
+strongest thing in this chain so far"* — it built its own Go oracle and three
+corpora of its own design and could not make the model lose a directive. All four
+findings are in the CLAIMS and the PINNING, not the behaviour. One matters.
+
+Baseline reproduced exactly: **6418 / 49631 / 0 failures / 1 skipped** in 1m51s,
+the skip being the legitimate `McpClientTest` one, and `SystemPromptWiringTest`
+did not flake. File alone: 106 tests / 470 assertions.
+
+### F-1 [MEDIUM] — a THIRD kind-vs-text gate, three lines below the two this round fixed
+
+`tests/VhsTapeContractTest.php:3048`. Round 15's headline was closing the two
+unpinned gates in `skipSpeedSuffix()` that were "on token KIND, not text". There
+is a third in the SAME METHOD and nothing pins it: dropping
+`$tokens[$i]['kind'] === 'ident'` leaves the file GREEN.
+
+Measured on both oracles — `Type@1"ms" "abc"` is `vhs validate` **exit 0**. A
+quoted `ms` is a `STRING`, not `MILLISECONDS`, so `parseTime` does not consume it
+and `parseType`'s `for p.peek.Type == token.STRING` loop takes BOTH strings.
+Upstream: `TYPE` Options `1s`, Args `ms abc`.
+
+    unmutated:  Type@1"ms" "abc"  =>  ['ms abc']    <- agrees with upstream
+    mutant:     Type@1"ms" "abc"  =>  ['abc']       <- silently drops a typed string
+
+This is the SILENT direction: `testTypedPathsResolveFromTheLibRoot()` gets one
+fewer value to check, so a bad path in the dropped token goes unchecked. Unlike
+the two gates the round DID pin, this one cannot announce itself. Fix is one
+case — `Type@1"ms" "abc"` → `['ms abc']` — added to
+`testASpeedSuffixBelongsToTheHeadNotTheValue()` at `:1216`, which already carries
+the four sibling cases.
+
+**The round declared this class closed while leaving it open in the very method it
+was fixing.** Sixth round running for this defect class.
+
+### F-2 [LOW-MED] — a false zero, contradicted by the same file 360 lines earlier
+
+`:2663` claims "0 missing, 0 extra, 0 value divergences" over the 198 clean tapes
+of the 255-tape sweep. Re-measured over exactly that domain: 0 missing ✓, 0 extra
+✓, **130 value divergences** — 128 UTF-8 re-encoding residual plus `0x23` (`#`)
+and `0x40` (`@`).
+
+`:2299-2302` describes the SAME named domain correctly ("`0x40` is the only value
+divergence that is neither a `#` nor the UTF-8 residual"). So the file holds the
+right measurement and a contradicting zero. In a paragraph that opens "No
+behavioural claim changed here".
+
+### F-3 [LOW] — "printable-ASCII" ≠ "< 0x80", at three sites
+
+`:75`, `:213`, `:2651`. The 64 is right — 64 of the 192 glue bytes are `< 0x80`.
+But **29 of those 64 are not printable**: `0x01`-`0x08`, `0x0b`, `0x0c`,
+`0x0e`-`0x1f`, `0x7f`. It is the 7-bit slice, not the printable slice. `:213` is
+worst because that mislabel is the ONLY domain it gives. Contrast `:2587`'s
+"94-printable-ASCII sweep", which uses the term correctly.
+
+### F-4 [LOW] — a fourth unpinned kind gate, benign direction
+
+`:2438`, `directiveValues()`'s multi-word head tail: dropping
+`$tokens[$i + $w]['kind'] !== 'ident'` leaves the file GREEN. Same shape as F-1,
+opposite consequence — `Set "Shell" "sh"` and `Set /Shell/ "sh"` both `validate`
+**exit 1** (`Unknown setting: Shell`), so the mutant can only raise a false alarm
+on a tape CI already rejects. Still worth pinning: `Set Shell` is the file's
+most-queried directive at 16 call sites.
+
+### Nit — divergence class 1 understates itself
+
+`:2280-2282` frames all five classes as "upstream gives a value MORE than this
+model does … none of them loses an occurrence". True, but class 1 *gains* an
+occurrence when the keyword names a queried directive: `Set Theme Output` +
+`Output a.gif` is validate exit 0, upstream one `OUTPUT`, model `Output` →
+`['', 'a.gif']`. Loud direction, no false green. The reviewer's own sweep found
+120 EXTRAs over 3,064 clean tapes, every one this class and nothing else — the
+class is real and complete, only its description is short.
+
+### What was attacked and HELD
+
+- **The 192-byte glue count AND the set**, re-measured exhaustively against
+  upstream's own lexer+parser: GLUE 192, clean-but-absorbed 6 (exactly `" # ' / `
+  `{`), rejected 57 = 255. The nine ranges are disjoint, ascending, sum to 192,
+  and are **byte-for-byte identical to the measured set**. "Glue" is the right
+  name: what is excluded is NUL, the four whitespace bytes, the six delimiter
+  openers, `.` and the 52 letters.
+- **Both oracles, rebuilt not taken.** Round 15's Go copy is GONE from this
+  machine, so the reviewer rebuilt one from the module cache: `diff` shows
+  **exactly three changed lines, all imports**; `token.go` byte-identical.
+- **The unit list is complete** — `token.Keywords:114-116` has exactly `ms`/`s`/`m`;
+  `parseTime` gates on those three and nothing else. No `h`, `us`, `ns`.
+- **Both new pins genuinely kill**, and round 14's F1/F2/F3 all landed (four
+  mutations, four RED). Round 14's two survivors are dead.
+- **N1 is honest and it works.** The docblock says outright it is "a DRIFT
+  DETECTOR, not a derivation". One byte mutated in each of the five constants →
+  all five RED, and `LETTER_BYTES` is caught by this test ALONE.
+- **N2a's survivor is genuinely equivalent** and the comment says so with the
+  reason — honest, not hidden.
+- **The model, on three corpora of the reviewer's own design**: 10,584 tapes /
+  3,367 clean → 0 MISS / 0 EXTRA; a hiding-construct corpus (EOF-truncated, CR,
+  nested, cross-line) 23,040 / 13,208 clean → 0/0; parser-level occurrence
+  differential 10,240 / 3,064 clean → 0 MISS. The occurrence-direction defect
+  stays closed.
+- **Every other reproducible figure**: all six five-tape figures exact, 22
+  `Sleep <n>s|ms`, `Set TypingSpeed 60ms` at chat:29/permission:33/diff:39/
+  agents:57/cli:85 all exact, 60 keywords, 67/11/9 class sizes, 510-tape
+  differential 0/0, "198 clean" = 192+6. Only F-2 and F-3 fail.
+- **All four new examples actually RUN** under a PTY at 117×40, rendering real
+  frames with no fatal/uncaught/warning (exit 124 = the expected timeout of an
+  interactive TEA loop). `bin/sugarcrush --help` is 66 lines / 85 cols and
+  `cli.tape` pipes it through `head -20`, so it fits.
+
+### `de15ee6d`'s header edit — verified accurate, no finding
+
+The staging step globs exactly `<lib>/.vhs/*.gif` into `/tmp/staged/<lib>/`, so
+the header's load-bearing claim — **the collected glob is unchanged** — is right.
+Every rule the test enforces about `Output` landing inside `.vhs/` is still
+defended by a live mechanism: a GIF at `<lib>/x.gif` is missed by the staging glob
+AND by the commit job's `git add */.vhs/*.gif`. Nothing in the test is defended by
+a mechanism that no longer exists.
+
+**Independent corroboration landed mid-review**: CI rendered and committed all
+five sugar-crush GIFs (`1800152e`, `5aa7edfc`), which proves the tapes render, the
+examples run under the real renderer, and the staging fix works in production.
+
+### No round-14 verdict was wrong
+
+Where the reviewer touched them they held: the occurrence-direction closure, the
+UTF-8 residual being boundary-neutral (all 128 high bytes match on count and kind,
+only text differs), and `SINGLE_BYTE_TOKENS` never entering a regex. candy-vcr
+forward-compatibility untouched — nothing narrowed, the named constants and the
+item-#81 grammar write-up intact.
+
+## Lane E round-2 review — 6 findings, and the HIGH one is F-4 all over again
+
+Reviewer verdict on `165f5874`. Baseline reproduced: 6418 / 49631 / 0 failures /
+1 skipped. All mutations run in a scratch copy with `ReflectionClass::getFileName()`
+confirming the copy's `src/` was loaded.
+
+### F-1 [HIGH] — a false `/keys` mitigation replaced by a DIFFERENT false one
+
+`README.md:157` and `src/Chat.php:3411-3414`, both written by this commit, claim
+`/keys` (or `/help`) is the escape hatch for when a draft is half-typed and `?`
+therefore cannot be used.
+
+`submit()` does `$text = trim($this->inputBuf)` and matches `$text === '/keys'`
+**exactly**. So with a draft half-typed you cannot use `/keys` either. Driven as
+real keystrokes:
+
+    type "why" then "/keys"  -> inputBuf 'why/keys', slashMenuMatches 0
+    Enter                    -> keyHelp NULL, history[2] = 'why/keys'  (SENT TO MODEL)
+    type "why" then "/"      -> inputBuf 'why/', slashMenuMatches 0    (no popup)
+    backspace x3 then "?"    -> keyHelp 0                              (the only route)
+
+Three consequences: the stated escape hatch does not work; following the README
+silently ships `why/keys` to the backend as a prompt; and **there is no state in
+which `/keys` works and `?` does not** — once the draft clears, `?` works.
+
+`/keys`/`/help` remain justified as discoverable command NAMES (the
+`CommandRegistry` comment's behaviour argument is sound), so they stay. It is the
+two sentences that are false. **This is the same defect class the previous round's
+F-4 was raised for, reappearing in a new sentence** — someone reasoned about
+`submit()` instead of typing into it.
+
+### F-2 [MED-HIGH] — the bar range is wrong for the SECOND consecutive round
+
+`src/Renderer.php:1050-1057`: "this cue 33 columns, against 54 for the bar at every
+width below 79 and 75 at 79 and above". Measured with `Width::of` after
+`stripZoneMarkers()`, two-message `EchoBackend` chat, idle, no prompt pending:
+
+    cols 1-61   -> 54
+    cols 62-64  -> 62
+    cols 65-74  -> 65
+    cols 75+    -> 75
+
+So "54 at every width below 79" is false across cols 62-78 (three plateaus, none of
+them 54), and the step to 75 is at **75**, not 79. The cue's 33 reproduces.
+
+The next sentence — "at the sizes that bring this cue out (cols < 5 or rows < 5) the
+bar it stands in for is still 54 columns" — is false for the `rows < 5` branch:
+**at 100×4 the bar is 75**, and that size is one of the four the round's own new
+test uses. The safety conclusion (33 ≤ min bar 54) survives; the domain does not.
+
+### F-3 [MEDIUM] — a domain figure stale as of its own commit
+
+`src/Chat.php:1085-1087` cites "the three files that construct a
+`PermissionRequestMsg` at all (252 tests / 19639 assertions)". At `165f5874` the
+trio is **260 / 19714** — the commit added 8 tests to those very files. The
+three-file set itself is right (`grep -rln PermissionRequestMsg tests/` finds
+exactly those three), and the rest of the four-row mutation table reproduces.
+
+### F-4 [MEDIUM] — `token()`'s narrowing is applied but not asserted
+
+`tests/Commands/KeyBindingDriftTest.php:1518-1520`. Reverting to the loose pre-fix
+form leaves the file at **OK (122 tests, 625 assertions)** — nothing fails
+anywhere. The commit message claims both latent parser hazards were "fixed rather
+than documented"; the sibling hazard (`/` discarded) got a real pin, this one got
+none. The ROUTING half does hold: `token()` returning null makes `chord()` return
+`[]`, failing `testEveryLabelIsALiteralChordOrADeclaredException()` with the right
+message. And nothing legitimate broke — every in-use glyph is in `$named` ahead of
+the fallback, and `$token >= ' ' && $token <= '~'` is a string comparison in every
+case (`' '` and `'~'` are non-numeric, so `'2'` does not fall into numeric compare).
+
+### F-5 [LOW-MED] — `picker.branch` leaks a directory every run
+
+`removeTree()` at `tests/Commands/KeyBindingDriftTest.php:1535` uses
+`glob($dir . '/*')`, which does not match dot entries. The fixture
+`repo-drift-branch` contains only `.git`, so nothing inside is unlinked, its
+`rmdir` fails as non-empty, and the sandbox root's `rmdir` fails too. One run leaves
+`/tmp/crush_keybind_drift_*/repo-drift-branch` (128K, full `.git`); the reviewer had
+accumulated 61 repo dirs plus 238 empty sandbox roots. Surrounding hygiene is fine —
+CWD restored via `try/finally` on both paths, pre-`chdir` failures abort before the
+CWD moves, no cross-test hazard.
+
+### F-6 [LOW] — arithmetic in a new docblock
+
+`tests/Renderer/KeyHelpTest.php:246-248`: "70 content lines, against a 27-line
+body". 70 is right; the body is **25**: at 100×30, `boxRows 28 → viewport 26 →
+minus footer = 25`, which is exactly why measured `keyHelpMaxOffset()` is **45** and
+not `70 − 27 = 43`.
+
+### Nits
+
+- The footer's 1-column margin is truthful but unasserted (`Width::of` 63 vs
+  `KEY_HELP_COLS = 64`; `strlen` 69, but `Width::truncate()` is column-correct so
+  bytes never reach the render path). F-5's fix tested the CUE's margin; this one
+  got only a comment.
+- "the footer is the ONE line here that may be truncated without losing a binding"
+  overstates: at cols 14-17 the rendered footer is just `Esc closes`, `?` clause
+  gone. The footer grew 39 → 63 cols, so it is now truncated for cols 44-67 where it
+  previously fit. No over-wide frame line anywhere (swept cols 40-130 × rows
+  {5,6,10,20,30,40,80}).
+- `$keyHelpMaxOffset`'s docblock overstates "every frame": `Pane::Agents` renders a
+  bespoke frame (`src/Tui/Renderer.php:425`) that never calls
+  `Crush\Renderer::renderView()`. Conclusion survives — in those states
+  `shellOwnsKeyboard()` claims every key, and `renderKeyHelp()` re-clamps anyway.
+- Dismissing a `/keys`-opened reference with `?` deposits a stray `?`. Disclosed by
+  the footer, but the README's `?` row lists only `Esc`/`Enter`/`q`, so a
+  README-only reader never learns `?` closes it.
+- "all 8 keyboard-owning sub-states" (commit message) overstates; the docblock is
+  honest that it is a CORPUS and `assertCount(8, …)` pins corpus size.
+- `git init` adds a subprocess + git ≥ 2.28 (`-b`) dependency to a unit-test file.
+
+### What HELD — do not re-litigate
+
+- **The `?` rule, driven as keystrokes.** `??why` → `'?why'`, keyHelp NULL; `??`
+  then Enter sends `?`; backspace-to-empty then `?` reopens; with the reference open
+  `Tab`/`Backspace`/`Left`/`Space`/`/` are exact no-ops (`$next === $chat`); `?` in
+  the `/` popup types `/?`; `?` with the palette open filters to `'?'`. Both
+  directions pinned: dropping the insert → 2 failures; making the FIRST `?` type
+  → 4 + 1.
+- **F-1's generalisation.** Every direction pair mutated both ways. SWAP is caught
+  for all nine `*.move`/`*.switch`/`*.page`/`session-cycle` rows; first-direction
+  DELETION is caught for eight of them. The one exception is `agents.move`'s `↑`
+  (the observation "up leaves −1" is also satisfied by an unbound key) — but
+  `KeyboardHandlerTest` catches it, which the previous review already recorded. So
+  "the other seven rows were already asymmetric" is **true as stated**.
+- **F-6's sweep and its self-caught leak.** Building the sub-state once per state
+  gives `[760, 692, 68]` — precisely the leak reported; per-press rebuild gives
+  `[760, 712, 48]` over 1520 presses. The rebuild is complete, and the distribution
+  is structurally determined, not sampled: 760 = the non-ctrl half, 48 = 8 states ×
+  the 6 `chatCtrlRunes()`, 712 = the remainder.
+- **F-7's six newly-covered rows**: each mutation reds exactly the right
+  observation(s), including `mouse.palette-row` for the click-highlight split.
+- **Every other figure the diff touched reproduces**, including `menuCount()` 9,
+  palette root 9, slash-`/` 17, `live=53 all=57 contexts=9`, cue 33,
+  `KEY_HELP_OVER_PROMPT` 35, footer 63/35, `ChatTest` 215, and the three nit-fixes.
+  No convention violations.
+
+## Lane D round-5 review — 6 findings, and the HIGH one is a LIVE escape the round claims cannot exist
+
+Reviewer spent ~2h on `c2ab3e31`: re-measured every figure, built fixture repos to
+break both containment tiers for real, drove `/workflow` end-to-end through a real
+`Bootstrap::chat()`, mutation-tested seven behaviours. Baseline reproduced exactly:
+6418 / 49631 / 0 failures / 1 skipped, 1m50s.
+
+### F-1 [HIGH] — `AgentPresetRegistry` is a third, LIVE instance of the escape this round closed twice
+
+`src/Agents/AgentPresetRegistry.php:28-37` (`load()`) and `:69-81` (`list()`) each
+spell the "realpath both sides, prefix-compare with a trailing separator" idiom by
+hand, **per-ENTRY, with no directory-level anchor**. `src/Cli/Bootstrap.php:606-612`
+makes `<root>/.sugar-crush/agents` the FIRST search path and calls `list()` on every
+launch (`agentPresets()` ← `agentManager()` ← `chat()`).
+
+CONFIRMED. A repo commits one line — `.sugar-crush/agents -> /home/you/notes` — and
+every frontmatter-bearing `*.md` in the target is parsed as a preset:
+
+    preset=notes  desc=PRIVATE NOTE DESCRIPTION  mode=bypass-permissions
+    prompt=SENTINEL-PRIVATE-BODY sk-live-DEADBEEF
+
+The file's `description` becomes a roster entry, its body becomes the sub-agent's
+`initialPrompt`, and **`permissionMode: bypass-permissions` out of a file the
+repository does not contain is honoured.** This is the identical relocatable-boundary
+bug `readableProjectDir()` and `skillFilesIn()` now refuse — in a subsystem the
+round's own docblocks describe as sharing the trust model.
+
+Bounded by: the target's top-level `.md` files must carry parseable frontmatter — the
+first that does not throws, and `agentPresets()` catches and degrades to built-ins.
+So `-> ..` at a checkout root usually self-DoSes on `README.md`; `-> ~/.claude/agents`,
+an Obsidian vault, or another repo's presets do not.
+
+### F-2 [MEDIUM] — `ContainedPath`'s opening claim is false, and the counterexample is inside the class it consolidated
+
+`src/Support/ContainedPath.php:8-9`: "the ONE resolution every symlink-containment
+decision in this package goes through." Measured package-wide: **14 other sites still
+spell it by hand** — `Skills/SkillLoader.php:778`, `Agents/AgentPresetRegistry.php:37`
+and `:81`, `Commands/CommandLoader.php:76`, `Context/InstructionFileLoader.php:192`
+and `:348`, `Tools/PathJail.php:99 :108 :174 :219 :283`,
+`Tools/BuiltIn/Glob.php:635`, `Tools/IgnoreRules.php:575`,
+`Hooks/BuiltIn/BashEscapeDenyHook.php:132`.
+
+Worse, `src/Skills/SkillLoader.php:436-443` says "This class ran its own copy of that
+idiom until the copy was found to be missing the directory-level half; there is one
+implementation now." `loadSkillAsset()` at `:766-779` is a **second copy 313 lines
+below in the same file**, guarding a `file_get_contents` of a skill asset. Dormant —
+only `SkillLoaderTest` reaches it — which is the exact shape that produced this
+round's headline defect. The six-rounds defect class, inside the round that retracts
+three instances of it.
+
+### F-3 [MEDIUM] — the wiring test cannot catch a recurrence of the bug it was written for
+
+`tests/Integration/BinSugarcrushWiringTest.php:120-136` hardcodes `assertCount(10, …)`
+plus a name list; `Bootstrap.php:2071-2075` and `README.md:272` claim the two numbers
+"agree **by construction** now".
+
+MEASURED: an 11th `Tool` implementor added and NOT listed in `Bootstrap::tools()`
+leaves that test at OK (298 / 1692) and the Integration tier at OK (467 / 2679).
+Every other corpus is a literal list too, and `tests/Tools/BuiltInToolTest.php:66-74`
+lists only **9 of 10** — `SkillTool` absent from its "all built-in tools" provider.
+**Nothing scans `src/Tools/BuiltIn/`.** Only the added-to-the-array direction is
+pinned; the omitted direction — what actually happened to `Write` — is invisible, and
+"by construction" names a mechanism that does not exist. Control: removing
+`new Write(...)` → exactly 1 failure, so it bites where it was aimed.
+
+### F-4 [MEDIUM] — `/workflow pause|resume|status` all reject the identifier `/workflow run` prints
+
+`WorkflowEngine.php:229` keys `$resultsByName` by NAME; `:1551` (the SIGINT path)
+keys the same array by the composite `<name>-<hash>`. The UI prints
+`ID: safe-252630d0` and the help says `/workflow pause <workflowId>`. MEASURED on a
+real `Bootstrap::chat($root)` launch:
+
+    /workflow run safe             -> ID: `safe-252630d0`
+    /workflow pause safe-252630d0  -> Error: No result found for workflow 'safe-252630d0'.
+    /workflow status safe-252630d0 -> Error: No pause file found …
+    /workflow resume safe-252630d0 -> Error: No paused workflow found with ID …
+    /workflow pause safe           -> Workflow `safe` has been paused.   <- the NAME works
+
+Pre-existing code, but the commit message claims the engine "is driven from
+`/workflow run|pause|resume|status|list`" — three of five verbs are unusable with the
+only identifier the UI hands the user. Why the suite cannot see it: every engine pause
+test passes a NAME (`WorkflowEngineTest.php:713, 845, 1594`) and the only Chat-level
+pause/resume/status tests pass **no argument** (`ChatTest.php:1645-1673`).
+
+### F-5 [LOW-MED] — "Stages completed: 1" for a run that dispatched nothing
+
+`Chat.php:3823` prints `count($result->stageResults)`. The new pre-flight
+(`WorkflowEngine.php:506-533`) builds one SYNTHETIC `StageResult`, and its own comment
+says "Nothing ran". MEASURED: stage 2 declaring `Bash` under `dont-ask` →
+"Workflow 'danger' failed … Stages completed: 1 … (0.00s elapsed)" while stage 1 never
+ran — proven by the round's own `WorkflowFailureReportingTest.php:47-48`
+(`expects($this->never())`), which asserts nothing about that line. The two halves of
+one round disagree. Same shape after resume: "Stages completed: 0" for a workflow that
+had completed one. **DEFERRED to tracker #85** — `Chat.php` was owned by lane E's
+concurrent round.
+
+### F-6 [LOW] — "the only spelling of 'does not resolve' a repository can commit" is false
+
+`WorkflowRegistry.php:528-540`. MEASURED: with the link one component higher —
+`.sugar-crush -> <a dir that exists but has no workflows/ in it>` —
+`realpath('<root>/.sugar-crush/workflows')` is `false` AND `is_link(...)` is `false`,
+so the dangling-link refusal does not fire and the directory is granted. The doc then
+argues the residual window costs "write access to the checkout"; in that layout the
+path that must appear is OUTSIDE the checkout (`/tmp/pwn/workflows`) — i.e. write
+access to `/tmp`. Not exploitable as far as the reviewer pushed it: **0 disclosures in
+40,000 `list()` calls** against a child flipping the target, and once the target
+exists the directory is refused. A claim defect, not a live escape.
+
+### Nits
+
+- **N1** `Bootstrap::$projectTierRefusals` is never cleared: `chat($bad)` then
+  `chat($good)` still returns `$bad`'s entry. Wrong for the "doctor report or debug
+  pane" the docblock advertises. Reviewer's ruling: this is **ABSENT** reset, not
+  PARTIAL — nothing resets any Bootstrap static — so it does NOT join the
+  partial-static-reset family.
+- **N2** The workflow refusal notice repeats the path; the skills notice does not.
+- **N3** `PermissionGateDeclarationTest.php:48-68` sweeps 5 tools × 6 modes with
+  `Read` as its only read-only representative. MEASURED: `dont-ask` also refuses
+  `Skill`, `doctor` and `WebSearch`, because `isReadOnlyTool()` names 4 of the 10
+  built-ins. Fail-closed and defensible — but the corpus cannot show it, and a stage
+  declaring the Skill tool is simply unrunnable under `dont-ask`.
+- **N4** `Commands/CommandLoader.php:76` is a dormant FOURTH copy of the idiom, no
+  directory anchor for the repo-chosen `<root>/.sugar-crush/commands`. Unwired (0
+  constructions in `src/`/`bin/`). Anchor it, do not delete it — step #14 wires it.
+
+### What HELD — do not re-litigate
+
+- **The strike-counter fix is genuinely closed.** `terraform destroy -auto-approve`
+  ×3: baseline `deny,deny,ask`; with a `refuses()` probe interleaved `deny,deny,ask`;
+  with the OLD shape interleaved `deny,deny,deny`. Mutation → exactly 1 failure.
+- **The per-mode refusal table is exactly right**, measured over 6 modes × 11 tool
+  names including `Skill`/`doctor`/`mcp__git__push`.
+- **Workflow containment: 18 escape attempts, 0 wins** — `-> ..`, `-> outside`,
+  `-> .`, `-> tools/workflows` (honoured, correctly), dangling, entry-level
+  `leak.yaml -> outside`, `sneak.yaml -> <root>/local-secrets.yaml`, trailing slash,
+  `//`, `../` traversal, root spelled `/`- and `/./`-suffixed, `projectRoot: null`,
+  symlinked checkout root, `projectRoot: ''`.
+- **Skills containment holds on both project trees**, and the USER tier is correctly
+  NOT anchored — the reviewer's real 32 `~/.claude/skills` still came through.
+- **`Write` is genuinely reachable, not merely present.** Real `EngineBackend` +
+  `Bootstrap::tools($root)` + a stub provider issuing a `Write` call: the provider is
+  handed `Bash,Read,Edit,Glob,Grep,Write,WebFetch,WebSearch,doctor,Skill` and the file
+  was created. Jail intact (`../escape.txt` and `/etc/…` refused, clobber refused
+  without `overwrite`). Tool-contract sweep: exactly 10 classes implement `Tools\Tool`,
+  all 10 wired — no OTHER tool is unreachable today. The problem is the test corpus.
+- **The "9 of 20 `WorkflowLoadException` sites interpolate file content" figure is
+  CORRECT** — 20 real sites, 7 `$where` arms + the `name` arm at `:754` +
+  `requirePositiveInt`'s `got {$int}` at `:982`. The figure most likely to be the
+  recurring defect is the one that checks out.
+- **The README test figure was EXACT at commit time, and the drift is accounted for.**
+  Reconstructed by running the 6 changed test files at both revisions in a
+  `ReflectionClass`-verified `git archive` copy: old `375/15354`, new `391/19433`,
+  delta `+16/+4079`. `6418 − 16 = 6402` and `49631 − 4079 = 45552` — **exactly** the
+  README's `6,402 / 45,552`. All drift attributable to the five later commits, chiefly
+  `165f5874`. "all 7 `ProviderFactory` type keys" ✓ (the rewording correctly excludes
+  `EchoProvider`).
+- **#79 and #80 are honestly disclosed and not made worse.** `/workflow run` measured
+  blocking `Chat::update()` for 1.08s per real stage, documented with the fix named;
+  `ProcessExecutor::createInlineWorkerScript()` is still the P1.S5 simulation. The
+  pre-flight actually REDUCES freeze time for refused runs (0.00s).
+- **The tiers are wired into a live path.** No `"not configured"` seam remains:
+  `/workflow`, `/agents`, `/sessions`, `/memory`, `/bg`, `/fork`, `/branch` all answer
+  from real collaborators on a `Bootstrap::chat()` launch.
+- **No FIFTH partial-static-reset.** There are NO static properties at all in
+  `src/Skills/*`, `src/Workflows/*`, `PermissionGate`, `ContainedPath` or
+  `ToolDeclaration`.
+- **Every cited line number in the new docblocks is accurate**, and
+  `ProjectSkillsDirContainmentTest` is NOT domain-bounded — each of its controls kills
+  a cheap fake fix.
+
+### The method rule this review produced
+
+No earlier lane D verdict was WRONG, but one was **narrower than it reads**, and that
+is what let F-1 and F-2 survive five rounds. Round 4's "the anchor is un-forgeable (a
+repo can move `$projectWorkflowsPath`, never `$projectRoot`)" is true of the workflow
+tier and does not generalise: the same sentence is false for `AgentPresetRegistry`,
+where the search path IS the forgeable thing and there is no anchor at all. Rounds 3-5
+took the containment inventory **per lane-scope file** and never package-wide.
+
+**Rule: when a round claims to be "the one implementation" of a predicate, the domain
+to measure is `grep` over `src/`, not the files the round happens to own.**
+
+## CURRENT STATE — three fix rounds in flight, all file-disjoint
+
+All three lanes were reviewed; all three had findings; all three fix rounds are
+running concurrently against `165f5874` + the uncommitted tree. Disjointness is
+enforced by the briefs and is the ONLY thing keeping this safe — earlier today
+`Chat.php` and `README.md` each needed hunk-level splitting at commit time because
+two lanes shared them.
+
+| lane | round | owns |
+|---|---|---|
+| **B** (#37) | 16 | `tests/VhsTapeContractTest.php` — that file ALONE |
+| **E** (#38) | 3 | `README.md`, `src/Chat.php`, `src/Renderer.php`, `src/Commands/{CommandRegistry,KeyBindingRegistry}.php`, `tests/Commands/*`, `tests/Renderer/*`, `tests/Tui/*` |
+| **D** (#13) | 6 | `src/Agents/AgentPresetRegistry.php`, `src/Support/ContainedPath.php`, `src/Skills/SkillLoader.php`, `src/Commands/CommandLoader.php`, `src/Workflows/*`, `src/Cli/Bootstrap.php`, `tests/{Integration,Tools,Providers,Permissions,Support,Skills,Workflows,Agents}/*` |
+
+**Lane D's scope was cut** to keep it off lane E's two files. Its F-5
+(`Chat.php:3823`'s "Stages completed") and the `README.md:272` half of its F-3 are
+DEFERRED to trackers **#85** and **#86**, both recorded with their measurements so
+they can be picked up cold. Lane D was told to fix F-4 ENGINE-side for the same
+reason. New tracker **#87** carries F-1, the live `AgentPresetRegistry` escape.
+
+Each fix agent was told: do not commit, do not spawn sub-agents, never
+`git checkout .`/`reset`/`stash`/`clean`. **I commit**, after each round's own
+re-review. If a notification is lost, every round is re-runnable from its findings
+section in this file — lane B at "Lane B round-15 review", lane E at "Lane E
+round-2 review", lane D at "Lane D round-5 review".
+
+**Every brief carries the six-rounds rule as an explicit failure condition**: every
+figure must be one the agent measured this session with its domain stated in the
+code; every "the only X" claim must be backed by a repo-wide sweep; every
+behavioural claim about keystrokes must be DRIVEN, not reasoned about. Lane E's F-1
+exists precisely because someone reasoned about `submit()` instead of typing into it.
+
+**#63** (`enforceTimeLimit` in `phpunit.xml`) still waits for a gap when NO agent is
+running the suite — adding a per-test time limit while three rounds are running it
+would corrupt their baselines.
+
+## STANDING INSTRUCTION — 2026-08-17
+
+**Keep each of the three lanes in its fix → review cycle until it reviews CLEAN and
+is committed. Then PAUSE, and update this worklog + the plan at that point.**
+
+Do not start plan step #14 (or #12, #17) until all three lanes are closed. Committed
+so far: lane B `2bd2263f`, lane E `b61db2e1`. Lane D still uncommitted — and its
+`<name>-<hash>` run-ID change currently reds 3 tests in
+`tests/Integration/WorkflowResumptionTest`, attribution proven by lane E via a
+scratch copy with only `WorkflowEngine.php`/`WorkflowRegistry.php` reverted to HEAD
+(→ OK, 9 tests / 49 assertions).
+
+A lane is CLOSED when its review returns no findings worth fixing AND the suite is
+green apart from the 1 legitimate `McpClientTest` skip. A review that returns
+findings starts another fix round on that lane — that is the loop, not an exception
+to it. Lanes B and E are committed but NOT yet closed; their round-16 and round-3
+reviews are in flight.
+
+**#88 is the last thing to do before pausing**: re-measure the README whole-suite
+figure once all three lanes are green, in a standalone commit, so the figure is one
+identifiable measurement instead of a moving target.
+
+## Lane B round-16 review — 6 findings; the eighth survivor is four, and two earlier verdicts were WRONG
+
+Reviewer on `2bd2263f`. 62-mutation one-per-conjunct sweep, three oracles.
+Baselines reproduced: targeted file 108 / 492 (0.043s); full suite 6459 / 51890 /
+0 failures / 1 skipped.
+
+### F1 [MEDIUM] — a fresh instance of the class, measured on the PARENT
+
+`:1479-1481`: "`Set Shell` is the most-queried directive in this file — 16 of its 28
+two-word `directiveValues()` calls, against `Set Theme`'s 4". Over **the file the
+sentence ships in**: **19 of 32, against 5**. Over `2bd2263f^`: 16 / 28 / 4, exact.
+The round's own new test adds 3 `Set Shell` calls and 1 `Set Theme` call, so the
+figure was measured on the parent and written into the commit that changed it. The
+commit message repeats it. Reproduce with
+`grep -oE "self::directiveValues\([^,]+, '[A-Za-z]+ [A-Za-z]+'\)"`.
+**Seventh consecutive round for this class, again inside the fix round.**
+
+### F2 [MEDIUM] — four non-equivalent survivors, ALL in `skipSpeedSuffix()`
+
+Round 16 claimed a complete conjunct sweep and three remaining equivalent mutants.
+Four conjuncts stay GREEN:
+
+- **`:3265` `$i >= $count`** — dropped → `Undefined array key` ×2 on
+  `Output a.gif\nEnter\n`, **a tape upstream ACCEPTS with zero errors**. Same class
+  as the `$i + $arity <= $count` guard round 16 pinned one method up, and **strictly
+  more reachable**: the pinned one needs a tape upstream rejects, this fires on any
+  tape ending in a 0-arity keypress head.
+- **`:3265` `$tokens[$i]['text'] !== '@'`** — dropped → on `Set Padding -` and
+  `Set Padding =` (both zero errors upstream) the model answers `''`. The **TEXT twin
+  of the `kind === 'single'` gate round 16 DID pin**, while `:1281`'s docblock says
+  these tests exist because the model "tests each token's KIND and not only its text".
+- **`:3271` and `:3274` `$i < $count`** — `Undefined array key` on `Type@` /
+  `Type@100` at EOF. Upstream rejects both, so lower risk, same warning class.
+
+Discipline note: each of round 16's seven claimed kills verified GREEN at the parent
+and RED at `2bd2263f`. These four are GREEN at both.
+
+### F3 [LOW-MED] — F-3 fixed three of FOUR sites
+
+`:1813-1815` still says "every row above it is a printable ASCII byte, and for three
+rounds so was the whole recorded glue set". 29 of those 64 are control bytes. Round
+16's own text asserts the count is three, so the undercount is in the file too.
+
+### F4 [LOW] — the "no vhs binary" premise was FALSE, and every surviving claim is TRUE
+
+`/tmp/vhsbin/vhs` exists: 30,797,703 bytes, v0.11.0, **ctime ~5h BEFORE the commit**
+(ctime cannot be back-dated by `cp -p`). Round 16's message says no binary existed.
+Unresolvable caveat: a private-`/tmp` sandbox would explain not seeing it.
+
+Substance is sound. All **5** surviving `/tmp/vhsbin/vhs validate` citations
+(`:996 :1065 :1328 :1429 :2248`) re-derived against that binary, against
+`/usr/local/bin/vhs` (v0.11.0 c6af91a, a DIFFERENT 23.2MB build), and the Go oracle:
+**all three agree on all 31 tapes, not one claim wrong**, including three panic
+offsets byte-exactly (`[:18]/17`, `[:22]/21`, `[:15]/14`). The reader is misled only
+about what was CONSULTED, and the path is live rather than dead.
+
+### F5 [LOW] — the file tells the next sweeper hangs are impossible; they are not
+
+`:2909-2912`: "no arm can produce a zero-width token and the failure mode does not
+exist". Dropping one conjunct at `:3025` makes `false < int` true, `$end` become 0,
+`$i` walk backwards, and `tokenize()` loop **forever** on `Type "echo abc` — a shape
+the suite already contains. 8s hard timeout, no progress; it killed the reviewer's
+first sweep pass at 10 minutes. The narrow arm-deletion claim holds; the
+generalisation does not, and round 14's "0 hangs" was scoped to arm deletions.
+
+### F6 [LOW] — the history evidence is vacuous
+
+The file was **ADDED** in `48e0690c` and has exactly three commits ever, so
+`git log -S` over it can only return `48e0690c` and "all three mislabels entered in a
+single commit" carries no information. "Said sixty-four for three rounds" is
+uncheckable — rounds 1-14 never landed. The number 64 is right.
+
+### Nits
+
+- **`VALID_SHELLS` (`:109`) is the one constant with a live false-green consequence
+  and no drift pin.** Adding `'sh'` → GREEN, and `Set Shell "sh"` is the
+  `invalid shell sh` abort that kills the whole `set -euo pipefail` loop. Dropping
+  `'nu'` → GREEN. The nine names DO match `shell.go`.
+- **`KEYWORDS` survives SUBSTITUTION** (count 60 + no-dupes + 7 lowercase):
+  `End`→`Home` and `Screenshot`→`Screenshots` both GREEN.
+- `:2827` "ten of them" = 10 rows but **7 distinct glue bytes**. `:2292` "four tokens
+  later" is **three**. `:1505` "Both rows" in a four-row test. The arity row's kill is
+  **warning-only** — exit 1 under `failOnWarning`, but the summary line reads "OK".
+
+### HELD
+
+F-1 fully verified on both binaries. All three units kill independently, and the
+corrected `m` message is right (mutant answers `''` because `m` is itself a keyword).
+F-2's numbers recomputed exactly: 198 clean = 192 glue + 6 absorbed, 57 rejected,
+**0 missing / 0 extra / 130 value divergences**, and over the 128 high-byte tapes
+**0 count, 0 kind, 128 TEXT mismatches, always ILLEGAL**. `lexer.go:107` is
+`literal := string(ch)` exactly; `json_encode` on a lone `\x80` → false. 64 glue
+bytes below 0x80 = **35 printable / 29 control**, the 29 byte-for-byte as listed.
+F-4 verified end to end. **All three "equivalent mutants" genuinely equivalent.**
+Oracle claim independently verified (`cmp`-identical, module renamed, imports
+untouched). Every cited Go line exact; `KEYWORDS` set-identical to upstream's 60.
+**The occurrence direction stays closed on a 12,240-tape corpus of the reviewer's own
+design** (8,850 upstream-clean, **0 MISSING**); its 1,158 EXTRAs were its own harness,
+because `parseSource` INLINES the sourced tape and filters out both `SOURCE` and
+`OUTPUT` (`parser.go:742-751`). 58 of 62 mutations die loudly. candy-vcr
+forward-compatibility intact — every deletion in the diff is a false sentence.
+
+### TWO EARLIER VERDICTS WERE WRONG
+
+1. **Round-15 review's F-3 said the "printable-ASCII" mislabel was at THREE sites.
+   There are FOUR** — `:1681` (now `:1813`) states it of the whole recorded glue set
+   and is still uncorrected. Both that review and round 16 undercounted.
+2. **Round-14 review's "the 3 HANG mutations are now impossible" is domain-bounded**
+   to arm deletions; a single-conjunct mutation in the string arm still hangs on data
+   already in the suite.
+
+Also wrong, though not a lane B verdict: the round's premise — and my brief's — that
+no `vhs` binary existed.
+
+## Lane E round-3 review — 2 HIGH, and round 3 OVERTURNED A CORRECT VERDICT
+
+Reviewer on `b61db2e1`. Baseline reproduced exactly: targeted 264 / 21041 (15.4s);
+trio 265 / 21846; ChatTest 215 / 770.
+
+### F-1 [HIGH] — "did not reproduce" was itself measured on the WRONG LINE
+
+`src/Chat.php:1070-1071` (table row 4) and `:1091-1103` (ten lines theorising the old
+row "paired one round's ChatTest number with another round's trio number").
+
+**`Chat.php` holds FOUR byte-identical
+`if ($msg->generation !== null && $msg->generation !== $this->generation) {` lines** —
+`607` (`AssistantMsg` arm of `update()`), **`1114`** (`requestPermission()`, the
+table's actual subject), `1447` (`finishToolCalls()`), `1511`
+(`applyBackendToolEvent()`). Round 3 mutated **607**. A naive replace-first lands there.
+
+    row4 @ 607    -> trio green,      ChatTest 6 failures      <- round 3's figure
+    row4 @ 1114   -> trio 1 failure,  ChatTest 1E/11F/6W       <- TRUTH
+    if(true)@607  -> trio green,      ChatTest 36F/1E/6W       <- round 3's variant
+    if(true)@1114 -> trio 14 FAILURES,ChatTest 1E/11F/6W       <- TRUTH
+
+**Round 2 was RIGHT; round 3's rebuttal is wrong**, and the rebuttal is committed as
+source-of-truth prose with a plausible causal story attached. Knock-ons: `:1097-1099`
+"says nothing about it at all" is false (row 4 reds exactly one trio test);
+`:1075-1077` understates (rows 1, 3 AND 4 all red that one test); `:1100-1103`'s
+variant, recorded so the row "cannot be misread", is the MORE wrong of the two.
+Rows 1-3 reproduce exactly.
+
+**Lesson: a mutation table must name the LINE, not just the predicate.**
+
+### F-2 [HIGH] — the universal is false; a whitespace-only draft is the seventh state
+
+The asymmetry is STRUCTURAL: the `?` arm (`src/Chat.php:889`) tests
+`$this->inputBuf === ''` **raw**, while `submit()` (`:3417`) tests `trim(...)`.
+
+    draft ' ' / '  ' / "\t" / ' \t '
+      '?' types ' ?', keyHelp NULL   |   '/keys'+Enter -> keyHelp 0    DISAGREE
+
+A single Space press reaches it. So there IS a state where `/keys` works and `?` does
+not, the routes do NOT stand or fall together, and `/keys` IS an escape hatch there.
+False at `src/Chat.php:3442-3443`, `:3450-3453`, `README.md:159`, pinned by
+`KeyHelpTest.php:167`. **Third consecutive round to ship a false `/keys` sentence,
+this time false in the OPPOSITE direction.** 20 drafts swept; the disagreement class
+is exactly and only "trimmed-empty but not empty".
+
+Why the corpus missed it: the six states were chosen for **frame distinctness**, a
+criterion ORTHOGONAL to the predicate the universal depends on. The one-space frame IS
+distinct from idle (7 bytes), so the rule would have admitted it — it was never tried.
+**A corpus assembled to satisfy a hygiene rule, then read as a universal quantifier.**
+The distinctness claim itself HOLDS; `Ctrl+R`, PageUp and `F10` really are
+byte-identical to idle.
+
+### F-3 [MED-LOW] — the bar floor 54 is fixture-only; where the cue fires it is 36
+
+`src/Renderer.php:1069-1073` and `KeyHelpTest.php:1035-1037`. Minimum bar width over
+cols 1-400 × rows {1,4,5,30}: idle/2-message/draft/palette **54**, long history 56,
+**turn in flight 36**, **prompt pending 36** (`requestPermission()` sets `inFlight`).
+So `KEY_HELP_TOO_SMALL` (33) has **3** columns of margin, not 21 — and
+`KEY_HELP_OVER_PROMPT` (35, `src/Renderer.php:565`) fires precisely when a prompt is
+pending, i.e. against the 36-column bar → **1 column**. Conclusion survives; the
+number that makes it look safe is off by 18 and comes from an idle-only fixture.
+`"everywhere"` is doing universal work the sweep does not earn.
+
+### F-4 [LOW-MED] — the README figure was stale as of its own commit
+
+`README.md:379-380` says `6,424 / 51,767`; at `b61db2e1` exactly it was **6,426 /
+51,789** (`--list-tests` agrees on 6,426) — while `:384-386` promises it "is
+re-measured whenever a change adds tests rather than left to age". Updating it WAS
+right (the old figure understated assertions by 14%), but it should have been measured
+last or the freshness promise dropped. Its boasted arithmetic does check out.
+
+### F-5 [LOW] — the sweep cites the wrong test
+
+`src/Chat.php:3450-3455` credits
+`testSlashKeysInAHalfTypedDraftIsSentAsAPromptNotAsACommand()` with the six-state
+sweep; the sweep is in `testTheCommandAndTheShortcutOpenTheReferenceInExactlyTheSame
+States` (`KeyHelpTest.php:167`), whose name appears NOWHERE outside its definition.
+
+### F-6 [LOW] — a source comment contradicting a test this lane wrote
+
+`src/Tui/KeyboardHandler.php:204-205` "rule 2 already claims every key" vs round 3's
+own test asserting six chords are NOT claimed in `Pane::Agents`. The corrected
+phrasing sits 30 lines away in the test file — two copies of one claim, one fixed.
+**The argument HOLDS**: the conjunct only governs `chatCtrlRunesYieldedToShell()`,
+the single rune `r`, and `Ctrl+R` is not among the six escapees.
+
+### HELD
+
+Every figure in the size sweep exact, and EXTENDED by the reviewer: plateaus
+`1:54 62:62 65:65 75:75`, boundaries exactly 61/62, 64/65, 74/75; constant 75 out to
+**cols 2000**; row-independence over rows **1-120**; cue a constant 33 firing exactly
+on `cols<=4 || rows<=4`; **1632 = 4×400 + 8×4**, asserted so it cannot drift. Trio and
+ChatTest figures exact. The `token()` rune set exact (13 ASCII + 4 arrows), mutant
+exactly 1 failure. **The `/tmp` leak fix is clean AND safe outward** — an adversarial
+fixture with `linked-dir -> outside/` and `linked-file -> outside/precious/keepme.txt`
+left the outside file untouched. F-6's arithmetic derived from code. All four
+truncation figures exact (14-15, 16-17, 39, 67); two footer mutants killed. **The six
+escaping chords held under all 145 `KeyType` cases × Ctrl × Alt × Shift plus 100
+runes — no seventh chord identity.** Discovery justification verbatim exact.
+
+Caveat to carry: `assertLessThanOrEqual(min($bars), 33)` can NEVER be the assertion
+that fires — the `assertSame` hard-codings above it catch any change first. It is
+documentation, not a pin. Do not count it as coverage.
+
+### Was an earlier lane E verdict wrong?
+
+**No — and that IS the finding.** Round 2's F-3 said "the rest of the four-row table
+reproduces", and row 4 measured at the correct guard gives precisely the pre-round
+figures. Round 2 was right; round 3's rebuttal is wrong and is now committed prose.
+**The most dangerous shape this class has taken in six rounds: previously a stale or
+mis-scoped number, now a CORRECT number actively overwritten by a wrong one, with the
+correction's own audit trail pointing the reader away from the truth.**
+
+Round 2's F-1 was also right and remains right; round 3's replacement is false in the
+other direction. Three rounds, three wrong `/keys` sentences.
+
+## Lane D round-6 review — a FIFTH escape, and the sweep rule needs one more clause
+
+Reviewer on `b35c0f2d`. Tree confirmed byte-identical afterwards. Baseline reproduced
+exactly: 6459 / 51890 / 0 failures / 1 skipped, 2m21s.
+
+### F-A [HIGH] — `InstructionFileLoader` has NO containment check at all → tracker #89
+
+`src/Context/InstructionFileLoader.php:100-122` (`loadRoot()`) and `:225-260`
+(`loadForPath()`) compare nothing: `<root>/CLAUDE.md` and `<root>/AGENTS.md` are
+`is_file()`-checked, read and expanded. CONFIRMED on a fixture whose only content is
+one committed symlink:
+
+    repo/CLAUDE.md     -> <outside>/secret.md  ->  loadRoot() returns the outside body
+    repo/src/CLAUDE.md -> <outside>/secret.md  ->  loadForPath(repo/src/app.php)
+
+Live: `src/Runtime.php:1107` drains `loadRoot()` into `buildSystemPrompt()`,
+`Bootstrap.php:2205` constructs it with `requireRoot($root)`. `git clone` + one line
+puts an arbitrary readable local file's body into the system prompt, no refusal notice.
+
+**Why six rounds missed it.** Round 5's F-2 instrument was
+`grep -rn str_starts_with src/` — it finds compares that EXIST.
+`InstructionFileLoader` appears in the round-6 inventory on its two innocuous
+already-resolved compares (`:192`, `:348`, both verified accurate), so the file reads
+as AUDITED while its primary read path has no compare to find.
+
+**The rule now needs its second clause:**
+
+> When a round claims to be "the one implementation" of a predicate, the domain is
+> `grep` over `src/` — **and the grep must be for the DECISIONS the predicate is
+> supposed to govern (every read of a repo-chosen path), not for the SPELLINGS of the
+> predicate. A sweep instrumented on `str_starts_with` is structurally incapable of
+> finding a MISSING check, which is the more dangerous half.**
+
+### F-B [MEDIUM] — the "actively wrong to consolidate" reason is BACKWARDS
+
+`src/Support/ContainedPath.php:45-49` (and the commit message) says consolidating
+`BashEscapeDenyHook::within()` would let `realpath()===false` "invert a DENY into an
+allow". CONFIRMED FALSE by measurement:
+
+    rm -rf /nonexistent        hand=deny   consolidated=DENY   <- the cited case: IDENTICAL
+    rm -rf ../outside          hand=deny   consolidated=DENY
+    touch sub/../newfile.txt   hand=allow  consolidated=DENY   <- the REAL divergence
+    mkdir -p sub/deep/../made  hand=allow  consolidated=DENY
+
+`!within(...)` ⇒ deny, so `false` is fail-CLOSED. The genuine reason not to
+consolidate is **over-denial of legitimate in-root creations**. Conclusion right,
+mechanism inverted — and the mechanism is what makes the entry read as a security
+argument.
+
+### F-C + F-D [MEDIUM each] — the derived corpus is blind, and an interface aborts the suite → tracker #90
+
+`tests/Tools/BuiltInToolCorpus.php:44-45` globs one flat directory. Measured: an
+unwired tool at `src/Tools/BuiltIn/Extra/Notify.php` or `src/LSP/LspTool.php` leaves
+**all three consumer files GREEN**. So the recurrence the corpus was written to
+prevent reappears verbatim for `src/LSP/LspTool.php` — **the next planned tool (#17)**.
+And `:56-60` throws when `class_exists()` is false, which it is for interfaces and
+traits, so the filter at `:66` that claims to handle them is never reached: an
+ordinary `NotifierInterface.php` makes `phpunit --list-tests` fatal inside suite
+CONSTRUCTION, so all 6459 tests cannot even enumerate.
+
+### F-E [LOW-MED] — "the USER tier stays unanchored" holds only while `$root !== $HOME`
+
+`Bootstrap.php:632-641` keys `anchors` by the path as SPELLED. When the launch root IS
+the home directory, `rtrim($root,'/').'/.sugar-crush/agents'` and
+`trustedConfigDirPath().'/agents'` are the same string, so the project anchor applies
+to the user tier. CONFIRMED with `~/.sugar-crush/agents -> <a dir outside $HOME>`:
+
+    agentPresets(<a project>) -> presets=[mine]  refusals=[]
+    agentPresets($HOME)       -> presets=[]      refusals=["…a repository chooses where…"]
+
+`chat()` defaults `$root` to `getcwd()`, so `cd ~ && sugarcrush` silently drops the
+user's own roster and blames "a repository" for the user's own layout. A link to
+`~/.claude/agents` survives (inside `$HOME`); a link out of `$HOME` does not.
+
+### F-F [LOW] — the anchors map fails OPEN on a one-byte key difference
+
+`AgentPresetRegistry:185` is `$this->anchors[$path] ?? null` → unanchored. CONFIRMED:
+search path spelled `<root>/.sugar-crush/agents/` with the anchor keyed without the
+trailing slash gives `list=[notes] refusals=0` — the full HIGH escape. `Bootstrap`
+cannot reach it today (one variable, as its comment says), but `AgentPresetRegistry`
+is public `final` API in a published lib and nothing pins the mismatch.
+
+### F-G [LOW] — three claims in this commit's own collector are stale
+
+`Bootstrap.php:150-158` says "**Both** subsystems that hold a repository-chosen
+directory feed it" and names two — this commit made it three. `Bootstrap.php:414-416`
+enumerates four paths and omits `.sugar-crush/agents`, which this commit added.
+`WorkflowRegistry.php:627-637` says "Three subsystems feed one collector; they say it
+the same way" — they do not: workflows prints NO path, agents prints the anchor, and
+`CommandLoader` does not feed the collector at all (it `error_log()`s `$dir`,
+`$realDir` AND `$anchoredIn`). The `assertStringNotContainsString` pin passes for
+agents only because the map key is `<root>/.sugar-crush/agents` while the reason
+contains `<root>`.
+
+### F-H [LOW] — 3 of the ten "different contract" entries are the same predicate
+
+`Tools/PathJail.php:108`, `:174`, `:283` are exactly `within()`, with the canonical
+path fetched separately. The stated reason describes the METHOD's return type, not the
+compare's; each is `if (!contained) return null; return $resolved;`. The honest
+barrier is one extra `realpath()` per call. The rest of the breakdown is EXACT — 2
+arms of `resolve()`, 2 of `resolveForCreate()`, 1 in `resolveDir()`, and exactly 2 of
+the 5 on the `realpath()===false` creation branch.
+
+### F-I / F-J [LOW] — two figures
+
+"left the suite GREEN at 311/793" — `311/793` is `tests/Skills`, not the suite
+(`6459/51890`). Both reproduce exactly and the FINDING is completely real; flagged
+only because it is this lane's named defect class inside the paragraph retracting it.
+And "derived providers went 19 → 22 cases" is **not reproducible**: measured
+`BinSugarcrushWiringTest` 297/1686 → 297/1686, `BuiltInToolTest` 74/243 → **77/255**
+(provider 27 → 30 over 3 methods), `ToolSchemaEncodingTest` 19/67 → 19/67 unchanged.
+No pair gives 19 → 22. `ToolSchemaEncodingTest`'s literal already listed all ten
+including `SkillTool`, so only `BuiltInToolTest`'s corpus was actually short.
+
+### HELD — extensive
+
+**F-1's fix is genuinely closed: 23 escape shapes driven, 1 hole (F-F), 0 other wins.**
+Refused: `-> ../../outside`, `-> ..` (so `below()` not `within()` is load-bearing),
+`-> /`, `-> <sibling checkout>`, `-> ~/.claude/agents`, a symlink CHAIN, a symlinked
+checkout root plus `agents -> outside`, anchors with trailing `/`, `//`, `/./`, `''`,
+non-existent, relative `$root` + relative search path, `.sugar-crush -> <outside>`
+with `agents/` present (the F-6 shape one component higher), and
+`.sugar-crush -> <existing dir, no agents yet>` dropped silently then refused the
+moment the target appears. Correctly allowed: real dir, `agents -> tools/agents`,
+`agents -> .`, `$root` spelled through a symlink, and a legit dir containing
+`leak.md -> outside/notes.md` (entry refused, `legit` kept). **All four claimed
+controls reproduce**, including the two-tier case.
+
+**The agents tier does NOT inherit the workflows tier's F-6 hole** — same
+`realpath()===false && !is_link()` shape, but the agents code DROPS rather than grants.
+
+**Every containment/anchor branch in the four consolidated files is now covered** — 14
+mutations, with a `below() -> true` control giving 31 failures to prove the mutant is
+what PHP loads. `M7 SkillLoader loadSkillAsset within -> false` → 2 failures, i.e. the
+branch that had zero coverage is now pinned. One benign GREEN: `M4` (the
+`realpath()`-false branch) because the anchored arm still refuses.
+
+**"10 and 10" is right and the instrument is nearly complete** — re-run with
+`strncmp`/`substr_compare`/`strpos(...)===0`/`substr($x,0,strlen(...))`: zero hits
+repo-wide. Two extra prefix compares exist that the inventory correctly omits
+(`WorktreeManager.php:472,477` is a glob matcher on relative paths;
+`src/Agents/PathJail.php` carries no containment logic and delegates). The
+instrument's only real gap is the ABSENT check — F-A.
+
+**F-4 driven end to end on a real `Bootstrap::chat($root)`**, keystroke by keystroke:
+all six verb/identifier combinations succeed. Collision space attacked — `''`, `..`,
+`a/b`, `../etc/passwd`, `1a2b3c4d`, `has-dash-name`, `.running`; pause files with
+absent/empty/malformed `workflowId`; a `workflowId` holding `../../evil` (refused at
+`getPauseFilePath`, before the glob); a `workflowPath` holding `../../../../etc/passwd`
+(refused by the name validator); two files claiming one ID (sorted, deterministic).
+**"decoded rather than regex-stripped" holds**: a workflow genuinely named
+`deploy-1a2b3c4d` pauses and resumes as itself.
+
+**The old-build compatibility claim is right, including its admission** — the old
+`resume()` also read `workflowPath` (= the ID) straight into `registry->load()`, so
+nothing that previously worked stopped working.
+
+**F-5's deferral reasoning is CONFIRMED and is a real trap**: a 3-stage workflow
+resumed from `stagesCompleted=1` yields `resumed->stageResults=2` with
+`status=completed`, so persisting that count would make the next resume start at index
+2 and **re-run stage 3**. Not fixable engine-side without the stage-accounting fix.
+
+**F-6's "0 disclosures in 20,000" reproduces**, and the agents tier holds under the
+same race: 20,000 calls, 0 leaked, and a TOCTOU probe flipping the link as fast as
+possible exercised the window demonstrably (1429 reads of the in-checkout file) with 0
+leaks. The residual window IS structurally present — the anchor is checked on `$path`,
+then `glob($path.'/*.md')` re-resolves it — and unlike `readableProjectDir()`,
+`AgentPresetRegistry` does not state it. PLAUSIBLE, unwon.
+
+**Refusal messages cannot leak into the model**: `reportProjectTierRefusals()` →
+`warnPermissionConfig()` → `fwrite(STDERR, …)` only, and the reason carries the
+directory path and anchor, never a filename from behind the link.
+`refusedDirectories()` is recomputed per call, so a refusal cannot outlive its cause.
+
+**Conventions and dormancy**: all four new files correct; `CommandLoader` is anchored
+and dormant, not disabled, with its old single-arg contract intact and the
+dormant-seam docblock kept. Fixtures clean up. Two nits: `AgentPresetRegistry` now
+MUTATES on `list()`/`load()` in a class whose other state is `readonly` (same shape as
+`WorkflowRegistry`, so consistent with siblings but not the immutable convention), and
+`tests/Support/CommandLoaderContainmentTest.php` tests a `Commands/` class from a
+`Tests\Support` namespace while its sibling lives at `tests/Commands/`.
+
+**INFO**: a workflow literally named `<other>-<8hex>` shadows that run ID (exact key
+first, by design) — driven with `mt_srand`, the other run becomes unpausable by its
+printed ID. 1-in-2^32 to arrange. `runFromPhp()` still does not `rememberResult()`, so
+such a run cannot be paused cooperatively (pre-existing).
+
+### Was an earlier lane D verdict wrong?
+
+**No verdict was factually wrong** — round 5's F-1, F-3, F-4 and F-6 all reproduce,
+and its "14 hand-spelled sites" reconciles exactly with round 6's "consolidated 4, 10
+remain". But **round 5's F-2 was narrower than it reads, in the same way round 4's
+anchor sentence was**, and that is what let F-A survive a sixth round: it enumerated
+every place a prefix compare is WRITTEN and treated that as every place a containment
+decision is MADE.
+
+## PAUSE POINT — 2026-08-17, all three lanes committed
+
+Suite verified on the real tree after the last commit: **6465 tests / 68244
+assertions / 0 failures / 1 skipped**, 1m59s. The one skip is the legitimate
+`tests/MCP/McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`.
+`SystemPromptWiringTest` did not flake. The assertion count jumped 51890 → 68244
+mostly because lane E's new app-state sweep is 14,400 (state, size) pairs.
+
+Today's lane commits, oldest first:
+
+| commit | lane | round |
+|---|---|---|
+| `2bd2263f` | B | 16 — three more kind-vs-text survivors, the false zero |
+| `b61db2e1` | E | 3 — the `/keys` escape hatch that was never one |
+| `b35c0f2d` | D | 6 — the agent-preset escape, and a corpus that could not see it |
+| `8e1103c8` | E | 4 — the guard that appears four times |
+| `cbdb5e2e` | B | 17 — the figure now asserts itself, and a fifth survivor |
+
+### Both round-4/17 fixes CORRECTED THEIR OWN BRIEF
+
+First time in the chain that happened, so worth recording:
+
+- **Lane B round 17** found my brief's claim "only the first is on an accepted tape"
+  to be FALSE. All three bounds guards are reachable on tapes upstream ACCEPTS, just
+  not via `Type` — `Output a.gif\nHide\n`, `Set Padding @`, and
+  `Output a.gif\nEnter@100` (the last recorded as **divergence class 6**). It caught
+  this in its own re-read pass rather than inheriting it.
+- It also found a **FIFTH** survivor nobody had: dropping the
+  `in_array(['ms','s','m'])` check as a WHOLE while keeping `kind === 'ident'` left
+  everything green, because every existing row puts a quoted STRING there so the kind
+  gate answered for all of them. Killed by `Type@100 abc`; the realistic spelling
+  `Type@100 ./bin/sugarcrush` silently drops a typed path.
+
+### Two structural improvements to carry forward
+
+1. **Warning-only kills are gone in lane B.** `valuesWithNoPhpDiagnostic()` promotes
+   PHP diagnostics to a thrown `\ErrorException`, so bounds-guard mutants die as
+   ERRORS (rc=2) instead of `OK, but there were issues!` — which a human reading the
+   summary line reads as OK. The pre-existing arity row was routed through it too.
+2. **The rotting figure now asserts itself.**
+   `testSetShellIsTheMostQueriedTwoWordHead()` greps its own `__FILE__` and asserts
+   both the tally and the ranking. It proved itself twice DURING the round it was
+   written (red at `Set Theme` 5→4, red again at `Set Padding` 3→4). It is
+   deliberately a **TRIPWIRE**: it fails whenever anyone adds or removes a two-word
+   query, and its message says so. Given this exact figure rotted for seven
+   consecutive rounds, a tripwire is the right trade — but if it ever becomes noise,
+   that assertion is the line to soften, not delete.
+
+Lane E's equivalent move:
+`testTheGenerationGuardPredicateAppearsInExactlyFourNamedMethods()` asserts the site
+count, each owning method, and that the four blocks are textually identical — because
+narrating a line number is exactly what failed in round 3. Its honest side effect is
+recorded: that pin reds on ANY row of the mutation table (it reads the guard's text
+back), so the table's trio column counts behavioural reds only and says so.
+
+### Lane E round 4 fixed the CODE, not the claim
+
+`src/Chat.php:889`: `$this->inputBuf === ''` → `trim($this->inputBuf) === ''`, so the
+`?` route and `/keys` genuinely agree on all 21 drafts driven — 5 disagreements to 0.
+**Measured cost: ZERO draft characters**, because the arm does not clear the buffer and
+the space survives behind the overlay. The `Up` arm deliberately KEEPS `=== ''` and
+says why: `Up` OVERWRITES the buffer, so trimming there would eat a whitespace draft.
+Same-looking guard, opposite conclusion.
+
+Also: the status-bar floor is **36**, not 54 — a turn in flight and a pending prompt
+both floor there, so `KEY_HELP_OVER_PROMPT` (35) has ONE column of margin. The new pin
+asserts per-(state,size), not against an aggregate. And `36` was ALREADY CORRECT in
+`KEY_HELP_OVER_PROMPT`'s own docblock 500 lines away — two copies, only the one whose
+fixture reached the wide bar went stale. That two-copies mechanism is behind several of
+this session's defects.
+
+### NOT DONE — the next session's queue, in order
+
+Per the standing instruction, no further agents were spawned after these commits.
+
+1. **Lane B round-17 review** and **lane E round-4 review** — neither round has been
+   adversarially reviewed. Both are large (+594/−56 and 6 files) and both corrected
+   earlier reviewers, so they need it.
+2. **Lane D round 7** — its round-6 review found SIX findings, none fixed:
+   - **#89 [HIGH]** `InstructionFileLoader` has NO containment check; a committed
+     `CLAUDE.md` symlink reads any local file into the system prompt. LIVE.
+   - **#90 [MEDIUM]** `BuiltInToolCorpus` is blind to any `Tool` outside the flat
+     `src/Tools/BuiltIn/` — including `src/LSP/LspTool.php`, which is **#17**, the
+     next planned tool. And an interface there makes `phpunit --list-tests` fatal
+     inside suite construction.
+   - F-B the inverted "actively wrong to consolidate" reason; F-E the user tier
+     anchored when `$root === $HOME`; F-F the anchors map failing OPEN on a one-byte
+     key difference; F-G three stale collector claims; F-H 3 of 10 inventory entries
+     being the same predicate.
+3. **#88** — the final README whole-suite figure, in a standalone commit, once nothing
+   else is landing. Lane E round 4 deliberately left `6,424 / 51,767` in place and
+   deleted the freshness PROMISE instead, so the sentence is now honest about being
+   point-in-time. The real number as of `cbdb5e2e` is **6465 / 68244**.
+4. **#63** `enforceTimeLimit` — still waiting for a window with no agent running the
+   suite. Lane B round 17 makes it more urgent: it confirmed a single-conjunct
+   mutation can hang `tokenize()` FOREVER on data already in the suite.
+5. Then plan steps **#14** → **#12** → **#17**, one at a time (#14 and #12 both want
+   `Bootstrap.php`). **#17 must not start before #90 is fixed**, or its `LspTool`
+   lands invisible to every corpus.
+
+### Housekeeping
+
+- **`.claude/settings.json` is MODIFIED and UNCOMMITTED**, with every Caliber hook
+  stripped out (`SessionEnd`, `PostToolUse`, `PostToolUseFailure`, …). Neither I nor
+  any agent wrote it — lane E's reviewer independently reported the same. Left
+  untouched and out of every commit, awaiting the user's word. If it was not
+  deliberate, `git checkout -- .claude/settings.json` restores it.
+- Reusable scratch left by lane B round 17 at
+  `/home/my/.claude/jobs/4eaa2c90/tmp/laneB-r17/` (125 MB) — the Go oracle, the
+  93-mutation list, probes. Delete when the chain is done.
+- **THREE oracles now exist** for vhs grammar questions and all three agree:
+  `/usr/local/bin/vhs` v0.11.0 (c6af91a) 23.2 MB, `/tmp/vhsbin/vhs` v0.11.0 30.8 MB
+  (a different build, NOT on `PATH`), and a Go oracle from the module cache. Build it
+  by copying the three files into a scratch module named
+  `github.com/charmbracelet/vhs` — then there are no import edits at all and `diff`
+  is empty on all three.
+
+---
+
+## Session resume — #63 landed, and the queue's first review is running
+
+### #63 DONE — `4dbf5074` — the hang-catcher, and the half that makes it bite
+
+This is the item that had been waiting for "a window with no agent running the
+suite". That window opened, so it went first, before any agent was spawned.
+
+`sugar-crush/phpunit.xml` now carries `enforceTimeLimit="true"`,
+`defaultTimeLimit="60"` and `failOnRisky="true"`.
+
+**Why 60, with the domain in the file rather than only here.** A JUnit-logged run
+of all 6465 tests on this host (PHP 8.3.6) peaks at **9.321s**
+(`Tools\WebSearchToolTest::testHandlesRedirectResponse`), with **4** tests over 5s
+and **none** over 10s. The next four are `KeyHelpTest::testTheCuesFitTheNarrowest\
+BarAnyAppStateCanProduce` 7.666s and two `LspConnectionTest` cases at ~5.04s. So
+60s sits ~6x above the slowest real test — loose enough that host load or a slow
+network redirect cannot trip it, tight enough that an infinite loop reports in a
+minute. The figure and its measurement method are recorded in the XML comment, not
+just in this worklog, per the standing rule.
+
+**`failOnRisky` is the load-bearing half, and this was nearly a false green.** With
+only `enforceTimeLimit`, the deliberate infinite-loop probe DID abort at 60.09s —
+and PHPUnit printed it under a green `OK, but there were issues!` banner and
+**exited 0**. A hang would have been a notice CI scrolls past. With `failOnRisky`
+the same probe exits **1**. Safe to enable because the suite reports 0 risky today.
+
+**One gap accepted and documented in the XML.** php-invoker enforces the limit via
+`pcntl_alarm()`, and `tests/Agents/AgentWorkerPoolTest.php` arms and cancels
+`pcntl_alarm()` itself (`:171`, `:176`, `:971`, `:979`, `:1784`, `:1796`, `:1800`).
+Its `pcntl_alarm(0)` calls clear the enforcing alarm, so the limit does **not**
+apply inside those tests. They are bounded by their own alarms instead, which is
+why they are also the tests least in need of this one.
+
+Also recorded in the XML: **no test declares `#[Small]`/`#[Medium]`/`#[Large]`**, so
+`defaultTimeLimit` is the limit every test actually gets. Adding a size attribute
+anywhere silently switches that test to PHPUnit's own 1s/10s/60s instead.
+
+`phpunit/php-invoker` needs no explicit `require-dev`: `phpunit/phpunit` requires
+it directly (checked in `composer.lock`), so it cannot silently vanish.
+
+Suite after: **6465 / 68244 / 1 skipped / 0 failures / exit 0**, 1:58 against 2:06
+before — no meaningful overhead.
+
+### Corrections to the record
+
+- The 6465 / 68244 figure is now **independently confirmed twice** at HEAD, matching
+  what the previous session recorded for `cbdb5e2e`. #88's number is good.
+- An earlier measurement this session reported a 20-file uncommitted tree and a
+  6386/45478 suite. That does not describe the repository: HEAD has been
+  `68e6a325` throughout, all three lanes' files are **tracked** (`git ls-files`
+  confirms `ContainedPath.php`, `ResetsDerivedRuneSets.php`, `KeyHelpTest.php`,
+  `VhsTapeContractTest.php`), and the worktree carried only `.claude/settings.json`.
+  Treat 6465 / 68244 as the baseline; disregard 6386 / 45478.
+
+### Method note — a self-inflicted false signal worth not repeating
+
+Two suite runs this session died at exit 144 with no failure, and one full run was
+killed at ~966/6465. Cause: a watchdog of the form
+`(sleep 900 && pkill -f 'phpunit') &`. `pkill -f` matches the FULL command line of
+the wrapper shell, which contains the pattern text — so it killed its own shell.
+Use the bracket trick (`pkill -f '[p]hpunit'`) or, now that #63 exists, no watchdog
+at all: the 60s per-test limit is the hang guard, which is what it was for.
+
+### Running now
+
+**Lane B round-17 review** (queue item 1a) — adversarial, review-only, no fixes and
+no commits, one agent as instructed. Reviewing `cbdb5e2e` (one file,
+`tests/VhsTapeContractTest.php`, +596/−56) against its two headline claims: that the
+byte figure "now asserts itself", and that a fifth survivor is real. Briefed with
+the three oracles, the four-round "figure without its domain" defect class, the
+sabotage discipline, and the new `enforceTimeLimit`/`failOnRisky` facts.
+
+### Queue after it
+
+1. **Lane E round-4 review** — `8e1103c8`, 6 files, +648/−112. Unreviewed.
+2. **Lane D round 7** — six findings from its round-6 review, none fixed. **#89
+   [HIGH]** `InstructionFileLoader` has NO containment check (LIVE); **#90
+   [MEDIUM]** `BuiltInToolCorpus` blind to any `Tool` outside flat
+   `src/Tools/BuiltIn/`, incl. `src/LSP/LspTool.php`; plus F-B, F-E, F-F, F-G, F-H.
+3. **#88** README whole-suite figure, standalone, once nothing else is landing.
+   Deliberately deferred again: reviews are still pending and would re-drift it.
+4. Plan steps **#14** → **#12** → **#17**, one at a time (#14 and #12 both want
+   `Bootstrap.php`). **#17 must not start before #90**, or its `LspTool` lands
+   invisible to every corpus.
+
+---
+
+## All three lanes closed a round, and all three are back under review
+
+Commits this stretch, in order: `4dbf5074` (#63), `ab7b185f` (worklog),
+`c08edcd0` (lane B round 18), `23ca19a1` (lane D round 7), `1fa7af45` (lane E
+round 5). Clean-tree suite at `1fa7af45`: **6525 / 68522 / 1 skipped / 0 failures
+/ 0 risky / exit 0**, 1:59. The 1 skip is the legitimate `McpClientTest` one.
+
+### The headline: #89 is CLOSED, and it was five escapes, not one
+
+The queue recorded #89 as "`InstructionFileLoader` has NO containment check; a
+committed `CLAUDE.md` symlink reads any local file into the system prompt." I
+proved that before briefing anyone — fixtures outside any checkout:
+
+```
+loadRoot()                           => ["TOP-SECRET-AAA private key material"]
+loadForPath("<sb>/outside/anything")  => "ANCESTOR-BBB instructions above the repo"
+```
+
+**The second one needs no symlink at all.** `loadForPath()` walked UP while
+`$dir !== $repoRoot`, so a touched path outside the repo never matched and the
+walk climbed to `/`, reading any `CLAUDE.md` it passed. That shape was not in the
+audit item.
+
+Writing the regression tests surfaced **three more**, none needing anything
+committed: a checkout merely SPELLED through a symlink (`$repoRoot` was
+`realpath()`-resolved and `$dir` was not, so the bound never fired); a `$repoRoot`
+that does not resolve (old code fell back to the configured string and walked);
+and the two pre-existing hand-spellings, consolidated. Five in total, five
+`ContainedPath` call sites, 18 regression tests of which **8 fail against the
+pre-fix source**. I re-ran my own probe against the fix: `[]` and `null`.
+
+Both halves of the "gate each candidate vs. don't walk at all" question were
+implemented, and the difference measured rather than assumed: the candidate gate
+stops **disclosure**; the start gate stops a directory outside the repository
+deciding which of the repository's OWN instruction files governs a touched path —
+a **control** escape, not a disclosure, and labelled as such in the code.
+
+### #90 was a prerequisite, not a nicety — the census is why
+
+I briefed the interface/trait guard as a tidy-up. The census corrected me: of
+**267** `.php` files under `src/`, **220 concrete / 25 enums / 16 interfaces /
+6 traits / 0 abstract**. `class_exists()` is false for interfaces and traits and
+true for abstract, so **the only shape the old guard classified correctly is the
+only shape that does not occur**, and the 22 files it throws on are already in the
+tree (`src/LSP/` alone ships two interfaces). Widening the scanner past the flat
+glob without fixing the guard first would have aborted suite construction on this
+checkout. Ordering credit goes to the agent, not the brief.
+
+### The defect class, eight rounds running, in its sharpest form yet
+
+`ContainedPath`'s inventory is no longer hand-maintained — 15 call sites in 5
+files, 8 hand-spellings in 4, all derived and pinned, drift biting in both
+directions. And it states its own bound in code: it counts compares that are
+**WRITTEN**, so it catches a check being deleted but **cannot catch a read path
+that never had one — which is exactly what `loadRoot()` and `loadForPath()` were,
+while listed as audited on that very inventory.** That is the whole eight-round
+pattern in one sentence: the instrument was blind to absence, not to change.
+
+Every lane hit the class again this round and every lane's fix agent found the
+recurrence in its own first draft. Lane B's F1: round 17 documented divergence
+class 6 as "inert today (nothing here queries a keypress head)" in the same commit
+that added an `Enter` query. Lane E's F1: `265` where the trio was `268`, in a
+docblock that PROMISED re-measurement, while the same commit updated the other two
+copies. Lane D's F-B: the reason given for not consolidating the deny hook was
+inverted — `rm -rf /nonexistent` is IDENTICAL both ways because the call site
+fails closed; the real divergence is over-denial of legitimate in-root creation.
+
+### Three false greens closed properly rather than documented around
+
+- **Lane B F3** — the tally tripwire's regex only matched a two-word head written
+  on ONE line. A genuine wrapped `Set Padding` query left the suite green; the
+  same call on one line reddened it. Replaced with `literalHeadArguments()`, a walk
+  over PHP's own token stream.
+- **Lane B F5** — "warning-only kills are gone" was false: three `scanRegex`
+  bounds guards were never routed, one giving 4,806,746 warnings and 8.39 GB.
+  Routed, and an **eighth** answer-invisible guard found that the review missed.
+- **Lane E F4** — the worst of the three. The agreement test APPENDED `/keys` to
+  each draft, so the command opened iff `trim(D . '/keys') === '/keys'` iff
+  `trim(D) === ''`: the identical predicate the `?` arm uses. The assertion was a
+  tautology of the two guards and the 18-draft corpus contributed nothing. Driving
+  the SUBMIT route instead found the drafts were already in the corpus, and the
+  true property is stronger than the one claimed — the two routes are
+  **complementary, not equivalent**.
+
+### #63 has already earned its keep
+
+Lane B's reviewer confirmed the documented forever-hang (dropping
+`$close !== false`) now turns the run **red** via `failOnRisky` instead of spinning
+indefinitely, and the 8.39 GB mutation produced two 60s aborts rather than a hang.
+Measured, in the exact scenario the config was added for.
+
+### Operational lessons — all three cost real time this session
+
+1. **`pkill -f <pattern>` matches the wrapper shell's OWN command line.** Two
+   suite runs died at exit 144 and one full run was cut at ~966/6465 because of a
+   `(sleep 900 && pkill -f 'phpunit') &` watchdog killing its own shell. Use
+   `pkill -f '[p]hpunit'` — or, now that #63 exists, no watchdog at all.
+2. **Never write into the live tree at test runtime.** An early draft of
+   `BuiltInToolCorpusTest` created `src/CorpusProbe/ProbeTool.php` while the suite
+   ran; it FATALED two of a sibling agent's full-suite runs (exit 255) and left an
+   empty `src/CorpusProbe/`. The fix that also fixes #90(a): make the scanner's
+   search root **injectable**, so the corpus can be tested without mutating the
+   tree it normally scans.
+3. **The scratchpad is shared across concurrent agents.** One agent `rm -rf`'d it
+   mid-run and destroyed another's harness; scratch files with generic names
+   (`probe.php`, `mutate.php`) collided. Concurrent agents must use private dirs.
+4. `cp -al vendor` preserves the RELATIVE `vendor/sugarcraft/*` symlinks, which
+   then dangle and produce phantom `Interface "SugarCraft\Core\Model" not found`
+   errors — one agent's first mutation matrix was invalid because of it.
+5. `ChatTest::tearDownAfterClass` globs shared `/tmp` for `sc_chat_tool_*.json`
+   and reports strays, so a CONCURRENT suite run makes it error spuriously. Not a
+   real failure.
+
+### Running now
+
+Three adversarial re-reviews, one per commit, all read-only and file-disjoint:
+`c08edcd0` (lane B round 18), `23ca19a1` (lane D round 7), `1fa7af45` (lane E
+round 5). Lane D's brief asks specifically for a **sixth escape** and points it at
+`ImportResolver` plus the skills/workflows/preset/command tiers, using the
+inventory's own admission as a map. Lane E's asks for a draft string that breaks
+the complementary-routes universal. Lane B's attacks the new token-stream scanner
+with the call shapes its own fixtures do not cover.
+
+### Queue after these
+
+1. Whatever the three reviews find — fix, then re-review, per lane.
+2. **#88** README whole-suite figure, standalone, once nothing else is landing.
+   Deferred AGAIN this stretch for the same reason. Current true value at
+   `1fa7af45` is **6525 / 68522**.
+3. Plan steps **#14** -> **#12** -> **#17**, one at a time (#14 and #12 both want
+   `Bootstrap.php`, which lane D just edited). **#90 is now fixed, so #17 is
+   unblocked** — its `LspTool` will be visible to the widened corpus.
+
+---
+
+## Round 2 of the review/fix cycle — and the instruments start parsing
+
+Commits: `dde2d293` (memory bound), `5f19c00d` (lane D round 8), `f8b37f63`
+(lane B round 19). Suite at `f8b37f63`: **6603 / 68722 / 1 skipped / 0 failures /
+exit 0**, 2:06. Lane E round 6 still running.
+
+### #89's real shape: five escapes, then three MORE read paths
+
+Round 7 closed five escapes in `InstructionFileLoader`. Its review then found the
+subsystem had **three further repository-chosen readers with no containment at
+all**: `ForeignAgentPresetRegistry` on `{projectRoot}/.claude/agents` and
+`.opencode/agents`, and `ForeignMemoryImporter` on `.opencode/memory`. Measured:
+
+```
+FOREIGN discoverClaude: presets=["leak"] initialPrompt='SIXTH-ESCAPE-BODY sk-live-CAFEBABE'
+                        permissionMode=bypass-permissions
+NATIVE  agentPresets(same repo): presets=[] refusals={"…/.sugar-crush/agents":"resolves to …/outside…"}
+```
+
+The native tier refuses the byte-identical shape **with a message describing
+exactly that harm**. All three are dormant, so they were GATED, not removed.
+`ContainedPath`'s "FIVE READ TIERS" is now seven, with the omissions named as what
+they were: read paths with no compare, in classes whose "unwired" was doing the
+work "gated" should have been.
+
+### The security rationale that did not exist
+
+Round 7 opened the `$root === $HOME` unanchored branch and justified it as *"still
+gated by `trustedConfigDirPath()`, which refuses a home this process cannot
+establish ownership of."* **There was no ownership check anywhere in the package.**
+Measured: `HOME=<mode 1777 dir>` → `trustedConfigDirPath()` returns it →
+user-tier presets read out of a world-writable directory. And with
+`posix_geteuid`/`posix_getpwuid` disabled and `HOME` unset — the documented
+fallback — `path()` returns `/tmp`, mode `41777`.
+
+Round 8 built the check instead of editing the sentence, with the domain AT the
+check: group-writable deliberately ACCEPTED (`umask 002` homes are 0775; refusing
+them breaks working installs), the sticky bit explicitly NOT a mitigation (sticky
+blocks delete, not create — which is why `/tmp` was readable), ownership degrading
+away where `fileowner()` is meaningless. The hole is closed by keeping the anchor
+when `$HOME` is itself a checkout, discriminated by `file_exists("$root/.git")` —
+`file_exists`, not `is_dir`, because a linked worktree spells `.git` as a FILE —
+with the uncaught case stated: a bare-repo dotfiles layout leaves no `$HOME/.git`.
+
+It deliberately did NOT migrate the four other subsystems off the unsafe fallback
+mid-round; it named every remaining reader by grep result and split
+prompt-bearing from write-side. A stated gap beats a quiet sweep.
+
+### The instruments were pattern-matchers; now they parse
+
+This is the round's real theme. FOUR "derived" instruments measured presence:
+
+- **`ContainedPathInventoryTest` counted a call whose RESULT WAS DISCARDED as a
+  live gate.** Neutering `loadRoot()`'s gate — call present, result thrown away,
+  escape restored — left it green at 5 tests / 14 assertions, and five real
+  containment spellings went uncounted. Now a token parser: ROUTED counts a call
+  only when its result is CONSUMED, and a discarded result is a hard failure with
+  file and line. Parsing also removed a false positive the line regex produced at
+  `BashEscapeDenyHook.php:107`. **Its blind spots are now asserted** — two known
+  misses are pinned, so teaching the scanner one of them fails the test and forces
+  the bound statement to be rewritten. First instrument in this chain that cannot
+  quietly outgrow its own documentation.
+- **`ProjectTierRefusalInventoryTest` asserted that a five-element literal has five
+  elements**, while both missing tier names were already `true` in its own
+  haystack. Replaced with a `token_get_all` derivation: 20 dot-paths, 10
+  repository-chosen. Classification stays a written-down judgement, because a
+  string literal cannot say who chose the location.
+- **`BuiltInToolCorpus` derived one class per FILENAME** while `src/` ships **286
+  top-level declarations in 267 files**. Now scans every declaration. Separately:
+  an **enum implementing `Tool`** passed both guard clauses and fatalled
+  `instances()` with an uncatchable `Error` — the exact failure the refactor
+  existed to remove.
+- **Lane B's census was fooled both ways** — `and` instead of `&&` added a real
+  conjunct invisibly; `&&` inside an assertion message counted as one. Replaced
+  with a `token_get_all` walk. **The figures did not move** (5/8/8/17, 2/3/3/4), so
+  it is an instrument fix, not a re-baseline.
+
+### The register that would have read "killed" forever
+
+Lane B's census test reds on EVERY conjunct-drop in the four model methods
+regardless of semantics — so the equivalent-mutant register's own rule ("a
+survivor outside this list IS a gap") could never be exercised again, and two of
+its five registered survivors were already false. The exclusion is now
+EXECUTABLE: `#[Group(SWEEP_EXCLUDE_GROUP)]` plus an assertion that every docblock
+spelling the sweep command out actually contains `--exclude-group <that group>`.
+The agent caught that its own first attempt — asserting the attribute matches the
+constant — is a TAUTOLOGY that stays green on a rename, which is why the
+docblock-citation half exists.
+
+### #63's follow-up: the timer bounds computing, not thrashing
+
+A review claimed the `tokenize()` for-header mutant hangs past 600s despite
+`defaultTimeLimit=60`. I probed three shapes under the real config and the stated
+mechanism did NOT reproduce: spin loop aborts at 60.09s, warning-per-iteration at
+61.4s having banked 2,640,658 warnings, 4KB-append at 65.6s. All three report.
+But the reviewer's own measurement stands, so the honest statement — now in
+`phpunit.xml` — is that the limit bounds TIME SPENT COMPUTING, not a process that
+has started thrashing.
+
+The fix for the shape the timer cannot help is a memory bound. CLI default here
+was `-1`. Same 4KB-append loop: **65.6s unlimited (38s of it in `sys`, i.e.
+paging) vs 0.626s at 1G**. Lane B then re-measured the real mutant across the
+change: **still running at 100s / exit 124 before, 10.7s memory fatal after**. The
+kill is recorded honestly as a process-level fatal with no test name and no
+summary, dependent on a `memory_limit` that file does not own.
+
+My original comment said "an infinite loop reports in a minute" with no domain —
+the same defect this chain has been fixing everywhere else, in the file that added
+the guard.
+
+### Operational: my own bad advice
+
+I told agents to use `pkill -f '[p]hpunit'`. **The bracket trick only stops the
+pattern matching your OWN shell — it still kills every other agent's phpunit.**
+Two such watchdogs were observed killing sibling runs mid-suite. Retracted; every
+brief now forbids global `pkill` and requires any watchdog to match the agent's
+own sandbox path. A run that dies mid-suite with no summary line looks exactly
+like a real defect, which is what makes this expensive.
+
+### TOCTOU, raced rather than reasoned
+
+45s, **3,107,929** `loadRoot()` iterations against a background symlink flipper:
+11,235 refused, **0 leaked**. Recorded as what it is — not proof the window is
+closed, since the read still follows whatever the resolved path names.
+
+### Queue
+
+1. Lane E round 6 (running) → commit.
+2. Re-reviews of `f8b37f63` (lane B r19) and `5f19c00d` (lane D r8), then lane E's.
+3. **#88** README whole-suite figure, standalone. Deferred a THIRD time — every
+   round moves it. True value at `f8b37f63` is **6603 / 68722**.
+4. Plan steps **#14** → **#12** → **#17**. #90 is fixed, so #17 is unblocked.
+5. Reported but not actioned: `src/ToolRegistry.php` declares its own
+   `SugarCraft\Crush\Tool`, one `use` away from colliding with the tool interface —
+   left alone because that file was outside the round's ownership.
+
+---
+
+## Round 3 of the review/fix cycle — and the first PRODUCT defect the chain has found
+
+Commits since the last entry: `54a07e95` (lane E round 6), `d4906998` (lane B
+round 20). Lanes stand at **B round 20, D round 8 (round 9 in flight), E round 6
+(round 7 in flight)**.
+
+### ⚠️ NEEDS A USER DECISION — the permission prompt answers on typed text
+
+This is the first defect in this chain that is a **product** bug rather than a
+test or documentation one, and it is the item to act on first next session.
+
+Driven one `KeyMsg(Char, c)` at a time against a live prompt (`rm -rf build/`
+pending), `Chat::handlePermissionKey()` (`src/Chat.php:1398-1415`):
+
+| typed | answers at keystroke | rune | outcome |
+|---|---|---|---|
+| `/agents` | **2** | `a` | `permissionGrants = {"bash":true}` — **Always, rest of session** |
+| `/branch main` | 4 | `a` | **Always** grant |
+| `/keys` | 4 | `y` | approved once |
+| `yes` / `Y` | 1 | `y` | approved (`strtolower`) |
+| `no` / `nay` | 1 | `n` | denied |
+| `/new` | 2 | `n` | denied |
+| `/help`, `/quit` | never | — | — |
+
+`PermissionReply::Always` writes a **persistent** grant, so every subsequent
+`bash` call in the session runs unasked. `/agents` is a documented one-word
+command that reaches it in **two keystrokes**.
+
+Lane E round 7 was told explicitly NOT to change the routing — where `y`/`n`/`a`
+should be accepted from is a design decision — but to correct every in-code claim
+to what is measured, pin current behaviour (including the `a` → persistent-grant
+case), and return **fix options with measured costs**. Pick one next session.
+
+Two corrections to earlier records: it answers on the **fourth** keystroke of
+`/keys`, not the third; and "a pasted path qualifies" is FALSE — the same commit
+proves `Chat::update()` DROPS `PasteMsg`, so only an unbracketed paste delivered
+as raw `Char` keys qualifies. The earlier claim was right by accident.
+
+### Lane D round 8's review: a LIVE escape needing no repository at all
+
+Round 8 closed the `$root === $HOME` hole with `file_exists("$root/.git")`,
+reasoning that *"the escape needs a COMMITTED symlink and nothing can be
+committed without a repository."* **The premise is false.** tar, zip, `rsync -a`,
+`degit` and every "download the release tarball" instruction carry symlinks and
+carry no `.git`. Measured, no git anywhere, payload delivered by `tar czf`/`tar
+xzf` into an owned mode-0700 `$HOME`:
+
+```
+$HOME/.sugar-crush/agents -> /…/outside      (symlink inside the tarball)
+presets=["pwned"] mode=bypass-permissions prompt=EXFIL-PRESET-BODY  refusals=[]
+```
+
+A **dangling `.git` symlink** escapes too — `file_exists()` follows links and
+answers false. The clean statement: the discriminator asks *"is a `.git` present
+right now"*, which is not the question *"did a repository choose this content"*.
+
+Also from that review, and all being fixed in round 9:
+- **The ownership clause the commit is TITLED for has ZERO coverage.** Deleting it
+  leaves the full suite byte-identical (6603/68775 both ways). `HOME=/usr` goes
+  from refused to accepted in one line. The tests drive world-writable, sticky,
+  group-writable, nonexistent, is-a-file — never "owned by another uid".
+- **The neutered-gate defect is REINTRODUCED in the commit that condemns it.**
+  `$unusedGateResult = ContainedPath::within(...)` with no `continue` leaves
+  `ContainedPathInventoryTest` green at 26 tests while `loadRoot()` returns
+  `TOP-SECRET-AAA`. Seven discarded-result shapes report `used: true`. The
+  method's own docblock lists `:` in the statement-start set; the code has
+  `['{', '}', ';']`.
+- **A NINTH read path.** `WorktreeConfig::new()` reads
+  `__DIR__/../../../.sugar-crush/config.json` — **git-tracked** — with no
+  containment, feeding `copyGlob()` patterns into every agent worktree. Invisible
+  to BOTH new instruments, because the dot-path derivation keys on the STRING and
+  one classification covers two different tiers.
+- **The corpus still fatals on this repo's OWN canonical class shape.** A `final`
+  class with a `private __construct()` and a `::new()` factory — mandated by
+  `CLAUDE.md` and `.claude/rules/model-pattern.md` — enters the corpus and aborts
+  suite construction, verbatim the failure the enum clause was added to remove.
+- Plus: `ForeignMemoryImporter`'s user tier still on `path()` not `owned()`; a
+  relative `$HOME` passing `owned()`; the "named by grep" reader list wrong in
+  three directions (11 sites, 9 named, one named that does not call it); four more
+  uncounted compare spellings, `strncasecmp` mattering most.
+- **My own finding:** `tests/Agents/WorktreeConfigTest.php:98-120` does
+  `file_put_contents` on the **git-tracked** `.sugar-crush/config.json` at test
+  runtime. An interrupted run leaves a tracked repo file mutated, and it is why
+  that test fails in every sandbox — **three separate agents burned time
+  diagnosing it**, and one reviewer refused to run the suite in-repo because of it.
+
+### Lane E round 6's review: the headline claim REFUTED
+
+Round 6 concluded the two locks are "stacked, never alternatives" because
+`requestPermission()` is the sole non-null writer of `pendingPermission`.
+`update()`'s `AssistantMsg` arm (`Chat.php:626-631`) writes `'inFlight' => false`
+without clearing it, and `mutate()` carries it forward — so ONE `update()` call
+separates them. And in that state the **permission arm alone** does the refusing,
+so round 6 replaced a message that named the right lock but could not fail with
+one that names the **wrong** lock.
+
+The methodological lesson, worth carrying: round 6's evidence was a whole-suite
+probe at the TOP of `update()`, which only fires on states fed BACK into
+`update()`. No test builds that state, so 6603 green tests were entirely
+consistent with it being reachable. Round 6's own text says a whole-suite probe is
+not a proof over unwritten code — and then treated one as exactly that.
+
+Also: a **fourteenth** disagreement member reachable by pure keystrokes
+(`Alt+Enter` then `/keys`) — round 6 applied its own reachability discoveries to
+the BLANK half of the set and not the COMMAND-SHAPED half; the `y` pin cannot fail
+on the property the prose rests on (`'y' => Reject` survives in `KeyHelpTest`);
+the `?` assertion at `:1494` still has no mutation naming it; the order artifact
+`ksort` fixed survives 1750 lines below at `:2262`; and the token instrument is
+blind to `use X as Ask; new Ask(...)`.
+
+Verified correctly, and worth crediting: round 6's "comment-only diff" claim holds
+under `token_get_all` on both revisions with comments and whitespace stripped —
+**byte-identical 19,246-token streams**.
+
+### Lane B rounds 19-20: the gate documented only where it helps
+
+The head scanner was blind for a THIRD round: wrapped calls (18), named arguments
+(19), `$this->` (20) — and this file already uses `$this->` for its own helpers at
+30+ sites. Round 20 fixed the reason rather than the spelling: the gate now takes
+`::`, `->` and `?->`, and **the tally's domain sentence states the restriction in
+the same sentence as the domain**, naming all three shrinkages in order. Each time,
+the gate had been written up where it HELPS and never where the domain is CLAIMED.
+
+Round 20 also **moved three census figures deliberately and said so**:
+`directiveValues` 5→8, `scanRegex` 8→10, `tokenize` 17→18, after finding the
+census counted `??` but not `??=` and `if` but not loop conditions — while this
+same file's register counts "each loop bound" as a leaf of the same operator and
+sweeps four of them. Round 19's "the figures did not move" sentence is now scoped
+to that round's domain rather than left standing.
+
+And it **disputed its reviewer with its own measurement**: the reviewer reported
+37 leaves / 16 survivors / 21 kills and separately named a 17th survivor, which
+does not add up; lane B's own full sweep on the final file gives **38 / 17 / 21**,
+and it reported only what it measured. Resolving the ambiguity in the safe
+direction (keeping `??` in the domain, because the census counts `T_COALESCE` and
+"the two instruments may not disagree about what a leaf is") surfaced a **second**
+unrecorded warning-only kill.
+
+### IN FLIGHT at the time of writing — resume these
+
+Two agents were running and their work is UNCOMMITTED in the tree:
+
+1. **Lane D round 9** — 12 findings. Modified so far:
+   `src/Agents/{AgentPresetRegistry,ForeignAgentPresetRegistry,WorktreeConfig,WorktreeManager}.php`,
+   `src/Cli/Bootstrap.php`, `src/Context/InstructionFileLoader.php`,
+   `src/Memory/ForeignMemoryImporter.php`, `src/Support/{ContainedPath,HomeDirectory}.php`,
+   and tests under `tests/{Agents,Cli,Context,Memory,Support}/` plus a new
+   `tests/Support/HomeSandboxTrait.php`.
+2. **Lane E round 7** — 10 findings. Modified: `src/Chat.php`,
+   `tests/Renderer/KeyHelpTest.php`, `README.md`.
+
+If either did not finish, its brief is reconstructible from the findings above.
+**Check for residue and stray processes before trusting the tree**, and remember
+the suite failure in `ContainedPathInventoryTest` over `src/{Commands,Context,Memory}`
+was lane D round 9 mid-flight, not a real defect.
+
+### Standing operational rules, all learned the hard way
+
+1. **NEVER a global `pkill`, including `pkill -f '[p]hpunit'`** — the bracket trick
+   only stops it matching your OWN shell; it still kills every other agent's
+   phpunit. My own brief told agents to do this and two watchdogs killed sibling
+   runs. A run that dies mid-suite with no summary line looks exactly like a real
+   defect.
+2. **Never write into the live tree at test runtime** — not `src/` (round 7's
+   `CorpusProbe`), not a tracked file (`WorktreeConfigTest`). Make the path
+   injectable instead.
+3. **Concurrent agents must use PRIVATE scratch dirs** — one `rm -rf`'d the shared
+   scratchpad mid-run and destroyed another agent's harness.
+4. **Never edit a file while a run of it is in flight** — it shifts
+   `file(__FILE__)` line ranges against already-loaded reflection and fakes a
+   census failure.
+5. `cp -al vendor` preserves RELATIVE `vendor/sugarcraft/*` symlinks, which dangle
+   and give phantom `Interface "SugarCraft\Core\Model" not found`.
+6. Judge every mutation by the **targeted test file** flipping green→red. Suite
+   totals move constantly with three lanes live.
+
+### Queue
+
+1. **The F7 permission-routing decision** — lane E round 7 returns options; pick one.
+2. Commit lanes D round 9 and E round 7, then re-review both.
+3. **#88** README whole-suite figure, standalone, once the chain stops. Deferred a
+   FOURTH time. True value at `d4906998` is ~**6638 / 68850** — re-measure.
+4. Plan steps **#14** → **#12** → **#17**. #90 is fixed so #17 is unblocked, but
+   **#17 must wait for lane D round 9's corpus fix** (private-constructor shape).
+5. Reported, unowned: `src/ToolRegistry.php` declares its own
+   `SugarCraft\Crush\Tool`, one `use` away from colliding with the tool interface.
+
+---
+
+## Session close — three commits, and the permission fix in flight
+
+Commits this stretch, all on master:
+
+| commit | content |
+|---|---|
+| `2c12bd9f` | lane D round 9 — user tier anchored to `$HOME`; the `.worktreeinclude` escape |
+| `97977abb` | lane E round 7 — the lock that does the refusing; the F7 table pinned |
+| `f0d95785` | lane B round 21 — the figure that counted anchors and called itself a leaf count |
+
+### The F7 decision was made, not deferred
+
+The user said "fix the permission routing". So it is being fixed, and the round-7
+agent's own recommendation (confirm-on-`a` alone) was **not** taken: it kills the
+session grant but leaves `/keys` still approving a bash call on the fourth
+keystroke. That is severity reduction, not a fix.
+
+**The design, decided and in flight as lane E round 8:**
+
+1. **Only the first keystroke after a prompt appears can answer it.** A prompt goes
+   up ARMED; any non-answer key DISARMS it; `Enter` RE-ARMS. Every queued ask arms
+   afresh. Consequence: `/agents`, `/keys`, `/compact`, `/init`, `/branch main`,
+   `/new` all become fully swallowed, because none has an answer key in first
+   position.
+2. **`a` no longer grants** — it raises a confirm; `y` commits the session grant,
+   `n`/Escape cancels back to a still-ARMED prompt, any other key cancels and
+   DISARMS.
+3. **The disarmed state must be visible.** A prompt that silently eats keys is
+   worse than the defect, so `Renderer::renderPermissionPrompt()`, the
+   `PERMISSION_OPTIONS` table and `KeyBindingRegistry::permission()` are all in
+   scope.
+4. **The residual is stated in the code, at the check**: a message beginning with
+   `y` or `n` still answers on the first keystroke. Unavoidable short of an
+   Enter-to-commit modal, which was weighed and rejected as slower for the common
+   case — and those letters genuinely ARE the answers.
+
+Suggested shape: one readonly field holding
+`PermissionPromptStage { Armed, Disarmed, ConfirmingAlways }`. The arm rule lives
+in `handlePermissionKey()` only — `answerPermission()` and the `PermissionReplyMsg`
+path (palette actions, tests) are explicit decisions, not keystrokes, and must keep
+working unchanged.
+
+### Two reviews stopped mid-flight, deliberately
+
+The user asked for one agent at a time near the session limit. Both were read-only
+and had produced nothing; **their briefs are the deliverable and are worth
+re-issuing verbatim**:
+
+- **Re-review of `f0d95785`** (lane B round 21). Attack list: is `sweepLeafCensus()`'s
+  subtraction falsifiable or does it pass because both sides come from the same
+  walk; is `38` still a literal anywhere; does the verbatim-`fragment` check bite
+  when a leaf is respelled meaning-preservingly; which shape does
+  `isTernaryCondition()` get wrong (nullable hints, `?->`, `??=`, match arms,
+  default argument values); spot-check four of the 38 leaf classifications
+  independently.
+- **Re-review of `2c12bd9f`** (lane D round 9). Primary brief: **hunt a tenth
+  ungated read path, trusting no inventory in the diff to enumerate them.** That
+  blindness — an inventory counts checks that are WRITTEN, so it catches a deletion
+  but never a path that never had one — is exactly how the previous eight escapes
+  survived while listed as audited. Then: attack the `$HOME` anchor itself (unset,
+  empty, trailing slash, symlink, relative, under `/tmp`, inside the checkout, repo
+  checked out AT `$HOME`); attack `patternStaysInside()` (`..` mid-path, doubled
+  separators, `*/../..`, symlinked segment, empty pattern); verify the stated cost
+  is the ACTUAL cost.
+
+### Lane B round 21 — what it actually found
+
+All five round-19 findings were **already closed by round 20**, verified by
+mutation rather than by reading. The register's `38 leaves / 22 killed / one
+warning-only` was three wrong numbers: the true sweep is **38 / 21 killed / 17
+survivors / TWO warning-only**, re-derived by sweeping all 38 leaves one at a time.
+
+Round 20 reintroduced the standing class twice — **twelve consecutive rounds** now:
+`guardCensus()`'s figure called itself a leaf count and was an anchor-plus-operator
+count, under-counting `tokenize()`'s own
+`$terminated = $close !== false && $close < $lineEnd;`; and the census and the
+register contradicted each other **by name** about ternaries, in two docblocks in
+the same file.
+
+### Queue
+
+1. **Lane E round 8 (the permission fix) is IN FLIGHT and UNCOMMITTED** when this
+   was written. Files: `src/Chat.php`, `src/Renderer.php`, `src/Permissions/*`,
+   `src/Commands/KeyBindingRegistry.php`, `tests/Renderer/KeyHelpTest.php`,
+   possibly `README.md`. If it died, re-issue from the design above — it is
+   complete enough to re-brief from.
+2. Re-issue the two stopped reviews (briefs summarised above).
+3. **#88** README whole-suite figure, standalone. Deferred a FIFTH time. At
+   `f0d95785` the true value is **6678 / 69298 / 1 skipped** — re-measure after
+   round 8 lands, since it moves the count.
+4. Plan steps **#14** → **#12** → **#17** (#14 and #12 both want `Bootstrap.php`,
+   which lane D round 9 just rewrote — re-read it first). #17 is unblocked now that
+   the corpus handles the private-constructor shape.
+5. Reported, unowned: `src/ToolRegistry.php` declares its own
+   `SugarCraft\Crush\Tool`, one `use` away from colliding with the tool interface.
+
+### Round 8 landed — `c075adcf`
+
+The permission fix is committed, as designed above. Re-driven table: all nine
+slash commands are now swallowed whole; `/agents`, Enter, `y` approves once at
+keystroke nine (the recovery); `ay` grants at keystroke two; `an` cancels the
+confirm and leaves the prompt ARMED, `and` cancels and DISARMS.
+
+Two things the agent surfaced that were not in the brief:
+
+1. **Binding descriptions were pinned by nothing.** Reverting `permission.always`'s
+   wording left KeyBindingRegistryTest, KeyBindingDriftTest, KeyHelpTest and
+   RendererTest all green — the drift suite reads a description only for
+   keyish-token violations and paints it, never asserting its words. One
+   assertion added for that row; **every other row's wording remains unpinned**,
+   and that is a standing gap worth its own round.
+2. **The first draft of the queued-ask test could not fail.** It answered question
+   one from an already-armed prompt, so "arms afresh" and "inherits" were
+   indistinguishable — the same defect class the chain keeps producing, caught by
+   the agent's own mutation rather than by a reviewer.
+
+**The two unexplained `VhsTapeContractTest` failures in round 8's intermediate run
+are explained: lane B round 21 was editing that file concurrently.** That is
+standing rule 4 (never edit a file while a run of it is in flight, because it
+shifts `file(__FILE__)` ranges against already-loaded reflection). Not a defect,
+and not unexplained — but it does mean two lanes were allowed to overlap on one
+file's *runs* even though they never overlapped on its *writes*. Serialise the
+suite runs, not just the edits.
+
+Queue item 1 above is now closed. Items 2–5 stand; #88's figure is **6678 / 69306
+/ 1 skipped** at `c075adcf`.
+
+---
+
+## The tenth path is arbitrary code execution — review of `2c12bd9f`
+
+The re-review found what nine rounds of inventories did not. **Do not close this
+lane until Findings 1 and 2 are fixed.**
+
+### F1 — CRITICAL, LIVE. `WorkflowRegistry`'s user tier `require`s PHP from outside `$HOME`
+
+`src/Workflows/WorkflowRegistry.php` still carries the **refuted** sentence verbatim
+in its constructor doc-block (~`:105`): *"The user's own tier stays unconfined: it
+is the directory whose `.php` files this class `require`s, so a link inside it is
+the user pointing at their own file."* `readableProjectDir()` anchors only the
+PROJECT tier; `yamlDirectories()` adds the user directory as `$dirs[$userDir] =
+false` (symlinks unconfined); `load()` does a bare `require $phpPath` at `:241`.
+
+**There is no `ContainedPath` call on the user tier at all** — which is exactly why
+`ContainedPathInventoryTest`'s `'Workflows/WorkflowRegistry.php' => 2` is a GREEN
+row. It counts the two compares that are written. This is the lane's signature
+blindness, and this time it was hiding code execution.
+
+Reachable in production, not dormant: `Bootstrap::workflowEngine()`
+(`Bootstrap.php:402`) → `Chat.php:3921 → 4297` (`/workflow run`).
+
+Two driven probes, `$HOME` mode 0700 and **owned** (i.e. `HomeDirectory::owned()`
+passes — the exact "ownership cannot substitute" case), no `.git` anywhere:
+
+* **A, tarball-delivered directory symlink** (`.sugar-crush/workflows -> <outside>`):
+  `load('pwned')` → `CODE-EXECUTED = arbitrary php ran from OUTSIDE $HOME; uid=1000`.
+  The stack trace names it: `WorkflowRegistry.php(241): require()`.
+* **B, no directory link at all** — a real directory inside `$HOME` with one ENTRY
+  symlinked out (`entry.php -> <outside>/pwned.php`) → same code execution.
+
+Probe A is closed by the one-line anchor **the same commit added ~300 lines away in
+the same file** (`ContainedPath::below($userDir, $userHome)` in
+`agentPresetTiers()`). Probe B needs the per-entry `confine: true` the code
+deliberately disables, plus a `.php` containment check that does not exist.
+
+Compounding: the commit's own new `HomeDirectory::path()` inventory files
+`WorkflowRegistry` under *"STORE LOCATION (the fallback is a convenience, not a
+trust decision), six"*. A number travelling without its domain — this is not a
+store location, it locates the only directory in the package whose contents are
+`require`d.
+
+### F2 — HIGH. Eleventh path: `CommandLoader`'s user tier, same refuted premise
+
+`src/Commands/CommandLoader.php:138` — `loadUserCommands()` calls
+`loadFromDirectory($this->userCommandsDir())` with `$anchoredIn` omitted (null);
+`loadProjectCommands()` passes `$projectRoot`. The directory comes from
+`HomeDirectory::path()` (`:187`), not `owned()`. Driven: an outside file's body
+lands in `CommandSpec::$template` — the prompt — with `refusals=[]`. The per-entry
+`within($file, $realDir)` at `:109` does not help: it resolves `$realDir` too, so it
+travels with the directory link.
+
+**Same shape, and this commit TOUCHED it:** `ForeignSkillDiscovery` anchors its user
+tier to `self::homeDir()`, which is `HomeDirectory::path()` (`:97`), **not**
+`owned()` — while its sibling `ForeignAgentPresetRegistry::userDir()`, changed in the
+same commit, correctly uses `owned()`. The same new sentence is true in one file and
+false in the other.
+
+### F3 — MODERATE. The `.worktreeinclude` gate is skipped on the CONSTRUCTOR DEFAULT
+
+`resolveWorktreeInclude()` skips the gate when `$repoRoot === ''`, justified by
+*"the include file is a caller-supplied relative path against the process CWD."*
+False in both halves: it comes from `config.json`, and `$repoRoot = ''` is the
+constructor default (`WorktreeManager.php:33`). Driven, branch A read the outside
+file and its lines reached `error_log()` — verbatim the harm the commit says that
+gate exists to close. The refusal message prints `it leaves the repository root ()`:
+an operand that is the empty string.
+
+The COPY escape is genuinely closed in both directions — that part confirms.
+
+### F4 — MODERATE. `patternStaysInside()` claims the Windows domain and fails it
+
+Normalises `\`→`/` as a separator but tests absoluteness on the raw string with
+`str_starts_with($pattern, '/')`. `\etc\passwd`, `C:\Users\victim\.ssh\id_rsa`,
+`C:/Users/x` and bare `\` are all **ALLOWED**; `/etc/passwd` refused. Matters because
+the doc-block argues the lexical pattern guard is the DURABLE one against
+`within()`'s two-`realpath()` TOCTOU window — so on Windows the durable guard is the
+defeated one. The correct predicate is ~40 lines away in a file this commit edited:
+`owned()`'s `preg_match('#^[A-Za-z]:[\\\\/]#', $home)`.
+
+Every POSIX case behaves correctly — nothing found there.
+
+### F5 — MODERATE. The corpus's "legible failure" is unreachable for the shape CLAUDE.md mandates
+
+`isDispatchableTool()` now ends with `&& self::isConstructible(...)`, and a false
+there **silently drops** the class — so `instances()`'s throw ("add it … rather than
+silently skipping it") can never fire for a private-constructor tool needing
+arguments. Driven: `NeedsArgs` (`final` + `private __construct` + `public static
+new(\stdClass $dep)`) and `NonStaticNew` both vanish with no exception and no
+diagnostic; only the zero-arg control survives. Residual: `instances()` invokes
+`new()` with no `instanceof Tool` check.
+
+### F6 — LOW/MODERATE. `statementStartIn()` — two false-GREENs
+
+The direction the instrument exists to remove: `$x && ContainedPath::within(...)` →
+`used = true`, and a closure assigned but never called → `used = true`. Two
+false-REDs too (named-argument colon — the third kind of `:`, absent from the
+doc-block's enumeration; and `... or throw ...`). The ternary disambiguation the
+commit worried about is **correct in both directions**.
+
+### F7 — LOW. `ProviderFactory::defaultConfigPath()` (`:118`)
+
+`__DIR__ . '/../../.sugar-crush/config.dev.json'`, read at `:143`/`:320` and at
+launch via `Bootstrap::availableProviders()` (`:1052`). Same containment-free
+`__DIR__`-relative `.sugar-crush/*.json` construction the commit just closed in
+`WorktreeConfig`. On neither inventory.
+
+### Confirmed
+
+The headline `$HOME` anchor works in all four launch shapes, including row 4 (the
+previously-live one). The stated surviving layout survives. The whole `$HOME` shape
+matrix holds — trailing slash, `//`, `$HOME` a symlink, `HOME=""`, unset, `HOME=.`
+— **no shape makes anything newly reachable, and no cost beyond the stated one in
+the agent-preset path.** F12's nullable-sentinel fix is complete for both file-backed
+parameters, including an explicit value equal to the old hard default.
+`WorktreeConfig`'s two new gates are live. `owned()`'s sticky-bit reasoning holds and
+no bypass was found.
+
+### Refuted
+
+**"The cost is a roster symlinked outside `$HOME` stops working."** That is the cost
+in the agent-preset path. The change-set's actual cost is that the same anchor was
+not applied to the three remaining user tiers that need it most — one of which
+executes code — and the refusal-message rewrite reached `AgentPresetRegistry`,
+`ForeignAgentPresetRegistry` and `SkillLoader` but not
+`WorkflowRegistry::readableProjectDir()`, which still names "the checkout root".
+
+### Queue (revised)
+
+1. **Lane D round 10 — F1 and F2 first.** Anchor `WorkflowRegistry`'s user tier with
+   the same `below($userDir, $userHome)` already in `Bootstrap::agentPresetTiers()`;
+   decide the per-ENTRY `.php` case (probe B is not closed by a directory anchor);
+   switch `CommandLoader` and `ForeignSkillDiscovery` from `path()` to `owned()` and
+   pass `$anchoredIn`. Delete the refuted sentence wherever it still appears.
+2. F3–F7 in the same lane, after.
+3. Re-issue the **lane B round 21 review** (`f0d95785`) — brief above, never ran.
+4. Review `c075adcf` (the permission fix) — never reviewed.
+5. **#88** README figure. Deferred a fifth time; **6678 / 69306 / 1 skipped**.
+6. Plan steps **#14** → **#12** → **#17**.
+
+---
+
+## Review of `f0d95785` (lane B round 21) — the reconciliation was a tautology
+
+The review that never got to run. Nine findings; the sweep itself is vindicated but
+three of the round's new instruments do not work.
+
+**Independently re-derived, and lane B is right:** 38 leaves (14/16/4/4), swept one
+at a time, **17 survivors / 21 killed**, survivor set **1:1 with `SWEEP_SURVIVORS`**,
+classes summing 4/6/7. Both warning-only kills reproduce with the register's exact
+counts (`Warnings: 1` and `Warnings: 12`), and **nothing else in the 38 is
+warning-only**. The round-19/20 reviewer's "37 / 16 / 21 plus a 17th" does not
+reconcile — lane B's set is the correct one.
+
+Note the mechanism, which is a trap: both warning-only kills are red *purely* via
+`failOnWarning="true"` changing the exit code. The printed banner still reads
+`OK, but there were issues!`. Anyone sweeping by reading output rather than `$?`
+will record them as survivors.
+
+### F1 — HIGH. `sweepLeafCensus()`'s reconciliation cannot detect anything it claims to
+
+It is `guardCensus(...)['conjuncts'] + $ternaries`, and the test recomputes
+`$ternaries` with the byte-identical loop. The expression is `(G + T) − G − T`,
+identically 0 for any token stream. Measured GREEN under: adding `T_FOREACH` to the
+anchors; removing `T_BOOLEAN_AND` from the operators; adding `T_SL`; widening
+`isTernaryCondition()`; **breaking `isTernaryCondition()` to `return false`
+always**; adding a third census term that is 0 on these methods. Only a *non-zero*
+third term reds it.
+
+So "neither side can be widened or narrowed without the other's figure moving" is
+false, and "this subtraction is what makes a third round of it red instead of quiet"
+is false. 8 assertions, 0 detection power. What actually prevents drift is the shared
+constant — see F4.
+
+### F2 — HIGH. Four ternary shapes are invisible, and a real ternary leaf lands green
+
+`isTernaryCondition()` misses `?` preceded by a token outside its whitelist:
+`Foo::class ? :` (prev `T_CLASS`), `match($z){…} ? :` (prev `}`),
+`"x$b" ? :` (prev bare `"`), and heredoc/nowdoc (prev `T_END_HEREDOC`).
+
+Whole-file mutation: inserting `$z = self::class ? 1 : 2;` or `$z = "x$depth" ? 1 : 2;`
+into `callArgument()` leaves **OK (115 / 625)** with the register total still 38. The
+`$depth >= 0 ? 1 : 2` control reds. Same defect class as round 19's `??=` finding,
+one operator along — under-count, which the file itself calls "the direction that
+matters", and these four are not among the escapes its message enumerates.
+
+### F3 — MEDIUM-HIGH. One `fragment` row is satisfied by a different leaf's bytes
+
+16 of 17 survivor rows red on a meaning-preserving respelling. **Row 9 does not.**
+Its fragment `$depth === 1` occurs **twice** in `callArgument()` — the registered
+survivor (early-continue) and a KILL (`elseif ($token === ',' && $depth === 1)`).
+Rewriting the survivor as `if (1 === $depth)` leaves the file green. Worse:
+**deleting that leaf outright** and rebaselining 16→15 / 38→37 / 21→20 leaves the
+register test green — verbatim the failure mode the `fragment` half was added to
+prevent, reintroduced in the commit that added it. Nothing constrains a `fragment`
+to be unique within its method.
+
+### F4 — MEDIUM. 4 of the shared domain's 11 members can be deleted in silence
+
+Sharing is real (no second copy; removing an occurring member reds both censuses).
+But `T_COALESCE_EQUAL`, `T_LOGICAL_AND`, `T_LOGICAL_OR`, `T_LOGICAL_XOR` are all
+**SILENT** on removal — exactly the four the docblocks argue hardest for ("every one
+of them was invisible to the regex these censuses replaced"). Adding `T_FOREACH` is
+silent too. They are load-bearing only against a *future* leaf, and nothing pins the
+constant's content the way `KEYWORDS` is pinned. Narrowing is the leaf-hiding
+direction, so "widen or narrow the domain here and BOTH figures move together" is
+false for 4 of 11.
+
+### F5 — MEDIUM. The twin defect, reintroduced by this round's own new assertion
+
+`assertLessThanOrEqual`'s message cites, as the measurement proving it bites,
+dropping `splitNamedArgument()`'s `\is_array($argument[0])` and correcting
+4→3 / 38→37 / 21→20. Driven: the **fragment check — added in the same commit, earlier
+in the same `foreach` — fires first**, so the `assertLessThanOrEqual` is never
+reached in its own cited scenario. It *is* reachable, but only by a route the message
+does not describe: `methodSourceWithoutComments()` strips comments and **keeps string
+literals**, so a nowdoc containing the fragment satisfies the row while the leaf is
+gone.
+
+### F6 — MEDIUM. The register's sweep instruction contradicts itself and is false
+
+`:4328-4329` says "a survivor is green either way". Measured across five survivors,
+each run twice: green **only** with `--exclude-group syntax-census`; without it,
+every one exits 1. A sweeper who follows that sentence records 38 kills / 0
+survivors and concludes the register is stale.
+
+### F7 — LOW-MEDIUM. `isTernaryCondition()` false-positives on `#[Attr] ?type`
+
+The docblock enumerates a nullable type's `?` as following `(`, `,` or `:`. It does
+not list `]`, and `]` is on the ternary side. Adding
+`#[\SensitiveParameter] ?string $z = null` to `callArgument()` reds the register with
+a figure moved and no leaf added; the bare `?string $z = null` control is silent. Not
+hypothetical — `callArgument()`'s own docblock probes `#[\SensitiveParameter]`.
+
+### F8 — LOW. Claim refuted as worded
+
+`:3325` says the killed total "exists nowhere as a literal"; `:3449` is
+`assertSame(21, $total - \count(self::SWEEP_SURVIVORS), …)`. Both `21` and `38` are
+literals. Functionally fine — each is an expected value against a derived actual, and
+both are falsifiable — but the file states a property of itself that is untrue of
+itself, two screens from the code.
+
+### F9 — LOW. The comment-strip admission is honest
+
+0 comment-token occurrences of all 17 fragments inside their own methods — no hidden
+gap. But the strip justifies itself by citing `tokenize()`/`scanRegex()`, which are
+outside its only call site's domain, and it does not mention that **strings are not
+stripped**, which is F5's live half.
+
+### Queue delta
+
+- **Lane B round 22** owes F1–F9. It CANNOT start while a full-suite run is in
+  flight elsewhere — editing this file mid-run shifts `file(__FILE__)` ranges. F1 is
+  the one to fix first: an 8-assertion tautology is worse than no check, because it
+  reads as coverage.
+- Still open: review of `c075adcf` (the permission fix, never reviewed); **#88**
+  README figure; plan steps **#14** → **#12** → **#17**.
+
+---
+
+## Sequencing changed: functionality first, hardening last
+
+**User instruction, 2026-08-17:** "move all security related fixes to the end .. i
+want the functionality stuff up front and all implemented first and everything
+working nicely we can tighten it all down at the end", and then: "security /
+tightening things that come up that can easily be delayed until the end do that".
+
+This defers more than containment work. **Audit-instrument correctness defers too** —
+mutation registers, censuses, inventories are audit hygiene, not functionality. So
+**lane B round 22 (the nine findings against `f0d95785`) is parked**, not next.
+Everything already found stays recorded above with its probes, so the final
+hardening pass starts from proof rather than re-discovery.
+
+Recorded in `crush_code.md`'s execution-status block as well (that file is
+UNTRACKED — deliberately, it seems — so its edits live only on disk).
+
+### Commits since the last worklog entry
+
+| commit | content |
+|---|---|
+| `dad90b18` | lane D round 10 — the tenth path was `require`; the eleventh was `CommandLoader` |
+| `15a2e605` | Phase 1 item 3 — foreign agent presets wired; foreign skills proven |
+
+### Lane D round 10 — closed, with the instrument inverted
+
+Both ACE spellings closed and proven **separately**, because different gates close
+them: neutering the directory anchor reds four tests incl. probe A; deleting the
+per-entry check reds two, **probe B only**. `bool $confineSymlinks` is gone rather
+than defaulted — its only `false` was the escape.
+
+`tests/Support/ReadPathCensusTest.php` (755 lines) inverts the failed instrument: it
+derives **every read/execute sink in `src/`** — 76 of them, `require`/`include`
+included, inside generated-code strings included — and demands a per-occurrence
+verdict, four verdict words measured against the mechanism rather than trusted. An
+ungated `file_get_contents` added anywhere in `src/` now reds it **by existing**.
+Its stated weakness, which is the honest one: it would **not** have auto-failed the
+tenth path (the file held two project-tier compares), it would have forced someone to
+write a sentence next to that `require` where the only true one was "none". It caught
+a wrong verdict of its author's own on first run, and forced a live residual into the
+record — `WorkflowEngine`'s pause files use the *configured* `workflowsPath()`, so a
+linked directory still relocates `.running/*.json`.
+
+**The tier count at the head of `ContainedPath` is DELETED, not re-incremented.** It
+said five, then seven, then eight, wrong within a round each time, and could not move
+at all while the tenth and eleventh paths were open.
+
+Known gap, unmeasurable on this host: `patternStaysInside()` still allows drive-
+relative `C:x`; no Windows host to establish the consequence.
+
+### Phase 1 item 3 — and a correction to my own brief
+
+**Phase 2 item 6 was already done.** `ForeignSkillDiscovery` has been called from
+`SkillManager::loadAll()` since `d1e0f2b1`, and the two docblocks the plan cites as
+falsely claiming the wiring say nothing about foreign skills at HEAD — **the plan's
+line numbers are stale by several commits**, and the supervisor passed that claim
+into a brief without checking it. What was missing was the PROOF; no test drove a
+foreign skill through `Bootstrap`. Mark the plan item accordingly.
+
+**Phase 1 item 3 was genuinely unwired**, and the brief's own wording was a trap:
+"wire it alongside the native registry construction", taken literally, ranks a cloned
+repo's `.claude/agents/reviewer.md` **above the built-in `reviewer`**, because
+`agentPresets()`' result is applied OVER the six built-ins. The agent declined the
+literal reading and used a separate `foreignAgentPresets()` so `agentRoster()` orders
+three layers in one place. Precedence: **foreign < built-in < native preset**,
+mirroring `SkillManager::loadAll()`.
+
+The plan's own cross-tool precedence claim was false: `discover()` cited
+`SkillLoader::loadAll()` as its authority, a method about NATIVE tiers, and the real
+rule resolves the pair the other way — **opencode wins for skills, Claude wins for
+agents**. Both directions now pinned in both files.
+
+Deliberately left for the hardening pass (recorded in code, unchanged):
+1. **Foreign agent presets scan user-then-project, last-write-wins**, so a cloned
+   repo's preset outranks the user's own — and `ForeignSkillDiscovery` deliberately
+   does the OPPOSITE, with the argument written out. The wiring does not widen it
+   (native still wins) but makes it reachable for the first time.
+2. `Agent::fromPreset()` silently drops `permissionMode`, `disallowedTools`,
+   `maxTurns`, `memory`, `background`, `effort`, `isolation`. That *bounds* the
+   wiring today, but the bound is only as good as `Agent`'s shape.
+3. `$projectTierRefusals` is reset only in `chat()`.
+
+### IN FLIGHT — Phase 3 item 1, uncommitted
+
+**The input box has no cursor movement at all** — `Chat::$inputBuf` is a hand-rolled
+append-only string, so a user cannot arrow left and fix a typo. Being replaced with
+`candy-forms`' `TextInput`/`TextArea`. 69 references in `src/Chat.php`, plus
+`src/Renderer.php`, `src/App/App.php`, and 8 test files.
+
+The brief's decision points, in case it needs re-issuing:
+- **`TextInput` vs `TextArea` must be measured, not assumed.** Alt/Shift/Ctrl+Enter
+  all insert newlines today (`Chat.php` ~`:817`), so the buffer already holds
+  multi-line content; `TextInput` is single-line. A wrong pick silently drops a
+  feature round 8 pinned.
+- Six key-routing invariants must survive: the ARMED permission prompt owning the
+  keyboard; overlay swallow; `?` on an empty line (and `??` typing a literal `?`);
+  Enter vs the three modifier+Enter newline producers; `↑` recall — **`Chat` and
+  `TextInput` both have history, one owner must be chosen**; and completion, where
+  both also have machinery.
+- Prefer keeping `Renderer`'s own painting, driven from the widget's state, over
+  `TextInput::view()` — two render paths would fight, and `Chat::view()` is already
+  double-diffed against `Program`'s renderer.
+- Dependency: `sugarcraft/*` resolves via **Packagist** now; the path-repo gotcha in
+  `CLAUDE.md` is stale. Add the require, `composer update`, only add a
+  `repositories[]` entry if resolution actually fails.
+
+### Queue
+
+1. **Phase 3 item 1** (in flight, uncommitted).
+2. **Phase 4** — `/model` as a real command, `/help`, `/clear`, `argumentHint` in the
+   popup.
+3. **Phase 5** — the base system prompt is one sentence today
+   (`'You are SugarCrush, an AI coding assistant.'`); `contextWindow()` is correctly
+   implemented on all seven providers and never called.
+4. **Rest of Phase 2** — `McpClient` de-duplication, `.mcp.json` builder,
+   `WorkflowEngine` construction, `CommandLoader` + the template-substitution engine
+   it needs to be useful, `LspTool`, `StreamingCommandBackend` swap.
+5. **Phase 7** docs.
+6. **THEN the hardening backlog**: lane B F1–F9 (incl. the `(G+T)−G−T` tautology),
+   lane D F3–F7 follow-ups, the three items above, `C:x`, the `.running/*.json`
+   residual. **#88** README figure (**6764 / 69788 / 1 skipped** at `15a2e605`).
+7. Never reviewed: `c075adcf` (the permission fix) and `15a2e605`.
+
+---
+
+## Session — Phase 3 item 1 shipped, and the composer path-repo policy inverted
+
+Three commits landed: `939f8ada` (Phase 3 item 1), `3bc5d269` (root path-repo
+closure completed), `2fa678a7` (per-lib manifests go Packagist-only, path repos
+become a CI injection).
+
+### `939f8ada` — Phase 3 item 1: the chat draft gets a cursor
+
+The defect was flat: **there was no cursor movement at all**, so a user could
+not arrow left and fix a typo. `Chat::$inputBuf` is now *derived* from a real
+`SugarCraft\Forms\TextArea\TextArea`; `Renderer` still paints from widget state
+rather than calling `TextArea::view()`, because `Chat::view()` is already
+double-diffed against Program's own renderer.
+
+**`TextArea`, not `TextInput`, and it was measured.** `renderInput()` paints a
+genuine multi-row box, so multi-line drafts are a live visible feature and
+Home/End must be line-scoped. That choice **dissolved** two collisions the brief
+expected to arbitrate: `TextArea` has no history field and no
+`setSuggestions()`/`currentSuggestion()` (verified as absences in the vendored
+copy that actually runs), so `Chat` stays sole owner of `↑` recall and of
+completion. There was no second mechanism to disable.
+
+`mutate()` carries an `input` key and **drops it when a change names `inputBuf`
+alone** — that key means "replace the whole draft" (submit clear, `↑` recall,
+slash completion, checkpoint restore) and reseeds with the cursor at the end.
+Load-bearing: deleting the guard reddens `ChatTest` (11 F + 1 E).
+
+Byte-identity of painted output holds unconditionally with the cursor at the
+end (57 `md5(view())` comparisons across 19 drafts × 3 sizes — CJK, emoji, ZWJ,
+combining marks, RTL, embedded SGR, a lone C1, C0 bytes, the 38–41 column
+boundary): zero differences. That is why `RendererTest`'s goldens needed no
+edit, and mutating the splice back to append-at-end leaves `RendererTest` green
+while reddening `ChatInputCursorTest` — the correct split.
+
+#### The regression the whole suite missed
+
+`TextArea::update()` opens with `if ($msg->ctrl) { return match ($msg->rune) {…
+default => [$this, null] }; }` — it swallows **every** ctrl-flagged key
+regardless of `type`. `Chat` filtered ctrl for `Char` and for `Left`/`Right` but
+not for `Space`/`Backspace`/`Delete`/`Home`/`End`, so:
+
+```
+                                   HEAD          WITH DIFF
+Ctrl+Backspace  "\x1b[127;5u"  =>  'ab c'    =>  'ab cd'   <- dead
+Ctrl+Space      "\x1b[32;5u"   =>  'ab cd '  =>  'ab cd'   <- dead
+```
+
+Both worked at HEAD. Nothing in 6795 tests caught it. Fixed with explicit arms,
+not a bug-for-bug restore: Ctrl+Space inserts a space (exact restoration),
+Ctrl+Backspace deletes the word before the cursor (an **upgrade**, justified by
+word motion now existing, sharing Ctrl+W's boundary), Ctrl+Delete deletes the
+word after (pure addition — no-op at HEAD). Ctrl+Home/End stay no-ops,
+documented as deliberate. The delegation list is now a named const behind a
+total `!$msg->ctrl` guard.
+
+**Honest negative recorded at the site:** that guard has **no detection power
+today** — mutating it away leaves the suite green, because the three explicit
+arms sit above it and Ctrl+Home/End are no-ops either way. Its value is purely
+prospective. No assertion was invented to give it artificial power.
+
+#### Review: ten blockers, all nine actionable ones reproduced
+
+No false alarms this round. Beyond the dead keys:
+
+- **Pure cursor motion reset the "/" popup's selection** — `withInput()` is the
+  every-keystroke route and unconditionally zeroed `slashMenuIndex`, so arrowing
+  inside a `/command` then pressing Enter ran the wrong entry. Now resets only
+  when `value()` actually changed.
+- **`App::clearInputKeys()` sent backspaces only**, leaving the tail of a
+  mid-cursor draft to be typed into the menu.
+- **Eight newly live keystrokes were undisclosed in the `?` reference.** The
+  drift instruments close registry→handler and handler-observation→registry, but
+  **nothing closed new-handler-arm→registry**. Counts were pinned at 58/54, so a
+  new arm with no row left them green — inventory blindness again. Now 66/62,
+  plus a check that reads the delegation const back by reflection and demands an
+  exact label *token* in a live chat row (the first version matched by substring
+  and was blind: deleting `chat.cursor` stayed green because `Alt+← / Alt+→`
+  still contains both glyphs).
+
+**Three tests had no detection power.** The modal-inertness test asserted only
+`inputBuf`, so its five motion keys were inert — leaking motion into the
+invisible widget (`Home` under an open palette moves 5 → 0) left **the entire
+6795-test suite green**. The shared-boundary check was
+`11 === mb_strlen('alpha beta ')`, unfailable — the `(G+T)−G−T` shape again, now
+table-driven over eight drafts. And three rows of the permission-swallow table
+sat at end-of-draft where `Right`/`End`/`Delete` are no-ops anyway, under a
+fixture message claiming "a forward Delete has a tail to take".
+
+**Four false claims shipped next to the code**, all corrected: two present-tense
+comments still asserting the box has no cursor movement; a `wordLeftOffset()`
+docblock citing `vimWordForward()`/`vimWordBackward()` as measured on
+`TextArea`, which **has no vim mode at all** (they are `TextInput`'s); a
+"~200 test assertions" figure (measured 110 occurrences, 91 on assertion lines —
+number dropped rather than replaced with one that will drift); and a
+`freshInput()` docblock crediting a palette fill-on-select that does not exist.
+
+**The plan's estimate was wrong by 4–6×.** It predicted 30–50 lines of
+hand-rolled buffer logic removed; the measured figure is **11 non-comment source
+lines, 8 of them match-arm bodies**. Both multi-byte helpers survive —
+`dropLast()` because the Ctrl+P palette query is a **second** hand-rolled
+append-only buffer, `dropLastWord()` because Chat now owns the boundary for four
+chords. The plan mistook 8 lines of expressions for a subsystem.
+
+Suite: **6806 / 70298 / 1 skipped, exit 0**, verified by the supervisor from a
+clean run rather than taken from the agent's report.
+
+Deferred to hardening, each verified rather than assumed: `withCharLimit(0)`
+leaves the draft unbounded (deliberate); `TextArea::update()`'s Ctrl+O
+`$EDITOR` `proc_open` seam is unreachable today and pinned, one keymap edit away
+from not being; `ESC b`/`ESC f` type a stray letter (identical at HEAD); the
+palette's own query buffer; cursor not persisted in checkpoints; combining marks
+splice onto the block glyph; the input box over-widens past 40 columns
+(byte-identical to HEAD); `KEY_HELP_COLS` says 58 where the widest live row is
+59 (pre-existing).
+
+### `3bc5d269` + `2fa678a7` — the composer path-repo policy, inverted
+
+Triggered by the user's observation that per-lib path repos are absurd for libs
+published as independent packages. **Both halves probed rather than argued:**
+
+- A dangling path repo in the **root** package is a **hard fatal**, not a
+  warning: `PathRepository.php line 163: The url supplied for the path (…)
+  repository does not exist`, exit 1.
+- A **dependency's** `repositories` are **ignored entirely** — a package
+  carrying that same dangling entry installs clean, exit 0.
+
+So the entries were invisible to consumers who merely `require` the package, and
+fatal to anyone cloning the split `sugarcraft/<lib>` repo, where `../candy-buffer`
+does not exist. That third case is why they had to go.
+
+`3bc5d269` first completed the **root** closure, which was genuinely broken:
+56 requires, 54 path repos. `candy-focus` carried a stale `vcs` entry (the only
+non-path repository in the file) and `sugar-gallery` had none, so
+`vendor/sugarcraft/` held **56 symlinks and 4 real directories** — those two plus
+transitive-only `candy-input`/`candy-layout`, each locked `dist=zip src=git`.
+Local edits to those four never reached the root autoloader. Now 58 symlinks,
+0 real dirs, 0 dangling (two orphans from earlier removals, `candy-crush` and
+`super-candy`, swept).
+
+`2fa678a7` then stripped **394 sibling path-repo entries from 53 manifests** —
+every one dropping `repositories` entirely, since no lib had a non-sibling repo
+— and re-injects them at build time via `--fix --strict-closure` before every
+`composer install` (**9 sites** across `ci.yml`, `pty-matrix.yml`, `vhs.yml`).
+Verified both directions: `candy-mouse`/`sugar-veil` rsynced without vendor or
+lock install and pass from Packagist alone (121/269, 201/406); under injection
+their `vendor/sugarcraft/*` are symlinks to `../../../` and tests stay green.
+All 58 libs confirmed published (200 from `repo.packagist.org/p2/<name>.json`).
+
+**The trap that would have made the injection silently useless:** `composer
+install` with a lock whose content-hash no longer matches does **not**
+re-resolve — it warns and installs *from the lock*, exit 0. With 14 committed
+per-lib locks, CI would have ignored the injection and kept testing published
+siblings **while looking green**. Those are untracked now, `/*/composer.lock`
+gitignored, root keeps its own. This executes
+`docs/plans/leftover/phase-01-pty-quickwins/step-02-drop-consumer-locks.md`,
+parked since PR #491 as "composer.lock deletion NOT executed".
+
+`tools/check-path-repos.php` gains `--no-lib-path-repos` (the inverse check, and
+the one that guards the committed tree). Its own test file
+`tools/tests/CheckPathReposTest.php` **could not run on any machine but its
+author's** — it died in `require_once '/home/my/.composer/vendor/autoload.php'`
+before PHPUnit could report anything. Bootstrap made portable; running it
+immediately exposed drift the dead file had hidden (it asserted output contains
+"no path-repo entry", wording the script had stopped using). 4 tests, 23
+assertions, exit 0; mutating the new mode's `exit(1)` to `exit(0)` reddens
+exactly the new test, file restored byte-identical.
+
+**Known and deliberate:** `--strict-closure` now reports ~394 gaps on the
+committed tree BY DESIGN. That is no longer drift.
+
+#### Two corrections I owe the record
+
+1. I told the user per-lib closures were "already partial and inconsistent
+   (`candy-async` has 1 path repo for 6 sibling deps)". **Inverted** — I misread
+   my own column order. `candy-async` has **6 path repos and 1 direct require**;
+   the entries cover the full transitive closure. Per-lib coverage was
+   *near-complete*, so the cost of dropping injection was a near-total loss of
+   cross-lib PR coverage, not a partial one. The user was choosing between
+   options on the strength of that figure and changed answer once corrected.
+   This is the session's own instance of the dominant defect class: **a number
+   written where it did not hold.**
+2. I cited `php tools/check-path-repos.php` exiting 0 as evidence the new
+   `candy-forms` dep was fine. It exits 0 **because it skips anything published
+   on Packagist** — it was not testing that at all.
+
+### IN FLIGHT — Phase 4, investigation only, nothing written
+
+Chosen bundle: **Phase 4 items 1, 2, 5, 7** (all commands/CLI parity, same
+dispatch/registry area). Items 3 and 4 are already ✅; item 6 is a follow-up.
+
+Facts established so far, and **two plan claims already refuted**:
+
+- `slashVisible: false` appears **5** times in `src/Commands/CommandRegistry.php`;
+  the rows are `new` (:35), `model` (:50), `docs` (:66) and two more. Item 1's
+  premise (flip `model` to visible) holds.
+- A `help` row **already exists** at `CommandRegistry.php:121` —
+  `CommandSpec::new('help', 'Show the keyboard shortcut reference (same as /keys)', 'App')`
+  — so item 2's `/help` is **not** a missing command but a *different* command
+  than the plan describes: the plan wants it to render
+  `CommandRegistry::slashCommands()`, while today's row aliases `/keys`. Decide
+  whether to repurpose or add a second row before briefing.
+- **`CommandParser` is NOT unused outside its own test** (item 7's stated
+  premise): `src/Commands/AgentsCommand.php` uses it, as does
+  `tests/Tools/BuiltInToolCorpusTest.php`.
+- `argumentHint` is a real `CommandSpec` field (`src/Commands/CommandSpec.php:64`,
+  parsed from `argument-hint` frontmatter at :168) and **is populated** on at
+  least `share`, `mcp`, `rename`, `bg`, `fork` and one web-search row — so item
+  5 is genuinely a *renderer* gap, not a data gap.
+  `Renderer::renderSlashMenu()` is at `src/Renderer.php:2228`, called from :928.
+- `grep -c "str_starts_with(\$text"` in `src/Chat.php` returns **0**, so item 7's
+  "`str_starts_with()` dispatch chain" is not literally that. **The real shape of
+  the dispatch chain is unverified — establish it before briefing item 7.**
+
+
+### Phase 5 pre-flight — every premise checked, and a sequencing constraint
+
+Measured while Phase 4 was in flight (read-only, no files touched). **All six
+checkable premises hold** — unusual for this plan, and worth recording as a
+positive result:
+
+| item | claim | verdict |
+|---|---|---|
+| 5.1 | base system prompt is one string literal | **holds** — `src/Runtime.php:1101`, `$base = 'You are SugarCrush, an AI coding assistant.'`; built in `buildSystemPrompt()` at `:1099` |
+| 5.3 | `dispatchSkill()` bypasses `Agent::systemPrompt()` | **exists** at `src/App/App.php:373` |
+| 5.4 | `contextWindow()` implemented on all 7 providers, never called | **holds** — defined in 8 files (7 providers + `ProviderInterface`); the only `contextWindow()` occurrence outside a definition is a *comment* at `src/Providers/SglangProvider.php:156` saying nothing reads it. `REMINDER_TOKEN_LIMIT` is a hardcoded `100000` at `src/Chat.php:198` with 4 uses (`:4228`, `:6876`, `:6901`) |
+| 5.5 | `shouldCompact()`/`shouldCompactForeground()` are dead code | **holds** — defined at `src/Context/ContextCompactor.php:49` and `:73`, **zero call sites anywhere in `src/`** |
+| 5.6 | `generateExchangeSummary()` is truncation/placeholder logic | **exists** — `src/Context/ContextCompactor.php:687`, one internal caller at `:673` |
+| 5.7 | `TokenTracker` never instantiated | **holds** — `src/Util/TokenTracker.php` exists, no `new TokenTracker` anywhere in `src/` |
+
+**Sequencing constraint — do not parallelise Phase 5 against Phase 4.** Items 5.4
+and 5.5 both need `src/Chat.php` (the `REMINDER_TOKEN_LIMIT` const and the
+`shouldSendReminder()` call site at `:4228`), and 5.7's status-bar readout needs
+`src/Renderer.php` — all three are files the Phase 4 bundle is editing. Even a
+file-disjoint second lane is unsafe here: the rule learned earlier in this chain is
+that a *suite run* which loads a file another lane is editing shifts
+`file(__FILE__)` ranges against already-loaded reflection and produces phantom
+failures. Serialise the suite runs, not just the writes.
+
+A genuinely disjoint sub-bundle exists if parallelism is ever needed: **5.1 + 5.2**
+touch only `src/Runtime.php` and `src/Tools/*`. 5.1 is also the plan's own
+"highest-leverage single change in this phase", so it is the natural next pick once
+Phase 4 lands.

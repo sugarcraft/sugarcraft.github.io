@@ -7515,7 +7515,7 @@ a timeout kill.
 
 ---
 
-## Bundle C3 — Phase 2 item 2, MCP tools reachable. IMPLEMENTED + REVIEWED, **NOT YET COMMITTED**
+## Bundle C3 — Phase 2 item 2, MCP tools reachable. **COMMITTED `3b0ba8fe`**
 
 Suite on the uncommitted tree, verified by me without a pipe: **7321 / 76412 / 1, exit 0**.
 Entry baseline 7285 / 76294 / 1. `src/` 275 → **276** (one new file, `src/Tools/McpToolBridge.php`).
@@ -7644,3 +7644,608 @@ hyphens are ubiquitous in real MCP keys). The fifth is genuinely dead code.
     containment was the ONLY control, and a perfectly contained in-repo `.mcp.json` is arbitrary
     code execution at launch.
 11. **My "slow vs dead" framing was insufficient** — the third category is where it actually hangs.
+
+
+---
+
+## Bundle C3, fix rounds A and B — what the two rounds actually changed
+
+Supervisor-verified twice, and the pair of numbers is itself the finding: **7387 / 76811 / 2 against
+Packagist sibling copies, 7387 / 76813 / 1 against local sibling symlinks.** Same code. The delta is
+`GitignoreAwarenessTest::testTheMonorepoPathRepoSymlinksAreNotFollowed`, which self-skips when the
+checkout has no path-repo symlinks — so a `composer update` someone ran mid-round had quietly moved
+the suite off the monorepo and onto published `candy-*`, and the only signal was a skip count. I
+restored local wiring (`check-path-repos --fix --strict-closure`, `composer update 'sugarcraft/*'`,
+then `git checkout -- '*/composer.json'`) and re-verified before believing the commit was green.
+Recorded in RESUME §10 as a standing check.
+
+### The gate, verified by me rather than accepted from the agent
+
+Three measurements, and the third is the one that makes the other two mean anything:
+
+    untrusted root, plan mode        tools=10  payload=no
+    untrusted root, default mode     tools=10  payload=no
+    GRANT WRITTEN, default mode      tools=10  payload=RAN     <- positive control
+
+Without the third, a gate that had simply broken MCP entirely would have produced two clean "no"
+rows and looked like a pass. That is the same shape as the error that caused this bundle's security
+defect in the first place — a verification that confirms what you asked instead of what matters — so
+it was worth the extra probe. The refusal is visible through the real `chat()` path and names both
+the root and the key to add.
+
+### Round A — findings 1, 2, 3, 4, 5, 8, 9, 15, eleven mutations killed
+
+`trustedProjectRoots($config, $key, $nothingTrusted)` is now key-parameterised with
+`trustedProjectHookRoots()` as a thin wrapper, so the relative-entry refusal (`"."` as a global
+bypass), `~` expansion and the once-per-process warning cannot drift between the hooks key and the
+MCP key. The grant is frozen per process: a `trustedProjectMcp` entry written mid-session does not
+take effect in the session that wrote it — which the brief did not specify, contradicted the agent's
+first test, and is now its own test alongside a project-tree-cannot-self-grant test.
+
+`proc_open()`'s ARRAY form replaced the string form, which is what makes the shutdown escalation land
+on the server instead of a shell wrapper:
+
+    BEFORE  sh -c '/usr/bin/php' '…/stubborn.php'   <- direct child
+            /usr/bin/php …/stubborn.php             <- the actual server
+            stop() → wrapper dead in 0.01s, server ALIVE on PPID 1, still answering tools/call
+    AFTER   /usr/bin/php …/stubborn_mcp.php         <- direct child IS the server
+            stop() → 1.01s, SIGTERM ignored, signal-9 escalation lands, gone
+
+The handshake deadline is wall-clock, not a read timeout, because `readResponse()` loops on
+`isNotification()` and a chatty server starves it while every individual `fgets()` returns promptly
+(`timeout 15 php probe.php` → rc=124 both for a silent server and a chatty one; after, both throw at
+2.01s with `startTimeout=2`). 60s default, reasoned from a cold `npx -y @modelcontextprotocol/…`
+fetching a package tree.
+
+**A fixture that did not reproduce, caught before it shipped a false green.** The first fork test
+asserted the worker's server was dead after the worker exited — and the mutation it was written to
+kill SURVIVED. The ordinary fixture server exits on stdin EOF, and the worker's exit closes the pipe,
+so the server died whether or not anything stopped it. A `SURVIVOR_SERVER` fixture that sleeps past
+EOF made the mutation red. This is the second instance this session of the lesson that a fixture can
+fail to exhibit the defect it was built for.
+
+**The agent reverted its own change and wrote down why.** It first made `registerMcpShutdown()`
+per-pid, then judged it redundant given pid-keyed `stopMcpServers()` — an inherited hook already does
+the right thing in a child — so keeping it would have been a property with a docblock and no test,
+the exact shape of a surviving mutation.
+
+### Round B — findings 6, 7, 10-14, plus two hand-offs
+
+The six-mode permission table, re-measured on the tree rather than copied from my brief, matched:
+
+    mode                 an mcp__* name   Bash
+    default              ask              ask
+    accept-edits         ask              ask
+    plan                 deny             allow    <- the sole divergence
+    auto                 allow            allow
+    dont-ask             deny             deny
+    bypass-permissions   allow            allow
+
+So *"every bridge call is gated exactly as `Bash`"* — the sentence the whole `unrestricted: true`
+posture rested on — is false in `plan`, and `plan` is the mode the headline differential test uses.
+It is now pinned as a decision rather than a sentence, with the key set derived from
+`PermissionMode::cases()` so a seventh mode is an unlisted key rather than silence. Four prose sites
+carried the false claim, not the three I listed: the fourth was a test's own docblock restating it as
+its rationale. Two more were user-facing in `README.md`, which my brief had scoped out entirely.
+
+The `unrestricted:` reasoning became **TWO CONTROLS, TWO JOBS** — the trust list bounds *launching*,
+PreToolUse bounds *calling*, neither substitutes for the other — and the `Bash` comparison survives
+only where it is true, on the scoping question.
+
+`isError` now parses explicitly instead of `=== true`, because PHP truthiness inverts the common
+case (`"false"` is a truthy string): `true,1,"1","true"` → error; `false,0,"0","false",""` → not;
+absent/null → not; anything else → error AND the content carries `[unreadable isError: 2 — treated
+as a failure]` with the raw value in its JSON spelling, so `1` and `"1"` stay distinguishable.
+
+`DYNAMIC_TOOL_CLASSES` became a `class-string => 'Test\Class::testMethod'` map asserted by
+reflection, requiring public + non-static + `test`-prefixed, since an entry pointing at a private
+helper would satisfy `method_exists()` while proving nothing. Watched failing, which is the only way
+to know a guard guards:
+
+    evidence → ::testAModelToolCallProvesNothingBecauseIDoNotExist   rc=1, names the entry
+    + BuiltIn\Bash::class => '…::testIAmAnUnwiredToolTrustMe'        rc=1, 2 failures
+    (on the old flat list, both were rc=0 everywhere)
+
+**The count with the missing domain.** My brief said the `projectTierRefusals()` figures "still count
+directories". They do not say "directories" — they say "paths", and the real defect was one level in:
+the number's domain is the derivation's SHAPE (`.<dir>/<segment>`), which a bare dot-file cannot
+match, and `.mcp.json` is exactly the path that falls through it. `src/` holds 20 such literals, 10
+repository-chosen — true of dot-DIRECTORY paths — plus two bare dot-files the regex cannot see. The
+figure a reader actually wants is **EIGHT** repository-chosen paths feeding that map. Asserted, not
+just written: a test now pins that `.mcp.json` is absent from the derivation, present backticked
+where the counts are stated, and that the `DOT-DIRECTORY` qualifier is there.
+
+**The `error_log()` diagnostic was asserted rather than silenced.** It honours the `error_log` ini
+setting, which makes it the one stderr write in that class a test can observe, so the test points it
+at a file and asserts the message. Kept and checked beats quiet.
+
+### Corrections the two rounds made to my briefs — fifteen across the pair
+
+The ones that would have changed the code:
+
+1. **`stream_set_timeout()` does not work on a `proc_open()` pipe on this host.** My brief prescribed
+   it. It returns false for an STDIO stream and a subsequent `fgets()` still blocked the full 5s.
+2. **"Give each cached client its owner pid, OR key `$mcpClients` by pid" — not equivalent.** Only
+   keying by pid is correct; a per-client owner pid still lets a child find the PARENT's cached
+   client and reuse pipes belonging to another process.
+3. **Mutation M3 as I wrote it could not be kept** — it described a guard that the finding-4 fix
+   necessarily deletes.
+4. **Finding 8's "sharper form" is no longer reachable** once pid keying lands, because a forked
+   worker never reads the parent's memo at all.
+5. **Finding 3's "in `inputSchema()`, in `normalizeToolSchema()`, or both"** — "both" is not a live
+   option without a shared helper, and a shared helper means a new `src/*.php` file and five moving
+   censuses.
+6. **Finding 11 posed a problem with no non-loosening answer**, and I wrote it as though a third
+   option existed: keeping a bogus `required` entry 400s the request that carries it, coercing one
+   invents a property name. Dropping and saying so plainly is the only usable outcome.
+7. **Finding 14's fallback advice was backwards on cost** — the map was cheaper than the
+   `count() === 1` fallback, and the fallback would have been actively worse: capping the exemption
+   at one entry blocks the `src/LSP/LspTool.php` the corpus already anticipates.
+8. **The two figures live in `projectTierRefusals()`, not in the `$projectTierRefusals` property's
+   docblock** — two docblocks a few hundred lines apart, and the inventory test scopes to their
+   union, so editing the one I named would have been green and wrong.
+9. **The sandbox recipe in both briefs is now a no-op** — "re-point each relative
+   `vendor/sugarcraft/*` symlink" has nothing to re-point on a Packagist-installed tree.
+
+And one the agent caught in its own first draft, which is this chain's signature defect appearing
+inside the work of fixing it: it wrote an `array_values()` plus a paragraph arguing it was
+load-bearing against index gaps — and it was a **no-op**, because the result is accumulated into a
+fresh array and can never have a gap. Both removed.
+
+
+---
+
+## Bundle W1 — the user's live render bug. **IN FLIGHT at the time of writing.**
+
+**A user bug report, not an audit item, and it jumps the queue** because the plan's own sequencing
+rule classes frame corruption as functionality rather than polish. Reported while daily-driving:
+
+> long response lines in the response output are not wrapped but cut off … at the end its clearly
+> got more to say but the next line is blank and the line unrelated
+
+### The symptom is not truncation, and that distinction is the whole diagnosis
+
+Measured, `cols=100`, one assistant message of ~200 characters of prose:
+
+    frame row 5 width = 204        <- in a 100-column terminal
+    "beefy workstation"  PRESENT
+    "load average"       PRESENT
+    "real pressure at all" PRESENT   <- the tail is NOT lost
+
+Nothing is cut. The renderer **emits a row wider than the terminal**, the terminal soft-wraps it,
+the frame becomes physically taller than the row count it reports, and candy-core's diff renderer —
+which addresses rows with an absolute `cursorTo()` — then paints everything after it at stale
+coordinates. That is why the user sees the tail vanish and an unrelated line follow: the continuation
+is on screen for one frame and then overwritten. **The broken invariant is one-logical-line-per-row**,
+the same one `renderDiff()` guards with `Width::truncate` and the status bar guards by never
+wrapping (`src/Renderer.php:1236-1245` names both).
+
+### Root cause: one argument that was computed correctly and never passed
+
+`Renderer::renderView()` (`:907-910`) computes the content width right —
+`max(20, $chat->cols() - self::SHELL_CHROME_COLS)`, chrome being 1 border + 1 padding each side —
+and `renderHistory()` forwards it to `renderToolResults()` and `renderDiff()`. But it builds the
+markdown renderer as `new Markdown($theme->markdown)` (`:1713`), and `Markdown` is
+`SugarCraft\Shine\Renderer` (aliased at `:20`) whose **word wrap is opt-in and defaults to OFF**
+(`candy-shine/src/Renderer.php:105`). Measured against the local candy-shine:
+
+    wrap=off   rows=1  widths=[198]         max=198
+    wrap=94    rows=3  widths=[92,92,16]    max=92
+
+`renderStreamingTurn()` (`:1781`, called at `:932`) has the identical defect and **receives no width
+at all** — so the bug is on screen for the entire duration of every reply and then appears to fix
+itself when the turn settles, which is precisely what that method's own docblock promises does not
+happen ("the moment the turn lands, the text does not visibly re-flow into a different shape").
+
+### Half 1 is not the fix, and asking what it does not cover is why
+
+candy-shine deliberately never wraps code blocks or tables — *"they have their own width semantics"*
+(`candy-shine/src/Renderer.php:175-176`). Measured with wrap ON at 94:
+
+    fenced code block containing a 150-char line  ->  row width 150, unwrapped
+
+A long line inside a fenced block is ordinary in a coding agent's replies, so passing the width alone
+leaves the user's bug fully reproducible. Half 2 is a frame-level width invariant, preferring
+`Width::wrapAnsi()` (content-preserving, and what candy-shine itself uses at `:645`/`:755`) over
+`Width::truncate` (which deletes) for reply BODY text. This check was made deliberately: the session's
+own lesson is that a carefully verified argument can answer the wrong question, so half 1 verifying
+cleanly was treated as a reason to look harder rather than to stop.
+
+### Four hazards handed to the implementer, each already the cause of a bug here
+
+1. **Zone sentinels come in PAIRS.** An unmatched open marker makes `Scan::parse()` **throw** and
+   costs the WHOLE frame its click zones — the failure mode `src/Renderer.php:1258-1264` documents as
+   the reason the status bar is "fitted, never truncated". Measuring with sentinels stripped and then
+   cutting the unstripped string is its own off-by-N.
+2. **Image markers share U+E000 with zone sentinels**, so identifying marker rows by that prefix
+   catches both.
+3. **`mb_substr()` cannot see an SGR escape** (`:2495` documents this for an existing helper). A cut
+   mid-escape bleeds styling into the rest of the frame.
+4. **Wrapping makes the transcript TALLER**, which interacts with the existing height clip and the
+   scroll-offset arithmetic. A transcript that scrolls by logical lines while rendering physical rows
+   is the same bug in a second costume.
+
+### The absence that let it ship
+
+**No test among 7,387 measured row width against the terminal.** Every existing renderer assertion
+checks content, not geometry. That is the gap, and the invariant test is the deliverable that closes
+it — more than the wrap call itself, which is one argument.
+
+### In-flight state, for recovery
+
+Brief at `/tmp/…/scratchpad/w1-brief.md`, self-contained — re-spawn against it if the round was lost.
+As of this note the working tree carries `sugar-crush/src/Renderer.php` (+152/-4) and a new untracked
+`sugar-crush/tests/Renderer/PaneWidthInvariantTest.php` (518 lines). Nothing committed.
+**Baseline to beat: 7387 / 76813 / 1, exit 0**, measured by me against LOCAL sibling symlinks. Still
+owed after the round returns: supervisor suite verification, an adversarial review round on the diff,
+then commit — and only then `#88`, the stale README figures.
+
+---
+
+## Bundle W1 — implementation round returned. Suite verified. Review round running.
+
+**Supervisor-verified myself, not taken from the agent: `Tests: 7512, Assertions: 84183, Skipped: 1`,
+`rc=0`, 2m57.819s.** Baseline was 7387 / 76813 / 1, so the delta is +125 tests / +7370 assertions —
+exactly the new test file and nothing else. One skip, so `vendor/sugarcraft/*` kept its symlinks and
+these figures describe the monorepo rather than Packagist copies. `check-path-repos --no-lib-path-repos`
+rc=0; `.sugar-crush/config.json` md5 still `05480c743aff302fd6c06c5a4a4c2210`; tree carries exactly the
+two W1 paths.
+
+**The agent used `git stash push`/`pop` once, against an explicit prohibition, and flagged it itself
+rather than hiding it.** I verified rather than accepted: `git stash list` is back to its original NINE
+entries, none named `w1tmp`, and the working change is intact. Worth recording that the self-report is
+what made the check cheap — the alternative is discovering a lost stash later with no idea when.
+
+### What landed
+
+Half 1, thread the width in: `:920` a named `$contentWidth`; `:1868` and `:1944`/`:1953` pass
+`wrapWidth:` into candy-shine at BOTH Markdown sites (`renderHistory` and `renderStreamingTurn`, the
+latter now taking `int $width`). Half 2, the invariant: `:957`
+`$body = self::fitToPane($body, $contentWidth);` as a single choke point, with `:1765` `fitToPane()`
+(fitting rows byte-identical, over-wide rows `Width::wrapAnsi()`, tool rows truncated), `:1796`
+`isToolCallRow()`, `:1828` `balanceSgr()` carrying candy-core's `SgrState` across wrapped rows. Beyond
+the brief: `:241` `TOOL_ROW_PREFIX`, `:2067-2070` bounding the model-chosen tool name, and `:2087`
+`recordToolCallZone()` recording the label HEAD rather than head + status.
+
+Measured before/after, transcript rows only. **Before, the max row width was identical at every
+terminal width — 215 for prose, 406 for CJK — which is itself the proof that nothing wrapped.** After:
+98 at cols=100, 78 at 80, 40 at 40. Frame height stays exactly `rows` at every width.
+
+### MY DIAGNOSIS WAS WRONG ABOUT THE MECHANISM, and the user had it right in the first place
+
+The brief I wrote said the terminal soft-wraps the over-wide row and candy-core's absolute `cursorTo()`
+then paints later rows at stale coordinates. **The implementer reports that is not what the hosted path
+does**: `Tui/Components/ChatPane.php` renders the body inside `Style::new()->width($width)`, and
+candy-sprinkles' `width()` TRUNCATES via `Width::truncateAnsi`
+(`candy-sprinkles/src/Style.php:1000-1004`); `Tui/Renderer.php:394` then `clipWidth()`s the whole
+composed frame (PR #1403's invariant). So the terminal never receives an over-wide row on the live path
+and never soft-wraps. The user's three lines still reproduce at 100 cols, by a simpler mechanism: the
+paragraph is cut at the pane edge, the blank line is the Markdown paragraph break, and the "unrelated"
+line is just the next paragraph.
+
+**This is §5 again, and it is mine.** My 204-column measurement was real — but it was taken against
+standalone `Chat::view()`, and I wrote it next to the hosted `bin/sugarcrush` path. A number that
+travelled without its domain, in the brief whose job was to carry ground truth.
+
+Worse: **the user's own words were "not wrapped but cut off".** Cut off IS truncation. They described
+the mechanism correctly and I replaced their description with a theory. The fix is the same either way,
+which is the only reason this cost nothing — the diagnosis I would have published was wrong.
+
+The claim is under adversarial review rather than accepted, since it is the implementer's word against
+my measurement and both of us have now been wrong once.
+
+### Four more corrections the implementer made to my brief
+
+1. **"No row exceeds `$chat->cols()`" is unachievable at cols=20 and always was.** Two pre-existing
+   deliberate exceptions: the `max(20, cols-6)` content floor makes the frame 26 wide at a 20-column
+   terminal, and the status bar is documented as the one line this renderer never truncates (narrowest
+   54 idle / 36 in flight, already pinned by `StatusBarSpendTest`). The test states both in its class
+   docblock and asserts the floor as a BOUND (26, against 180-406 unfixed) rather than exempting it.
+2. **Hazard 3 was inverted.** An unbalanced row does not bleed colour downward — the shell's border
+   closes every row with a reset — so dropping `balanceSgr()` shows up as continuation rows LOSING
+   their styling. The consequence is sharper than the correction: **a `SgrState::isDefault()` per-row
+   assertion is VACUOUS on this frame, passing with and without the rebalance**, and the implementer's
+   first version of that test was exactly that. It was replaced with one deriving the literal's SGR
+   sequence from its first row and requiring every continuation row to carry it. That is "tests pin the
+   PRESENCE of a clause and not its TRUTH" caught in the act, by the person writing it.
+3. **Hazards 1 and 2 do not arise; their unnamed twin does.** No `Mark::zone()` pair exists in the
+   string being fitted (every caller runs after `renderView()` assembles the body), and an image marker
+   row is never over-wide (`max(8, min(40, $width))` against a floor of 20) — so no marker-detection
+   predicate is needed at all, which is fortunate, because my own warning that "starts with U+E000"
+   would also match a zone sentinel was correct. What actually bit was `markToolCalls()`'s
+   `str_contains()` on the recorded label: cutting or wrapping a tool row **loses its click zone
+   silently** — the row looks right and simply stops responding. My four hazards would not have
+   surfaced it.
+4. **Half 1 does not earn its place on the invariant.** Once half 2 exists, dropping the width from
+   either Markdown site leaves the width invariant fully intact — M1/M2 survive any width-only
+   assertion. Half 1 buys wrap QUALITY: candy-shine hangs a list item's continuation under the item's
+   text, which a flat row fitter cannot do. My brief said "do not skip this half" because streaming
+   would leave the bug on screen; right about wanting it, wrong about why it holds.
+
+Every line number my brief cited, in both `sugar-crush` and `candy-shine`, checked out exactly. So the
+anchors were sound and the reasoning on top of them was not, which is the reverse of the usual failure
+here and worth noticing.
+
+### Golden-file fallout: none, and the absence is the finding
+
+With the src change alone and the new test file absent, the full suite came out **byte-identical to
+baseline** — 7387 / 76813 / 1, no snapshot changed, no assertion count moved. **Not one test among
+7,387 rendered assistant prose long enough to wrap at its fixture width.** That is the same shape as
+the gap that let the bug ship (no test measured row width against the terminal), and it is why the new
+file, not the src diff, is the real deliverable.
+
+### Deferred, recorded rather than smuggled in
+
+- A wide Markdown **table** now wraps into a mangled grid — all data kept, but box-drawing rows wrap so
+  border glyphs land mid-row. Wrap was chosen over truncation deliberately, since the complaint is lost
+  content and truncating a table drops whole columns silently. The real fix is a per-column width
+  budget, which belongs in candy-shine. Strictly better than before, where the tail was lost anyway.
+- **candy-shine's `withTableWrap(true)` cannot bound a table's width**: `candy-shine/src/Renderer.php:916-917`
+  wraps each CELL at the full `wrapWidth`, so a three-column table still renders roughly three times
+  the pane wide. The option reads as though it solves this. Not edited.
+- `renderPendingToolCall()` (`:2450`) has no width discipline of its own and now relies entirely on the
+  net at `:957`. Covered, so no longer a defect, but the one body producer with no bound of its own.
+
+### W1's review round: 11 surviving mutations against a self-reported 8-for-8
+
+**This is the round that justifies the rule.** The implementation agent ran 8 mutations, killed 8, and
+reported "eight for eight killed by the new file, zero by 42,841 pre-existing assertions" — accurate, and
+not coverage. An independent reviewer judged **29 mutations, killed 18, discarded 1 as an equivalent
+mutant, and left 11 SURVIVING**: MU2, MU4, MU8, MU11, MU12, MU18, MU21, MU25, MU26, MU28, MU29. Twenty-
+seventh consecutive round in which the reviewer found what the implementer's own score said was not
+there.
+
+Tree restored byte-exactly afterwards (`diff -q` identical, `git status` unchanged, config md5 intact,
+stash list still 9), verified by me.
+
+#### The two that matter
+
+**F1 (HIGH) — the bundle's headline invariant is provably FALSE for emoji clusters.** `fitToPane()`
+decides with `Width::of()` and fits with `Width::wrapAnsi()`, **and the two disagree**: `Width::of()`
+counts `👍🏽` as 4 cells and `wrapAnsi()` as 2; `wrapAnsi()` counts a regional-indicator codepoint as 0
+where `Width::of()` counts the pair as 2. Nothing re-measures the wrapped pieces, so an over-wide row is
+emitted anyway — end to end, `flags x40 at cols=40 → widest 74 (OVER by 9 rows)` and
+`skin tone x80 at cols=100 → widest 194`. The fixture set never saw it because `contentClasses()['emoji']`
+uses only plain 2-cell emoji (`🎉🚀✨`). **A test suite of 7,370 assertions asserting a bound that is
+false, because its fixtures were all drawn from the easy case.** Root cause is a candy-core disagreement
+— filed **E46**, defended locally.
+
+**F3 (MEDIUM-HIGH) — a regression this bundle introduced.** `balanceSgr()` is applied only to pieces
+`fitToPane()` produced. Half 1 turned candy-shine's paragraph wrap ON, so most wrapping now happens
+*inside candy-shine* and arrives as rows that already fit — taking the byte-identical fast path and
+never being balanced. Measured at cols=60, `\x1b[1m` opens on one row and never closes: the border glyph
+inherits bold and the continuation row renders plain. Pre-W1 the clause was on one row and balanced. The
+test that names this exact defect passes because it uses a fenced code block — the other path. **A test
+named after the property, exercising the one route where the property already held.**
+
+#### The rest
+
+**F2 (HIGH, test-only)** — the byte-identity fast path is load-bearing for image markers and completely
+unasserted. `markerBlock()` rows are sized `max(8, min(IMAGE_COLS=40, $width))`, so **for every terminal
+at `cols <= 46` the marker row is exactly `$contentWidth`, sitting on the `<=` boundary**, and
+`wrapAnsi()` `rtrim()`s. Four independent single-token mutations each corrupt the marker block and **all
+four leave 125 tests / 7370 assertions green**, because the only test that puts a marker on screen runs
+solely at cols=100, where `min(40, 94) = 40` and the boundary is never reached.
+
+**F4 (MEDIUM)** — a wrapped OSC 8 hyperlink leaves the link open, so every later cell joins it in
+iTerm2/WezTerm/VTE/Kitty. Newly reachable: pre-W1 the label never wrapped. Fixed locally; general fix
+filed **E50**.
+
+**F5 (MEDIUM)** — `isToolCallRow()` *does* disagree with `markToolCalls()`, and the docblock said it
+"cannot". Not via model text (candy-shine escapes raw ESC, so the styled head is unforgeable — the
+reviewer checked and cleared that route) but **via the zone registry**: with clicks disabled, or a
+model-supplied id failing `ZONE_ID_CHARSET`, the registry is empty, so the row is wrapped instead of
+truncated — producing the lookalike second row the narrow-terminal test documents as unacceptable.
+
+**F6 (MEDIUM)** — the test's status-bar exemption `array_pop()`s by POSITION, and with the palette open
+at `rows <= ~12` the last row is a composited overlay, not the bar. Also: **no test among the 125 drives
+an overlay at all**, and the overlay path is over-wide (`cols=40 → widest 56`). Pre-existing; filed
+**E47**.
+
+**F7 (MEDIUM, coverage)** — the addendum's suspicion, half right. The code is CORRECT:
+`$maxScrollOffset` is computed from `$contentLines` after `fitToPane()`, both extremes reachable. But
+**nothing asserts it** — MU18 makes the oldest three rendered rows permanently unreachable and survives,
+because the scroll test only asserts `maxScrollOffset() > 0` and offsets 1 and 3. I asked for this one
+specifically and it was worth asking.
+
+**F8 (LOW)** — every geometry assertion is `assertLessThanOrEqual`, so **only the upper bound is
+asserted and the pane width is never asserted to be USED.** Five mutations survive on that alone; a fix
+that wrapped at half the pane width would pass. Also establishes that the `max(20, …)` floor's value is
+load-bearing (it must be ≥ 8 to keep the image arithmetic sound) and unpinned.
+
+**F9 (LOW)** — MU8 (drop `balanceSgr()`'s trailing reset) survives, and the test's own docblock concedes
+the border already closes every row. **Decision: keep the clause**, same reasoning as C3's unreachable
+fail-closed arm — but resolve the docblock rather than leaving it implying coverage MU8 proves absent.
+
+**F10 (LOW, pre-existing)** — `rows=1` yields a 2-row frame; the class docblock claimed the height
+invariant unconditionally while sweeping only 8/20/40. Filed **E48**.
+
+#### Claims checked, including mine
+
+- **My soft-wrap diagnosis: the implementer's correction HOLDS.** `ChatPane.php:129` `->width($width)`,
+  candy-sprinkles `Style.php:1000-1004` `Width::truncateAnsi`, `Tui/Renderer.php:394` `clipWidth`. And
+  usefully: `ChatPane.php:112` routes through `LiveRenderer::renderView($a->chat->withSize(...))`, so
+  W1's fix does apply on the hosted path. My diagnosis was wrong and the fix location was right.
+- **The highest-severity hazard I named does not arise.** No sentinel pairs exist in the fitted string —
+  established by instrumenting `fitToPane()` and dumping the block on a frame carrying a fence, a tool
+  row, an image and an open palette: `OPEN=1 CLOSE=0 wellformedPairs=0`, the single U+E000 being the
+  image marker. Both the implementer and the reviewer reached that independently.
+- **Out-of-scope 1 was overstated by the implementer and I repeated it.** The wide-table trade is NOT
+  "strictly better": at cols=100 the header loses its right `│`, the separator is cut mid-run, and the
+  195-column border rows wrap into several rows of dashes. Better on the reported axis, visually worse.
+  A trade. Corrected in **E49**, which also records that `withTableWrap(true)` cannot bound a table's
+  width at all (cells wrap to 67/49/56/23 while borders stay 195).
+
+**Categories the reviewer established as clean, with the probes named** so "nothing found" is
+distinguishable from "nothing tried": sentinel-pair splitting · cluster DELETION by `wrapAnsi` (five
+cluster classes × three widths, all byte-identical round-trip — clusters are split, never dropped) ·
+`mb_substr`/`mb_strlen` in width arithmetic (zero hits in `src/`) · scroll-window arithmetic · and
+model-forged tool-row prefixes.
+
+New backlog entries from this round: **E46** (candy-core `Width` disagreement), **E47** (overlay path has
+no width discipline), **E48** (2-row frame at `rows=1`), **E49** (candy-shine table borders unbounded),
+**E50** (`SgrState` tracks neither OSC 8 nor SGR 58). Backlog is now E1-E50.
+
+### W1 fix round A, and the verification that caught it: a mutation table can be wrong about its own mutations
+
+Round A closed all ten findings and moved the suite to **7574 / 87586 / 1, rc=0** (2m58s → 3m01s;
+balancing every row costs about 1.7% and nothing else). I verified that myself. `+425/-7` on
+`Renderer.php`, the test file 125 → 187 tests.
+
+**It also corrected the remedy that both my brief and the reviewer had prescribed for F1, and it was
+right to.** We both said: when a wrapped piece still overflows, fall back to `Width::truncateAnsi()`.
+**That does nothing** — `truncateAnsi` uses the *same* `nextCluster()` scanner as `wrapAnsi`, so
+`Width::of(truncateAnsi(flags×10, 10))` is still 20. The actual root cause is that `Width::of()` wants
+`grapheme_str_split()`, **which does not exist on PHP 8.3** (it is 8.4+), so it falls back to
+one-codepoint-per-cluster while the scanner clusters properly. I verified that on this machine directly:
+`extension_loaded('intl')` **true**, `function_exists('grapheme_str_split')` **false**, PHP 8.3.6. Flags
+under-count in the scanner; skin tones over-count in `of()`. E46 is corrected accordingly.
+
+Round A's fix is a `wrapToPane()` that wraps, **measures with `Width::of()`**, and re-asks for a
+narrower wrap while it still overflows — bounded, target strictly decreasing, `WRAP_RETRY_MAX = 8` —
+with a `hardFit()` truncate loop measured by the same instrument as the backstop. Measured:
+`flags x40 @ cols=40: widest 74 → 40`, `skin tone x80 @ cols=100: 194 → 98`, and the retry means the
+bound costs no content (60 flags in → 60 rendered; 80 thumbs in → 80 rendered).
+
+#### THE VERIFICATION THAT MATTERED, and it is the same defect again
+
+Round A reported **"all eleven named mutations now die"** — and disclosed, unprompted, that **five of the
+eleven definitions were its own reconstructions**, because the reviewer's harness took them as argv and
+never recorded them. That disclosure is the only reason the gap was cheap to find.
+
+I compared the reconstructions against the reviewer's finding table. **Four of the five were different
+mutations entirely** — round A's MU11 was "renderHistory wrapWidth halved" where the reviewer's MU11 is
+"`$labelRoom` loses its `- 1`". So I ran the reviewer's real definitions myself, each judged by `$?` on
+`PaneWidthInvariantTest.php` and `RendererTest.php`, restoring the file between runs:
+
+| the reviewer's ACTUAL definition | verdict |
+|---|---|
+| MU11 `:2296` drop the `- 1` from `$labelRoom` | **SURVIVED** |
+| MU12 `:2297` `max(1, $labelRoom)` → `max(0, …)` | **SURVIVED** |
+| MU25 fast path `$out[] = $row;` → `$out[] = Width::truncateAnsi($row, $width);` | **SURVIVED** |
+| MU29 `:2296` drop `- Width::of($status)` | **SURVIVED** |
+| MU28 `:2495` `max(8, min(IMAGE_COLS, $width))` → `max(8, IMAGE_COLS)` | KILLED |
+
+**"All eleven die" was true of round A's reconstructions and false of the reviewer's mutations.** A claim
+that travelled without its domain — here the domain being *which edit the name denotes* — in a report
+whose entire purpose was to certify that the mutations were dead. Twenty-eighth round.
+
+**And the reason those four resist is itself worth recording, because it is not laziness.** All of
+MU11/MU12/MU29 sit on the tool-label bound, and **round A's own `hardFit()` is what made them unkillable
+by any width assertion**: an over-wide tool row is now truncated at the fitter regardless of what
+`$labelRoom` computed, so the width invariant holds with the arithmetic wrong. A fix can make its
+neighbours' tests vacuous. The property left to pin is not the width but what the bound is FOR — that
+the row arrives already fitting, status word and click zone intact, so `hardFit()` never fires.
+
+Fix round B is briefed with the exact edits and that diagnosis.
+
+### W1 fix round B, and W1 COMMITTED as `47ee2c86`
+
+Round B closed all four surviving mutations, and its `src/Renderer.php` change was **comment-only** —
+verified independently: `diff` against the pre-round file has 34 changed lines and **0** that are not a
+comment. The kills came entirely from three new tests. That is the right shape for a round whose finding
+was "the code is correct and nothing observes it".
+
+**I re-ran all four myself, with my own edits, before believing any of it:**
+
+| the reviewer's definition | before | after |
+|---|---|---|
+| MU11 drop the `- 1` from `$labelRoom` | SURVIVED | **KILLED** |
+| MU12 `max(1, $labelRoom)` → `max(0, …)` | SURVIVED | **KILLED** |
+| MU25 fast path `$out[] = $row;` → `$out[] = Width::truncateAnsi($row, $width);` | SURVIVED | **KILLED** |
+| MU29 drop `- Width::of($status)` from `$labelRoom` | SURVIVED | **KILLED** |
+
+Tree restored byte-identical after each. Final suite, my own run: **7577 / 87648 / 1, rc=0, 3m01.280s.**
+`check-path-repos --no-lib-path-repos` rc=0, config md5 `05480c74…` unchanged, stash list still 9.
+
+#### The three `$labelRoom` kills are a lesson about safety nets, not about effort
+
+Round B did not attack them with a width bound, because the brief established they cannot be killed that
+way: `hardFit()` truncates an over-wide tool row regardless of the arithmetic. Instead it drove
+`renderToolResults()` directly and observed the row **before** `fitToPane()` — the only place the bound
+is observable at all. Measured, with a name longer than any budget:
+
+                  w=26  w=40  w=94      (prefix 9 cells, "⊘ interrupted" 13)
+    pristine        26    40    94      row == width exactly, status word whole
+    MU11 (-1)       27    41    95      one cell over → hardFit shaves the status word's last cell
+    MU29 (-status)  39    53   107      13 cells over → hardFit eats "⊘ interrupted" whole
+
+and it asserts the **exact predicted row** (`prefix . mb_substr($name, 0, $labelRoom) . ' ' . $status`)
+rather than a bound. MU12's reachable range was **derived, not guessed**:
+`Width::of(TOOL_ROW_PREFIX) + Width::of($status) + 1 = 23` is where the bound runs out, and
+`renderView()`'s content floor is `max(20, cols-6)`, so the clamped reachable range is exactly widths
+**20-23** — where `max(0, …)` renders the row **one cell NARROWER**, which is precisely why every
+`assertLessThanOrEqual` in the file missed it.
+
+#### MU25 found a THIRD accounting disagreement in candy-core, and it is not about clusters
+
+The observable composition exists: `Width::of()` measures `Ansi::strip($row)`, and `strip()` consumes a
+two-byte escape whose second byte is an ECMA-48 Fe final (0x40-0x5f: `ESC \`, `ESC P`, `ESC M`) as
+**zero** cells, while `truncateAnsi()`'s scanner passes through `ESC [` and `ESC ]` only and reads that
+second byte as **one visible** cell. Measured on `"a" + ESC + "\"` × 10:
+
+    Width::of($row)                = 10   → the fast path accepts the row
+    Width::truncateAnsi($row, 10)  →  5 cells, 15 of 30 bytes
+    fitToPane($row, 10) pristine   → byte-identical;  under MU25 → half the row deleted
+
+So the mutant deletes visible cells from a row that already fit, on the one branch whose contract is to
+touch nothing. **Unlike the flag/skin-tone disagreements, this one survives PHP 8.4's
+`grapheme_str_split()`** — it is not a cluster problem. Filed as a third instance under E46.
+
+Round B also swept reachability honestly and reported the inconvenient answer: **no path delivers such a
+row today** — assistant prose, a fenced block, inline code, a user message and a diff body each carrying
+twelve `ESC \` pairs all produce a frame with zero of them. So the test pins the branch where the
+decision is made rather than claiming an end-to-end repro, and both the measurement and the
+non-reachability are written into the docblock. That is the honest version of "we fixed it": the claim is
+now observable somewhere, and where it is not reachable is stated.
+
+#### What W1 cost, and what it bought
+
+Four rounds — implement, review, fix A, fix B. Entry 7387 / 76813 / 1; exit **7577 / 87648 / 1**. The src
+diff is +457/-7 in one file; the test file is 187 tests / 10,773 assertions. Twelve of twelve mutations
+dead, every one re-verified by me rather than accepted from a report — and that re-verification is what
+caught round A's four false kills.
+
+**Three separate "it's dead" reports in one bundle were wrong.** 8/8 became 11 survivors under review;
+"all 11 dead" became 4 alive under my own re-run. The gate that caught each was the *next* gate, never
+self-assessment. This is now written into the resume file as a standing rule, together with the practical
+half: **a mutation name is not a definition — write the exact edit.**
+
+---
+
+## Session state at the user's `/compact` request, 2026-08-19
+
+**Last CODE commit: `47ee2c86`** (bundle W1). Supervisor-verified **7577 / 87648 / 1, exit 0** against
+LOCAL sibling symlinks; `check-path-repos --no-lib-path-repos` rc=0; `.sugar-crush/config.json` md5
+`05480c743aff302fd6c06c5a4a4c2210`; `git stash list` 9 entries; `vendor/sugarcraft/` holds 16 symlinks.
+
+**Bundle W2 is IN FLIGHT** — implementation round running, nothing committed. Its two briefs
+(`w2-brief.md`, `w2-measured.md`) are self-contained; re-spawn against them if the round is lost.
+
+**Counted state: 47 of 75 plan items, 28 left.** W1 and W2 are user-reported bugs, NOT plan items — do
+not add them to the count, and do not sum the plan against the E1-E50 backlog. They are different series.
+
+**The user has asked for a workflow to finish the remaining plan**, and its design, bundle order and the
+non-negotiables every agent must be handed are recorded in `crush_code_RESUME.md` under "🤖 THE
+WORKFLOW". The one honest compromise is written down there too: until now the supervisor ran the full
+suite personally at every gate, and that is precisely what caught four false mutation kills in W1. A
+workflow cannot do that, so it carries a dedicated re-verify agent instead — a weaker substitute, and the
+resume file says so plainly. **After each workflow run, re-run the suite personally before trusting its
+commits.**
+
+### What this session actually established, beyond the two bundles
+
+Three things worth carrying forward that are not in any diff:
+
+1. **A number or a claim must never travel without its domain** — twenty-eight rounds running, and this
+   session produced four fresh instances, three of them mine: a 204-column measurement taken against
+   standalone `Chat::view()` and written next to the hosted path; "all eleven mutations dead" true of
+   reconstructions and false of the mutations; a `#88` note that would have destroyed a deliberate
+   historical citation; and a C4 brief asserting the menu bar *cannot* list file commands when the route
+   already exists.
+2. **A fix can make its neighbours' tests vacuous.** W1's `hardFit()` safety net made three `$labelRoom`
+   mutations unkillable by every width assertion in a 10,000-assertion file. When a bundle adds a net,
+   re-ask what the older assertions still prove.
+3. **The user was right and I overrode them.** They wrote "not wrapped but cut off". Cut off IS
+   truncation, and that was the mechanism; I replaced an accurate description with a soft-wrap theory and
+   carried it into a brief as ground truth. Read the report as evidence, not as a symptom to reinterpret.

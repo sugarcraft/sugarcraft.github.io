@@ -72,7 +72,7 @@ unless you cannot proceed further without a decision from me or i told you to pa
 - Never commit a per-lib `composer.lock`; no `repositories[]` in a lib manifest.
   Verify with `php tools/check-path-repos.php --no-lib-path-repos` (must exit 0).
 
-## 5. THE recurring defect — twenty-four rounds running
+## 5. THE recurring defect — twenty-six rounds running
 
 **A number or a claim must never travel without its domain.** A count, width, limit,
 or behavioural claim that is true of one thing, written next to a different thing.
@@ -269,65 +269,648 @@ already done and one names a class that does not exist:**
 what is complete, and §11 below for what is next. Verify the suite yourself before
 believing any number written anywhere.
 
-**CURRENT STATE, 2026-08-19.** Last CODE commit is **`7ed551b6`** (bundle E33, the reminder
-pile-up), supervisor-verified at 7285 / 76294 / 1, exit 0. Bundle C1 is `6bc5218b`
-(7276/76239/1). **Phase 5 is complete. Phase 2 items 1, 3, 5, 6 and 8 are complete** — 3 and 5
-needed no code and the plan's premise about both was measured false (see §9).
+**CURRENT STATE, 2026-08-19.** Last CODE commit is **`47ee2c86`** (bundle W1, the user's live render
+bug — long replies wrap instead of being cut, and pane width is now an invariant). Before it,
+**`3b0ba8fe`** (bundle C3, MCP tools behind a trust gate). Supervisor-verified **7577 / 87648 / 1,
+exit 0** against LOCAL sibling symlinks. **A 2-skip run means you are not testing the monorepo** — see
+the vendor section below.
 
-## ⚠️ BUNDLE C3 IS IN THE WORKING TREE, UNCOMMITTED, AND MUST NOT SHIP AS-IS
+**Bundle W2 is IN FLIGHT** (input blocked while a turn runs, user-reported). Nothing of it is
+committed.
 
-**Phase 2 item 2 (MCP) is implemented and reviewed but NOT committed**, and it carries a HIGH
-SECURITY defect the review found. Do not commit it until fix round A lands.
+**Phase 2 items 1, 2, 3, 5, 6, 8 complete. Phases 0, 1 complete. PHASE 5 IS COMPLETE** —
+item 10b was measured 2026-08-19 and found already done by Bundle A (`bf3495f5`); see
+"BUNDLE B4 NEEDED NO CODE" below before re-planning it.
+**48 of 75 plan items, 27 left.** See the `#N`-tracker section below before answering any question
+about totals — the answer is not the sum of the series.
 
-State: implementation done, adversarial review done (17 findings, 5 surviving mutations), **fix
-round A brief WRITTEN AND READY BUT NOT LAUNCHED** at
-`/tmp/claude-1000/-home-sites-sugarcraft/ee99e40f-1cef-4bc4-8c0a-90ae8bc11daf/scratchpad/c3-fixA.md`
-— it is self-contained, so re-spawn against it. Suite on the uncommitted tree, verified by me:
-**7321 / 76412 / 1, exit 0**; `src/` is **276** files (one new: `src/Tools/McpToolBridge.php`).
+## BUNDLE W1 IS COMMITTED — `47ee2c86`. The user's live render bug is fixed.
 
-**THE SECURITY DEFECT.** `.mcp.json` executes arbitrary repository-supplied commands **at launch,
-in every permission mode including `plan`**, with no trust check and no user-visible output.
-Measured: a payload that is not even a valid MCP server (`initialize` fails, server discarded,
-`tools=10`) still ran its command. **Starting IS the execution.** `README.md:441` already
-documents this exact threat model for `.sugar-crush/hooks.yaml` — off by default, "No permission
-mode protects you from it (`plan` included)", grant only via the user's own
-`~/.sugar-crush/config.json` under `trustedProjectHooks`. C3 introduced a second instance of the
-hole this project already closed.
+**A user bug report that jumps the audit queue**, because frame corruption counts as functionality
+under §3. Reported while daily-driving: long assistant lines "not wrapped but cut off", then a blank
+line, then unrelated content.
 
-Fix round A gates it behind a **NEW sibling key `trustedProjectMcp`** — new rather than reusing
-`trustedProjectHooks`, because reusing it would retroactively grant MCP execution to every root a
-user already trusted for hooks, which is a silent widening of a security grant.
+**Four rounds: implement → review → fix A → fix B, then commit.** Supervisor-verified at every
+gate. Final: **`Tests: 7577, Assertions: 87648, Skipped: 1`, rc=0, 3m01s** (entry baseline was
+7387 / 76813 / 1). `Renderer.php` +457/-7 plus `tests/Renderer/PaneWidthInvariantTest.php` (187 tests,
+10,773 assertions). Full round-by-round detail is in the worklog.
 
-**NOT deferred under the security-later rule.** That rule covers PRE-EXISTING issues; this one is
-introduced by the bundle in flight, the mechanism to fix it already exists, and shipping it would
-make daily-driving actively dangerous.
+**Twelve of twelve mutations killed, each RE-VERIFIED BY ME with my own edits** — which is the whole
+reason this bundle is trustworthy, see the next section.
 
-**Fix round A** (brief ready): findings 1 (trust gate), 2 (every bridge call routes to the FIRST
-server advertising that tool name), 3 (a nested `properties: []` 400s the ENTIRE request), 4 (a
-forked child that starts its own servers can never stop them), 5 (`stop()` kills the `sh -c`
-wrapper, not the server — fix by using `proc_open()`'s ARRAY form), 8 (memo key is the raw
-spelling, so four spellings of one root gave four clients and eight processes), 9 (the launch hang
-— and a read timeout is NOT sufficient, see below), the four surviving mutations, and deleting one
-dead branch.
+**MY DIAGNOSIS WAS WRONG ABOUT THE MECHANISM — now CONFIRMED wrong by the review round.** I wrote
+that the terminal soft-wraps the over-wide row and candy-core's absolute `cursorTo()` paints later
+rows at stale coordinates. The implementer reports the hosted path never emits an over-wide row at
+all: `ChatPane.php` wraps the body in `Style::new()->width($width)` and candy-sprinkles' `width()`
+TRUNCATES (`candy-sprinkles/src/Style.php:1000-1004`, `Width::truncateAnsi`), with
+`Tui/Renderer.php:394` clipping the composed frame. My 204-column measurement was real but taken
+against standalone `Chat::view()` — a number written next to the wrong domain, §5 again, in the brief
+whose whole job was ground truth. **The user's own words were "cut off", which IS truncation; I
+replaced an accurate description with a theory.** The fix is the same either way, which is the only
+reason it cost nothing.
 
-**Fix round B** (brief NOT yet written): findings 6 ("gated exactly as `Bash`" is false in `plan`,
-the one mode the headline test uses — `evaluatePlan()` allows `Bash` and denies any `mcp__`), 7
-("a broken config is reported on stderr" is true for ONE of five broken shapes), 10, 11
-(non-array `required` silently discarded), 12 (`isError` strict `=== true` reads `"true"`/`1` as
-success), 13 (empty `content[]` reads as success with no output), 14 (the `DYNAMIC_TOOL_CLASSES`
-exemption's discipline is prose only — the deliberate one-line case is unguarded). Backlog
-E40/E41/E42 already carry findings 16, 17 and the rest.
+**The absence that let it ship: no test among 7,387 measured row width against the terminal.** Proven,
+not asserted — with the src change alone and the new file absent, the suite came out byte-identical to
+baseline. Not one test rendered prose long enough to wrap at its fixture width.
 
-**The launch hang needs a WALL-CLOCK DEADLINE, not a read timeout.** `start()` makes TWO unbounded
-reads, and `readResponse()` is `while (true) { … if isNotification() continue; }` — a server
-emitting valid JSON-RPC notifications forever starves it while every individual `fgets()` returns
-promptly (`timeout 20 php probe.php -> rc=124`). Three categories, not two: dead, slow, and
-**live-chatty-never-answering**.
+## ⚠️ THE LESSON FROM W1 THAT MUST SURVIVE INTO EVERY LATER BUNDLE
 
-**MEASURE YOUR OWN INVARIANTS FROM THE REPO ROOT WITH ABSOLUTE PATHS.** I got this wrong once:
-after `cd sugar-crush`, `md5sum .sugar-crush/config.json` reads a DIFFERENT, untracked file
-(`dfbee969ef3987bc183247d97bfdf73c`) and `check-path-repos` exits 1 purely because `tools/` is
-not on that path. The invariant is `/home/sites/sugarcraft/.sugar-crush/config.json`.
+**Re-verify an agent's mutation table yourself, with your own edits, before believing a bundle.**
+
+W1's chain produced three false "it's dead" reports, each caught only by the next gate:
+
+1. The implementation round reported **8 mutations, 8 killed**. An independent reviewer ran 29 and left
+   **11 surviving**, including that the bundle's headline invariant was provably FALSE for emoji
+   clusters.
+2. Fix round A reported **all 11 now dead** — and disclosed, unprompted, that **5 of the 11 definitions
+   were its own reconstructions** because the reviewer's harness took them as argv and never wrote them
+   down. Comparing against the reviewer's table, **4 of those 5 were different mutations entirely.** I
+   applied the reviewer's real definitions myself: **MU11, MU12, MU25, MU29 all still SURVIVED.**
+3. Fix round B closed all four. I re-ran all four myself with my own edits before committing.
+
+**And the reason those four resisted is the transferable insight:** all three `$labelRoom` mutations
+were unkillable by ANY width assertion **by construction**, because fix round A's own `hardFit()`
+truncates an over-wide tool row regardless of what the label arithmetic computed. **A fix can make its
+neighbours' tests vacuous.** When a bundle adds a safety net, re-ask what the older assertions still
+prove — often the answer is "nothing they used to".
+
+Practical rule now in force: **write mutation definitions as the exact edit, verbatim, in the report.**
+"MU11" is not a definition. `$labelRoom = … - Width::of($status) - 1;` → drop the `- 1` is.
+
+## ✅ BUNDLE W2 IS COMMITTED — `a8d8ec75`. Input works mid-turn and Enter queues.
+
+**Suite verified by me personally, not taken from the agent's report: 7602 / 88074 / 1, exit 0**
+(entry baseline 7577 / 87648 / 1). 29 mutations defined as verbatim edits, all 29 killed by the new
+`tests/Chat/InFlightInputQueueTest.php` (25 tests, 390 assertions). Invariants re-checked at the
+gate: config md5 unchanged, stash list 9, 16 vendor symlinks so the skip count stayed 1,
+`phpunit.xml` untouched, `check-path-repos --no-lib-path-repos` rc=0.
+
+**The measured finding that shrank the bundle:** the async half was already done, so the user's
+framing ("it shoudl be doing these requests asynchronously") was the one thing measurement
+contradicted — nothing was blocking. It was one policy `return` plus a hidden caret.
+
+**Six existing tests changed, and every one had pinned the OLD policy** —
+`testKeystrokesIgnoredWhileInFlight` became `testTypingReachesTheDraftWhileATurnIsInFlight`: same
+property, opposite value. That is the category to scrutinise hardest in any review, and it is why the
+review brief pointed at those six diffs by name.
+
+**Two drain decisions worth remembering:** the double-Escape cancel deliberately HOLDS the queue
+(not dispatched, since it may be what the user was stopping; not dropped), and a spend-cap-refused
+prompt goes back at the queue HEAD because `spendCapTurnRefusal()` keeps the draft and writes no
+echo, so it would otherwise vanish with the restored draft.
+
+## ✅ BUNDLE W5 IS COMMITTED — `f8fd9cfa`. Three commands no longer kill the app.
+
+**A USER-REPORTED FATAL, and the most severe report so far.** A bare `/websearch` printed its usage
+line and then died: *"Argument #1 ($msg) must be of type SugarCraft\Core\Msg, int given"*.
+
+Three sites — `/share`, `/websearch`, `/agents` — ended their failure branch with
+`return [$this, static fn() => print $output];`. **`print` is an EXPRESSION evaluating to `int 1`**,
+so the closure is a `Cmd` returning an int; `Program::scheduleCmd()` dispatches whatever non-null a
+Cmd returns and `dispatch()` requires a `Msg`. Any non-zero exit from those three took the app down,
+and `/agents` is one Ctrl+A away.
+
+Writing to stdout was the wrong shape even before the TypeError — the screen belongs to candy-core's
+frame renderer. The `/agents` site's own comment said "output error but don't add to history", which
+is why the failure had nowhere to appear. All three now route through one
+`commandFailureResponse()`: the command is echoed, the output lands as **`Role::System`** (not
+assistant — history is replayed to the provider, so a failure notice filed as a model turn becomes
+something the model believes it said), and the Cmd is null.
+
+**Why nothing caught it, which is the transferable part:** the suite covered these three commands
+only on their SUCCESS paths, where the Cmd is null. The failure branch was the one line of each
+handler no test entered — and it is the line that runs when a user gets an argument wrong, the
+ordinary case rather than the exotic one. **Worse, one test pinned the bug AS the feature:**
+`ChatTest::testPaletteEnterOnShareSessionDispatchesRealHandlerAndCloses` asserted
+`assertNotNull($cmd)` and its comment named "the print-closure path" as its proof that dispatch
+reached the real handler. Its claim was right and was kept; the evidence it cited was the crash.
+
+**Proven against the unfixed code rather than asserted:** with the three call sites reverted, 6 of
+the 7 new tests fail. That exercise also caught a vacuous pass in my own new test —
+`testTheFailureNoticeIsNeverAnAssistantTurn` indexed `$added[1]` without counting first, so against
+the unfixed build (which appended nothing) it compared a role against an undefined key and passed
+with a warning. Suite: **7609 / 88105 / 1, exit 0.**
+
+## ⚠️ BUNDLE W4 IS QUEUED — Tab does not complete a partial `/command`. USER-REPORTED.
+
+Reported: Tab *"should expand your typed command to the full command currently highlighted .. currntly
+it switches your active other window (like between skills/tools/agents/etc) which is fine normally but
+when typing a /command and its showing matching command results the bhavior should chang"*.
+
+**Measured as a PRECEDENCE problem, not a missing feature.** Bare Tab never reaches `Chat`:
+`src/Tui/KeyboardHandler.php:174` claims it **unconditionally** inside the shell's "does the shell own
+this key" predicate and cycles panes. `Chat` has no bare-Tab arm at all — its three `KeyType::Tab`
+hits are a comment at 1343 and two Ctrl+Tab arms (1475, 4787) — so bare Tab falls to the match
+default and leaves the buffer alone. The slash-menu state is already public
+(`slashMenuMatches()`/`slashMenuMatchResults()`/`slashMenuIndex()`, ~8290-8343) and "the popup is
+showing" is exactly `slashMenuMatches() !== []`.
+
+**The idiom to follow already exists two lines below the Tab claim:** the `Escape` arm is conditional
+on `$app->pane !== Pane::Chat`, and `shellOwnsKeyboard($app)` above it is the established
+modal-owns-the-keyboard predicate. So a conditional Tab claim is the existing pattern.
+
+**The test that matters** drives a real keystroke sequence through the shell — type `/comp`, then bare
+Tab — because a test that calls Chat's Tab arm directly cannot see the precedence bug and would pass
+on the broken build. The negative must be pinned too: with no slash menu open, bare Tab must still
+cycle panes, which is the behaviour the user called "fine normally". And no keystroke may put a
+literal `\t` in the buffer (`KeyHelpTest`'s byte map, asserted both ways).
+
+## ⚠️ THE ORIGINAL W2 BRIEF (kept for its measurements)
+
+**Second live bug report, same priority class as W1.** Verbatim: *"when i send a chat message and its
+processing the request im unable to type new text into the chat . im alaso unable to use things like
+Ctrl-P to bring up the command pallete … new messages should be typable and sendable (well really
+queued for processing if its mid processing the previous message) during that time"*, then *"it shoudl
+be doing these requests asynchronously anyways it shouldnt be blocking"*.
+
+**Full measured brief: `/tmp/…/scratchpad/w2-measured.md` (128 lines).** The headline, because it
+decides the size of the bundle: **the async half is already done.**
+`Chat::scheduleBackendCompletion()` (`:5231`) returns `Cmd::promise(fn() => $backend->completeAsync(…))`
+and `completeAsync()` forks a child. Driven proof the loop delivers keystrokes mid-turn: with
+`inFlight: true`, an `Escape` KeyMsg mutates state (`lastEscapeAt` null → set).
+
+**The defect is one policy return: `src/Chat.php:1141-1146`,** `if ($this->inFlight) { return [$this,
+null]; }` — a blanket swallow, so everything lexically below it is dead for the whole turn. Measured
+`inFlight` vs idle for the same KeyMsg: `Char 'x'` leaves `inputBuf` empty vs `'x'`; `Ctrl+P` leaves
+`palette` null vs OPEN.
+
+**Do not just delete the swallow** — its stated reason ("the user racing ahead and queuing another turn
+into a half-formed history") is real. Split it: keys reach the input box and the overlays, and **Enter
+enqueues instead of dispatching**.
+
+Two constraints from the brief: `dispatchTurn()` (`:4502`) has exactly two callers and its docblock
+warns a third copy is where the generation, cancellation token, checkpoint or title Cmd goes missing —
+**the drain must call it**; and `scheduleParkedCompaction()` (`:6287`) already implements "hold a
+submission, dispatch later" for the 85% tier, so reuse that shape rather than inventing queue state.
+
+**The census trap:** `grep "'inFlight' => false" src/Chat.php` gives 26 — but 4 are comment prose and
+one (`:4586`) is a serialized checkpoint payload, not a state transition. **21 are real writes**, and a
+queue draining at only one strands the user's message. One of the two that settle a real turn is the
+CANCEL path, where draining would send a message the user just tried to stop.
+
+**Two more seams I measured after writing that brief, both load-bearing:**
+
+1. **`Renderer.php`'s `$cursor = $chat->inFlight ? '' : '█';` HIDES the input cursor while a turn
+   runs.** So even with typing unblocked the box still looks dead — this is the second half of the
+   user's complaint and the feature is invisible without it. (Re-grep the line; `Renderer.php` was
+   rewritten by W1.)
+2. **The 21-site census collapses to ONE real drain point.** `finishToolCalls()` sets
+   `'inFlight' => true` (`:2333`), so a tool-calling turn keeps running and settles at a LATER
+   `AssistantMsg`. The only place an ordinary turn ends is `update()`'s AssistantMsg no-tool-calls exit
+   (`:905-910`), which returns a **null Cmd** — and that null is exactly where the drained turn's Cmd
+   goes. `:1106` is the cancel path and draining there is WRONG. The rest are command responses that
+   set and clear `inFlight` inside their own response; the ones needing an individual decision are the
+   compaction paths and `backgroundDispatch()`, because a PARKED submission deliberately holds
+   `inFlight` true with no turn running.
+
+**The subtle test this bundle can fail:** a queue that drains on any `AssistantMsg` fires MID-TURN on a
+tool-calling turn. `finishToolCalls()` keeping `inFlight` true is what makes that a live hazard.
+
+Brief: `/tmp/…/scratchpad/w2-brief.md` (184 lines) + `w2-measured.md` (128 lines), both self-contained.
+
+## ⚠️ BUNDLE W3 IS QUEUED — the shell chrome ignores the theme. USER-REPORTED.
+
+**Third live bug report, 2026-08-19, same priority class as W1/W2.** Reported as *"when showing the
+menus up top none of them have borderes making where the menu listing txt starts/ends difficult to
+tell at a glance ... (no the menu names the menu items list)"*, then corrected by the user a minute
+later: *"i stand corrrectd.. there are borderes.. just foreground matchs background color so invis"*.
+
+**The user's correction is the right diagnosis and it is sharper than the original report.** Do not
+implement the first version of this bug — there is nothing to add. Measured:
+`MenuBar::dropdownLines()` (`src/Tui/Components/MenuBar.php:431-440`) already draws a full box, and a
+probe of `renderDropdown()` with menu 1 open returns 12 rows, every one exactly 18 cells wide, with
+matched `┌─…─┐` / `│ … │` / `└─…─┘`. `Tui/Renderer.php:400` splices it in AFTER `clipWidth`/`clipTail`
+specifically so it cannot be trimmed. Nothing is missing and nothing is clipped.
+
+**The root cause is that `src/Tui/` is theme-blind, and it is the whole directory, not the menu.**
+
+| | measured |
+|---|---|
+| `src/Tui/` files with hardcoded `Color::hex('#…')` | **10** (~37 distinct colors) |
+| `src/Tui/` files that consult `Theme` | **0** — `SettingsPane`'s single `Theme` hit only *lists* theme names |
+| `src/Renderer.php`, the transcript | fully themed: `$theme->border`, `$theme->userLabel`, `$theme->systemLabel` |
+
+`MenuBar` does not import `Theme` at all (`grep -c Theme` → **0**) and hardcodes `#00ffaa` (active),
+`#fde68a` (title), `#6b7280` (border), `#e5e7eb` (item text), `#7d6e98` (inactive tab).
+
+**Why that produces "foreground matches background":** `Theme::adaptive()` DETECTS the terminal
+background — `TerminalBackground::isDark()` over an OSC 11 query plus `COLORFGBG` — and returns a dark
+or a light palette accordingly. So on a light terminal the transcript repaints for light and the shell
+chrome stays painted for dark: a mid-gray `#6b7280` border and near-white `#e5e7eb` item text, both of
+which disappear against a light background. The same applies to any `/theme` switch: it moves the
+transcript and leaves the shell behind.
+
+**A design constraint to settle BEFORE any agent starts editing, because there is no obviously right
+answer and inventing one silently is how this goes wrong:** `Theme` exposes only `name`, `markdown`,
+`border`, `userLabel`, `assistantLabel`, `systemLabel`. There is **no background token, no muted/dim
+token and no selected/accent token** — and the shell needs all three (the dim border, the `(empty)`
+and inactive-tab gray, the `#00ffaa` selected row). So this bundle must either add tokens to `Theme`
+(and then every `Theme` factory, `byName()`, `adaptive()`, `default()` and `pair()` must set them) or
+map the shell onto the four that exist and accept losing a distinction. **Measure which before
+choosing** — and whichever it is, the fix is not complete until a light-background run is driven, since
+that is the only configuration in which the reported symptom appears at all.
+
+**QUANTIFIED, and it moves the surface one step from where BOTH of us put it.** `Color::luminance()`
+is a proper WCAG relative luminance, so the contrast ratio against each palette's own background is
+computable. Measured for all five of `MenuBar`'s hardcoded colours:
+
+| hardcoded colour | role | on dark `#0e0e14` | on light `#fafafa` |
+|---|---|---|---|
+| `#00ffaa` | selected dropdown row | 14.55:1 | **1.27:1 — invisible** |
+| `#fde68a` | menu title | 15.45:1 | **1.19:1 — invisible** |
+| `#e5e7eb` | dropdown item text | 15.54:1 | **1.19:1 — invisible** |
+| `#6b7280` | dropdown border | 3.98:1 | 4.63:1 — visible |
+| `#7d6e98` | inactive pane tab | 4.17:1 | 4.42:1 — visible |
+
+**All five pass on dark; three of five are invisible on light — and the two that SURVIVE are the
+borders.** So the border glyphs are not the casualty: the item text, the titles and the selected-row
+highlight are. The user's first report ("where the menu listing txt starts/ends difficult to tell")
+described the text washing out, which makes a box with visible edges read as edgeless; the user's own
+correction then named the border, and the measurement says the border is fine. **Both readings had the
+mechanism right and the surface wrong, and only the ratio settles it.** Note the practical
+consequence, which is worse than cosmetic: at 1.27:1 the user cannot see which row Enter would run.
+
+**A coincidence worth naming, because it says where these colours came from:** `#6b7280` is exactly
+the LIGHT palette's `muted` and `#e5e7eb` is exactly its `border` — the light palette's own tokens,
+frozen into the wrong roles. These were eyeballed against one background and then rendered against
+whatever the terminal is.
+
+**This also confirms the detection half is working, which narrows the fix.** With the transcript
+themed and the shell not, a light terminal produces exactly one broken surface — the shell — which is
+what was reported. Had `TerminalBackground::isDark()` been wrong, the transcript would look wrong too.
+So do NOT go looking at the detector.
+
+**THE DESIGN QUESTION IS SETTLED, and cheaply — do not add new colours.** `Crush\Theme::pair()`
+(`src/Theme.php:115`) is the ONLY construction site of `Crush\Theme` in the entire codebase (one
+`new self(`), and it already receives a `SugarCraft\Sprinkles\Theme` carrying **13** tokens:
+`foreground`, `background`, `primary`, `secondary`, `accent`, `muted`, `error`, `warning`, `success`,
+`info`, `border`, `separator`, `cursor`. It projects **four** of them and discards nine. So the shell's
+missing background/muted/accent tokens **already exist upstream in both palettes** —
+`SprinklesTheme::dark()` and `::light()` — and widening `Crush\Theme` costs one constructor plus one
+`pair()` body, with correct light AND dark values for free. Inventing hex values, or mapping the shell
+onto the four existing fields and losing a distinction, are both the wrong answer now.
+
+**THE TEST MUST PIN CONTRAST, NOT PRESENCE — this is the whole point of the bundle.** A test asserting
+"`MenuBar` uses `$theme->border`" is the recurring defect in its purest form: it pins that a clause is
+present and says nothing about whether the result is legible, and it would pass against a theme whose
+border equals its background. Assert the RATIO: for every colour the shell paints, against the
+resolved background, in BOTH palettes, require ≥3:1 for chrome/glyphs and ≥4.5:1 for text. Written that
+way the assertion covers all ten `src/Tui/` files and every theme added later, and it would have
+failed on the build the user is running — the table above is that test's output.
+
+### W3 CORRECTED BY THE USER AGAIN — the contrast table above measures a background NOTHING PAINTS
+
+**The user reported using the `ansi` theme, where the menu border is invisible — and asked whether
+that contradicts the measurement. It does, and finding out why widened the bundle.**
+
+All six themes, each shell colour against **that theme's own background token**:
+
+| theme | bg token | selected `#00ffaa` | title `#fde68a` | item `#e5e7eb` | border `#6b7280` | inactive `#7d6e98` |
+|---|---|---|---|---|---|---|
+| dark | `#0e0e14` | 14.55 | 15.45 | 15.54 | 3.98 | 4.17 |
+| light | `#fafafa` | **1.27** | **1.19** | **1.19** | 4.63 | 4.42 |
+| dracula | `#282a36` | 10.77 | 11.43 | 11.50 | **2.95 FAILS** | 3.09 |
+| tokyoNight | `#1a1b26` | 12.93 | 13.72 | 13.80 | 3.54 | 3.71 |
+| ansi | `#000000` | 15.88 | 16.86 | 16.96 | 4.34 | 4.56 |
+| adaptive | — | resolves to the `dark` or the `light` row at runtime via `TerminalBackground::isDark()` | | | | |
+
+**Under `ansi` every shell colour PASSES against the token, and the user sees an invisible border. The
+table is wrong, not the user — and the reason is a discarded measurement.**
+
+`BackgroundColorMsg` (candy-core) carries the terminal's real background as `public readonly int $r`,
+`$g`, `$b` plus a `hex()`. `TerminalBackground::observe()` (`src/Tui/TerminalBackground.php:89`) does:
+
+    self::$observed = $msg->isDark();
+
+**The app sends an OSC 11 query, receives the terminal's true background RGB, and reduces it to one
+bit.** So no contrast decision anywhere in this app — including every number in the table above — is
+taken against the real background. Each theme substitutes its own ASSUMED background token, and
+`ansi`'s assumption is pure `#000000`. That assumption is what scores `#6b7280` at 4.34:1.
+
+**The corroborating number is dracula's row: `#6b7280` on `#282a36` is 2.95:1 and already fails.** A
+mid-dark terminal background — the ordinary case — puts that border under 3:1. The user's terminal is
+in that range, which is precisely the reported symptom, and no theme token describes it.
+
+**Consequence for the fix, and it is a prerequisite rather than a nicety:** the contrast assertion
+prescribed above must be evaluated against the RETAINED background, so `observe()` has to keep the RGB
+it is already handed (the `hex()` is right there) instead of collapsing to a bool. Without that the
+test validates the shell against `#000000`/`#0e0e14` fictions and passes on exactly the build the user
+is looking at. **Keep `isDark()` — the boolean has real callers and `adaptive()` needs it — and ADD the
+retained colour beside it.** This is a widening of a live seam, not a rewrite, and it is dormant-code
+wiring of the kind the standing directive protects: the RGB is already arriving.
+
+**A SECOND, INDEPENDENT DEFECT the user's theme choice uncovered.** `Color::ansi(8)` emits
+`\e[90m` — the palette entry the user's terminal actually controls — **only at `ColorProfile::Ansi`**.
+Measured emissions: `Ansi` → `\e[90m`; `Ansi256` → `\e[38;5;244m`; `TrueColor` →
+`\e[38;2;127;127;127m` (`toHex()` `#7f7f7f`). `ColorProfile::detect()` in this environment
+(`TERM=screen-256color`) returns **`Ansi256`**. So the `ansi` theme — whose entire purpose is deferring
+to the terminal's own 16 colours, and which `SprinklesTheme::ansi()` builds exclusively from
+`Color::ansi(0..8)` — is silently up-converted to absolute 256-cube values on any terminal that
+advertises more than 16 colours. **A user selecting `ansi` to make the app match their terminal does
+not get that**, which is why this user's theme choice could not rescue the hardcoded shell. Whether
+that belongs in W3 or in the ledger is an open call; it is a candy-core/profile-policy question, not a
+`src/Tui/` one, so it is probably a separate item — but it must not be lost, because it makes the one
+theme that would otherwise be immune to this whole bug class behave like the others.
+
+**Two lessons, both instances of the chain's dominant defect:**
+
+1. **I measured against the wrong background and reported ratios as if they described the screen.** The
+   domain of every number in the first table is "this theme's declared background token", not "the
+   user's terminal" — and the two differ by exactly the amount that makes the bug visible. §5, and it
+   is the third time this session that a number of mine travelled without its domain.
+2. **A test asserting contrast against a theme token would have inherited the same defect** and shipped
+   green. The prescription "pin the ratio, not the presence" was right and insufficient: pin the ratio
+   **against the retained real background**.
+
+**Ordering:** W3 goes after W2 (it touches `src/Tui/` and `src/Theme.php`, W2 owns `src/Chat.php` and
+`src/Renderer.php` — no file overlap, but the strictly-sequential rule is about suite runs, not files).
+It is a live-bug bundle, so it precedes the audit queue, and `#88` moves behind it for the same reason
+it moved behind W2: W3 will change the suite figure again.
+
+## ✅ BUNDLE B4 NEEDED NO CODE — Phase 5 item 10b was already done
+
+**Measured 2026-08-19 while the W2 agent was still running, read-only, off the files W2 owns.**
+Item 10b asks to differentiate the hardcoded `AgentDefinition` preset prompts, "currently generic
+one-liners that don't even mention the skills they're granted". They are not one-liners.
+`git show bf3495f5 -- src/Agents/AgentDefinition.php` shows the generic one-liners as the `-` side
+of the diff, and that commit's own message says **"Phase 5 items 1, 2, 3 and item 10's preset half."**
+
+Three errors in the plan's own tracking of this item, all in the same direction:
+
+1. **"10b (the preset prompts) untouched"** — written during Bundle B3, which closed 10a, asserting
+   an absence nobody re-measured after Bundle A had closed the other half. `crush_code.md:25` then
+   went further and called the earlier "Phase 5 is finished" note *wrong*; **the earlier note was
+   right and the correction was the error.** §5 in the item tracker rather than in a code comment.
+2. **"the five hardcoded presets"** — there are **six**. `fromType()` builds `coder`, `reviewer`,
+   `debugger`, `architect`, `tester`, `devops`.
+3. The parenthetical is now pinned in **both** directions, which is more than the item asked for:
+   `AgentDefinitionTest::testEveryPresetNamesEverySkillItIsGranted` (a granted skill the prompt
+   forgets) and `::testNoPresetPromptNamesASkillItIsNotGranted` (a prompt that tells a sub-agent to
+   consult a skill it was never handed). The second reads the skill universe off
+   `SkillLoader::loadBuiltInSkills()` instead of a literal list, so a skill added under
+   `src/Skills/BuiltIn/` is covered the moment it exists.
+
+**The transferable rule, and it is the workflow's step 1 for a reason:** a queue row is not evidence.
+This is the second time in this plan that "verify before writing" turned a bundle into a no-op — the
+other is Phase 6 item 1's `__DIR__` bug, flagged the same way in the bundle table. **Every bundle's
+measure step must re-derive the defect from the source, and a bundle whose defect has evaporated
+must be reported as closed rather than re-implemented.** An agent handed "differentiate the prompts"
+with no measure step would have rewritten six perfectly good prompts and called it progress.
+
+## 📏 C5 IS MEASURED — Phase 4 item 6, and one of its four parts is already done
+
+**Read-only inventory, 2026-08-19.** The item bundles four unrelated changes; they are not equally
+real.
+
+| part | measured state |
+|---|---|
+| subcommands `mcp list`, `session list`/`delete`, `models`, `doctor`, `completion bash\|zsh\|fish` | **absent.** `run` is the ONLY subcommand — `ArgvParser.php:140`, `if ($arg === 'run' && !$promptRequested)`, an alias for `-p` |
+| `--config <path>` | **absent** from the parser entirely; no `--config` token in `ArgvParser.php` |
+| a 0/1/2 exit-code convention | **ALREADY DONE**, and thoroughly — `bin/sugarcrush` documents 2 = "nothing was attempted and a retry cannot help" at five separate exits, with 1 reserved for "ran and failed" |
+| warn-not-silently-drop on unrecognised `--output-format` | **REAL DEFECT.** `NonInteractive.php:507` states it in its own docblock: *"Any value other than `self::FORMAT_JSON` falls back to plain text."* `--output-format xml` gets text, silently, exit 0 |
+
+So C5 is three parts of work, not four. The `--output-format` half is the sharpest and the smallest:
+the value is accepted verbatim by `ArgvParser` (`:208` `substr($arg, 16)`, `:215` `$argv[++$i]`) and
+then compared for equality against `FORMAT_JSON` in three places (`:388` `emitErrorDocument`, `:524`
+`format`), so an unrecognised value is not merely unvalidated — it is *indistinguishable from `text`*
+at every consumer. Validation belongs in the parser (one place, before any dispatch), which is also
+where `usageError` already lives, so it can reuse the exit-2 usage path rather than inventing a
+warning channel.
+
+**A trap for whoever implements the subcommands:** `bin/sugarcrush` parses argv and dispatches
+`--help`/`--version` **before** touching `Bootstrap` or `Program`, deliberately, so they answer on a
+machine with no provider, no config and no TTY. Every new subcommand is in that same class and must
+dispatch in the same place — `mcp list` and `doctor` that open the alt-screen would be Phase 0
+item 3's bug all over again. `doctor` in particular must stay distinct from the model-invoked
+`doctor` tool, which is the wording the item chose on purpose.
+
+## 🤖 THE WORKFLOW — how the rest of the plan gets executed (requested by the user 2026-08-19)
+
+The user asked for a **workflow** to finish the remaining plan, and started it. The script is persisted
+under the session directory and its path is printed in the `Workflow` tool result; a copy of the intent
+lives here so it can be rebuilt from scratch.
+
+### The shape, and why it is this shape
+
+**One bundle at a time, strictly sequential, committing between bundles.** Not because parallelism is
+hard, but because it is measurably wrong here: two uncommitted tracks in one working tree make every
+reviewer flag the other track's diff, and a *suite run* that loads a file another lane is editing shifts
+`file(__FILE__)` ranges against already-loaded reflection and produces phantom failures. Parallelism
+inside a bundle is fine (independent review lenses); parallelism across bundles is not.
+
+Per bundle, the workflow runs the §2 loop as separate agents, because the whole value is that the
+reviewer did not write the code:
+
+1. **measure** — read-only, produces the ground truth the brief will carry. Never trust the plan's line
+   numbers (§9); they are stale by construction and C3 moved `Bootstrap.php` by ~486 lines.
+2. **implement** — against the measured brief only.
+3. **review** — adversarial, on the diff, with a mutation budget. **Separate agent, never skipped.**
+4. **fix** — given the findings.
+5. **re-verify** — a *fresh* agent that re-runs the review's mutations **from their verbatim
+   definitions** and reports which still survive. This step exists because of W1: see the LESSON
+   section above. Three "it's dead" reports in one bundle were false.
+6. **commit** — only after the full suite is green, only that bundle's paths.
+
+### The one honest compromise
+
+Up to now **the supervisor ran the full suite personally at every gate** and that is what caught four
+false kills in W1. A workflow cannot do that — step 5 is the substitute, and it is weaker: it is another
+agent, not me. **So after each workflow run returns, re-run the suite yourself and spot-check the
+bundle's mutations before trusting the commit.** If a workflow run reports green and a personal run
+disagrees, believe the personal run and treat the whole batch as suspect.
+
+### Bundle order (28 plan items left, grouped)
+
+Docs go LAST among features so they describe what actually got built, and the plugin system is last of
+all per the existing queue note.
+
+| # | bundle | plan items |
+|---|---|---|
+| ~~0~~ | ~~**W2**~~ | **COMMITTED `a8d8ec75`** — 7602/88074/1, 29/29 mutations |
+| 0b | **W3** | *not a plan item* — shell ignores `Theme` + retain bg RGB + ansi profile. **RUNNING** under workflow `wf_3ae98739-893` |
+| 0c | **W4** | *not a plan item* — Tab completes a partial `/command`. **RUNNING** in the same workflow |
+| ~~0d~~ | ~~**W5**~~ | **COMMITTED `f8fd9cfa`** — the `print`-returns-int fatal in three commands |
+| ~~1~~ | ~~**B4**~~ | **DROPPED — already done** by Bundle A (`bf3495f5`), measured 2026-08-19. No code. Phase 5 is closed |
+| 2 | **C5** | Phase 4 item **6** — real subcommands, `--config`, exit-code convention, `--output-format` warning |
+| 3 | **C4a** | Phase 2 item 4 part 1 — wire `CommandLoader` as an instance into `Chat`; `$ARGUMENTS`/`$1..$9` |
+| 4 | **C4b** | Phase 2 item 4 part 2 — `` !`cmd` `` (ReactPHP `Process`) + `@file` |
+| 5 | **C6** | Phase 2 item **7** — WRITE `LspTool implements Tool` over the existing `src/LSP/LspClient.php` |
+| 6 | **D** | Phase 3 items **2-5** — `candy-focus\FocusRing` in `Tui\Pane`; `sugar-veil` |
+| 7 | **E** | Phase 6 items **1-6** — item 1's `__DIR__` bug is largely already fixed; verify before writing |
+| 8 | **G1/G2** | Phase 8 items **3, 4, 6, 8, 9, 10, 11, 13, 15** — split into two bundles |
+| 9 | **F** | Phase 7 items **3-6** — authoring/reference docs |
+| 10 | **C7** | Phase 2 item **9** — unified `crush-plugin.json` + `PluginLoader`. Explicitly last |
+| 11 | **#88** | the stale README suite figure — standalone, nothing else in flight |
+| 12 | **hardening** | `crush_code_hardening_backlog.md` E1-E50. LAST, per the user's standing directive |
+
+### Non-negotiables every workflow agent must be handed
+
+These are not style preferences; each one is a bug this project already had.
+
+- **Never** `git stash`/`checkout`/`reset`/`commit`/`clean` in a non-commit step. **Never**
+  `composer install`/`update` (it silently replaces `vendor/sugarcraft/*` symlinks with Packagist copies
+  — the only signal is the skip count going 1 → 2). **Never** a global `pkill`. **Never** `caliber`.
+- **Skips must be exactly 1.** A 2-skip run is not testing the monorepo and its figures are void.
+- Judge by `$?`, never the banner; **redirect, never pipe** (`phpunit | tail` reports `tail`'s code);
+  never run `tests/Cli` as a DIRECTORY (hangs >4 min), single FILES are ~0.05s; full suite needs a
+  **600000ms** timeout.
+- **Defer the FIX, never the FINDING** — every deferred security item goes in the backlog with its probe.
+- **Never delete dormant code** — wire it or document it as an intentional seam.
+- **Write mutation definitions as the exact edit, verbatim.** "MU11" is not a definition.
+- Adding a `src/*.php` file moves **five** censuses; update all five in the same diff.
+
+### Chaining
+
+The size guideline here is ~15 agents per run, and a full bundle is 6, so a run covers **2-3 bundles**.
+Invoke with the next batch, read the result, re-verify personally, then invoke again. Do not try to put
+all twelve bundles in one run.
+
+## ORDER: W1 ✅ → W2 ✅ → W5 ✅ → W3 → W4 → `#88` → the audit queue
+
+`#88` is the stale README suite figure. **Moved to AFTER the live-bug bundles, not straight after W1**,
+and for a measurable reason: the figure has now been invalidated three times in one session (7,276 →
+7,387 → 7,512) and W2 will move it again. Writing it between two bundles guarantees writing it wrong.
+Take it from the verification run of the last live-bug commit, in a standalone commit with nothing else
+in flight.
+
+**Prepared edit: `/tmp/…/scratchpad/88-readme-figure.md`.** Read it first — it corrects an error in my
+own earlier note here. That note said `README.md:551` carries a second stale figure, `4,337/12,587`.
+**It is not stale and must not be touched**: it is introduced by "For scale rather than for accuracy:
+the first figure to stand here …" and is a deliberate historical citation kept to show the drift.
+Updating it destroys the point it makes. Only `:531`'s figure is live — plus its runtime and its
+delta sentence, both of which are part of the measurement rather than decoration.
+
+## BUNDLE C3 IS COMMITTED — `3b0ba8fe`. Phase 2 item 2 done.
+
+Supervisor-verified TWICE, and the second run is the one that counts: **7387 / 76813 / 1, exit 0
+against LOCAL sibling symlinks** (and 7387 / 76811 / 2 against Packagist copies — see the vendor
+note below for why the two differ). Implementation + adversarial review (17 findings, 5 surviving
+mutations) + two fix rounds. `src/` is **276** files.
+
+**The security defect is closed, and I verified it myself rather than taking the agent's word.**
+`.mcp.json` now requires the root to be listed under `trustedProjectMcp` in the user's own
+`~/.sugar-crush/config.json`. Measured personally, three ways: untrusted root in `plan` → payload
+never runs; untrusted in `default` → never runs; **grant written → runs** (the positive control
+matters — a gate that simply broke MCP would also show "no payload" and would have looked like a
+pass). The refusal is visible through the real `chat()` path, naming the root and the key to add.
+
+Findings 6, 7, 10-14 landed in fix round B, plus two hand-offs: the `error_log()` diagnostic is now
+asserted rather than silenced, and the `projectTierRefusals()` count got its missing domain — "TEN"
+is true of dot-DIRECTORY paths, and `.mcp.json` is a bare dot-file the derivation cannot see, so
+the figure a reader wants is **EIGHT** paths feeding that map.
+
+**Two things fix round B reported and deliberately did not change — both still open, my call:**
+
+1. `mcpClient()`'s untrusted branch is guarded `$canonicalRoot === false || !projectMcpIsTrusted(…)`,
+   and the `false` arm is **unreachable** there (`is_file()` already succeeded on a path composed
+   from `$canonicalRoot`). Same shape as the dead `stdClass` clause round A deleted — but here the
+   dead arm is the fail-CLOSED direction on a security gate. **Decision: keep it, document it as
+   deliberate belt-and-braces.** A later reader deleting it "because it is unreachable" is exactly
+   how a gate acquires a hole, and the cost of keeping it is one branch.
+2. Neither refusal branch writes `$mcpClients`, so an untrusted root re-stats and re-checks trust on
+   every `tools()` call. Harmless and idempotent; the memo docblock reads as if every outcome is
+   cached, which is the claim to correct, not the behaviour.
+
+## ⚠️ VENDOR STATE IS NOW A THING TO CHECK, and it silently changes what "green" means
+
+Mid-round, something ran `composer update` and replaced `sugar-crush/vendor/sugarcraft/*`'s
+symlinks with real Packagist directories — so the suite stopped testing the monorepo's own
+`candy-*` and started testing published copies, with no signal except a skip count moving 1 → 2
+(`GitignoreAwarenessTest::testTheMonorepoPathRepoSymlinksAreNotFollowed` self-skips when there are
+no symlinks). **A 2-skip run means you are not testing the monorepo.** It also left an unrelated
+third-party bump in the tracked root `composer.lock` (aws-sdk 3.390.4 → 3.393.1 and others), which
+I reverted rather than letting it ride along inside a feature commit.
+
+Restore local wiring with the documented loop, and note it is `sugarcraft/*` scoped so third-party
+versions do not move:
+
+    php tools/check-path-repos.php --fix --strict-closure
+    cd sugar-crush && composer update 'sugarcraft/*' --quiet
+    cd .. && git checkout -- '*/composer.json'      # NEVER commit these
+    php tools/check-path-repos.php --no-lib-path-repos   # must exit 0
+
+`vendor/` is gitignored, so reverting the manifests keeps the symlinks AND a clean tree. **Tell
+every agent not to run `composer install`/`update`** — it silently undoes this.
+
+## THE `#N` TRACKER IS crush_code.md RENUMBERED — it adds nothing to the count
+
+**Settled by the user, then verified in the worklog. Do not re-run this archaeology.**
+
+The worklog is full of `#11`-`#90` references, and I mistook them for a second plan with a lost
+defining document (I even inferred `crush_feat_plan.md:81`'s uncommitted `crush_code_update.md` as
+the source). **Wrong.** There was never a plan beyond `crush_code.md` and this worklog. The `#N`
+numbers are a FLAT TRACKER over `crush_code.md`'s own items, extended with new numbers as problems
+were discovered — and the mapping is written down in the worklog itself:
+
+    :195   #12 (`McpClient` rename)  -> P2.1 + the Bootstrap::mcpClient() half
+    :194   #31 (P6.2 layered settings)
+    :3417  "#17 / P2.7"              -> LspTool over the built LspClient
+    :~194  #13 (P2.3 workflow wiring)
+           "#14/#16/#17 — the rest of Phase 2 wiring"
+
+So `#12`/`#13` are CLOSED (C1, C2, C3), `#14`/`#16` are Phase 2 items already inside the 28, and
+`#17` is Phase 2 item 7. **The `#N` tail I reported as "unrecoverable" was Phase 2 wiring I was
+already executing.** Discovered items went on to become the `E1`-`E45` backlog, which is the live
+second series.
+
+**Two lessons, both mine, both in this section's own history:**
+
+- **I answered "how far along is the plan" by counting one series and calling it "the plan".** The
+  user knew the number was wrong (~88-90) before I did.
+- **I then explained the discrepancy with a missing-file theory built from an absence**, when the
+  mapping was in the file I was already reading. An inference from "I cannot find X" is not
+  evidence about X. Check for the notation before positing the document.
+
+### The one genuine straggler, and it is not a plan item
+
+**`#88` — the README whole-suite figure, OPEN.** `sugar-crush/README.md:531` says
+"7,276 tests / 76,239 assertions" (bundle C1's number, `6bc5218b`); the tree is at 7,387 / 76,813.
+`:551` carries a separate `4,337/12,587`. Update it AFTER W1 lands, in a standalone commit, once
+nothing else is in flight — a figure committed mid-bundle is stale before it is pushed.
+
+**`#63` `enforceTimeLimit` — CLOSED, and the worklog's "still waiting for a window" note is stale.**
+I recorded it OPEN here from the worklog rather than the file and corrected it minutes later.
+`phpunit.xml` already carries `enforceTimeLimit="true"` + `defaultTimeLimit="60"` with `php-invoker`
+installed, plus 55 lines of measured reasoning: 60s sits ~6x above the slowest real test (9.321s,
+`WebSearchToolTest::testHandlesRedirectResponse`); `memory_limit` is set because the limit bounds
+TIME SPENT COMPUTING and not a thrashing process (a real `tokenize()` mutant ran past 600s at >4GB
+RSS emitting one progress character in ten minutes); `failOnRisky` is what makes it bite, since a
+timed-out test is recorded RISKY and risky alone exits 0. Accepted gap:
+`tests/Agents/AgentWorkerPoolTest.php` arms and cancels `pcntl_alarm()` itself, and its
+`pcntl_alarm(0)` clears the enforcing alarm. **Verify a "waiting" note against the file before
+repeating it.**
+
+`#89` (InstructionFileLoader containment — five escapes, not one) and `#90` (`BuiltInToolCorpus`
+blindness, whose closure unblocked `#17`) are both CLOSED per worklog `:4646` and `:4769`.
+
+### THE LIVE SERIES ARE TWO
+
+1. **`crush_code.md`** — 75 numbered items across 9 phases, unchanged since `418c0888`. **47 done,
+   28 left.** Verified by counting the plan section bounded at its `## Appendix` heading; an unbounded
+   awk attributes every numbered line in the 2,000-line appendix to Phase 8 and reports 202.
+2. **`crush_code_hardening_backlog.md`** — `E1`-`E45`, deferred to the end by the user's own rule.
+   Note `crush_code.md:129` claims "50 items across 6 groups" against 45 actual entries — an
+   unreconciled count that needs its domain like everything else.
+
+## THE COUNT, and two items that had fallen out of the queue
+
+**47 of 75 plan items complete (63%), 28 left.** Counted by item from `crush_code.md`'s phase
+sections: Phase 0=14, 1=3, 2=9, 3=5, 4=7, 5=10, 6=6, 7=6, 8=15.
+
+Two corrections the arithmetic forced, both of them errors in THIS file:
+
+- **"PHASE 5 IS COMPLETE" was wrong.** Item **10b** — differentiate the five hardcoded
+  `AgentDefinition` preset prompts, currently generic one-liners that do not mention the skills
+  they grant — is untouched. B3 shipped 10a (the `EnvironmentBlock` OS-version line) only.
+  Phase 5 is items 1-9 + 10a.
+- **Phase 4 item 6 was missing from the queue entirely.** Real subcommands (`mcp list`,
+  `session list`/`delete`, `models`, `doctor`, `completion bash|zsh|fish`), `--config <path>`, a
+  0/1/2 exit-code convention, and warn-not-silently-drop on an unrecognised `--output-format`.
+  Never done, just absent from §11.
+
+The item count is not effort. Phase 2 item 4 alone is bigger than all of Phase 7; Phase 8's nine
+remaining items are mostly small. And the hardening backlog (E1-E42, and growing as rounds land) is
+a SECOND queue, deliberately held to the end.
 
 **The two lessons this session added, both from C1:**
 
@@ -409,8 +992,10 @@ inside those two files were renamed too before assuming the item is half-done.
   compactions happen. Pick E21 up before calling Phase 5 finished.
 - ~~**B3** Phase 5 items 8,9,10a.~~ **DONE `a72c5b0a`** (7204/75944/1, exit 0).
 - ~~**E21** — finish Phase 5 (wire the automatic 85% tier to the model).~~ **DONE `261ac59d`**
-  (7237/76136/1, exit 0). **PHASE 5 IS COMPLETE.** It also fixed four silent-loss bugs in
+  (7237/76136/1, exit 0). It also fixed four silent-loss bugs in
   `ContextCompactor::groupIntoPairs()` and one spend-cap bypass it had itself introduced.
+  **This row used to claim "PHASE 5 IS COMPLETE". That was wrong** — item **10b** (the five
+  preset prompts) is untouched, so Phase 5 is items 1-9 + 10a. See §10's count.
 - ~~**E33** — the 70% reminder piling up in permanent history.~~ **DONE `7ed551b6`**
   (7285/76294/1, exit 0). Deduplicated: strip unconditionally, append only when the tier fires.
   Also fixed a bug the review found and I had not thought to look for — **`/rewind` was
@@ -434,37 +1019,30 @@ inside those two files were renamed too before assuming the item is half-done.
   deliberate.
 - ~~**C2** Phase 2 item 3 — `WorkflowEngine`/`WorkflowRegistry` in `Bootstrap::chat()`.~~
   **ALREADY DONE** — `Bootstrap.php:374` passes it. Measured 2026-08-19, see §9. No work.
-- **C3** Phase 2 item 2 — MCP. **NEXT UP.** The plan's framing is wrong in two ways, and my own
-  first measurement of it was ALSO wrong in the direction that matters — corrected in full at
-  `/tmp/…/scratchpad/c3-measured.md`, read that before briefing. **The gating already exists and
-  is better built than I assumed:** `MCP\McpClient` already reads `$config['mcpServers']` (the
-  exact `.mcp.json` key, so the convention is implemented and only the PATH is unchosen),
-  already dispatches `stdio`/`http`/`git` server types, already **fails CLOSED** (with no
-  `AgentPreset` and `$unrestricted = false`, `listTools()`/`callTool()` "see and reach nothing at
-  all"), and already routes through `McpRouter` with deny patterns. Its Guzzle `timeout => 30` is
-  an MCP HTTP bound, NOT an LLM bound, so the no-total-request-timeout rule does not touch it.
-  **So three things are missing, and one is a DECISION:** the config path choice; lifecycle
-  (`startServers()`/`stopServers()` — these SPAWN PROCESSES, so reuse C1's bounded
-  SIGTERM→signal-9 `terminateAndReap()` rather than inventing a third escalation); and the `Tool`
-  adapter. The decision: the client fails closed and the MAIN chat agent has no `AgentPreset`, so
-  as things stand it would see ZERO MCP tools. Options are a synthetic preset, `unrestricted:
-  true` on the main path (**bypasses `McpRouter` entirely — a security posture change, not a
-  wiring detail**), or routing MCP calls through `PermissionGate`. **Proceeding with
-  `PermissionGate`** unless the user says otherwise: MCP tools are arbitrary external process and
-  HTTP execution, that gate is what this app already uses to put a human in front of exactly
-  that, and it is the reversible choice. Raised with the user 2026-08-19; no objection received.
-  Original (partly wrong) framing follows for the record. Measured 2026-08-19, full write-up at
-  `/tmp/…/scratchpad/c3-measured.md`: (a) `.mcp.json` appears **nowhere** in `src/` or `bin/` —
-  it is README prose, and `MCP\McpClient` takes an injected `$configPath`; (b) the MCP **auth**
-  path IS already wired (`McpAuthStore` at `Chat.php:9112`, `Commands/McpAuthCommand.php`) while
-  the MCP **tool** path has ZERO production users — `McpClient`, `McpRouter`, the `McpServer`
-  interface and all three implementations (`GitMcpServer`, `HttpMcpServer`, `StdioMcpServer`)
-  plus the 41KB `GitCommandHandlers`. So `/mcp auth` works and the model has no MCP tools at
-  all. Five pieces: config loading, client construction + process lifecycle, the `Tool` bridge
-  (the real work), `ContainedPath`/`PermissionGate` gating, and `McpRouter`'s per-`AgentPreset`
-  allow/deny lists. **NAMING HAZARD:** `src/MCP/McpTool.php` already exists as a DTO with no
-  `execute()` — do not name an adapter `McpTool` and recreate exactly the basename collision
-  C1's item 1 just renamed away from. Probably two bundles.
+- ~~**C3** Phase 2 item 2 — MCP tools reachable.~~ **DONE `3b0ba8fe`** (7387/76813/1, exit 0
+  against local siblings). Three rounds: implement, adversarial review, two fix rounds. The
+  headline is not the wiring but the gate — see §10. `trustedProjectMcp` is a NEW key, verified by
+  me in all three directions including the positive control. E40/E41/E42 carry the deferred
+  remainder.
+- ~~**W1** — the user's live render bug: long replies cut off at the pane edge.~~ **DONE `47ee2c86`**
+  (7577 / 87648 / 1, exit 0). Four rounds. Twelve of twelve mutations killed, re-verified by me.
+  **Read the "LESSON FROM W1" section above before running any later bundle** — three separate "it's
+  dead" reports in this one chain were false, and a fix round made its neighbours' assertions vacuous.
+- **W2 — IN FLIGHT: input is blocked while a turn runs. USER-REPORTED, ahead of the audit queue.**
+  Typing and Ctrl+P are both dead mid-turn, and the input cursor is hidden as well. **Not an async
+  problem — the async work is already done** (`completeAsync()` forks a child; a driven `Escape`
+  mutates state mid-turn, proving the loop delivers keys). The defect is one policy return,
+  `Chat.php:1141-1146`'s blanket `if ($this->inFlight)` swallow. Do NOT delete it — split it, and make
+  **Enter enqueue** rather than dispatch. The drain must go through the existing turn-start path
+  (`dispatchTurn()` has two callers and its docblock warns a third copy loses the generation stamp, the
+  cancellation token, the checkpoint or the title Cmd); `scheduleParkedCompaction()` already implements
+  hold-then-dispatch for the 85% tier. **One real drain site, not 21** — see the W2 section above.
+- ~~**Phase 5 item 10b**~~ — **ALREADY DONE, no code written.** Closed by Bundle A (`bf3495f5`),
+  measured 2026-08-19. The row said "it is what stops Phase 5 being finished"; nothing did.
+- **Phase 4 item 6** — real subcommands (`mcp list`, `session list`/`delete`, `models`, `doctor`
+  health-check distinct from the model-invoked tool, `completion bash|zsh|fish`), `--config <path>`,
+  a 0/1/2 exit-code convention, warn-not-silently-drop on an unrecognised `--output-format`. **This
+  row was missing from the queue entirely** until the item arithmetic caught it.
 - **C4** Phase 2 item 4 — **the biggest remaining item.** Wire `CommandLoader::loadAll()`
   AND build the missing template-substitution engine (`$ARGUMENTS`, `$1`, backtick-cmd,
   `@file` — none exist; a `grep -rn ARGUMENTS src/` returns three hits, all unrelated prose).

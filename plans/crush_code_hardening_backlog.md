@@ -2953,8 +2953,9 @@ still true before designing around it.
 
 ---
 
-**ROUND 39 SCOUT — STILL OPEN, reproduces exactly, but this entry contains a SUBSTANTIVELY FALSE
-claim and every line number it cites is stale.**
+**ROUND 39 SCOUT — was STILL OPEN when stamped; ADDRESSED in round 40, see the stamp below.
+Reproduces exactly, but this entry contains a SUBSTANTIVELY FALSE claim and every line number it
+cites is stale.**
 
 🔴 **"no trust grant required" is FALSE.** `Bootstrap::projectSettingsTrusted()` gates
 `LayeredSettings::projectLayer()`, and an untrusted project's `disabledTools` is discarded whole.
@@ -2969,6 +2970,12 @@ Stale line numbers — all four: `docs/SETTINGS.md:106-107` → **`:178-195`**;
 `src/Config/LayeredSettings.php:249-253` → **`:262-282`**; `src/Cli/Bootstrap.php:4266` → **`:4386`**
 (`filterToolSet()` opens at `:4374`); `src/Permissions/PermissionRule.php:334` → **`:332`**.
 
+> **All four of those corrections are AS OF ROUND 39 and are now themselves stale. Do not re-correct
+> them here.** They went stale in round 40 and again in round 41 — three consecutive rounds of the same
+> entry carrying wrong line numbers, which is the actual defect. See the round-41 stamp at the end of
+> this entry for what replaced them; the figures above are kept unedited as the record of what the
+> scout measured, not as a way to find anything.
+
 **Severity argument SURVIVES.** `filterToolSet()` (`:4374-4402`) tests allow/deny as a single
 conjunction with no later stage, so a project's `disabledTools` genuinely cannot re-admit what a user's
 `allowedTools` excluded — "only ever shrinks" holds. Tier membership confirmed by execution.
@@ -2982,6 +2989,137 @@ is lowercase **`doctor`**. The parallel passage at `LayeredSettings.php:274-276`
 
 ⚠️ A fix must preserve globs at the user tier —
 `testDisabledToolsAcceptsTheSameGlobDialectAsAPermissionRule` locks the dialect in.
+
+**ROUND 40 `sglang` — ADDRESSED, by reporting the effect rather than restricting the grammar. Read
+the two narrowings below before deciding this needs more.**
+
+Re-measured in the lane, every row confirming the round-39 scout: trusted `["[!B]*"]` → 1 tool
+(`Bash`); untrusted → all 11; `["*"]` → 0 tools; the shipped tool name is lower-case `doctor`. To be
+exact about what did and did not survive re-measurement: the ORIGINAL entry's central figure (`[!B]*`
+leaves `Bash`) reproduced; what did not was its "no trust grant required" and all four of its line
+numbers, both already corrected by the scout.
+
+**NEITHER PROPOSED RESTRICTION WAS TAKEN, and one of them is measurably not a fix.** "Refuse negated
+character classes at the project tier" closes `[!B]*` and nothing else: **`["[C-Z]*", "[a-z]*"]` uses no
+negation, is barely longer, and also leaves exactly `Bash` — measured in this lane.** Shipping it would
+have swapped a false claim about the dialect for a false claim about the fix. "Literal names only" does
+close it, but it deletes the one use the key was admitted for (`mcp__git__*` for a checkout with no such
+server) and it costs the operator a capability they granted rather than an attacker one they took.
+
+**What shipped instead:** `Bootstrap::reportProjectTierToolRemovals()` announces a trusted project's tool
+removals at launch — naming the file, the tools taken and the tools left — so the property the tiering
+argument actually needed ("a value you can see when you read the file") holds for **every** spelling,
+including the ones no pattern rule would catch. The capability is unchanged and deliberately so; a
+control test pins that `[!B]*` still yields `['Bash']`.
+
+**Reported by DIFFING, not by re-matching the project's patterns**, computed through a single
+`Bootstrap::mergedConfig()` so there is one copy of the layer precedence. `LayeredSettings` gained
+`projectKeySource()` (mirroring `permissionKeySource()`) so the report can name `settings.json` vs
+`settings.local.json`.
+
+🔴 **A SECOND NARROWING, NOT PREVIOUSLY RECORDED ANYWHERE, and it should change how this entry reads.**
+`LayeredSettings::merge()` is **key-level, not a union**: a user who names ANY `disabledTools` of their
+own **replaces a trusted project's list outright**. Measured: user `["Read"]` against project `["[!B]*"]`
+removes exactly `Read` and leaves all ten others — the project's complement glob does nothing. Combined
+with the trust gate, the gap is open only for an operator who trusted a repository **and** set no
+`disabledTools` themselves. Both narrowings are now written into `docs/SETTINGS.md` and the
+`PROJECT_TIER_KEYS` doc-block, and both have tests.
+
+**The scout's un-recorded `["*"]` → 0 tools: reported, NOT refused.** `filterToolSet()`'s own shipped
+doc-block already names `disabledTools: ["*"]` as the supported way to ask for a toolless agent (it is
+the stated alternative to reading `allowedTools: []` that way), so a refusal would break a configuration
+the code documents as intentional. The direction is fail-safe; only the silence was a defect.
+
+**Doc defects fixed, and one was live rather than cosmetic.** `docs/PERMISSIONS.md` told users to write
+permission rules against a tool named `Doctor`; matching is case-sensitive `fnmatch()` and the tool is
+`doctor`, so a rule copied from that page **matched nothing and denied nothing** — verified by
+executing `PermissionRule::matchesToolName('Doctor', 'doctor') === false`. Fixed in both PERMISSIONS.md
+passages and in `docs/SETTINGS.md`. `LayeredSettings`' parallel passage named five of the ten tools an
+`allowedTools: ["Bash"]` removes; it now names all ten. `ARCHITECTURE.md`'s `Doctor` is correct — that
+list is of CLASS names.
+
+**Coverage:** 8 new tests in `tests/Cli/BootstrapToolAndPermissionSettingsTest.php` (2 fail against the
+unfixed build — verified) and 2 in `tests/Config/LayeredSettingsTest.php`. The diff-not-re-match property
+and `projectKeySource()`'s tier guard were each confirmed by mutating the source and watching the
+specific test go red.
+
+**Still open, deliberately:** a trusted project can still reduce the tool set to one tool of its
+choosing. If a future round decides that capability itself must go, the honest option is moving
+`disabledTools` to the user tier — not a pattern-shape rule.
+
+**ROUND 41 `sglang` — the round-40 report was invisible in an interactive launch. FIXED; the entry is
+still deliberately open on the capability itself.**
+
+🔴 **Round 40's fix worked in `-p` and nowhere a TUI user could read it.** Driven under a pty in a
+trusted repo with `{"disabledTools":["[!B]*"]}`: the warning is written to stderr, the terminal enters
+the alternate screen ~0.5s later and paints over it, and the primary buffer does not return until the
+session ENDS. Replaying the captured byte stream through a `candy-vt` `Terminal(120, 40)` gives
+`altScreen=true` and a visible screen containing neither `disabledTools` nor `sugarcrush:`. The operator
+whose tool set a checkout had just cut to `Bash` was told after the Bash-only session was over — which
+defeats the "a value you can see" property the whole round-40 argument rests on.
+
+**Not a regression, and no cheap correct option existed at the time.** Before round 40 there was nothing
+at all; `warnPermissionConfig()`'s stderr channel is pre-existing and ~ten sibling launch warnings are
+swallowed by the identical mechanism; and there was no in-TUI notice surface to route it through
+(`grep -E 'startupNotice|launchWarning|addNotice|bannerLines' src/` returned nothing).
+
+**Fixed by building the surface.** `Chat::withLaunchNotices()` seeds a launch's warnings into the
+transcript as `Role::System` rows — the shape `Renderer` already wraps, scrolls and paints correctly at
+every width. `Bootstrap::warnPermissionConfigInTranscript()` is the seam, and it writes to **both**
+channels: `-p` and post-exit scrollback are real consumers of the stderr line and the other launch
+warnings still share it. Only `reportProjectTierToolRemovals()` is routed through the seam today —
+whether each of the other nine earns a transcript row is a separate judgement per message.
+
+**Proved the way the old behaviour was disproved**, same fixture, same input, same 120x40 pty, only the
+two source files differing: before → visible screen contains `disabledTools`: **NO** (8996 bytes
+captured); after → **YES** (9421 bytes). Replaying ONLY the bytes from `\e[?1049h` onward — the stderr
+line discarded entirely — still finds the sentence, so the TUI painted it rather than it showing through
+from underneath. One `\e[?1049h`, one copy of the sentence, though `app()` builds the tool set twice.
+
+⚠️ **A pre-alt-screen acknowledgement gate was considered and REJECTED.** It is the wrong answer for a
+launch-time warning about a grant the operator already made. Do not build one.
+
+🔴 **STOP CITING LINE NUMBERS IN THIS ENTRY. Cite symbols.** This is the third consecutive round in which
+this entry's line numbers were stale when read: the original entry's four were corrected by the round-39
+scout; those corrections were stale by round 40; round 40's re-head left them uncorrected; and the
+round-40 review's own re-measurement (`filterToolSet()` opens at `:4477`, the `matchesToolName()` call at
+`:4529`) was stale within the same round, because THIS round's fix inserted ~100 lines above both —
+they now read `:4569` and `:4625`. Every figure in this entry, this sentence's included, is a decaying
+one. The durable citations are the symbols: `Bootstrap::filterToolSet()`, `Bootstrap::toolSetUnder()`,
+`Bootstrap::reportProjectTierToolRemovals()`, `PermissionRule::matchesToolName()`,
+`LayeredSettings::PROJECT_TIER_KEYS`' doc-block, and `docs/SETTINGS.md`'s "Why `allowedTools` is
+user-tier only when `disabledTools` is not". A reader with `grep` finds each in one command and none of
+them decays.
+
+**Also landed this round, from the same review:**
+
+- `README.md`'s wiring sentence listed the built-in tools as
+  `Bash/Read/…/WebSearch/`**`Doctor`**`/Skill/Lsp` — ten exact runtime names and one that matches no
+  tool, in a sentence about wiring. Same mixed-list shape as the PERMISSIONS.md defect round 40 found
+  live. Fixed, and the sentence now says which spelling it is quoting. `README.md`'s two
+  `Tools\BuiltIn\*` class lists and `ARCHITECTURE.md`'s are correct as they stand.
+- `toolSetUnder()`'s doc-block said the "two passes" warning is in "this method's doc-block". It is in
+  `filterToolSet()`'s.
+- `filterToolSet()`'s *"a user who wants that has `disabledTools: ["*"]`"* is stated about a USER and
+  applied by the code to a trusted PROJECT too. Behaviour deliberately unchanged — both reports fire and
+  it needs a trust grant — but the sentence's authority is "the user chose this" and that does not
+  transfer to the project tier by itself. Now said in the doc-block and in `docs/SETTINGS.md`.
+- `withoutEmptyPermissionOverrides()`'s scoping to `PERMISSION_SETTINGS_KEYS` rested on an unenforced
+  premise 3,000 lines away (that `permissionSettingsLayer()` emits nothing else). Now pinned by
+  `testThePermissionSettingsLayerEmitsNothingOutsideItsWhitelist`, asserted against a file carrying a
+  superset so the subset relation is measured rather than restated. It passes on both sides — a guard
+  against a future widening, not a fix.
+
+**Coverage:** 12 new tests — 7 in `tests/Cli/BootstrapToolAndPermissionSettingsTest.php`, 5 in a new
+`tests/Chat/LaunchNoticesTest.php`. Against the unfixed build the 7 give 4 errors + 1 failure +
+2 passes; the one that fails for a behavioural rather than a missing-symbol reason is
+`testTheBuiltChatComesUpWithTheReportInItsTranscript`. **Stated plainly: none of these is the evidence
+for the fix.** A string reaching a static list is not a user seeing a line — the captured pty launch is
+the evidence, and any future round revisiting this must re-capture rather than trust a green suite.
+
+**Bookkeeping for other lanes:** round 40's edits to this file were not purely additive — two
+pre-existing `ROUND 39 SCOUT —` stamp headers were rewritten (they read "STILL OPEN"). This round's
+edits are insertions only, except the two corrections inside round 40's own stamps.
 
 ## E58 — a `permissionMode` in `settings.json` is silently discarded by an EMPTY key in `config.json`
 
@@ -3018,7 +3156,8 @@ measured the mode only.
 
 ---
 
-**ROUND 39 SCOUT — STILL OPEN, and this entry is ACCURATE as written.** Measured, `settings.json`
+**ROUND 39 SCOUT — was STILL OPEN when stamped; FIXED in round 40, see the stamp below. This entry
+is ACCURATE as written.** Measured, `settings.json`
 carrying `{"permissionMode":"plan"}` in every row:
 
 ```
@@ -3050,6 +3189,46 @@ reach bypass".
 
 **No test locks the current behaviour in** — the mode-precedence tests cover absent/present/invalid but
 not empty-string or null. Test-free to land; needs new coverage. **Size S**, one file region.
+
+**ROUND 40 `sglang` — FIXED.** Every one of the scout's six rows reproduced byte-for-byte before the
+change, and the `permissionRules` half reproduced too (`null` and `""` in `config.json` each dropped a
+`deny` rule configured in `settings.json`, announcing only "no rules were loaded").
+
+**One mechanism covers both keys**, because both keys had the same defect for the same reason.
+`permissionConfigLayers()` now returns its layers through a new
+`Bootstrap::withoutEmptyPermissionOverrides()`, which drops a `null`/`''` value for a
+`PERMISSION_SETTINGS_KEYS` key out of a LATER layer when an EARLIER layer set that key to something
+real, and reports the drop on stderr naming BOTH files — the part the old `permissionRules` message
+never said. Filtering at `permissionConfigLayers()` rather than at either merge site means
+`permissionGate()`, `permissionConfig()` and `permissionKeySource()` all see the same layers, so the
+provenance the gate remembers now names the file that actually won (before: `"permissionMode":""` in
+`config.json` under a `plan` in `settings.json` reported `the built-in default`; after: it reports
+`settings.json`).
+
+**Written against the invariant the ⚠️ named, not against `bypass`.** Nothing in the fix or its tests
+mentions `bypass-permissions` as the thing being avoided; the docblock states why, and the tests assert
+the configured mode AND its source rather than "not bypass", so tightening `DEFAULT_PERMISSION_MODE`
+cannot make them vacuous.
+
+**Deliberately NOT changed, each pinned by a control test:** `"  "` is a value that names no mode and
+still refuses the launch by name; a non-string still refuses; `"permissionRules": []` is a well-formed
+empty list and still outranks `settings.json`; an empty key with nothing beneath it is still read as
+absence, still silent, and `permissionRules`' shipped "present but null" warning still fires for it —
+which is why `testAPresentButNullRulesKeyInTheSettingsFileIsReported` and
+`testAPresentButNullRulesKeyInTheWrittenConfigIsAlsoReported` stay meaningful rather than being
+satisfied by the new message. (Written as a brace expansion in the round-40 stamp, which was cosmetic
+but wrong: the second name carries an `Also` the brace form dropped, so neither half expanded to a
+real symbol.)
+
+**Newly recorded while measuring, NOT fixed:** `{"permissionRules": []}` in `config.json` silently
+discards a `deny` rule configured in `settings.json`. It is the same user-visible surprise, but it is
+NOT the same defect — `[]` is a value of the right type winning documented later-layer precedence, and
+suppressing it would be a precedence change, not an emptiness fix. Left as-is, with a control test that
+says so out loud.
+
+**Coverage:** 9 new tests in `tests/Cli/BootstrapToolAndPermissionSettingsTest.php` (5 that fail against
+the unfixed build — verified by running them against it — and 4 controls that pass on both sides and are
+labelled as controls). `docs/SETTINGS.md` gained the rule under "Which keys are layered at all".
 
 ## E59 — the split-pane compositor now paints running-worker output, but the worker is a SIMULATION STUB
 

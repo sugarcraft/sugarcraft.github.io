@@ -3324,7 +3324,7 @@ fixture root or a `... [` note that is not an instruction note — which is exac
 
 ---
 
-## E60 — a hook's non-DENY output is still unbounded prompt text (recorded, not fixed)
+## E60 — a hook's non-DENY output is still unbounded prompt text (FIXED, round 40 `cmd` — see the stamp below; the heading's "prompt text" was itself wrong about the MODIFY half)
 
 **Found by round 37's `cmd` reviewer on the timeout work; fixed only where it was measured.**
 
@@ -3382,6 +3382,74 @@ one constant" still holds; the enumeration behind it does not.
 Cited figures all check out: `MAX_DENY_REASON_BYTES = 16384` (`ScriptHook.php:166`),
 `CommandSpec::MAX_SUBSTITUTION_BYTES = 16384` (`:149`), `modifyOrDeny()` (`ScriptHook.php:676`),
 `clip()` (`:439`). Observed 16,465 = 16,384 + an 81-byte marker. **Size S–M**, one file plus tests.
+
+**ROUND 40 `cmd` — FIXED, at 9ed89648. Every figure in the round-39 scout stamp re-measured and
+confirmed; one figure of the scout's own was an artefact and is corrected below.**
+
+Re-measured at afe3c26b before touching anything, 200 KB through `HookManager::preToolUse()`:
+
+```
+ALLOW(0)   stdout 200000 -> action=allow  message=      0   modifiedInput= (null)
+ASK(3)     stdout 200000 -> action=ask    message= 200000   modifiedInput= (null)
+DENY(1)    stderr 200000 -> action=deny   message=  16465   modifiedInput= (null)
+BLOCK(2)   stderr 200000 -> action=deny   message=  16465   modifiedInput= (null)
+UNKNOWN(7) stderr 200000 -> action=deny   message=  16465   modifiedInput= (null)
+```
+
+The scout's ALLOW/ASK/DENY numbers reproduce exactly, and so does the "false headline bullet"
+finding — `EXIT_ALLOW` stdout reaches nobody. **BLOCK and unknown confirmed clipping to the same
+16,465**, which the scout asserted and is now measured here too.
+
+**The scout's MODIFY row (`100014`) understated the exposure and did so for a reason worth
+recording.** MODIFY through the live registry could not be measured at 200 KB at all — it came back
+`deny "Hook audit could not be executed"`, because `executeHooks()` feeds an accepted rewrite back as
+the NEXT pass's `toolInput` and E65's env ceiling then killed pass 2. Called DIRECTLY,
+`ScriptHook::execute()` returned a **200,014-byte** `modifiedInput` on the same hook. So the live
+ceiling on `modifiedInput` was **not a bound anybody wrote** — it was E65 leaking into E60, and it
+would have silently disappeared the moment E65 was fixed alone.
+
+**What was changed** (`sugar-crush/src/Hooks/ScriptHook.php`):
+
+- **ASK is now clipped** at a new `MAX_ASK_PROMPT_BYTES = 16384`, a constant of its own rather than a
+  widening of `MAX_DENY_REASON_BYTES` — the two are separate decisions that agree on a number.
+  `clip()` now takes its limit as a **required** argument with no default, so a future third caller
+  cannot inherit whichever bound happened to be written first. Measured after: 200,000 -> 16,465.
+- **MODIFY is REFUSED over a ceiling, never clipped.** A truncated rewrite is invalid JSON,
+  `HookResult::rewrittenArgs()` reports that as null, and every consumer then runs the **originals**
+  the rewrite existed to replace — the exact failure `modifyOrDeny()` exists to prevent, so clipping
+  here would have converted an unbounded-size problem into a silent-wrong-arguments problem. The
+  ceiling is **derived, not invented**: the larger of `MIN_REWRITE_BYTES = 16384` and the byte length
+  of the arguments the rewrite replaces. A flat cap would break the legitimate case outright — a
+  sanitiser editing the `file_path` of a 300 KB `Write` has to print the body back. The ceiling is
+  non-increasing across the re-scan (pass N+1's ceiling is `max(16384, len(rewrite_N))`, and
+  `len(rewrite_N)` was bounded by pass N's), so the whole chain is bounded by
+  `max(16384, len(the model's own arguments))`.
+- **ALLOW left alone**, because there is no exposure to fix — not because "its size is what the author
+  chose to emit", which is what the old docblock said.
+
+**Docblock claims corrected in place** (this entry's real ancestor is a comment that was true of the
+class and false of the live path): the class docblock's `0 ALLOW — stdout becomes the result message`,
+and the whole final paragraph of `MAX_DENY_REASON_BYTES` claiming the other three exits were left
+unbounded on purpose.
+
+**Now impossible:** an ASK message over 16,384 bytes + marker reaching the permission modal or
+`Runtime::settleAsk()`'s no-approver string — with the round-41 correction under E65 that the modal was
+never the unbounded half (`Renderer::wrapPermissionText()` already kept 8 wrapped rows), so what this
+bound actually buys is the model's tool result; a `modifiedInput` larger than the arguments it replaces
+(above the 16 KiB floor) reaching a dispatcher.
+**Now reachable, and deliberately:** a `modifiedInput` **above 131 KiB** — which E65's ceiling used to
+forbid by accident. It is bounded by the derived ceiling instead, so on a large call a large rewrite
+now works where it used to be denied.
+**Still unbounded, named rather than fixed:** a hand-written PHP `HookInterface` returning a huge ASK
+or MODIFY — nothing in this change touches those (that is E61's territory), and `HookResult` itself
+enforces no size.
+
+Tests: `ScriptHookTest::testALargeAskQuestionIsClipped`,
+`::testAnOrdinaryAskQuestionIsNotClipped`,
+`::testARewriteOverTheCeilingIsRefusedAndCarriesNoTruncatedArguments`,
+`::testARewriteNoLargerThanTheCallItReplacesIsAccepted`,
+`::testAnOrdinarySmallRewriteIsAccepted`. Each of the three new-behaviour tests was run against
+afe3c26b first and failed for the stated reason.
 
 ## E61 — a chain of hand-written PHP hooks is bounded by nothing
 
@@ -3788,7 +3856,7 @@ measurement in two units, so the `+6` stands and the units are now spelled out w
 
 ---
 
-### E65 — any registered `ScriptHook` denies every tool call whose input exceeds ~128 KiB
+### E65 — any registered `ScriptHook` denies every tool call whose input exceeds ~128 KiB (FIXED, round 40 `cmd`)
 
 **Found by the round-39 scout, measured.** Not a security finding — a **daily-driver blocker**, and it
 fails in the one direction that reads as someone else's bug.
@@ -3816,6 +3884,148 @@ MODIFY measurement at 131,054 bytes, so the two findings share a mechanism as we
 E60: bounding MODIFY at a sane size would also make this failure unreachable, so fixing them separately
 means the second fix arrives with a stale premise. Whatever the outcome, the refusal must say what
 actually happened.
+
+**ROUND 40 `cmd` — FIXED, at 9ed89648. Reproduced exactly, and it is one line wider than recorded.**
+
+Re-measured at afe3c26b, hook script `<?php exit(0);`, through `HookManager::preToolUse()`:
+
+```
+toolInput =  131037 -> allow          boundary bisected: 131054 -> allow
+toolInput =  131137 -> deny                              131055 -> deny
+toolInput =  200037 -> deny
+toolInput = 1000037 -> deny
+```
+
+Every figure in the entry reproduces, and the boundary is **131,054 / 131,055** — exactly
+`strlen('CRUSH_TOOL_INPUT') + 1 + value + 1 <= 131072`, i.e. `MAX_ARG_STRLEN` for `NAME=VALUE\0`.
+
+🔴 **What the entry missed: `CRUSH_TOOL_OUTPUT` is the same defect on the next line.** Measured, a
+PostToolUse chain with the same `exit(0)` hook: `toolOutput = 131000 -> allow`, `200000 -> deny`. It is
+harder to reach — `TruncatesOutput::DEFAULT_MAX_OUTPUT_BYTES` is 65,536 — but that default is a
+constructor argument, not an invariant. Fixing only the input would have left the identical bug one
+line down, which is this audit's own recurring defect.
+
+**What was changed.** The payload travels **both** routes now:
+
+- `CRUSH_TOOL_INPUT_FILE` / `CRUSH_TOOL_OUTPUT_FILE` hold the complete bytes in a `0600` `tempnam()`
+  file, set on every run in which such a file can be created (not only the oversize ones — "present
+  only when large" is a conditional contract a hook author who tested on small calls would ship
+  against). Deleted in a `finally`, so the timeout path, the fail-closed paths and any throw clean up
+  as well as the ordinary return. Measured: 0 leftover `crush-hook-payload-*` files after a sweep.
+- `CRUSH_TOOL_INPUT` / `CRUSH_TOOL_OUTPUT` are **byte-identical to before whenever the value fits**
+  (`strlen(name) + strlen(value) + 2 <= 131072`). That is the compatibility guarantee: **no hook that
+  works today changes behaviour**, which is why the fix is an addition and not a transport swap.
+- An oversize value carries `@@CRUSH_PAYLOAD_IN_FILE@@ <n> bytes; read $CRUSH_TOOL_INPUT_FILE`
+  instead. **Not a prefix** — truncated JSON is not smaller JSON and a lenient hook would judge a call
+  that does not exist. **Not empty** — `docs/HOOKS.md` already tells authors to read an absent
+  `CRUSH_*` as empty, so empty is indistinguishable from "no input".
+- The `proc_open()` failure message now names both payload sizes instead of only
+  `Hook <name> could not be executed`.
+
+After: `131054, 131055, 200000, 1000000, 5000000 -> allow`, and a hook running
+`wc -c < "$CRUSH_TOOL_INPUT_FILE"` reports the full length.
+
+🔴 **THE HONEST COST, and it is a real widening.** A hook that reads only `CRUSH_TOOL_INPUT` and never
+the file now **runs** on an oversize call and sees the marker where it used to see arguments — where
+before, the call was denied outright. For an argument-inspecting guard that is a change in the
+permissive direction. It is confined to calls that previously **could not happen at all** (the deny
+was unconditional, so no guard was protecting anything reachable) — **on Linux with 4 KiB pages, and
+only there**; see the round-41 correction below, which removes the assumption rather than restating
+it. `CRUSH_TOOL_NAME` plus the `matcher:` — what most guards key on — are unaffected either way.
+Stated in `docs/HOOKS.md`.
+
+**Not modelled as a number** (and, after round 41, not needing to be): platforms that cap the whole
+environment rather than one entry (macOS: 256 KiB for argv and environ together). A payload pair
+passing every per-entry check can still be refused there — but the refusal is now retried with the
+payloads moved onto their files, and if that is refused too it prints both sizes.
+
+Tests: `ScriptHookTest::testAToolInputOverTheEnvironmentCeilingStillRunsTheHook`,
+`::testAnOversizeToolInputIsReadableFromTheFileTheChildIsPointedAt`,
+`::testAToolInputThatFitsIsStillPassedInTheEnvironmentVerbatim`,
+`::testAnOversizeToolInputLeavesANonJsonMarkerInTheEnvironment`,
+`::testAnOversizeToolOutputTakesTheSameRouteAsTheInput`,
+`::testThePayloadFilesAreRemovedOnceTheHookHasRun`,
+`::testTheEnvironmentIsUsedUpToTheKernelBoundaryAndNotPastIt` (added at e20382d4 — the others all
+probe at 200 KB and would survive a 100 KB drift in the fit computation; this one is mutation-checked
+against `+ 2` → `+ 1`), `::testAPayloadThatFitsNeitherRouteFailsClosed` (added at fe7c39d9), and
+`HookRegistryTest::testAChainReScansARewriteTooLargeForOneEnvironmentEntry` — that last one is the
+E60xE65 seam and was red at afe3c26b with `Hook bulk-rewriter could not be executed`.
+
+Suite: **8834 / 99811 / 1 skipped / rc 0**, against a measured pre-change baseline of
+**8820 / 99755 / 1 skipped / rc 0**. That is **14** new tests (9 listed under this entry, 5 under E60).
+
+**ROUND 41 `cmd` — REVIEW RESPONSE, at 981aeb37 / bb8bfa93 / 8a756cf1 / 3b7bc6a7.** An adversarial
+reviewer re-derived every figure above and confirmed them; what it blocked on was two claims and one
+platform assumption.
+
+🔴 **The assumption was the headline defence.** `MAX_ENV_ENTRY_BYTES = 131072` hardcodes
+`PAGE_SIZE * 32` with `PAGE_SIZE == 4096`, and `stagePayloads()` branched on it. Where the real
+per-entry limit is **larger**, the old code did not deny in `131,055 … real_limit` — it passed the
+arguments **verbatim** and an argument-inspecting guard worked — so substituting the marker there is
+exactly *"a hook previously saw real arguments at a size that now yields a marker"*. Two classes:
+64 KiB-page Linux (ppc64le, and the aarch64 kernels RHEL and SLES ship, where `MAX_ARG_STRLEN` is
+2 MiB) and macOS/BSD, which cap the total and not the entry. `sugar-crush` is in neither `MACOS_LIBS`
+nor `WINDOWS_LIBS` in `scripts/affected-libs.php`, so neither is CI-tested.
+
+**Fixed by not assuming.** `executeStaged()` offers the real bytes and retries with the file-backed
+payloads moved out of the environment **only when `proc_open()` actually refuses**. Right on a bigger
+page size (the first attempt succeeds); right on macOS, where the unmodelled 256 KiB total is now
+recoverable instead of a hard deny; right on Windows, whose 32,767-byte limit is *below* the guess and
+where the old code could not have helped. `proc_open()` is `@`-suppressed on that path — the bare call
+emits `PHP Warning: proc_open(): posix_spawn() failed: Argument list too long`, which lands mid-frame
+in the TUI and, under `failOnWarning="true"`, would fail this suite's own coverage of the retry. The
+constant survives only to say which payload probably broke the exec.
+
+The boundary test now **derives** its expectation from `getconf PAGESIZE` instead of typing 131,072 in,
+so the length at which the marker appears is the running kernel's and not ours; it also pins
+`CRUSH_TOOL_OUTPUT` at **131,053 / 131,054**, one byte below the input's, correcting a comment that
+rounded that to "the same, one line down". A retry is only safe if a refusal started nothing, so that
+is counted: a hook appending one byte per run leaves exactly one byte on a 200 KB payload.
+
+🔴 **`docs/HOOKS.md` shipped a guard snippet that fails OPEN.** *"If your hook inspects arguments,
+read the file, not the variable"*, with `input="$(cat "$CRUSH_TOOL_INPUT_FILE")"` labelled "correct at
+every size". When `writePayloadFile()` returns null (unwritable or full `/tmp`) **and the payload
+fits**, `CRUSH_TOOL_INPUT` is set verbatim, `CRUSH_TOOL_INPUT_FILE` is not set at all, and the hook
+runs. Measured, same guard, two configurations:
+
+```
+normal TMPDIR       FILEVAR=[/tmp/crush-hook-payload-…]  DOC_SNIPPET_SAW=[{"command":"rm -rf /"}]  -> deny
+TMPDIR is a file    FILEVAR=[]                           DOC_SNIPPET_SAW=[]                        -> ALLOW
+```
+
+Fixed in the documentation, not in `writePayloadFile()`: making the file unconditional means denying
+**every** tool call when `/tmp` is full. The snippet now prefers the file, falls back to the variable,
+and refuses on an empty value or a marker. Re-measured with the new snippet: **deny in both
+configurations**. The prelude is a constant `ScriptHookTest` actually runs.
+
+**Also landed, from the same review:**
+- The ASK clip marker is **never visible in the modal**. `Renderer::wrapPermissionText()` keeps
+  `PERMISSION_PROMPT_MAX_ROWS` = 8 wrapped rows and appends its own `… N more lines`, and the clip does
+  not engage below 16,384 bytes ≈ 216 rows. Measured at 76 columns: 200 B shows the marker, 1,000 B and
+  16,384 B render as 8 rows and `… 6 more lines` / `… 209 more lines`. The model-facing half is real
+  (`settleAsk()` gets 16,465 bytes where it got 262,144); the claim that *the human* sees the marker is
+  withdrawn from `ScriptHook`, `ScriptHookTest` and `HOOKS.md` — which also said flatly that an
+  `EXIT_ASK` question is not clipped, contradicting its own table.
+- `HookRegistryTest::testAChainReScansARewriteTooLargeForOneEnvironmentEntry`'s docblock claimed figures
+  "MEASURED at afe3c26b through this exact path" that came from a neighbouring experiment: the rewrite
+  is **200,011** bytes, not 200,014 (that is the `{"command":…}` wrapper, three bytes longer); the hook
+  is **bulk-rewriter**, not `audit`; and the original is 250,011 bytes, already past the old ceiling, so
+  the `E2BIG` landed on **pass 1** — the fixture is red at afe3c26b for the plain E65 reason and does
+  not demonstrate the re-scan seam there at all. It does exercise it against the code as it stands.
+- `crush-hook-payload-*` was in **no sweep**. The `finally` covers every in-process exit (0 leaks over a
+  full run, timeout and SIGKILL paths included); a killed process is what it cannot cover, and that
+  strands a 0600 copy of the tool call in `/tmp` forever. The prefix moved to
+  `ToolIpcFiles::HOOK_PAYLOAD_PREFIX` and joined `sweep()`'s list — E63's class, so E63's reaper.
+- The both-routes-unavailable deny printed the limit but not the payload's size. After the retry the two
+  refusals are one event, so they are one message, and it names both sizes.
+
+Tests: `ScriptHookTest::testAnEnvironmentTheKernelRefusesDoesNotRunTheHookTwice`,
+`::testAFittingPayloadStillReachesAHookThatCanBeGivenNoFile`,
+`ToolIpcFilesTest::testSweepRemovesAHookPayloadStrandedByAKilledProcess`, plus three assertions added
+to `::testTheEnvironmentIsUsedUpToTheKernelBoundaryAndNotPastIt`. **17** new tests across rounds 40
+and 41.
+
+Suite: **8837 / 99827 / 1 skipped / rc 0**.
 
 ---
 

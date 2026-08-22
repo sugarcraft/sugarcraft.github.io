@@ -2954,7 +2954,26 @@ surviving tools: Bash
 
 Eight characters, project-tier-legal, no trust grant required, and it produces
 exactly the Bash-only tool set the doc says only a whitelist could produce "in
-one line". Tier membership confirmed directly rather than from the doc:
+one line".
+
+> **RULE 7 REWRITE, round 42 fix pass — two of those clauses are now false.**
+> WHAT IT USED TO SAY: "eight characters … no trust grant required".
+> WHAT IS TRUE NOW: (a) the count was never right — `[!B]*` is **five**
+> characters, `"[!B]*"` seven, `["[!B]*"]` nine, `{"disabledTools":["[!B]*"]}`
+> twenty-seven, re-derived on PHP 8.3.6; nothing in this counterexample is
+> eight. (b) A trust grant **is** required, and this was probably true when
+> recorded and overtaken by the gate since. MEASURED, fresh process per row,
+> PHP 8.3.6, sandboxed `HOME`, project `.sugar-crush/settings.json` =
+> `{"disabledTools":["[!B]*"]}`: with **no** `trustedProjectSettings` entry all
+> **11** tools survive and nothing is printed; with the entry, **1** (`Bash`)
+> survives and the removal is reported on stderr and in the transcript.
+> `Bootstrap::projectSettingsTrusted()` is the gate.
+> WHY THIS STILL EARNS ITS PLACE: the finding itself is intact and is the
+> reason `E74` exists. The tier argument really does not survive contact with
+> `fnmatch()`, and the trust gate narrows the blast radius without closing it —
+> an operator who trusted a repository and set no `disabledTools` of their own
+> is still exposed. Do not act on the "no trust grant required" clause; act on
+> the **Step** below, which is unaffected. Tier membership confirmed directly rather than from the doc:
 `PROJECT_TIER_KEYS` contains `disabledTools`; `userTierOnlyKeys()` contains
 `allowedTools`.
 
@@ -3349,6 +3368,86 @@ The scope-boundary framing is otherwise correct: `ProcessExecutor` is instantiat
 genuinely does paint the stub. `src/App/App.php:437-444` carries the same note, accurately.
 
 **Size L. Do not bundle it** — the test rewrite is the risky part and deserves an isolated diff.
+
+---
+
+**ROUND 42 `lane c` — THE TEST HALF IS FIXED. 🔴 THE WORKER HALF IS DEFERRED, DELIBERATELY; this stamp
+does not close the entry.**
+
+**The round-39 scout's correction was right, and it was one anchor short.** It found two literals in
+`WorkflowLivePaneTest` (`Processing:` and `[<name>] Processing:`). There are **three** in that file:
+the third is `assertStringNotContainsString('Processing:', $frame)` in
+`testThePaneIsGoneOnceTheWorkflowHasFinished()` — a NEGATIVE assertion, which is the one that could
+never have announced its own rot. **Measured, not argued:** with `Tui\Renderer::liveAgentOutputs()`
+mutated to inject a stuck tile carrying the stub's *final* line
+(`[docs-explorer] Task finished: explore the docs`), the OLD test file passed — `OK (1 test, 5
+assertions)`, rc 0 — while the rewritten one reds. The pane was pinned open and the negative anchor,
+looking for a word the stub only emits *mid*-run, saw nothing wrong.
+
+There is a **fourth** anchor outside that file, and it is NOT touched here: `tests/ChatTest.php`'s
+config-built-pool dispatch test asserts `'[ConfigBuiltPoolAgent] Task finished: Say hello'` verbatim
+against `Chat::executeAgents()`'s result. It is a legitimate end-to-end assertion *today* and it will
+break the day the worker is real; recorded so that day's implementer finds it.
+
+**What the anchors are now.** Not a string — a contract. On each painter tick the test reads
+`AgentManager::liveOutputs()` FIRST and renders SECOND, then asserts that the agent's own tile, sliced
+out of the frame by column (`WorkflowLivePaneTest::paneColumn()`), carries 16 cells of whatever that
+buffer's first non-blank line was (`WorkflowLivePaneTest::livenessProbe()`, `LIVE_TEXT_PROBE_CELLS`).
+A real worker satisfies it by emitting anything at all. The negative test asserts the TILE is gone
+(`╭ <name> `, `[working]`) rather than a stub word, and is guarded against vacuity: the finished
+sub-agent is checked to be terminal AND non-empty via `AgentManager::subAgentsOf()`, so "the pane is
+down" cannot pass because the worker never spoke.
+
+🔴 **ROUND-42 REVIEW CORRECTION, applied: as first written the derived probe was the AGENT'S NAME and
+pinned nothing.** `livenessProbe()` took the first 16 cells from cell 0, the stub tags every line
+`[<name>] `, and `[docs-explorer] ` is exactly 16 cells — so the probe was a datum
+`AgentSplitColumn::state()` is handed as a parameter and could paint without reading a byte from the
+worker. Measured (PHP 8.3.6, PHPUnit 10.5.64): a mutant passing
+`self::tail('[' . $name . '] MUTANT never came from the worker')` as `outputBuffer:` passed the whole
+file, `OK (11 tests, 49 assertions)`, rc 0. The probe now skips a leading `[<agent name>] ` tag and
+FAILS if what remains still contains the name; the same mutant reds, as does the tag-free
+`'MUTANT placeholder text'` variant. A new `tileTopBorder()` measures the painted tile's own budget so
+the window's upper bound is an assertion rather than a sentence.
+
+🔴 **And a figure in the same docblock did not reproduce (RULE 9).** It claimed "the tile is 40 cells,
+inner 36, and the stub's 34-cell first line survives whole". The arithmetic is right —
+`Renderer::agentSplitWidth()` at `cols = 120` gives `min(60, max(24, intdiv(120, 3))) = 40`, and
+`AgentSplitColumn::render()` clips to `$width - PANE_CHROME` = 36 — and the rest is wrong twice.
+Instrumenting a scratch copy of the test file: the live buffer holds NO newline, because
+`AgentWorkerPool::pumpProgress()` concatenates both `streaming` chunks, so the "first line" is one
+88-cell string; the stub's first *emitted* line is 44 cells, not 34; and it is clipped, the painted row
+being `│ [docs-explorer] Processing: explore  │`. Rewritten in place per RULE 7.
+
+🔴 **A third negation was narrower than the prose around it.** All three frame negations in
+`testThePaneIsGoneOnceTheWorkflowHasFinished()` name this agent or `[working]`, so a stopped tile for a
+DIFFERENT agent satisfied every one — measured by injecting `['other-agent' => 'zzz mutant filler']`
+into `Renderer::liveAgentOutputs()`. That is not a regression (the old `Processing:` negation had the
+same hole), but the docblock implied otherwise. The test now asserts `Renderer::liveAgentOutputs()`
+empty directly — the compositor's own source for the split, and a different method from the
+`AgentManager::liveOutputs()` asserted beside it — and that mutation reds.
+
+**Why the worker half is not here, stated as a size and not as a preference.** `php -r` is the whole
+worker: `ProcessExecutor::spawnWorker()` launches `[$binaryPath, '-r', $workerScript]` with **no
+autoloader in the child**. A real one needs (1) composer's autoloader bootstrapped in that child, (2) a
+provider IDENTITY plus credentials crossing the startup message — which today carries `agent.id`,
+`agent.name`, `agent.model`, `agent.prompt`, `task` and a `request` sub-object of
+`model`/`messages`/`tools`/`systemPrompt`/`temperature`/`maxTokens`, eleven fields and not one of them
+a provider or a credential; `Agents\Agent` even HAS a `provider` field that `spawnWorker()` does not
+forward (an earlier revision of this stamp and of the `createInlineWorkerScript()` docblock listed only
+the six `request` fields and called that the whole message — corrected in both, and the point stands
+harder for it) — and (3) an offline substitute, because CI has no model — so the simulation does not disappear even
+then, it moves behind a seam. (1) and (2) touch `bin/` and `Cli/Bootstrap.php`, held by other lanes
+this round, and (3) is a new `src/` file, which moves four figures in `BuiltInToolCorpusTest`, a prose
+restatement in `RepoMapBlock`, and `BinSugarcrushWiringTest::crushSourceFiles`. That is not a
+drive-by; half-landing it is worse than not landing it.
+
+`ProcessExecutor::createInlineWorkerScript()` now carries the RULE-6 seam docblock saying all of the
+above at the site, including which parts around it are genuinely production (the `proc_open()`, the
+line protocol, `AgentWorkerPool::pumpProgress()`, the compositor) and that deleting the simulation
+would remove the only exercise that chain has. The two "Real LLM integration comes in later phases"
+comments are rewritten, not deleted, per RULE 7 — the phase they deferred to has passed.
+
+**Still open, unchanged:** the worker is a simulation. Size of what remains: L.
 
 ## ROUND 37 SCOUT — E55 and E56 both reproduce; figures restated at master `4a4ecb98`
 
@@ -4813,6 +4912,98 @@ this is the documentation of it that is wrong.
 tools with a pattern far shorter than the set it removes, which is why the dangerous keys are
 user-tier-only rather than why `disabledTools` is safe. Cite the eight-character counterexample.
 
+**FIXED — round 42, lane a.** `README.md`'s tool-tier paragraph now retracts the claim in place, quoting
+it and marking it false, and carries the counterexample, the mechanism
+(`Bootstrap::filterToolSet()` → `PermissionRule::matchesToolName()` → bare `fnmatch()`), the two
+measured mitigations (untrusted projects never reach the merge; a user's own `disabledTools` replaces
+rather than unions) and the launch report. Pinned by
+`tests/Config/ReadmeSettingsTierClaimTest`.
+
+**PIN REPAIRED, round 42 fix pass.** The first cut of that pin did NOT hold. Its prose test
+(`::testWhereverTheReadmeQuotesTheRetractedClaimTheCounterexampleIsRightThere`) asked only that the
+counterexample and the words "That is false" appear within 2000 characters FORWARD of the retracted
+quote — and the retraction itself supplies both, so the false sentence could be restored verbatim as
+body prose immediately above the retraction and the file stayed green (measured: the counterexample
+sits +600 characters from the quote, "That is false" +57, leaving ~1400 characters of slack in front of
+the retraction for a restored occurrence to hide in). It now uses the same STRUCTURAL rule the E75 test
+already used — the retracted wording may appear only on a `>` line — scanned per PARAGRAPH rather than
+per line so a re-wrap cannot straddle a fragment across a break, and against three fragments rather
+than one needle. Two mutations confirm it: the sentence restored as body prose, and the same re-wrapped
+so no single line carries a whole fragment — both rc=1.
+
+Two corrections to this entry, both re-measured in-lane on
+PHP 8.3.6:
+
+- **"eight characters" counts nothing.** `[!B]*` is five characters, `"[!B]*"` seven, `["[!B]*"]` nine,
+  and `{"disabledTools":["[!B]*"]}` twenty-seven. Nothing here is eight. The README says *five
+  characters of glob* and `docs/SETTINGS.md` was corrected to match.
+  `src/Config/LayeredSettings.php` (`PROJECT_TIER_KEYS`) and
+  `Bootstrap::reportProjectTierToolRemovals()` still say "eight" — **not fixed here**, both are outside
+  this lane's write scope. So does `crush_code.md`'s round-41 status line (historical log, left alone).
+  **CORRECTION, round 42 fix pass:** the first stamp said *two* doc-blocks still carried the figure.
+  There were three: `docs/SETTINGS.md` itself contradicted its own re-derivation sixty lines further
+  down ("refusing negated classes would close the eight-character version"), inside the file the same
+  commit had just corrected. Fixed now.
+- **CORRECTION, round 42 fix pass — `Bootstrap::tools()` does NOT memoise.** The round-42 report
+  justified its one-process-per-row probe design with "`Bootstrap::tools()` memoises within a process",
+  offered as the lesson from a first probe that false-negatived on the trusted row. That mechanism claim
+  is false and was written down without being verified (RULE 11). `Bootstrap::tools()` constructs
+  `new Bash($root)`, `new Read(...)` and the rest unconditionally on every call; it holds no cache.
+  The per-process staleness is `Bootstrap::$trustedSettingsRoots`, filled by
+  `Bootstrap::projectSettingsTrusted()` and keyed by `trustedConfigDirPath() . '/config.json'` — a
+  deliberate freeze, documented on the property as "one answer per process, so a mid-session edit to
+  the user's OWN config.json cannot widen the grant a launch already decided". Granting trust after a
+  first untrusted `tools()` call in the same process therefore changes nothing *while the sandboxed
+  HOME stays the same*, and changes everything the moment the sandbox path (and so the cache key)
+  moves. One process per row is still the right probe design; the reason it is right is the trust-list
+  freeze, not a tool cache. **The measured results are unaffected.** All four rows of the round-42 table
+  were re-run in this lane, one fresh PHP 8.3.6 process each
+  (`scratchpad/probe/row.php`, `scratchpad/probe/row_nonneg.php`; sandboxed `HOME`, `chmod 0600` on
+  `config.json`, trust via `LayeredSettings::PROJECT_SETTINGS_TRUST_KEY` + `realpath()`): no project
+  file / trusted → 11; `{"disabledTools":["[!B]*"]}` untrusted → 11 and nothing printed;
+  the same trusted → 1 (`Bash`) plus the launch report; `["[C-Z]*","[a-z]*"]` trusted → 1 (`Bash`).
+
+  RE-DERIVED IN-LANE, not taken from the reviewer (RULE 9). Generator:
+  `scratchpad/probe/memo2.php`, ONE PHP 8.3.6 process, three `Bootstrap::tools($root)` calls, sandboxed
+  `HOME` via `putenv()` + `$_SERVER['HOME']`, `chmod 0600` on each `config.json`, project
+  `.sugar-crush/settings.json` = `{"disabledTools":["[!B]*"]}` throughout, trust granted via
+  `LayeredSettings::PROJECT_SETTINGS_TRUST_KEY` with `realpath()`. No fuzzing, no seed, no ICU.
+  `Bootstrap::$trustedSettingsRoots` read back by reflection after each call:
+
+  | call | HOME | `config.json` | tools | `$trustedSettingsRoots` after |
+  |---|---|---|---|---|
+  | A | `home_one` | `{}` (no grant) | 11 | `{home_one/...: []}` |
+  | B | `home_one` | grant written | **11** — the false negative | unchanged (key already present) |
+  | C | `home_two` | grant written | **1** (`Bash`) | second key added, `[repo]` |
+
+  Call C is the THIRD `tools()` call in the same process and it returns the filtered set. A tool cache
+  would have made C 11. The only thing that changed between B and C is the cache KEY.
+
+  ONE TRAP WORTH RECORDING, because it cost a probe: write the sandbox config as `{}` and not as
+  `json_encode([])`. PHP emits `[]` for an empty array, `Bootstrap::permissionConfig()` refuses a
+  top-level JSON array (`PermissionConfigException`, "the top level is not a JSON object"), and
+  `projectSettingsTrusted()` swallows that through its `catch (\Throwable)` and returns false
+  **without caching**. Row B then reads 1 instead of 11 and the freeze appears not to exist. Use
+  `JSON_FORCE_OBJECT`. See the new sub-finding below.
+
+- **NEW, found while re-deriving the above — the `trustedProjectSettings` freeze does not engage until
+  `permissionConfig()` has succeeded once.** `Bootstrap::projectSettingsTrusted()` populates
+  `self::$trustedSettingsRoots[$path]` INSIDE the `try`, so any throw from `permissionConfig()` returns
+  false and leaves the key absent; the next call re-reads `config.json` from disk. MEASURED, PHP 8.3.6,
+  one process, same generator with the empty config written as `[]`: call A (untrusted) → 11 tools and
+  `trustedSettingsRoots == []`; the config is then rewritten with a grant; call B → **1 tool**, i.e. a
+  mid-process edit to the user's own `config.json` widened a grant the process had already decided —
+  exactly what the property's doc-block says the freeze buys ("one answer per process"). REACHABILITY
+  IS NARROW and this is why it is recorded rather than fixed: the only way to reach the un-cached state
+  is a `config.json` that `permissionConfig()` rejects, and a real launch calls `permissionConfig()` on
+  its own path and refuses to start on that same file. It is a hazard for in-process embedders and for
+  tests, not for the CLI. **Functionality before hardening — FINDING recorded, FIX deferred.** Step:
+  cache the negative outcome too (an explicit sentinel), or state on the property that the freeze is
+  conditional on a parseable config and that an unparseable one fails open across calls.
+- **The negation is not the mechanism.** `["[C-Z]*", "[a-z]*"]` also leaves exactly `Bash`, measured
+  end-to-end, so the Step's framing of the counterexample as *the* negated-class case understates it:
+  no restriction on pattern shape could restore the retracted property.
+
 ### E75 — `README.md` calls `config.json` "the deprecated name"; the source argues at length that it is not
 
 **Recorded 2026-08-22 by the round-41 lane-a reviewer.** Severity: low, but actively misdirecting.
@@ -4823,6 +5014,14 @@ and that calling it deprecated points users away from the file their changes act
 anyone trying to find their own settings.
 
 **Step.** Reconcile in `README.md`, in favour of the source docblock. Rewrite, do not delete.
+
+**FIXED — round 42, lane a.** The ranking paragraph in `README.md` no longer calls `config.json`
+deprecated; a block quote records what it used to say, why the word was damaging (it pointed readers
+off the only file that receives a write) and what is true instead. Verified against the write path
+rather than against the other doc: `Bootstrap::writeUserConfig()` → `Bootstrap::userConfigPath()` →
+`configDirPath() . '/config.json'`, and the only two `@deprecated` tags anywhere in `sugar-crush/src/`
+are on `Agents/PathJail` and `Chat::pool`'s alias — neither mentions `config.json`. Both halves are
+pinned by `tests/Config/ReadmeSettingsTierClaimTest`.
 
 ### E76 — `Chat.php`'s pane-click docblock asserts the opposite of what `bin/sugarcrush` does
 
@@ -4842,6 +5041,85 @@ launch path (which is how it knew which renderer to edit) and recorded it rather
 Confirm first whether `Tui\Renderer::statusBar()` is genuinely dead on the live path — lane a measured
 that it is, because `renderView()` sets `$bottom = ''` whenever `$a->chat !== null`, which is always
 true on a real launch. If so, say *that*, rather than that nothing constructs the system.
+
+**ROUND 42 `lane c` — FIXED. THE ENTRY WAS RIGHT ABOUT THE FALSE CLAIM AND MISSED A SECOND ONE IN THE
+SAME DOCBLOCK.**
+
+**Launch path, traced rather than accepted.** `bin/sugarcrush` ends in
+`new Program(Bootstrap::app($args->root), Chat::programOptions())`; `Cli\Bootstrap::app()` builds the
+`App` and calls `->withChat(self::chat($root))`; `App::view()` calls `Tui\Renderer::renderView()`. So
+the entry is correct: the system IS constructed and `nothing constructs it` was false.
+
+**`Tui\Renderer::statusBar()` is dead on that path — re-confirmed.** `renderView()` sets
+`$hosted = $a->chat !== null` and `$bottom = $hosted ? '' : InputPane::render(...) . "\n" .
+self::statusBar($a)`, and `Bootstrap::app()` always attaches a chat. Round-41 lane a's finding holds.
+**Already pinned, so not re-pinned:** `AppModelTest::testHostedFrameHasExactlyOneInputBoxAndOneStatusBar()`
+asserts `Switch Pane` absent from a hosted frame and `::testViewRendersTheShellChrome()` asserts it
+present un-hosted. `Renderer\StatusLineSegmentTest`'s class docblock already narrates it.
+
+🔴 **THE ENTRY'S SUGGESTED REPLACEMENT WOULD HAVE LEFT A SECOND FALSEHOOD STANDING.** The Step says to
+say "constructed, but this particular method is unreachable because …". That is the right shape for
+`statusBar()`. It is the wrong diagnosis for `Chat::selectPane()`, whose docblock went on to conclude
+that "jumping a pane field **no live frame reads** would be a switch the user can never see" — and
+**the live frame does read `App::$pane`**: `renderView()` diverts `Pane::Agents` to the full-width
+dashboard before any sidebar exists, `leftSidebar()` branches on `Pane::Files`/`Pane::Tools`, and
+`rightSidebar()` branches on `Pane::Skills`/`Pane::Settings`. A pane switch is plainly visible. A third
+sentence lower in the same docblock — "Files/Tools/Skills/Settings/Help have NO live surface on this
+path at all" — was false for the same reason, and is rewritten too.
+
+🔴 **ROUND-42 REVIEW CORRECTION, applied: the rewrite above introduced a THIRD falsehood about `Help`.**
+This stamp and the docblock both said "`Help` alone was right: it has no `Pane` case". `src/Tui/Pane.php`
+declares `case Help = 'help';`, `Pane::Help->label()` returns `'Help'`, and `tests/Tui/PaneTest.php`
+asserts `value`, `label()` and `from('help')`. Only the *arm* half held — nothing in `src/` matches on
+`Pane::Help`. And it has a live surface by the same criterion used to condemn the sentence for
+Files/Tools/Skills/Settings: `MenuBar::paneTabs()` renders `'Currently: ' . $a->pane->label()`
+unconditionally. Measured at 120x40, line 0 reads `… Currently: Help` for `Pane::Help` against
+`… Currently: Chat` for `Pane::Chat`, and the two frames differ — and it was already pinned all along:
+`ComponentTest::testMenuBarWithDifferentPaneLabels()`'s all-panes `Currently:` table has a `Pane::Help => 'Help'` row. The docblock now records the
+correction in place rather than deleting it (RULE 7); the argument it was attached to — these panes
+lack a *writer* reachable from `selectPane()`, not a surface — is unchanged and covers `Help` too.
+
+**The real reason `selectPane()` cannot take §8 E3's `$app->withPane(...)` sketch is ownership, not
+reachability.** `Chat::update()` returns `array{0:self,1:?\Closure}`;
+`App::delegateToChat()` re-wraps the returned Chat with `withChat()`. There is no channel from a value
+this method computes to the host's `$pane`, and Chat holds no reference to its host. That is what the
+docblock now says.
+
+**A dormant seam found while verifying, kept and recorded per RULE 6.** `App\SelectPaneMsg` exists,
+`App::update()` answers it with `withPane($msg->pane)`, and `delegateToChat()` passes Chat's Cmd
+straight up to `Program` — so a Cmd dispatching a `SelectPaneMsg` **would** reach the host. **Nothing
+in `src/` or `bin/` constructs one** (`grep -c 'new SelectPaneMsg' src/ bin/` → 0; the 5 textual hits
+are the class definition and `App::update()`'s two match arms). Only `tests/App/AppTest.php` and
+`tests/App/AppModelTest.php` build one. Wiring it is a behavioural change and was out of scope for a
+comment-only item, so it stays a seam — and
+`HostedFrameReadsThePaneTest::testNothingInSrcConstructsASelectPaneMsg()` now reds the day somebody
+wires it, which is the commit on which the docblock's ⚠️ paragraph becomes wrong.
+
+🔴 **ROUND-42 REVIEW CORRECTION, applied: as first written that census could not see the wiring it
+existed to catch.** The regex `/\bnew\s+(\\[\w\\]+\\)?SelectPaneMsg\s*\(/` requires a LEADING
+backslash on its optional namespace prefix, so it matched `new SelectPaneMsg(` and
+`new \Fully\Qualified\SelectPaneMsg(` and was blind to `new App\SelectPaneMsg(` — the relative form
+`Chat.php` would use, since it sits in `SugarCraft\Crush` and imports no `SelectPaneMsg`. Measured: with
+that arm added to `selectPane()`'s match the test stayed green, and reflection on the mutated method
+really did return a `SugarCraft\Crush\App\SelectPaneMsg`, so it was a producer and not a phantom.
+It also scanned only `src/`, while this entry claimed `src/ or bin/`. Both are fixed: any namespace
+prefix or none, `use … as` aliases resolved, `bin/sugarcrush` included, plus a second assertion pinning
+the exact set of production files that so much as name the symbol (`src/App/App.php`, `src/Chat.php`) —
+which is what catches an alias import landing in a file not already on the list. All four construction
+syntaxes were driven as mutations and all four now red. **Residual, stated rather than papered over:**
+`$c = SelectPaneMsg::class; new $c(…)` inside a file already on the allowlist is invisible to a textual
+census. That is the floor of this technique, not an oversight.
+
+**New file `tests/App/HostedFrameReadsThePaneTest.php`** pins the corrected behavioural claims: the
+hosted frame's left sidebar follows `Pane::Files`/`Pane::Tools`, its right sidebar follows
+`Pane::Skills`, `Pane::Agents` diverts to the full-width dashboard, and the seam census above.
+
+⚠️ **A TESTING HAZARD WORTH ONE LINE, because it cost a survived mutation here.** "Frame A differs from
+frame B when the pane changes" proves nothing about the panes: `MenuBar::render()` prints
+`Currently: <pane>` on line 0 for *every* pane, so two frames always differ. The first version of the
+right-sidebar test asserted `assertNotSame($files, $skills)` and **survived** deletion of
+`rightSidebar()`'s entire `Pane::Skills` arm. It now asserts the `╭ skills ` border title, and that
+mutation reds.
 
 ### E77 — `nextCluster()`'s no-ext-intl fallback is now measurably wrong for real ZWJ sequences
 
@@ -4873,6 +5151,52 @@ just spent a round pinning at the unit level.
 `intdiv($shippedCap, 8) >= SkillPathNudge::maxBytes()` (or the derived floor). It is the cheap guard
 that makes the unit-level work above actually protective.
 
+**CLOSED round 42, lane b** — `SkillPathScopingWiringTest::testEveryShippedNudgeBudgetClearsTheTrackerCeiling()`
+and `::testEveryShippedNudgeBudgetClearsTheWorstCaseDeadBandFloor()`, both deriving their threshold
+from `SkillPathNudge` at runtime and their roster from the `intdiv($this-><cap>, <n>)` in each tool's
+own source. **Two figures in the "What" above did not survive re-measurement, and the mechanism
+sentence has a third error:**
+
+- *Wrong.* `Bootstrap.php` does not construct `Read`/`Glob`/`Grep` with those caps. `Bootstrap::tools()`
+  passes `$root`, `instructionLoader:` and `skillNudge:` and **no cap at all**; 1,048,576 / 65,536 /
+  65,536 are the tools' own `DEFAULT_MAX_BYTES` / `DEFAULT_MAX_OUTPUT_BYTES` defaults. A guard written
+  against a literal in `Bootstrap.php` would have had nothing to read. The shipped caps are therefore
+  read off the constructed instances.
+- *Wrong.* The nudge floor is not 166–174 bytes and the eighths do not clear it "by three orders of
+  magnitude". Round 41's own edits to `SkillPathNudge` moved the pricing. **Measured on this tree, PHP
+  8.3.6:** `SkillPathNudge::maxBytes()` = **2,636**; the worst-case price of ONE entry (a description
+  past `MAX_ENTRY_BYTES` so the entry clips, plus a second pending skill so the deferred-note reserve
+  applies) = **529**. Against the ceiling, Glob's and Grep's 8,192 clear it by **3.1x** — half an order
+  of magnitude.
+- *Wrong.* The reopening threshold is not "roughly 1,400 bytes". The ceiling guard reds below a cap of
+  8 x 2,636 = **21,088**; the dead band itself opens below 8 x 529 = **4,232**. Fifteen times and three
+  times the recorded figure respectively.
+- *Right.* Nothing asserted any of it, and the eighth relationship still holds: all three tools spend
+  `intdiv($cap, 8)`, and `Edit`/`Write` still pass `null` (no cap of their own to spend inside).
+
+**Mutation.** `new Grep($root, instructionLoader: ..., skillNudge: ...)` -> `new Grep($root, 1024,
+instructionLoader: ..., skillNudge: ...)` reds both tests (budget 128, under both 2,636 and 529);
+Read's budget argument -> `null` reds the roster assertion.
+
+### E78/round-42 follow-up — a repeat prune in one process prints its session ids under no header
+
+**Recorded 2026-08-22 by the round-42 lane-b agent.** Severity: cosmetic; stderr only.
+
+**What.** Round 42 split `Bootstrap::reportPrunedSessions()`: the one-line summary now goes through
+`warnPermissionConfigInTranscript()` (both channels) and the per-session id rows stay raw on stderr.
+The summary inherits `warnPermissionConfigOnce()`'s **per-process** de-duplication; the id rows are
+unconditional. So a second `chat()` in one process whose prune produces a byte-identical summary
+prints its id rows with no header above them.
+
+**Why it is not fixed.** The alternative is a second de-dup map keyed on the detail, which would drop
+rows from the channel that exists to be the complete unclipped record — the property
+`LAUNCH_NOTICE_MAX_CHARS`'s doc-block relies on when it advertises "full text on stderr". The rows are
+self-describing (`sugarcrush:   <id> (last used ... UTC, N messages)`), and a launch only reaches this
+by building two Chats in one process, which no shipped entry point does.
+
+**Step.** Leave it. If a second de-dup is ever wanted, key it on the report rows and not on the
+summary, and keep the rule that stderr never loses a row the transcript never carried.
+
 ### E79 — the tab/Extend under-run family in `Width` is a rendering-semantics decision, not a bug
 
 **Recorded 2026-08-22 by the round-41 lane-b reviewer.** Severity: low; **in the safe direction.**
@@ -4889,3 +5213,216 @@ radius well beyond this class. Under-counting also cannot corrupt a frame here �
 **Step.** Decide the semantics deliberately, in a round of its own, with the foundation-wide blast
 radius costed first. Its shape is already pinned by
 `StyleTest::testExpandingATabCanStillReclusterAFollowingCombiningMark`, so it cannot drift unnoticed.
+
+### E78/round-42 follow-up — two `NonInteractive` stderr writes are transcript-seam candidates the seam cannot reach
+
+**Recorded 2026-08-22 by the round-42 lane-b fix agent, after the round-42 review.** Severity: low;
+**functionality, not security** (RULE 14 records it rather than fixing it).
+
+**What.** Round 42 claimed on `bin/sugarcrush` and on
+`Tests\Integration\BinSugarcrushAutoloadGuardTest` that "every other stderr write in this codebase was
+re-examined" against `Bootstrap::warnPermissionConfigInTranscript()`. It had not been. Measured
+myself, `grep -rn 'STDERR' src/ bin/` on this tree, PHP 8.3.6 — **eleven** raw `fwrite(STDERR, …)`
+call sites: `Cli\NonInteractive` **six** (`run()` twice, `failUsage()`, `failUnusableProvider()`,
+`noticeOfflineDefault()`, `readStdinIfPiped()`), `Cli\Subcommands` **two** (`sessionDelete()`,
+`mcp()`), `Cli\Bootstrap` **two** (`warnPermissionConfig()`, which *is* the stderr channel, and
+`reportPrunedSessions()`'s id rows), `bin/sugarcrush` **one**. Both doc-blocks are corrected in place
+per RULE 7. Note the review's own distribution was slightly off in the same total: it recorded
+NonInteractive at five (missing `noticeOfflineDefault()`, whose `fwrite(` and `\STDERR,` are on
+separate lines) and Bootstrap at three (counting the summary that is no longer a raw write).
+
+Two of the eight unexamined writes satisfy the routing rule the round applied — *a warning reaches the
+transcript iff it names something the session can no longer **do***:
+
+- `NonInteractive::readStdinIfPiped()` — `sugarcrush: piped stdin exceeds 10MB cap; truncating.` The
+  model is handed a truncated prompt and is never told it is answering half a question. This is the
+  stronger of the two.
+- `NonInteractive::noticeOfflineDefault()` — the session is answering from the offline echo provider
+  because no provider is configured.
+
+**Why it is not fixed here.** Out of E78's scope, and the seam does not reach these paths as it
+stands: `Bootstrap::launchNotices()` is read by `Bootstrap::chat()` and `Bootstrap::app()` and by
+**nothing else** (verified, `grep -rn 'launchNotices' src/ bin/`), so a notice recorded from the
+one-shot `-p` path or from a subcommand goes into a static the process discards. Telling the model
+about a truncated stdin is therefore not a seam call — it is a decision about appending a note to the
+one-shot *prompt*, which is a different mechanism with a different blast radius.
+
+**Step.** Decide it as a one-shot-path question, not as a launch-notice question. Either
+`NonInteractive` grows its own way of prefixing a system note onto the outgoing message, or
+`launchNotices()` gains a reader on that path. Do not "migrate" these onto
+`warnPermissionConfigInTranscript()` on the strength of the rule alone — measure first that anything
+reads the list back, because today nothing on those paths does. The six writes that accompany a
+non-zero exit (`run()` x2, `failUsage()`, `failUnusableProvider()`, and both in `Subcommands`) need no
+decision: the process ends, and there is no transcript for a row to survive into.
+### E80 — `MultiAgentRefactorTest`'s forked claim race aborts at 60s under concurrent machine load
+
+**Recorded 2026-08-22 by the round-42 lane-c implementer.** Severity: **CI flake, not a product
+defect** — but it turns a green suite red and it is not obvious from the failure text why.
+
+**What.** `Integration\MultiAgentRefactorTest::testArchitectPlansTwoCodersImplementInParallelReviewerVerifiesLeadMerges`
+was reported **risky — "aborted after 60 seconds"** on one full-suite run and clean on the next, same
+tree, same commit, nothing between the two runs but load. Both figures are mine and both are
+reproducible only in the statistical sense:
+
+| run | tests | assertions | skipped | risky | rc | wall |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 8982 | 105,026 | 1 | 1 | **1** | 06:22 |
+| 2 | 8982 | **105,048** | 1 | 0 | **0** | 04:12 |
+
+The 22-assertion gap is *consistent with* that one test being the whole of the difference: it asserts
+25 in isolation (re-measured by a reviewer at `OK (1 test, 25 assertions)`, 00:00.114 — the 0.128 s
+first reported was a different run of the same command), and 25 − 22 = 3 would then be what landed
+before the abort.
+
+⚠️ **That "3" is arithmetic, not a measurement, and the inference is circular if read the other way
+round.** Nobody exported the assertion count at the moment of the abort; run 1's 105,026 is by
+construction not reproducible. What is actually established is: exactly one test went risky, and the
+gap is small enough to be that one test. Treat "3 landed" as a consequence of assuming the abort
+explains the gap, never as evidence for it.
+
+**Mechanism, as far as it was chased.** The test does not touch `ProcessExecutor`. It `pcntl_fork()`s
+two real children that race for one task through `flock()` on a SQLite file, with a start barrier and
+a spin whose backoff is capped: `usleep(min(20_000, 1_000 * $attempts) + (crc32($coderId) % 3_000))`.
+A **capped** backoff under a loser that keeps re-attempting is a lock-starvation shape — the delay
+stops growing at 20 ms however long contention lasts — and the machine was running sibling lanes'
+suites concurrently. That is a hypothesis consistent with both runs, not a measurement; nobody has
+instrumented the attempt count at the moment of the abort.
+
+**Why it is not fixed here.** Diagnosing it properly means running that one test under synthetic load
+with the attempt counter exported, and the honest fix is probably an uncapped (or much higher-capped)
+backoff plus a bound on total attempts — a change to a concurrency test's timing, which is exactly the
+kind of edit that should not ride along in a lane about docblocks and pane anchors.
+
+**Step.** Reproduce under deliberate load (`stress-ng`, or two suites in parallel) rather than by
+re-running and hoping. Export `$attempts` at abort. Then decide between raising the backoff cap and
+raising the 60 s limit for this one test — and prefer the backoff, because a 60 s limit that is
+routinely brushed is a limit that has stopped meaning anything.
+
+### E81 — `LayeredSettings`' `provider` doc-block credits the palette and omits the command that actually writes it
+
+**Recorded 2026-08-22 by the round-42 lane-a implementer.** Severity: low, doc-only.
+
+**What.** `src/Config/LayeredSettings.php` says the `provider` value comes from "the Ctrl+P palette's
+'Switch Model' action". Verified by following the write, not by reading the neighbouring doc: the
+`/model <name>` slash command routes through `Chat::handleModelCommand()` directly into
+`Chat::selectPaletteProvider()`, which is the site that invokes `onConfigChange('provider', …)`. The
+README's table, which credits `/model`, is the accurate one. Two docs disagree and the less-read one is
+right — the same shape as E74.
+
+**Step.** Name both producers in the doc-block. Pin with a drift test in the family of
+`TrustKeyDocumentationDriftTest` if one can read that doc-block cheaply.
+
+### E82 — three-way drift on what a `settings.json` `theme` actually breaks
+
+**Recorded 2026-08-22 by the round-42 lane-a implementer.** Severity: low, doc-only.
+
+**What.** `LayeredSettings`' doc-block says a project `settings.json` naming `theme` makes `/theme`
+"appear to do nothing at all". `docs/SETTINGS.md` refines this: the theme *repaints immediately*, then
+silently reverts on the next launch — what breaks is **persistence**, not the visible command.
+`SETTINGS.md` is right, because `/theme` mutates the live `Chat`. Round 42 aligned `README.md`;
+**`LayeredSettings`' doc-block still carries the coarser, wrong version.**
+
+**Step.** Align the doc-block to the persistence framing. ⚠️ Related: `docs/SETTINGS.md`'s
+counterexample block still carries no PHP version on its "measured end-to-end" claim (RULE 12), and
+neither do `LayeredSettings` or `Bootstrap::reportProjectTierToolRemovals()`. Nothing there is believed
+version-sensitive — `fnmatch()`'s negated-class support is not new — but an undated figure is how E68
+happened.
+
+### E83 — `README.md` prose is almost entirely unpinned by tests
+
+**Recorded 2026-08-22 by the round-42 lane-a implementer.** Severity: medium as a CLASS, low per claim.
+
+**What.** `docs/PERMISSIONS.md` and `docs/SETTINGS.md` have `TrustKeyDocumentationDriftTest`;
+`README.md` had **nothing** until round 42 added `ReadmeSettingsTierClaimTest`. That absence is exactly
+why E74's false security claim survived two rounds after the source was corrected: the tree agreed with
+itself in three places and disagreed in the one file a user actually reads. The new test covers the
+settings-tier paragraph only. Every other README claim remains unpinned.
+
+**Step.** Inventory the README's checkable assertions (tool roster, key bindings, config precedence,
+the launch-report sample) and pin the ones with a cheap oracle. Prefer structural rules over
+±N-character windows — see round 42's mutation C, which survived because any window wide enough to
+reach the retraction also reached an unrelated "not".
+
+### E84 — the autoload guard leaves stdout empty under `--output-format json`
+
+**Recorded 2026-08-22 by the round-42 lane-b implementer.** Severity: low; pre-existing and deliberate.
+
+**What.** `bin/sugarcrush`'s missing-autoloader guard cannot emit the JSON error document, because the
+document's owner — `NonInteractive::emitErrorDocument()` — is itself behind the absent autoloader. So
+`--output-format json` gets an empty stdout and a stderr line. Round 42 *pinned* the behaviour rather
+than leaving it asserted in prose, but it remains a hole in the "exactly one JSON object on stdout"
+contract that machine consumers are told to rely on.
+
+**Step.** Decide whether the guard should hand-roll a minimal JSON document (no autoloader needed —
+`json_encode` is core) or whether the contract should document the exception. Prefer the former: a
+consumer parsing stdout cannot distinguish "empty because the binary died early" from "empty because
+there was nothing to say".
+
+### E85 — `SkillRegistry::getForPaths()` translates `**` with three hand-rolled `str_replace` calls
+
+**Recorded 2026-08-22 by the round-42 lane-b implementer.** Severity: medium; pre-existing.
+
+**What.** Globstar support is three textual rewrites (`/**/ → /*/`, `/** → /*`, `/** → ''`) rather than
+a real glob translation. A leading `**` with no slash — `**/*.php`, the form most people write first —
+is not among the three, so it does not match what the author intends. It also weakens the *fixture*
+half of every path-scoping test that uses such a pattern.
+
+**Step.** Replace with a real translation (pattern → regex) or state the supported subset in the
+doc-block and refuse the rest loudly. ⚠️ Whatever lands must be mutation-tested against a pattern
+starting with `**`, since that is the case the current code silently mishandles.
+
+### E86 — the MCP failure notice goes to `error_log()`, whose destination the operator's ini decides
+
+**Recorded 2026-08-22 by the round-42 lane-b implementer.** Severity: medium; **functionality**.
+
+**What.** `Bootstrap::tools()`'s McpClient failure path uses `error_log()`. On a box with `error_log`
+pointed at a file, the "MCP config could not be fully started" notice reaches **neither** the terminal
+nor the transcript — the user gets a silently reduced tool set. The call site's own comment argues for
+assertability; it never weighed where the message actually lands.
+
+**Step.** Route it through `Bootstrap::warnPermissionConfigInTranscript()`, which is precisely the seam
+for "the session can no longer do something" — the rule round 42 used to move fifteen other warnings.
+This one qualifies plainly: tools are missing.
+
+### E87 — the `Grep`/`Glob` margin over the nudge ceiling is thin and is not a fixed relationship
+
+**Recorded 2026-08-22 by the round-42 lane-b implementer.** Severity: low, but it is a decision nobody
+has made.
+
+**What.** E78 tied the shipped caps to `SkillPathNudge::maxBytes()` (2,636) and measured a 3.1x margin
+for `Grep`/`Glob` (65,536 cap / 8,192 budget). That margin is not structural: `maxBytes()` is
+`MAX_ENTRIES * (MAX_ENTRY_BYTES + 1) + …`, so raising `MAX_ENTRIES` from 8 to 20 takes it 2,636 → 6,248
+and **reds the new ceiling guard without anyone touching a cap**. That is the guard doing its job; the
+unmade decision is what the resolution should be.
+
+**Step.** Decide now, while the arithmetic is fresh: either raise the caps in step with `MAX_ENTRIES`,
+or express the budget as a multiple of `maxBytes()` so the relationship cannot drift. Record which, and
+why, next to the constant.
+
+### E88 — `App\SelectPaneMsg` is a dormant seam with no producer
+
+**Recorded 2026-08-22 by the round-42 lane-c implementer.** Severity: low. **Kept per the never-remove
+rule; recorded so it is not rediscovered as dead code.**
+
+**What.** `App::update()` answers `SelectPaneMsg` with `withPane($msg->pane)`, and
+`App::delegateToChat()` passes Chat's Cmd through to `Program` — so a Cmd from `Chat::selectPane()`
+**would** reach the host. But `grep -c 'new SelectPaneMsg' src/ bin/` is **0**; the five textual hits
+are the class definition and two match arms. The wiring exists on both ends with nothing in between.
+Round 42 documented it in the docblock and pinned it as *deliberately* dormant with
+`testNothingInSrcConstructsASelectPaneMsg()`, so wiring it later is a visible, deliberate act.
+
+**Step.** Decide whether pane clicks should route through it. Wiring is behavioural, not comment-only,
+so it needs its own item and its own tests — do not fold it into a doc round.
+
+### E89 — `RendererTest::testRenderWithDifferentPaneShowsCorrectLabel()` proves less than its name
+
+**Recorded 2026-08-22 by the round-42 lane-c implementer.** Severity: low, test-quality.
+
+**What.** It asserts pane-sensitivity only through the MenuBar's `Currently:` label, and only on an
+**un-hosted** `App`. It would survive mutations M7/M8b/M9 — i.e. it does not pin the thing its name
+claims. Round 42's new `HostedFrameReadsThePaneTest` covers the hosted shape, so the gap is narrowed,
+but the original assertion is still weaker than it reads.
+
+**Step.** Strengthen it to assert on the rendered pane content, or rename it to say what it actually
+checks. A test whose name overstates its coverage is worse than no test, because it stops anyone
+looking.

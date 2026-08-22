@@ -10053,3 +10053,63 @@ decision with foundation-wide blast radius, in the safe (under-count) direction.
 and deliberately absent from `PROJECT_TIER_KEYS`, so `projectLayer()`'s existing filter drops a
 project-supplied `statusLine` before the merge. Its timeout is **derived** (`REFRESH_SECONDS / 2.0`)
 rather than invented, so overlapping runs are impossible by construction rather than by luck.
+
+## ROUND 42 — doc truth, launch-warning routing, and a prediction that was right to fail
+
+Merged `98589858` (a), `878c5fdf` (b), `c204015e` (c). Floor **8996 / 105179 / 1 skipped / rc 0** at
+`c204015e`, 04:12.080, measured by the supervisor in the live tree with `sugar-crush` linked.
+Run `wf_062ad75c-a27`: 9 agents, 0 errors, ~71 min, 1.35 M subagent tokens, 689 tool calls.
+
+**The merged-total prediction missed by 2 and that is the whole value of making it.** Predicted 8994
+from the lanes' reported deltas; discovery said 8996. Counting added `public function test` in each
+lane's diff gave 5 / 9 / 4 = 18 → 8996 exactly. Lane `b` had measured 8985 honestly after its implement
+stage and then added two tests in its fix stage without re-measuring. A report's figure table is a
+snapshot of whichever commit it was taken at; the fix stage moves the tree after it. New rule in the
+brief, and a one-command cross-check before every merge.
+
+**Every lane again entered the fix stage** (3 / 2 / 4 blocking-or-major findings). Three rounds running.
+Two lanes falsified figures in their own briefs: lane `a` showed that "eight characters" — a number this
+plan has repeated in five files — is produced by nothing (`[!B]*` is five), and, more importantly, that
+the negated character class the backlog named as *the mechanism* is not one: `["[C-Z]*", "[a-z]*"]`
+strips the same ten tools with no negation anywhere, so no pattern-shape restriction could have restored
+the property the README promised. Lane `b` corrected its own census twice in the same round — fifteen
+transcript-seam call sites, not fourteen; eleven raw stderr writes, not four.
+
+**The file-disjointness split leaked.** `docs/SETTINGS.md` was lane `a`'s, and lane `b` edited it too.
+It merged clean only because they landed in different sections. Diff-level overlap checking is now part
+of the drain, not the brief.
+
+**E59 was half-landed on purpose.** The test-anchor half shipped; the real worker did not, because it
+needs an autoloader in the child, a provider identity across the startup message, and an offline
+substitute for CI — and two of those touch files other lanes were holding. Recorded as a seam rather
+than faked.
+
+**Nine findings the lanes surfaced and did not fix are now E81–E89** instead of dying in a report. The
+one to do first is **E86**: the MCP failure notice goes to `error_log()`, so on a box with `error_log`
+pointed at a file the user gets a silently reduced tool set and no message anywhere.
+
+**Out-of-band this round: the vendor closure was destroyed twice more and the second one was mine to
+catch.** The user ran `composer update` in `sugar-crush`; the tree went to **0/18 symlinks** with
+`candy-core` at the pre-E73 md5. Repaired with the standard round-trip. Two things came out of it that
+outlast the repair: a content probe on a file the round did not change reports `SAME` with the closure
+entirely absent (`is_link()` is the only check that cannot be fooled), and third-party drift between the
+lanes and the live tree must be checked before trusting delta arithmetic (it was zero). The user then
+made the standing request that every lib be kept updated, which produced `scripts/refresh-deps.php` and
+a correction the supervisor owed them — see the RESUME's §🟢 blocks.
+
+### Round 42 postscript — the vendor state, and a proof that turned out to be a coin flip
+
+After the merge: root `composer update -v -o -W` ran and is committed (`2d78013d`), paying back the
+change round 41 reverted before it knew it was the user's. `scripts/refresh-deps.php --mode=linked`
+then took the monorepo from **12 linked / 12 mixed / 30 fully-Packagist** to **53 linked / 0 mixed /
+0 published**, no failures. `sugar-crush` was held out so the floor stays comparable.
+
+The sweep that followed was the first in which those 30 libs were actually testing the working tree,
+and it was green — but it also killed a claim this plan has been repeating. Round 41 cited
+`candy-buffer` moving 1,621 → 1,661 assertions as proof that linking mattered. Three runs on one
+identical clean tree give 1569, 1545, 1507: `BufferTest.php` uses `rand()`, and that single file swung
+1246 → 1098 between two runs. The +40 was inside the noise. The *conclusion* survives — `--fix
+--strict-closure` genuinely injects nothing for `candy-buffer`, which I re-verified by reading the
+manifest after running it rather than by inferring from a total — but the evidence was never evidence.
+"A figure without its generator is not a measurement" was already a rule in the brief; it was not
+applied to the plan's own prose.

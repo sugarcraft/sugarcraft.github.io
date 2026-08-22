@@ -5426,3 +5426,357 @@ but the original assertion is still weaker than it reads.
 **Step.** Strengthen it to assert on the rendered pane content, or rename it to say what it actually
 checks. A test whose name overstates its coverage is worse than no test, because it stops anyone
 looking.
+
+### E90 — `paths:` frontmatter now accepts a leading `**`, and no user-facing doc says so
+
+**Recorded 2026-08-22 by the round-43 lane-a fix agent.** Severity: low, docs. **Behaviour change,
+user-visible, already shipped.**
+
+**What.** E85 (round 43) replaced `SkillRegistry::pathMatches()`'s `**` handling. A pattern starting
+with `**` previously matched none of the three `str_replace` rewrites and fell through to a bare
+`fnmatch()`, which reads `**/` as "some characters, then a literal slash" — so `**/*.php` did not
+claim `a.php`. It does now. Three SHIPPED built-in skills are affected: `security-audit` and
+`php-best-practices` both declare `paths: ["**/*.php"]`, and `phpunit-master` declares
+`**/*Test.php`. All three previously stayed silent on root-level files and now fire on them.
+
+`README.md` and `docs/SETTINGS.md` were lane `c`'s files in round 43, so lane `a` could not add the
+note without an out-of-lane edit.
+
+**Step.** One sentence under the skills-frontmatter documentation: `paths:` globs are `fnmatch`
+semantics with `**` meaning zero-or-more directory levels at any position, including the first, and
+a single `*` crossing `/` (no `FNM_PATHNAME`). Mention that skills scoped with a leading `**` began
+firing on tree-root files as of E85.
+
+### E91 — `TruncatesOutput::DEFAULT_MAX_OUTPUT_BYTES` carries no pointer to the nudge ceiling it constrains
+
+**Recorded 2026-08-22 by the round-43 lane-a fix agent.** Severity: low, comment-only.
+
+**What.** E87 decided a 2.0x margin between the tightest shipped tool output cap and
+`SkillPathNudge::maxBytes()`, and recorded it in `SkillPathNudge` and in
+`SkillPathScopingWiringTest`. The other half of the relationship is
+`TruncatesOutput::DEFAULT_MAX_OUTPUT_BYTES` (65,536), which is where someone lowering a cap will
+actually be standing, and it says nothing. `SkillPathNudge::smallestUnclippedCallerCap()` exists
+precisely to be cited from there. Not lane `a`'s file in round 43.
+
+**Step.** A short paragraph on `DEFAULT_MAX_OUTPUT_BYTES` pointing at
+`SkillPathNudge::smallestUnclippedCallerCap()` and at the margin guard, so the loop closes for a
+reader who arrives at the cap first.
+
+### E92 — ~~the `paths:` translation still does not implement POSIX character classes~~ FIXED in round 43; the escaped-`]` half remains
+
+**Recorded and then superseded 2026-08-22 by the round-43 lane-a fix agent.**
+
+**Recorded as** "low severity, strictly no worse than before E85: `[[:alpha:]]` emits an
+uncompilable regex and routes to `legacyPathMatch()`, so a glob combining it with `**` gets the OLD
+`**` handling."
+
+**What was actually true.** That premise was wrong, and it was wrong in the direction that matters.
+The class only reached the fallback when the malformed regex it produced *also failed to compile*.
+`[[:alpha:]]x` emits `#^[[:alpha:]\]x$#Ds`, which PCRE refuses — fine. But a second bracket group
+supplies the missing `]`: `[[:alpha:]][!a]` emits `#^[[:alpha:]\][^a]$#Ds`, which **compiles**,
+folds the second group into the first class, and answers false for `ab` where `fnmatch()` answers
+true. A silently wrong match with no fallback under it. Found by widening the differential fuzz's own
+pattern alphabet to include `[[:alpha:]]`; four seeds x 200,000 trials each reported 12-18 such
+narrowings.
+
+**Fixed** in round 43: `compilePathPattern()`'s terminator scan now skips `[:...:]`, so POSIX classes
+are translated (PCRE spells them identically to libc) rather than routed anywhere. Pinned by
+`SkillPathPatternTest::testAPosixClassIsTranslatedRatherThanRoutedToTheFallback()` and by the grid
+row `[[:alpha:]][!a]`.
+
+**What is left.** One uncompilable shape remains **deliberately**: a backslash-escaped `]` inside a
+class (`a[\]]b`). The bracket scan is not escape-aware, so the body arrives as the fragment `\`;
+left alone the regex will not compile and the pattern routes to `legacyPathMatch()`, which reads it
+correctly. Making it compile would make it compile *wrong* — the same mistake the POSIX scan was
+making. See `SkillRegistry::compileClassBody()`'s doc-block.
+
+**Step, if anyone wants that last shape too.** Make the bracket scan escape-aware. **Whoever does it
+must find a NEW uncompilable input first**, or `legacyPathMatch()` stops being reachable, the
+M6-class mutations (fallback → `return false`, fallback → bare `fnmatch()`) go back to surviving, and
+the never-remove rule leaves an unpinnable method behind. The 46x54 characterisation grid and the
+four-seed differential fuzz described in `SkillRegistry::pathMatches()` are the harness to prove no
+narrowing.
+
+### E93 — a `preg_match()` backtrack-limit hit is silently absorbed by the fallback
+
+**Recorded 2026-08-22 by the round-43 lane-a fix agent.** Severity: low, observability.
+
+**What.** `SkillRegistry::pathMatches()` treats `preg_match() === false` as "route to
+`legacyPathMatch()`", which is right for an uncompilable pattern and silent for a
+`pcre.backtrack_limit` exhaustion. In that case a tool call quietly answers with the *old* predicate
+and nothing is logged. Measured as theoretical today: the deliberately pathological case (three
+globstars against a 60-segment non-matching path) runs 2,000 iterations in 0.0004s on PHP 8.3.6,
+because the leading literal anchors the match before PCRE can backtrack.
+
+**Step.** Distinguish the two causes — `preg_last_error()` is `PREG_BACKTRACK_LIMIT_ERROR` for one
+and `PREG_INTERNAL_ERROR` for the other — and count or log the backtrack case if `SkillRegistry`
+ever gains a logging seam. Adding a logger dependency to a pure static matcher is a bigger design
+call than the finding warrants on its own.
+
+### E94 — `README.md`'s "exactly two exceptions" to the JSON contract is now one
+
+**Recorded 2026-08-22 by the round-43 lane-b implementer.** Severity: low, documentation-correctness.
+**Not fixed here because `sugar-crush/README.md` belonged to lane `c` this round.**
+
+**What.** `README.md` (search for `There are exactly two exceptions`) tells a machine consumer that
+`--output-format json` leaves stdout empty in two cases: an `--output-format` value that is neither
+`text` nor `json`, and *"a checkout with no `vendor/autoload.php`: that exits 2 with an empty stdout,
+because the class that owns the JSON document shape is precisely the one that could not be loaded, and
+hand-rolling a second copy of the shape in `bin/sugarcrush` to cover it would be the drift that having
+one definition prevents."* E84 (round 43) closed that second case — the guard now emits
+`{"result":null,"error":{"type":"installation","message":"sugarcrush: cannot find composer autoload.php"}}`
+and a newline, still at exit 2 — so the paragraph is now false, and it is false in the direction that
+matters: it tells a consumer not to bother parsing stdout on the one failure where parsing now works.
+Nothing asserts that sentence, so no test went red — `grep -rn 'exactly two exceptions'` hits `README.md`
+and nothing else, which is why this is recorded rather than caught.
+
+**Step.** Rewrite the paragraph to one exception (the unimplemented `--output-format` value), state that
+the autoload guard hand-rolls the document and why the duplication is deliberate, and add the
+`installation` `error.type` to the exit-code table's row for `2` (line beginning `| \`2\` |`). Consider
+pinning the claim with a test the way `ReadmeSettingsTierClaimTest` pins its own, so the next divergence
+reds instead of waiting for a reader.
+
+### E95 — the MCP start-then-throw diagnostic now prints one unowned line into the suite's own output
+
+**Recorded 2026-08-22 by the round-43 lane-b implementer.** Severity: cosmetic, test-hygiene. **Left as
+it is, deliberately; recorded so it is not rediscovered as an accident.**
+
+**What.** E86 routed `Bootstrap::mcpClient()`'s start-then-throw notice onto
+`warnPermissionConfigInTranscript()` in addition to its existing `error_log()`. That seam's stderr half
+is a `fwrite(STDERR, …)` in `Bootstrap::warnPermissionConfig()`, which no ini setting can redirect, so
+`McpToolWiringTest::testAClientWhoseConfigThrewPartWayThroughIsStillReachableByTheShutdownSeam()` — which
+runs in-process and points `error_log` at a file precisely to stay quiet — now prints exactly one line
+(`sugarcrush: MCP tools from …/.mcp.json are incomplete…`) into the suite's output. MEASURED on the full
+run at PHP 8.3.6: one line, and the suite already tolerates a comparable one from the workflow-tier
+refusal test.
+
+**Step.** Either accept it permanently, or quiet that one test by pre-seeding
+`Bootstrap::$reportedPermissionConfigWarnings` by reflection — which works because the seam records the
+transcript row BEFORE delegating for stderr, but couples the test to a private map whose purpose is
+unrelated and stops working silently the day the message is reworded. The reasoning is written up on that
+test's doc-block; the line's CONTENT is asserted by
+`testAPartlyStartedMcpConfigReachesTheTranscriptAndNotOnlyTheErrorLog()`, which uses a child process.
+
+### E96 — `ParallelToolCallsTest::testACompletedGroupLeavesNoPayloadFilesBehind` globs the shared `/tmp`
+
+**Recorded 2026-08-22 by the round-43 lane-b implementer.** Severity: low, test-isolation. **Not fixed
+here — `tests/Integration/ParallelToolCallsTest.php` was outside lane `b`'s file split.**
+
+**What.** Its `runtimeIpcFiles()` helper is `glob(sys_get_temp_dir() . '/sc_runtime_tool_*')`, i.e. a
+before/after snapshot of a directory every concurrent process on the box shares. Lane `b`'s round-43
+baseline run failed on it with one extra entry (`/tmp/sc_runtime_tool_e79c09f5fbbc8d5b.bin`) created by a
+sibling lane's suite between the two snapshots; the same test passed in isolation moments later. It is a
+false red under any parallel or multi-checkout run, including two developers on one box.
+
+**Step.** Scope the sweep to files this process created — the runner already knows its own pid — or point
+`ToolIpcFiles` at a per-run subdirectory under `sys_get_temp_dir()` and glob that. Do not "fix" it by
+widening the assertion; the leak-detection is the point.
+
+### E97 — the "fourteen call sites" seam count is stale in three places outside `Bootstrap.php`
+
+**Recorded 2026-08-22 by the round-43 lane-b fix agent**, from that round's review. Severity: low,
+documentation-correctness. **Not fixed here — `sugar-crush/src/Chat.php` and
+`sugar-crush/tests/Cli/BootstrapLaunchNoticeRoutingTest.php` were outside lane `b`'s file split.**
+
+**What.** The verified number of `self::warnPermissionConfigInTranscript(` CALL sites in
+`sugar-crush/src/Cli/Bootstrap.php` is **16** — counted with `token_get_all()` and a `::`/`(` adjacency
+test, not `grep`, so doc-comment mentions of the name are excluded. E86 (round 43) corrected the count
+inside `Bootstrap.php` itself and deliberately left the other three, which still say fourteen/fifteen:
+
+- `sugar-crush/src/Chat.php`, `Chat::withLaunchNotices()`'s doc-block — the paragraph opening
+  `FOURTEEN OF {@see \SugarCraft\Crush\Cli\Bootstrap}'S LAUNCH-WARNING CALL`.
+- `sugar-crush/tests/Cli/BootstrapLaunchNoticeRoutingTest.php`, class doc-block — "the guard for the
+  other fourteen" and "the retention summary onto the seam as the fifteenth call site".
+- The same file, on the method whose doc-block says "a transcript that also carries fourteen".
+
+**Step.** Set all three to 16 in one edit with the other two, and say in each how the number is obtained
+(the token scan above), so the next reader re-derives it in one command instead of grepping a name that
+also appears 15 times in prose. Better still, assert it: a small test that token-scans `Bootstrap.php`
+and compares the count against a constant these doc-blocks cite would make the next drift red rather
+than merely wrong.
+
+### E98 — `README.md` has a THIRD spot E84 falsified, beyond the two E94 names
+
+**Recorded 2026-08-22 by the round-43 lane-b fix agent**, from that round's review. Severity: low,
+documentation-correctness. **Not fixed here — `sugar-crush/README.md` belonged to lane `c`.** Fold this
+into E94 before touching that file, or E94 will be closed with the file still wrong.
+
+**What.** E94 names two spots: the `There are exactly two exceptions` paragraph (README.md, and confirmed
+the only file under `sugar-crush/` carrying that phrase) and the exit-code table's row for `2`. There is
+a third: the sentence enumerating the `error.type` values, which reads *"`usage` and
+`provider_configuration` are both `2`, `backend` and `encoding` are both `1`"* and omits `installation`
+entirely. The JSON schema block a few lines above it lists the same four types in its `"type":` union and
+omits `installation` too.
+
+**Step.** Add `installation` to both the union in the schema block and the exit-code sentence, mapping it
+to `2`, alongside E94's two edits. `NonInteractive::emitErrorDocument()`'s doc-block already carries the
+full five-type table and is the source to copy from.
+
+### E99 — `SkillRegistry::$compiledPathPatterns` is an unbounded static cache
+
+**Recorded 2026-08-22 by the round-43 lane-a fix agent** (reported, not filed by the lane). Severity: low.
+
+**What.** E85's translation memoises compiled patterns in a `static` array keyed by the raw pattern, for
+the lifetime of the process. Bounded in practice by the number of distinct `paths:` globs across
+installed skills — the doc-block says so — but nothing enforces it, and a caller that fabricated
+patterns per request would grow it without limit. Round 43 at least pinned that the cache exists, with
+`testTheCompiledPatternIsCachedUnderItsRawPattern()`.
+
+**Step.** No action today; the entry exists so a future dynamic-pattern feature (a user-supplied
+`paths:` filter, a `/skill` command that accepts a glob) does not discover this the hard way. If one
+lands, cap the cache or key it by a bounded identity.
+
+### E100 — the gain classifier's cause-discrimination has no isolating in-suite mutation
+
+**Recorded 2026-08-22 by the round-43 lane-a fix agent** (review finding F5, residual). Severity: low,
+test-quality.
+
+**What.** The E85 grid's gain classifier now attributes each newly-matching pair by CAUSE — it repairs
+the named hole and requires the old predicate to claim the path once the hole is gone — rather than by
+pattern prefix, and `**/a?c` is in the grid to make that falsifiable. But the discrimination could only
+be demonstrated **offline**: under a `?` → `.*` widening, `**/a?c` ← `a/b/c` is a gain the prefix
+classifier labels "leading globstar" and the cause classifier rejects — yet the same mutation also reds
+`testTheShippedMatcherReturnsExactlyTheCharacterisedTable`, so no in-suite mutation isolates the
+classifier alone. The offline table is in round 43's lane-a report.
+
+**Step.** A future round wanting an isolating mutation needs a widening that changes only a
+`**`-prefixed row. Until then the classifier is correct-by-inspection and pinned only jointly.
+
+### E101 — `nudgeSpendRoster()` discovers nudge-budget spenders by regex over each tool's source
+
+**Recorded 2026-08-22 by the round-43 lane-a fix agent** (review finding F3, residual). Severity: low.
+
+**What.** The E87 roster finds the tools that spend a nudge budget by matching
+`intdiv($this-><cap>, <n>|CALLER_BUDGET_DIVISOR)` over each tool's source text. A hypothetical fourth
+tool that spent a nudge budget **without** holding a `skillNudge` property would be invisible to the
+roster. Narrow, because the three-name roster assertion catches a tool joining or leaving.
+
+**Step.** Widen the discovery to the property rather than the arithmetic, or move the roster to a
+`public const` on each tool. Not done in round 43 because `Bootstrap.php`'s tool construction was
+lane b's file. Related: E91.
+
+### E102 — two integration tests now spawn ~28 child PHP processes between them
+
+**Recorded 2026-08-22 by the round-43 lane-b fix agent** (reported, not filed by the lane). Severity:
+low, test-runtime. **Measured, and cheap today.**
+
+**What.** `BinSugarcrushAutoloadGuardTest` spawns roughly 26 children (17 differential-table rows, 9
+`nonJsonInvocations` rows, plus singletons); file time **1.48 s** on PHP 8.3.6, because each child dies
+inside the guard's IIFE. `McpToolWiringTest` now spawns **two** children with live MCP fixture servers
+via the shared `launchChatInChild()` helper; file time **3.29 s → 3.36 s**. Neither is a problem now, but
+the differential table is the natural place to add a row, and every row is another process.
+
+**Step.** If it ever matters: fold the differential comparison into one child that reads a table off
+stdin and answers all rows, rather than one child per row. A **third** caller of `launchChatInChild()`
+should get a harness that starts one child and asks it several questions.
+
+### E103 — `Bootstrap::reportProjectTierToolRemovals()` still spells the stale glob length
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, doc-only. **Already has a
+failing-on-fix guard pointing at it.**
+
+**What.** The paragraph "THE RESTRICTION THE BACKLOG PROPOSED WAS NOT TAKEN" in
+`src/Cli/Bootstrap.php` says "the eight-character version". The correct figure for `[!B]*` is **five**
+(E74/round 42 established that "eight characters" is a number nothing produces). Not fixed in round 43
+because `Bootstrap.php` was lane b's file.
+
+**Step.** A three-part rewrite, **not** a number swap — the point of the sentence is that the value
+names none of the ten tools it removes. ⚠️ `GlobFigureDriftTest::testTheSettingsPageNamesExactlyTheSourceFilesStillCarryingTheStaleFigure()`
+asserts the census equals exactly `['src/Cli/Bootstrap.php' => 1]`, so fixing this WILL red that test —
+by design. `docs/SETTINGS.md`'s "is the one remaining site" sentence must move in the same commit.
+
+### E104 — no test pins any launch-report line in `Bootstrap` other than the `disabledTools` one
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low.
+
+**What.** Round 43 anchored the README's launch-report sample by reading three literals out of
+`src/Cli/Bootstrap.php` (the `sprintf` format, the `'leaving: '` prefix, and `warnPermissionConfig()`'s
+stderr envelope). Every **other** `sprintf()` in `Bootstrap` that reaches stderr or the transcript has
+exactly the non-coverage that finding established for this one.
+
+**Step.** Extract the formats to `public const` on `Bootstrap` (lane-b territory) so README and
+transcript tests can reference them **by name** instead of by source-text regex — then drop
+`bootstrapMethodSource()`/`soleMatch()` from `ReadmeRosterDriftTest`. Related: E101.
+
+### E105 — the E81 door census catches a new KEY, never a new DOOR
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, and it is a **stated limit**,
+not an oversight.
+
+**What.** `ConfigWriteProducerDocumentationDriftTest` walks the token stream for `onConfigChange`
+invocations and pins the *keys* written. A fifth user-facing route into
+`Chat::selectPaletteProvider()` would leave every assertion green while the enumeration in
+`LayeredSettings`' doc-block went stale. The routes are ordinary private-method calls; there is no cheap
+oracle for "every entry point into this method". Stated in the test's own doc-block.
+
+**Step.** No cheap fix. If `Chat` ever grows a command dispatch table, census that instead.
+
+### E106 — `Chat::withOnConfigChange()`'s doc-block repeats the `/model` omission E81 just fixed
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, doc-only. **One line.**
+
+**What.** It still says the callback fires on "the Switch Model/Switch Theme palette actions (or
+`/theme`)" — the identical omission of `/model` that E81 corrected one file over in
+`LayeredSettings`. `src/Chat.php` was not lane c's file this round.
+
+**Step.** One-line fix, and it now has a pinning pattern to copy:
+`testTheReadmeCounterfactualCreditsTheSlashCommandAndNotThePaletteAlone`.
+
+### E107 — eight of round 43's lane-c review mutations were never verified by anyone
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, process.
+
+**What.** Reviewer mutations MD, ME, MF, MH, MI, MJ, MK, ML (subcommand fence, layer swap,
+`dont-ask`, launch-sample survivor and order, heading rename, added subcommand,
+`Bootstrap::tools()` minus `Grep`) were claimed but not re-exercised by the fix agent. The neighbouring
+ones **were** re-run and behaved as claimed — X7 (README drops `Grep`), X2/X3 (heading and roster
+uniqueness) — and the assertions behind the unverified set are `assertSame` over sorted arrays derived
+from `src/`, which is the shape that does work. Low risk, still unmeasured.
+
+**Step.** Re-run the eight when anything in `ReadmeRosterDriftTest` next changes.
+
+### E108 — `GlobFigureDriftTest`'s stale-figure census has a hand-written connector class
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, test-quality.
+
+**What.** The census matches `/eight[- ]character/i`. The number **word** is derived from `word(8)` so it
+moves with the glob, but the connector class `[- ]` is hand-written: `eight‑character` with a
+non-breaking hyphen, or "eight characters" split across a doc-block line in a way the paragraph
+normaliser did not collapse, slips past.
+
+**Step.** Normalise Unicode dashes (and collapse intra-paragraph line breaks) before matching. Cheap.
+
+### E109 — the launch-sample regex accepts any non-space path
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low. **Deliberate; recorded so
+nobody reads the guard as stronger than it is.**
+
+**What.** `ReadmeRosterDriftTest`'s launch-sample anchor ends with `(?=\s|$)` but spells the source path
+`\S+`, so a README sample with a nonsense-but-nonspace path (`xxx`) still matches. Pinning the path
+shape would mean pinning an example value, which is why it was left.
+
+**Step.** None unless the sample's path becomes load-bearing.
+
+### E110 — the README Keys table is unpinned row by row, deliberately
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low. Unchanged from the
+implementer's own deferral.
+
+**What.** README spells chords for humans (`Up`, `Page Up`, `Esc Esc`); `KeyBindingRegistry` spells them
+for the screen (`up-arrow`, `PgUp`). Any mapping between the two is a translation table that would
+itself go stale — the guard would become the thing needing a guard.
+
+**Step.** Give `KeyBinding` a canonical machine id per chord and match on that. Until then the table
+stays prose. Related: the `keybindings` L item, still DEFERred.
+
+### E111 — five `docs/SETTINGS.md` claim families still have no cheap oracle
+
+**Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, and it is the honest residue of
+E83 rather than a defect.
+
+**What.** The `--flag` list, the `$SUGARCRUSH_*` env roster, the exit-code table, the twelve built-in
+skills and the six agent presets all still lack a cheap oracle. The compaction thresholds ARE real
+constants, but too volatile to pin without building a change-detector, which is a different tool.
+
+**Step.** Take them one at a time as each acquires a machine-readable source. The roster and preset
+lists are the two most likely to become checkable, since both are already enumerated in `src/`.

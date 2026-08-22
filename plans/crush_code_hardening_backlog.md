@@ -2642,6 +2642,34 @@ across every modified key, so it is not a drive-by.
 `KeyMsg` wholesale and drops the shift the `Z` final byte encodes. Nothing in this tree emits
 `CSI 1;5Z`, so this stays recorded rather than scheduled.
 
+**ROUND 41 — FIXED (`ae30fee5`), AND THIS ENTRY UNDERSTATED ITS OWN SIZE.** Everything above is
+accurate and the heading is too narrow: it is the whole **shift-bit-clear family**, not one shape.
+Measured before the fix, at `ae30fee5`'s parent: `ESC[1;3Z` → `alt+tab`, `ESC[1;5Z` → `ctrl+tab`,
+`ESC[1;7Z` → `ctrl+alt+tab` — every xterm modifier whose shift bit is clear (the odd values, since
+mod = 1 + bitmask(shift=1, alt=2, ctrl=4)). **A fix scoped to the literal `1;5` this entry names would
+have left two thirds of the family broken**, and a mutation in `InputReaderTest` now demonstrates
+exactly that: constraining the OR to `ctrl && !alt` kills mod 3 and mod 7 and nothing else.
+
+**The Step recorded above was right about the mechanism and right about which option to take.** The
+rebuild in `decodeCsi()` now **ORs** rather than assigns:
+`alt: $mods->alt || $key->alt` and the same for ctrl and shift. The entry called merging "the more
+general fix" that "would want its own test sweep across every modified key, so it is not a drive-by" —
+that sweep is the second data provider added (`unshiftedModifiedKeyProvider`: ctrl+Up, ctrl+Down,
+alt+Right, ctrl+Home, ctrl+Tab, ctrl+F5), and it is what the merge needed, because the danger of an OR
+is inventing a modifier rather than dropping one. **`'Z'` is the only arm in the key table that sets a
+flag of its own**, so for every other final byte the OR is provably identical to the assignment it
+replaced — which is what makes this a small change rather than a sweep.
+
+The load-bearing pair is `ESC[1;5I` vs `ESC[1;5Z`: the SAME modifier parameter must yield an unshifted
+tab for one final byte and a shifted one for the other, and before the fix both came back `ctrl+tab`.
+A rebuild that reads only the parameter cannot tell them apart. Pinned by
+`testTheSameModifierParameterDivergesOnTheFinalByte`.
+
+**The declined-on-emitter-grounds argument has been rewritten in place, not deleted** (per the standing
+rule): the `'Z'` arm's comment now records what it used to say, that the reasoning was right about the
+emitter and wrong about the size, and why the merge is the general fix.
+candy-core: 795 tests / 7181 assertions / 25 skipped / rc 0 (from 785 / 7134).
+
 ### E53 — fast and slow width paths diverge on ZWJ sequences
 
 **What.** `AgentViewPane::visualWidth()` delegates to `Width::string()` and is **grapheme-aware over a
@@ -3718,6 +3746,48 @@ A user reading it would raise the `ScriptHook`'s `timeout:`, which cannot help.
 **Size: L as a fix** (a fiber or a fork, plus a decision about what killing an in-process hook means —
 a design decision, not an edit). **S** if the outcome is to correct the denial message to name the spender.
 
+**ROUND 41 — THE S IS FIXED (`ae30fee5`). 🔴 THE L IS STILL OPEN; do not read this stamp as closing the
+entry.** A chain of only hand-written hooks still gets no deadline, and a hand-written hook still spends
+the chain's clock without contributing to it. Nothing about that changed — only what the user is told
+when it bites.
+
+`HookRegistry::executeHooks()` now keeps a spend ledger (name, seconds, whether the hook is a
+`BoundedHookInterface`), **accumulated across rewrite passes** rather than per pass, because on a
+rewriting chain the pass that hits the wall is routinely not the pass that spent the budget. The
+expiry refusal is built by a new `chainExpiryReason()` and states, in order: elapsed **next to**
+budgeted; where the sum came from; the spenders largest-first, each marked counted-in-the-sum or not;
+that the stopped hook ran for **0s** and consumed none of the budget its own timeout contributed; and
+then the actionable half — that raising a `timeout:` will **NOT** fix it when an unbounded hook is
+implicated, with the opposite advice when every spender was bounded. Bounded by
+`MAX_NAMED_SPENDERS` (4) and `MAX_SPENDER_NAME_CHARS` (60), announcing the cut, because hook names come
+from a YAML file and are therefore user-supplied — the same clip doctrine `ScriptHook` applies to its
+own reasons.
+
+**Two reachability claims were measured rather than assumed, and one was wrong when first written.**
+(1) A first draft's comment said `timeout: 0` reaches the "no hook had run yet" branch. It does not —
+`ScriptHook::timeoutSeconds()` reads zero as *unset* and answers its 60-second default, so the chain
+gets a minute. The real route is a **positive sub-microsecond** timeout (`0.000001`, verified): the
+budget is then smaller than the walk from arming the deadline to the first hook. (2) That branch also
+exposed a self-refuting rendering — at three decimals the refusal read *"ran 0s against a 0s budget"* —
+so `seconds()` now falls back to a fixed-significand form for anything that would round away.
+
+**The all-bounded branch is pinned with a test double, deliberately.** A `ScriptHook` cannot overrun
+(it kills itself at the deadline it was charged), so an all-`ScriptHook` chain can exceed its own sum
+only by per-hook `proc_open`/`proc_close` overhead — total spend ≈ N × overhead against a budget of
+≈ N × overhead. **Measured: four hooks each declaring 10ms denied on some runs and fitted on others.**
+The first cut of that test called `markTestSkipped()` on the fitted case, which would have put a
+**second skip** into a suite whose skip count is the path-repo-closure alarm. It is now a
+`BoundedHookInterface` double that declares a figure and overruns it — legitimate, because
+"shortening only" is `ScriptHook`'s own contract rather than the interface's, and this branch has to be
+right for any implementor.
+
+**The E60 non-collision note above still holds and is now load-bearing in the other direction:** the S
+touched only the refusal's wording and the ledger behind it, so `ScriptHook` remains the sole
+`BoundedHookInterface` implementor in `src/` and E60's clip design still has exactly one caller.
+sugar-crush: 8909 tests / 101051 assertions / 1 skipped / rc 0 (from 8905 / 101022). Seven mutations
+killed: old message restored, unbounded advice forced on and forced off, ledger unsorted, ledger
+bounded-only, sub-millisecond rendering fallback removed, spender cap raised to 999.
+
 ⚠️ **Must NOT share a lane with E60** — it changes E60's premise: if hand-written hooks become
 forkable, `ScriptHook` stops being the only `BoundedHookInterface` implementor and the clip design
 acquires more callers.
@@ -4330,7 +4400,9 @@ these against the E66 fix; the supervisor reproduced them and fixed the two bloc
 `Read` guard and the wrong threshold figures above) in the same round. These three are recorded instead:
 
 - **E70 — `GrepInstructionWiringTest::testASkillIsAnnouncedForEveryHitTheModelCanSeeAtEveryCap` is now
-  violable.** That test asserts the law `!$visible || $announced`. MEASURED on the round-40 branch:
+  violable.** *(That method no longer exists. It was renamed and restructured in f8272f8f to
+  `::testTheAnnounceOnceMarkIsSpentOnlyOnAHitTheModelWasToldAbout`, which is where the retitled law
+  and the derived-threshold sweep now live.)* That test asserts the law `!$visible || $announced`. MEASURED on the round-40 branch:
   with 1 hit file and a skill carrying a 400-byte description, at caps 1,000 / 1,250 / 1,500 / 2,000 /
   3,000 the hit path **is** in the 62-byte result and the skill is **never** announced — the eighth
   cannot hold the entry. It flips true at 3,500. With the shipped 30-byte description the dead band is
@@ -4348,6 +4420,43 @@ these against the E66 fix; the supervisor reproduced them and fixed the two bloc
   claim that "a long session pays nothing per tool call" once everything is announced is FALSE in that
   case. Driven: two consecutive `forPath()` calls both return null, `announced()` stays `[]`, and the
   registry is walked in full each time. Pre-existing; surfaced by the diff's prose.
+
+- **CLOSED 2026-08-22 (round 41, lane c: f8272f8f + this round's fix pass).** All three shipped.
+  - **E70.** The old law's fixture could not reach its own boundary and its failure message asserted
+    the opposite of the truth: `SkillPathNudge::forPaths()` marks only the entries it EMITS, so an
+    unaffordable nudge is DEFERRED, not retired. Replaced by
+    `::testTheAnnounceOnceMarkIsSpentOnlyOnAHitTheModelWasToldAbout` (mark/emit law + the qualified
+    old law, swept over a 0-hit and a 200-hit fixture so all three regimes are reached, then bracketed
+    at ±1 byte on the derived `8 * floor` boundary because the 250-byte sweep step steps clean over
+    the window where an eighth and a ninth disagree) and
+    `::testACapTooTightForTheNudgeDefersTheSkillRatherThanRetiringIt`. The falsified sentence in
+    `Grep::execute()`'s nudge-append comment is rewritten in place, not deleted.
+  - **E71.** Pinned: Read's eighth
+    (`SkillPathScopingTest::testReadSpendsExactlyAnEighthOfMaxBytesOnTheSkillNudge`), Glob's eighth
+    (`::testGlobSpendsExactlyAnEighthOfMaxOutputBytesOnTheSkillNudge`), Glob's `+1`
+    (`::testGlobsNudgeReservationHoldsTheResultInsideTheCapAtSaturation`) and Grep's `+1`
+    (`GrepInstructionWiringTest::testGrepsNudgeReservationHoldsTheResultInsideTheCapAtSaturation`).
+    Every threshold is derived from `SkillPathNudge`'s own pricing at runtime, never written down.
+    ⚠️ **Grep's `+ 1` is NOT an over-reservation** — a comment written in f8272f8f said it was.
+    `separated()` emits its newline whenever the cut does not land on one, which a byte-capped hit
+    list mostly does not, so the byte is exact there and spare only at the caps where it does.
+    MEASURED on PHP 8.3.6 over a 41-hit fixture, caps 200–6,000: shipped Grep over-ran nothing;
+    with the `+ 1` dropped, cap 3,037 returned 3,038 bytes.
+  - **E72.** `hasPending()` now applies `isAutoInvocable()`. Both halves of its skip are pinned —
+    the auto-invocable half by `SkillPathScopingTest::testASkillTheModelMayNotInvokeIsNotPending`,
+    the `paths === []` half by `::testTheGuardClosesOnceEveryAnnounceableSkillIsAnnounced`, whose
+    fixture now carries a path-less skill (deleting that half of the guard reproduces E72's exact
+    symptom through the ordinary case).
+  - **Also pinned this round:** `forPaths()`'s strict `>` against `>=`
+    (`SkillPathNudgeTest::testTheSmallestBudgetThatBuysANudgeIsExactlyWhatThatNudgeCosts`), and
+    Glob's `max(1, …)` guard is documented as unreachable-while-the-share-is-an-eighth rather than
+    left implying a live knife-edge. `forPaths()`'s deferred-note `$reserve` was reported as unpinned
+    by review but is NOT: `SkillPathNudgeTest::testTheNudgeNeverExceedsTheBudgetItIsGiven` kills
+    `$reserve = 0` (budget 169 returns 246 bytes).
+  - **Still open, deliberately:** the shipped `Bootstrap` caps (1 MB / 65,536 / 65,536) clear the
+    166–174-byte nudge floor by three orders of magnitude, so E70 is not live in production — and
+    nothing asserts that. A Bootstrap-owning lane should add
+    `intdiv(shippedCap, 8) >= SkillPathNudge::maxBytes()`.
 
 The `Grep::execute()` cross-reference is corrected from E57 to E66, and the two comments in `Grep` and
 `Glob` that described the nudge as living outside the cap are rewritten. `sugar-crush/docs/SKILLS.md`'s
@@ -4649,3 +4758,134 @@ rather than defer. It is bounded in practice only by how rare a tab-then-ZWJ is 
 UAX #29) rather than zeroing whatever precedes a ZWJ. Land it with the property that is false today:
 for every input, `Width::string(Style::new()->render($x))` must equal `Width::string($x)` — currently
 false in BOTH directions, so assert the sign of the disagreement, not just its magnitude.
+
+**ROUND 41 — FIXED (lane b, `1b0974bc` + `79110a35` + `550dd1dd`). THE RECORDED STEP WAS TOO NARROW,
+AND THE FIX IS A DELETION RATHER THAN A REPAIR.** The Step above says to make the look-ahead "refuse to
+absorb a Control". That treats the Control as the special case. It is not: **the entire machine had
+inverted semantics.** It was written when `string()` split per CODEPOINT (pre-E68), where a ZWJ really
+did arrive as a sibling of the emoji it joined. Under the ICU cluster segmentation E68 introduced, a
+bare ZWJ cluster means UAX #29 broke **before** it — nothing joined — so every clause was reading the
+opposite of what it assumed. A ZWJ that genuinely joins is already **inside** one cluster and is scored
+once by its base, which is why removing the look-ahead and the `$inZwjSequence` flag changes nothing
+about real ZWJ sequences. `compute()` is now a plain sum of `graphemeWidth()` over `graphemes()` with no
+cross-cluster state. Supervisor-verified independently before the merge: `TAB ZWJ U+1F44D` 0 → 6,
+`a TAB ZWJ U+1F44D` 1 → 7, `U+1F468 ZWJ U+1F469 ZWJ U+1F467` unchanged at 2, lone U+1F44D unchanged at 2.
+
+**The fuzz figures in the first commit message were not reproducible and were corrected in the third.**
+`989 over-runs / 3,862 under-runs` came from no generator the file defines and carried neither a seed
+nor a length bound. Re-run with the committed generator (`mt_srand(20260822)`, `1 + mt_rand(0, 5)`
+symbols, 200,000 trials, PHP 8.3.6 / ICU 74.2): **461 over-runs (worst Δ8) and 1,669 under-runs (worst
+Δ4) at `ae30fee5`; 0 and 1,670 after the fix.** The over-run family — the frame-corrupting direction —
+is closed outright. Recording the corrected numbers matters more than the original claim did: a figure
+without its generator is the defect this backlog keeps finding.
+
+**E69's "0 unexplained" completeness claim is refuted and rewritten in place, not deleted** (its
+tab-WIDTH conclusion still stands). That census's alphabet **contained no ZWJ**, so it could not have
+seen this family — a number reported without its domain, in the very docblock that warns about domains.
+
+`Width::isEmoji()` lost its only caller with the machine. It is **kept** (dormant code is wired or
+documented, never deleted) and deliberately **not** wired into `graphemeWidth()`: measured against ICU
+74.2 East_Asian_Width, the three ranges it covers that `isWide()` does not are majority-NARROW
+(U+1FA00–U+1FAFF 107 wide vs 98 other; U+2600–U+26FF 31 vs 225; U+2700–U+27BF 15 vs 177), so charging
+2 cells for them would over-count ~500 assigned codepoints in the frame-corrupting direction. Recorded
+as a seam on its docblock plus a `phpstan.neon` `ignoreErrors` entry, following the `Concerns/Mutable`
+`trait.unused` precedent. **This also unbroke a red CI job**: `candy-core` ships `phpstan.neon` at level
+5 and CI runs it per-lib, so the lane was briefly shipping an unreferenced private method.
+
+candy-core: 799 tests / 7,210 assertions / 25 skipped / rc 0 (from 795 / 7,181). candy-sprinkles green.
+
+### E74 — `sugar-crush/README.md` repeats a project-tier claim the source records as measured FALSE
+
+**Recorded 2026-08-22 by the round-41 lane-a reviewer.** Severity: **medium, and user-facing.**
+
+**What.** `README.md` tells the reader that a hostile project-tier `disabledTools` "means naming every
+tool it removes — a value you can see". `LayeredSettings.php`'s docblock records the measured
+counterexample in the opposite direction: `{"disabledTools":["[!B]*"]}` is **eight characters** and
+leaves only `Bash` enabled. The glob is a negated character class, so a short pattern removes an
+unbounded set without naming any of it.
+
+**Why it matters more than a doc nit.** This is the sentence a user would rely on when deciding whether
+a cloned repo's settings need reading. It advertises a safety property the code does not have, and it
+sits in the file most likely to be read and least likely to be re-derived. The tier design is sound —
+this is the documentation of it that is wrong.
+
+**Step.** Rewrite the claim in place (never delete it) to state what is true: project tier can *remove*
+tools with a pattern far shorter than the set it removes, which is why the dangerous keys are
+user-tier-only rather than why `disabledTools` is safe. Cite the eight-character counterexample.
+
+### E75 — `README.md` calls `config.json` "the deprecated name"; the source argues at length that it is not
+
+**Recorded 2026-08-22 by the round-41 lane-a reviewer.** Severity: low, but actively misdirecting.
+
+**What.** `LayeredSettings.php` documents that `config.json` is the only file that is ever *written*,
+and that calling it deprecated points users away from the file their changes actually land in.
+`README.md` calls it deprecated anyway. Two source-of-truth statements, one of them load-bearing for
+anyone trying to find their own settings.
+
+**Step.** Reconcile in `README.md`, in favour of the source docblock. Rewrite, do not delete.
+
+### E76 — `Chat.php`'s pane-click docblock asserts the opposite of what `bin/sugarcrush` does
+
+**Recorded 2026-08-22 by the round-41 lane-a reviewer; deliberately not fixed in-lane.**
+Severity: low (comment-only), but it is a **load-bearing argument** that a future reader would act on.
+
+**What.** The docblock states that the `App` / `Tui\Renderer` system is one "that nothing constructs
+(`bin/sugarcrush` runs THIS model)". `bin/sugarcrush:225` constructs `new Program(Bootstrap::app(...))`,
+so `App::view()` → `TuiRenderer::renderView()` **is** the live path. `Renderer.php`'s class docblock
+already carries the corrected account, so the tree contradicts itself.
+
+**Why it was left.** Rewriting a load-bearing justification is a rule-13 change that deserves its own
+round rather than a drive-by inside an unrelated item. Lane a established the truth by tracing the
+launch path (which is how it knew which renderer to edit) and recorded it rather than acting on it.
+
+**Step.** Rewrite the `Chat.php` docblock in place, recording what it used to say and why it was wrong.
+Confirm first whether `Tui\Renderer::statusBar()` is genuinely dead on the live path — lane a measured
+that it is, because `renderView()` sets `$bottom = ''` whenever `$a->chat !== null`, which is always
+true on a real launch. If so, say *that*, rather than that nothing constructs the system.
+
+### E77 — `nextCluster()`'s no-ext-intl fallback is now measurably wrong for real ZWJ sequences
+
+**Recorded 2026-08-22 by the round-41 lane-b reviewer.** Severity: **latent — currently unreachable.**
+
+**What.** The removed ZWJ machine (E73) was what compensated for the hand-rolled fallback segmenter.
+With it gone, the fallback scores `U+1F469 ZWJ U+1F4BB` as **4** where ICU scores 2 — over-counting a
+joined sequence by 2 cells per extra emoji. Measured under `-d disable_functions=grapheme_extract`
+(U+1F468 family: 2 before, 8 after).
+
+**Why it is not scheduled.** `candy-core/composer.json` **hard-requires `ext-intl`**, so the fallback
+cannot execute in any supported configuration. It is a seam, kept rather than removed.
+
+**Step.** None while the requirement stands. If anyone ever relaxes `ext-intl` to a suggestion, this
+becomes live and must be fixed in the same change — cross-reference this entry from the composer edit.
+
+### E78 — nothing ties the shipped `Bootstrap` tool caps to the skill-nudge floor
+
+**Recorded 2026-08-22 by the round-41 lane-c reviewer; the file was held by another lane.**
+Severity: low today, medium if a cap ever moves.
+
+**What.** E70's dead band (a cap too tight to afford the nudge) is not live in production only because
+`Bootstrap.php` constructs `Read`/`Glob`/`Grep` with 1 MB / 65,536 / 65,536, whose eighths (131,072 /
+8,192 / 8,192) clear the 166–174-byte nudge floor by three orders of magnitude. **No test asserts
+that.** A future Bootstrap cap below roughly 1,400 bytes would silently reopen the band that lane c
+just spent a round pinning at the unit level.
+
+**Step.** In a Bootstrap-owning lane, one assertion per tool:
+`intdiv($shippedCap, 8) >= SkillPathNudge::maxBytes()` (or the derived floor). It is the cheap guard
+that makes the unit-level work above actually protective.
+
+### E79 — the tab/Extend under-run family in `Width` is a rendering-semantics decision, not a bug
+
+**Recorded 2026-08-22 by the round-41 lane-b reviewer.** Severity: low; **in the safe direction.**
+
+**What.** 1,670 of 200,000 fuzz strings (worst Δ4) still under-count. Mechanism: `Style::render()`
+rewrites `\t` → spaces *before* measuring, and a space — unlike a Control — absorbs a following Extend.
+So `\t` + U+1F3FB is 4+2=6 unexpanded but 4 expanded.
+
+**Why it is not a fix.** Closing it requires deciding that **an orphan Extend cluster scores 0**, which
+would change `Width::string("\u{1F3FD}")` from 2 to 0 across the entire foundation and changes what a
+terminal is expected to paint for a lone skin-tone modifier. That is a semantics change with blast
+radius well beyond this class. Under-counting also cannot corrupt a frame here — over-wide rows can.
+
+**Step.** Decide the semantics deliberately, in a round of its own, with the foundation-wide blast
+radius costed first. Its shape is already pinned by
+`StyleTest::testExpandingATabCanStillReclusterAFollowingCombiningMark`, so it cannot drift unnoticed.

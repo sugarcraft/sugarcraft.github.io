@@ -3079,6 +3079,49 @@ from underneath. One `\e[?1049h`, one copy of the sentence, though `app()` build
 ⚠️ **A pre-alt-screen acknowledgement gate was considered and REJECTED.** It is the wrong answer for a
 launch-time warning about a grant the operator already made. Do not build one.
 
+**ROUND 40 `sglang` — the migration finished, and three things the entry above got wrong.**
+
+**The census. "nine" other warnings was wrong: there were SEVENTEEN.** Measured at `8add627b`: 13
+un-migrated `warnPermissionConfig()`/`warnPermissionConfigOnce()` call sites, plus 4 launch warnings
+that bypassed the seam entirely as raw `fwrite(STDERR, …)` — the two provider degradations to echo and
+the two agent-preset degradations, which are arguably the most user-visible of the lot. A further 2
+`fwrite`s in `reportPrunedSessions()` were not in any census.
+
+**Thirteen migrated, four deliberately not.** The rule, recorded on
+`warnPermissionConfigInTranscript()`: a warning earns a transcript row iff it names something **the
+session can no longer do**. Left on stderr — `trustedProjectRoots()`'s three per-entry complaints
+(the consequence, an untrusted project, is already on the seam with the actionable path),
+`withoutEmptyPermissionOverrides()` (reports a change that was DECLINED, so nothing about the session
+differs), and `reportPrunedSessions()` (history already deleted, not this session's capabilities).
+
+**Finding: `permissionRules()` said everything TWICE, on every launch.** `chat()` reaches it through
+`permissionGate()` AND through `agentManager()`, and those were raw `warnPermissionConfig()` calls
+with no de-duplication at all — probed at `8add627b`, a config with two bad rules printed **four**
+stderr lines. Routing through the seam picks up the per-process map, so it is one apiece now.
+
+**Finding: `app()` raised two of these AFTER `chat()` had already read the list.** `bin/sugarcrush`
+runs `app()`, not `chat()`; `app()` calls `reportSkillSkips()` and `reportProjectTierRefusals()` a
+second time after `chat()` returned, so anything they recorded landed in a static nothing read again.
+Migrating them without fixing that would have been a no-op that looked like a fix. `app()` now applies
+the **delta** — never the whole list, because `withLaunchNotices()` appends.
+
+**The list is now bounded, and it was not before.** `$launchNotices` becomes `Role::System` rows of the
+CONVERSATION, so it is sent to the model on every turn — an unbounded list is a per-token cost for the
+whole session, not a scrolling nuisance. `LAUNCH_NOTICE_LIMIT = 24` rows (measured: 17 is the most a
+launch reaches without a per-ENTRY fan-out) and `LAUNCH_NOTICE_MAX_CHARS = 400` (measured: the longest
+legitimate message this class builds is `hookFiles()`'s at 283 chars). stderr is never clipped or
+capped, and the overflow is a counted tail row pointing at it.
+
+**Sub-finding, caught by the test rather than by review.** The overflow counter was an `int` and
+double-counted: because `permissionRules()` is raised twice per launch, a 30-rule config reported
+"and 12 more" for the 6 it could not fit. It is a message-keyed set now, so the dropped half has the
+same de-duplication the kept half already had.
+
+**Still stderr-only and UNTESTED:** the two agent-preset degradations. Both registries catch per-file
+failures internally, so the outer `catch (\Throwable)` needs a registry-level throw that no filesystem
+fixture reaches — probed three ways (a `.claude/agents` that is a file, one that is unreadable, one
+holding malformed YAML) and none of them throws. They are guarded by review, not by a test.
+
 🔴 **STOP CITING LINE NUMBERS IN THIS ENTRY. Cite symbols.** This is the third consecutive round in which
 this entry's line numbers were stale when read: the original entry's four were corrected by the round-39
 scout; those corrections were stale by round 40; round 40's re-head left them uncorrected; and the
@@ -4239,6 +4282,93 @@ often but not how much.
 
 **Step.** Clip the nudge, and count it against the same budget as the tool body rather than beside it.
 
+**FIXED, round 40 `cmd`.** Both halves. The four-row table above re-measured independently in the lane
+and reproduced EXACTLY (345 / 20,253 / 1,000,773 / 10,002,823 bytes). End-to-end, over a 30-file
+fixture, 20 skills x 20,000-byte descriptions: `Grep` at cap 1,000 returned 401,372 bytes (401.4x),
+`Glob` 401,378 (401.4x), `Read` at `maxBytes` 200 returned 400,406 (2,002.0x) — and ONE skill with a
+200-byte description already overran at 1,334 / 1,340 (1.3x), so it was never a
+pathological-input-only defect.
+
+`SkillPathNudge::forPaths()` now bounds itself in COUNT (`MAX_ENTRIES` = 8) and in BYTES per entry
+(`MAX_ENTRY_BYTES` = 300, cut with `mb_strcut` so a clip cannot emit a partial UTF-8 sequence and
+marked `... [clipped]`), giving a class ceiling `SkillPathNudge::maxBytes()` = 2,636 bytes. Overflow is
+DEFERRED, not dropped — a held-back entry is left unannounced, so `hasPending()` still reports it and a
+later call surfaces it, which is the rule `instructionSection()` follows for the same reason.
+`forPaths()` also takes an optional caller budget; a budget too small for one entry returns null and
+marks NOTHING.
+
+For the second half, `Grep` and `Glob` build the nudge BEFORE clipping the body and subtract its
+length from the body's cap; `Grep`, `Glob` and `Read` give it an eighth of their cap where the
+instruction section takes a quarter, making `Read`'s stated total 1.375x `maxBytes`. `Edit`/`Write`
+pass no budget — their result is a one-line success message with no cap to spend — so the class
+ceiling is the whole bound there, the analogue of their flat `DEFAULT_MAX_INSTRUCTION_BYTES`.
+
+Residual, stated: below a cap that depends on the case, an eighth cannot hold the chrome plus one
+entry, so no nudge is emitted at all — deferred, not spent. **There is no single threshold**, because
+the deferred-note reserve is charged only when something is actually held back. MEASURED by binary
+sweep on `SkillPathNudge::forPaths()` (PHP 8.3.6), and independently reproduced by the round-40
+reviewer and by the supervisor:
+
+| pending × description | min budget | min cap (×8) |
+|---|---|---|
+| 1 × 20,000 | 434 | 3,472 |
+| 2 × 20,000 | 529 | 4,232 |
+| 1 × 30 | 173 | 1,384 |
+| 20 × 30 | 268 | 2,144 |
+
+Chrome is `strlen(HEADER) + strlen(FOOTER)` = 115 + 19 = 134; one clipped entry is at most
+`MAX_ENTRY_BYTES` = 300; the note reserve adds 95. The shipped cap is 65,536, whose eighth (8,192)
+clears every row.
+
+⚠️ **The figures this paragraph originally carried — "roughly 4,120 bytes (1,960 for a short entry)"
+and a companion "515 bytes" in `ToolOutputBudgetTest` — were WRONG, in all three cases, and stated
+without naming which of the four cases they held over.** That is §5's recurring defect committed
+inside the fix that closes E66. Corrected in the same round it was introduced.
+
+**ROUND 40 SUPERVISOR REVIEW — three findings recorded, not fixed.** An adversarial reviewer found
+these against the E66 fix; the supervisor reproduced them and fixed the two blocking ones (the vacuous
+`Read` guard and the wrong threshold figures above) in the same round. These three are recorded instead:
+
+- **E70 — `GrepInstructionWiringTest::testASkillIsAnnouncedForEveryHitTheModelCanSeeAtEveryCap` is now
+  violable.** That test asserts the law `!$visible || $announced`. MEASURED on the round-40 branch:
+  with 1 hit file and a skill carrying a 400-byte description, at caps 1,000 / 1,250 / 1,500 / 2,000 /
+  3,000 the hit path **is** in the 62-byte result and the skill is **never** announced — the eighth
+  cannot hold the entry. It flips true at 3,500. With the shipped 30-byte description the dead band is
+  caps 1,000–1,250. **Not live**: the only shipped construction sites are `Bootstrap`'s
+  `new Read/Glob/Grep(...)` at 1 MB / 65,536 / 65,536, whose eighths all clear the thresholds tabulated
+  above. The existing test passes only because its fixture's two regimes — hit visible, entry
+  affordable — do not overlap. **That is fixture luck, not structure**, and it is the exact shape §5
+  describes: a law asserted over a fixture that cannot reach its own boundary.
+- **E71 — `Read`'s "an eighth" and `Glob`'s +1 reservation are stated but unpinned.** MEASURED:
+  `intdiv($this->maxBytes, 8)` → `intdiv($this->maxBytes, 2)` in `Read::execute()` SURVIVES the suite,
+  and `$nudgeCost = ... strlen($nudge) + 1` → `strlen($nudge)` in `Glob` SURVIVES. The latter is a
+  reachable 1-byte overrun when `truncateOutput()` saturates `$bodyCap` exactly; no test does.
+- **E72 — `SkillPathNudge::hasPending()` does not consult `isAutoInvocable()`.** A path-scoped skill
+  carrying `disable-model-invocation: true` keeps `hasPending()` true forever, so the class docblock's
+  claim that "a long session pays nothing per tool call" once everything is announced is FALSE in that
+  case. Driven: two consecutive `forPath()` calls both return null, `announced()` stays `[]`, and the
+  registry is walked in full each time. Pre-existing; surfaced by the diff's prose.
+
+The `Grep::execute()` cross-reference is corrected from E57 to E66, and the two comments in `Grep` and
+`Glob` that described the nudge as living outside the cap are rewritten. `sugar-crush/docs/SKILLS.md`'s
+`paths` row now states the bound.
+
+Tests: `SkillPathNudgeTest::testTheNudgeIsBoundedHoweverManySkillsMatchAndHoweverLongTheirDescriptions`,
+`::testManyShortSkillsAreBoundedByCountAndOneLongSkillByBytes`, `::testAClippedEntrySaysItWasClipped`,
+`::testAClippedDescriptionStaysValidUtf8`, `::testASkillHeldBackByTheCountBoundIsAnnouncedByTheNextCall`,
+`::testTheNudgeNeverExceedsTheBudgetItIsGiven`,
+`::testABudgetTooSmallForOneEntrySurfacesNothingAndSpendsNothing`,
+`ToolOutputBudgetTest::testGrepAndGlobStayInsideTheirCapWithAnOversizeSkillNudge`,
+`::testTheSkillNudgeCannotStarveTheAnswer`, `::testReadBoundsTheSkillNudgeItAppends`,
+`::testACallWithNoNudgeToShowGetsTheWholeCap`, `::testASkillTheReservationCannotHoldIsNotSpent`.
+**12** new tests.
+
+**A warning for the next fixture.** The first cut of the cap test used 30 matches under a 65,536-byte
+cap. The hit list was then far inside the budget, so deleting the reservation outright left the whole
+file GREEN — the mutation the test exists to kill SURVIVED it. A cap test needs the body to overflow
+the cap on its own AND the nudge to be present, or it proves nothing. It now uses 400 matches at caps
+8,192 and 16,384 and asserts `<system-reminder>` at each.
+
 ---
 
 ### E67 — `SkillRegistry::register()` keys by array key, not by skill name
@@ -4258,6 +4388,31 @@ this is a latent trap for the next caller; if one does, auto-invocation is broke
 (`src/Runtime.php:857`, `src/Chat.php:3250`). Runtime's comment — *a hook is OBSERVABILITY, not the
 answer* — makes this deliberate. Flagged only because a user writing a PostToolUse hook that returns
 DENY gets silence. A documentation gap at most.
+
+**SETTLED AND FIXED, round 40 `cmd`.** The caller question is closed: `SkillRegistry::register()` has
+exactly TWO shipped call sites, both in `SkillManager::loadAll()`
+(`register($this->foreign->discoverClaude(...))` and the `discoverOpencode()` sibling). Both arrays come
+from `ForeignSkillDiscovery::discover()`, which builds `$skills[$name] = $this->tag($skill, $source)`
+over `SkillLoader::loadFromDirectory()`, which itself builds `$skills[$skill->name] = $skill` after
+`withName($skillName)`; `tag()` copies `name` through unchanged. Repo-wide grep for `SkillRegistry`
+outside the class and its tests finds no third producer. **So auto-invocation was NOT broken in
+production — this was a latent trap, sized S, and it is now shut**: `register()` keys by `$skill->name`
+and ignores the incoming key. The `array<string, Skill>` signature is kept, because a name-keyed array
+is still the shape to pass; the key is now redundant rather than load-bearing.
+
+**The `all()` cast STAYS, and the two defences do not disagree.** The backlog asked whether keying by
+`$skill->name` makes the decimal-integer-string coercion unreachable. It does NOT, and the reason is
+worth recording: PHP coerces `"123"` to `int(123)` on ANY array-key insert, so
+`$this->skills[$skill->name] = $skill` for a skill named `123` stores under `int(123)` exactly as the
+caller's own key did. The coercion is a property of the array, not of where the key was read.
+`register()` decides WHICH name a skill is filed under; the cast decides what type comes back out of
+`array_keys()`/`ARRAY_FILTER_USE_KEY`. Both comments now say so.
+
+The `PostToolUse` note above is untouched, as briefed.
+
+Tests: `SkillRegistryTest::testRegisterKeysByTheSkillsOwnNameNotTheIncomingArrayKey`,
+`::testAMislabelledKeyDoesNotDecideWhereASkillIsFiled`,
+`::testASkillRegisteredFromAListCanStillBeDisabledByName`. **3** new tests.
 ---
 
 ### E68 — `AgentDashboardPane` over-runs its caller's width on a single emoji
@@ -4316,6 +4471,57 @@ code, so the guard goes red first. Note E69 below when choosing the authority: a
 `Width::string` is not a clamp against what `Style::render()` finally lays out. Do this in its own
 diff — it is a foundation change with callers outside this pane.
 
+**FIXED 2026-08-22, ROUND 40 `lsp` lane. The stated mechanism above was wrong; the reproduction was
+right.** `truncateAnsi()` does NOT slice at codepoints and was already stopping BEFORE a cluster it
+could not fit — it walks `nextCluster()`, i.e. `grapheme_extract()`. The over-budget return came from
+the OTHER side: `Width::string()` preferred `grapheme_str_split()`, which is **PHP 8.4+** and absent
+on this PHP 8.3.6, so it fell back to `mb_str_split()` and measured per CODEPOINT. Two splitters, one
+class. `truncateAnsi("\u{1F44D}\u{1F3FD}xy", 3)` returned `"\u{1F44D}\u{1F3FD}x"` — 3 cells by the
+cluster measure that chose it, 5 by the codepoint measure the caller checked it with. So "fix
+truncateAnsi to stop before a cluster it cannot fit" would have changed nothing.
+
+Fix: `Width::graphemes()` now walks `nextCluster()`, so `string()` and every truncator share ONE
+segmentation, and `graphemeWidth()` gained the regional-indicator-pair rule (a flag is 2 cells, a lone
+regional indicator 1) that the per-codepoint sum used to supply by accident. Fuzz, 20,000
+cluster-heavy strings x budgets 1-8 = 160,000 `truncateAnsi` calls: **7,966 over-budget (worst +6) ->
+0**. The E68 end-to-end table above re-derived exactly (0/35/34/41 of 77 widths).
+
+`AgentViewPaneGeometryTest::testTheAgentDashboardPaneFitsTheOutsideWidthItWasHanded()` was widened to
+the four tabulated descriptions x widths 24..100 BEFORE the fix and went red at width 38. Confirmed
+non-vacuous: with the fixtures reverted to ASCII it PASSES against the pre-fix `Width` over the same
+77 widths and 385 assertions, so the ASCII fixture — not the narrow width list — was the blindness.
+
+**The bound is not fully closed, and `Renderer::hardFit()` is still load-bearing.** A SECOND
+disagreement survives, unrelated to clusters: `Ansi::strip()` (which `Width::of()` measures through)
+eats a two-byte escape whose second byte is an ECMA-48 Fe final (`ESC \`, `ESC P`, `ESC M`), while
+`truncateAnsi()`'s scanner passes `ESC [` / `ESC ]` only. Alone it makes `truncateAnsi()` stop early;
+followed by a grapheme Extend it goes over. Measured over 400,000 escape- and cluster-bearing calls at
+budgets 1-10: **548 over-budget, worst +1**, all of that shape, minimum `ESC M` + U+1F3FD at budget 1.
+`PaneWidthInvariantTest::testTheHardFitBackstopHoldsTheBoundWhereTruncateAnsiAloneDoesNot` fired on the
+fix (its first assertion PINNED the flags defect) and was repointed at this live shape, keeping the
+flags case as a fixed-and-pinned equality. Worth its own finding if anyone wants the bound closed.
+
+**Also found, out of scope:** the `grapheme_str_split() -> mb_str_split()` cascade that caused this is
+duplicated in `sugar-charts` (3 sites), `sugar-table` (2), `sugar-stickers` (1) and `sugar-calendar`
+(1) — **seven sites in four libs**. Each degrades to codepoint splitting on PHP 8.3 exactly as `Width`
+did.
+
+⚠️ `candy-lister` was listed here and **has no such cascade** — `grep -rl grapheme_str_split
+candy-lister/src` returns nothing. Caught by the round-40 reviewer and re-verified by the supervisor.
+A wrong name in a to-do list costs the next lane a wasted file-open, which is cheap; a wrong name that
+makes a five-lib job look like a four-lib job is the kind of miscount this tracker exists to stop.
+
+**And the descoping is no longer neutral.** With `Width` now walking ICU on every version and those
+four libs still splitting per-codepoint on PHP 8.3, `candy-core` and its consumers **disagree about
+what a cluster is** on the build this tree runs — which is the very shape E69 is about. Measured by
+the reviewer in the worst case found, `sugar-table/src/Column.php::wrapCharacter()`: it gates on
+`Width::of($text)` (now 2 for a toned thumb) and then sums `Width::of()` per **codepoint** (4). The
+result is under-fill plus a mid-cluster split, **not** over-wide output (`thumbTone x6` at width 4
+gives 6 lines, widest 2), so nothing is corrupted — but the disagreement is now real rather than
+latent, and closing it is a lane, not a footnote.
+`findings/README.md` already records the duplication as a shape ("repeated in 8+ libs") but not as a
+correctness defect.
+
 ---
 
 ### E69 — `Width::string()` scores a tab 0; `Style::render()` expands it to four spaces
@@ -4358,3 +4564,88 @@ today it is not — it is `Style` state), or `Style::render()` stops rewriting c
 and the expansion moves to the caller that knows both. Whichever way it goes, land it with a test that
 renders a tab-bearing string through `Style` and asserts `Width::string()` of the result equals
 `Width::string()` of the input, which is the property that is false today.
+
+**FIXED 2026-08-22, ROUND 40 `lsp` lane — and the proposed remedy is incomplete by construction.**
+
+Authority chosen: **`Width::string()` charges the tab.** Blast radius measured both ways across the
+11 libs that reference `truncateAnsi`, plus `sugar-dash`. Charging a tab 4 cells in `Width`: **0 test
+failures**. Removing the expansion from `Style::render()`: **2 failures in `candy-sprinkles`**, and it
+deletes the effect of a documented public API (`tabWidth()` / `getTabWidth()` / `unsetTabWidth()`,
+mirroring lipgloss) — a removal, which this project's rules forbid in favour of wiring.
+
+`Width::TAB_WIDTH = 4` is now the single number: `graphemeWidth()` charges it and `Style`'s default
+`$tabWidth` reads it, so the two move together instead of agreeing by coincidence.
+
+**A THIRD tab measure was found and fixed with it:** `Width::wrapAnsi()` charged a `\t` **1** cell in
+its whitespace branch — against `string()`'s 0 and `Style::render()`'s 4. `wrapAnsi("ab\tcd", 7)`
+returned ONE line of 8 cells against a 7-cell column. It now routes through `graphemeWidth()`.
+
+**What no per-tab charge can fix, and this is the correction to the Step above.** `render()` does not
+re-measure content, it REWRITES it, and substituting spaces for a tab changes GRAPHEME CLUSTERING
+after the substitution. A tab is a Control character, which by UAX #29 never joins a following Extend;
+a space is not, and does. So `"\t" . U+1F3FD` is `TAB_WIDTH + 2` cells while the rendered
+`"    " . U+1F3FD` is `TAB_WIDTH` — the modifier joins the final space and contributes 0. That is the
+same two-codepoint input this finding delta-debugged. Measured over 4,797 tab-bearing random strings,
+`Style::render()` moving `Width::string()`: **4,797/4,797 (100%) at `8add627b` -> 568/4,797 (11.84%)**.
+Only not rewriting the content closes it, which is `Style::tabWidth(0)`. Both the property and the
+residue are pinned in `candy-sprinkles/tests/StyleTest.php`.
+
+🔴 **CORRECTION — "all 568 are that one shape, 0 unexplained" IS FALSE, and the half it misses is the
+dangerous half.** Found by the round-40 reviewer, independently reproduced by the supervisor. The
+residue is **BIMODAL**: the shape above renders NARROWER than `Width::string()` predicts, and a second
+shape — `\t` followed by a **ZWJ** — renders **WIDER**. The reviewer's corpus put it at 667
+disagreements of 4,797 (13.90%), **425 narrower and 242 wider**, delta histogram
+`+4:219 −1:217 −2:206 +6:20 −3:2 +3:1 +2:1 +8:1`. Supervisor-measured on PHP 8.3.6, directly:
+
+| input | `Width::string(in)` | `Width::string(render(in))` | delta |
+|---|---|---|---|
+| `"\t"` | 4 | 4 | 0 |
+| `"\t" U+1F3FD` | 6 | 4 | **−2** |
+| `"\t" ZWJ U+1F44D` | **0** | **6** | **+6** |
+| `"a\t" ZWJ U+1F44D` | 1 | 7 | **+6** |
+
+**Why the +6 direction is the one that matters.** A measure that OVER-reports makes a pane under-fill;
+a measure that UNDER-reports makes it **over-run**, and an over-wide row is frame corruption — the diff
+renderer paints one line per row. `Width::string("\t" ZWJ U+1F44D)` returning **0** for something that
+takes **6 cells** is a budget saying "this is free". Mechanism, per the reviewer: in `Width::compute()`'s
+ZWJ state machine a Control before a ZWJ makes ICU emit the ZWJ as its own cluster, the
+`$clusters[$i+1] === 0x200d` look-ahead then zeroes the tab, and `inZwjSequence` zeroes the emoji after
+it.
+
+**Pre-existing** — the same inputs behave identically on the pre-fix code, so this is not a regression
+of the E68/E69 work and E69 stays correctly fixed for what it claimed. What is corrected here is the
+**completeness claim**, which is exactly §5's defect: a figure measured over one shape, written as a
+property of the whole residue. Recorded as **E73** below rather than fixed in this round — it is a
+change to candy-core's ZWJ state machine, not to the tab rule, and it deserves its own diff.
+
+**Residue also left deliberately:** a `Style` with a non-default `tabWidth` still disagrees with
+`Width::string()` by `abs($tabWidth - TAB_WIDTH)` per tab; documented on `Width::TAB_WIDTH` and pinned.
+Note `\SugarCraft\Dash\Components\Card\Highlight` carries its OWN unrelated `$tabWidth` field, same
+name, same default of 4, settable to any value >= 1 — a fourth tab-width authority, untouched.
+
+---
+
+### E73 — `Width::compute()`'s ZWJ state machine scores a Control-before-ZWJ sequence 0
+
+**Recorded 2026-08-22 by the round-40 `lsp` reviewer; supervisor-reproduced.** Split out of E69's
+residue, whose "0 unexplained" completeness claim it refutes (see the correction in the E69 stamp).
+
+**What.** `Width::string()` returns **0** for `"\t" ZWJ U+1F44D`, which `Style::render()` lays out as
+**6 cells**; `"a\t" ZWJ U+1F44D` scores 1 against 7. A Control character before a ZWJ makes ICU emit
+the ZWJ as its own cluster; `compute()`'s `$clusters[$i+1] === 0x200d` look-ahead then zeroes the
+Control, and its `inZwjSequence` flag zeroes the emoji that follows.
+
+**Severity.** Medium, and it is in the **over-run** direction: a caller that budgets with
+`Width::string()` and lays out through `Style` is told a 6-cell run is free. Over-wide rows are frame
+corruption in this tree (the diff renderer paints one line per row), which is the class §3 says to fix
+rather than defer. It is bounded in practice only by how rare a tab-then-ZWJ is in a pane string.
+
+**Where.** `candy-core/src/Util/Width.php::compute()` (the ZWJ branch), against
+`candy-sprinkles/src/Style.php::render()`.
+
+**Not a regression.** The pre-fix code scores these inputs identically. E68 and E69 stay fixed.
+
+**Step.** Make the ZWJ look-ahead refuse to absorb a Control (or any character that cannot join under
+UAX #29) rather than zeroing whatever precedes a ZWJ. Land it with the property that is false today:
+for every input, `Width::string(Style::new()->render($x))` must equal `Width::string($x)` — currently
+false in BOTH directions, so assert the sign of the disagreement, not just its magnitude.

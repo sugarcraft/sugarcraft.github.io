@@ -5780,3 +5780,499 @@ constants, but too volatile to pin without building a change-detector, which is 
 
 **Step.** Take them one at a time as each acquires a machine-readable source. The roster and preset
 lists are the two most likely to become checkable, since both are already enumerated in `src/`.
+
+### E112 — `bin/sugarcrush` carries a comment saying README.md is still wrong; it is not, as of round 44
+
+**Recorded 2026-08-22 by the round-44 lane-b implementer.** Severity: low, comment-correctness.
+**Not fixed at record time — `bin/sugarcrush` was read-only for that lane** (it is item 1's SOURCE, not
+its target). **CLOSED in the same round by the lane-b fix agent**, which was not under that restriction:
+the last two sentences were rewritten in the three-part form, keeping the load-bearing half and adding
+the pointer at `ReadmeJsonErrorContractDriftTest` as the README end's guard.
+
+**What.** The `$args->usageError` block in `bin/sugarcrush` ends with *"README.md's list still names both;
+correcting it is lane c's file this round and is recorded as a deferred finding."* Round 44 lane b did
+correct it: the "exactly two exceptions" paragraph now names one, and the retraction is a blockquote.
+So the sentence describes a state that no longer exists and points a reader at a defect they will not
+find. The rest of that comment — that an unimplemented `--output-format` VALUE is the one remaining
+exception, and why — is correct and should be kept.
+
+**Step.** Rewrite the last two sentences of that block in the three-part form: what it said, that
+README.md was corrected in round 44 (commit `4547d07a`), and that the "this is now the ONLY exception"
+claim still earns its place because it is the load-bearing half. `ReadmeJsonErrorContractDriftTest`
+pins the README end of it; nothing pins this comment, and nothing needs to.
+
+### E113 — `ReadmeJsonErrorContractDriftTest` derives error types from two files by two different scans
+
+**Recorded 2026-08-22 by the round-44 lane-b implementer.** Severity: low, test-design. **Deliberate;
+recorded so the asymmetry is not mistaken for an oversight.**
+
+**What.** The test reads `src/Cli/NonInteractive.php` for `emitErrorDocument()` call sites (arguments
+split from the token stream, exit code taken from the `return self::EXIT_*` closing the same block) and
+`bin/sugarcrush` for a literal `'type' => …` pair plus the `exit(<int>)` after it. Two scans, because the
+guard is a plain script with no class to reflect on — which is the entire point of the guard. Both go
+red rather than skipping on anything they cannot parse.
+
+The asymmetry that is worth naming: the `NonInteractive` scan finds ALL types by construction, while the
+guard scan finds THE FIRST `'type' => <literal>` and stops. A second hand-rolled document in
+`bin/sugarcrush` would be invisible to it. There is no second one today and no reason to expect one — the
+guard exists precisely because that path can load nothing — but a `--version` fast path or a second
+pre-autoload guard would reopen it.
+
+**Step.** If a second pre-autoload document is ever added, make the guard scan collect all pairs and
+assert the set, the way the `NonInteractive` side already does. Related: E94/E98.
+
+**CLOSED in the same round by the lane-b fix agent, and by removing the asymmetry rather than by
+documenting it.** The reviewer's F1 showed the two-file window was the defect, not the two scans: a
+third producer (`src/Cli/Subcommands.php`) emitted two error types neither scan could see. The
+derivation now reads ALL of `src/` and `bin/` in one pass, in three shapes — an `emitErrorDocument()`
+call, an `'error' => ['type' => …]` array literal, and a raw JSON envelope string — so the guard is
+found the same way every other producer is and "the first `'type' =>` and stop" is gone. The two
+unbounded scans this entry did not name (`$message = '<literal>'` and `exit(<int>)`, both first-match
+over the whole script) are bounded to the enclosing function, and a second `$message` literal inside the
+guard now reds rather than being silently ignored. VERIFIED by mutation: a decoy `$message` placed
+earlier in the file and outside the guard is read by the old whole-file scan (proved standalone) and
+correctly ignored by the bounded one.
+
+### E114 — the round-44 lane scratchpad was shared between lanes and one lane's suite output overwrote another's
+
+**Recorded 2026-08-22 by the round-44 lane-b implementer.** Severity: process, not code.
+
+**What.** All three round-44 lanes were given the same scratchpad path
+(`/tmp/claude-1000/-home-sites-sugarcraft/<session>/scratchpad`), so a baseline written to
+`scratchpad/baseline.txt` by lane b and by lane c landed in one file. Lane b's baseline was recoverable
+only because the two summaries happened to append rather than truncate; a truncating write would have
+silently handed one lane the other's figures, and the standing rules make every later figure depend on
+that baseline.
+
+Second-order, and it corroborates **E96** with a live instance: lane c's run in that shared file failed
+`ParallelToolCallsTest::testACompletedGroupLeavesNoPayloadFilesBehind` and
+`testAThrowingSessionStateMergeCostsOnlyThatCallsMark` on `/tmp/sc_runtime_tool_*.bin` files that were
+**not its own** — lane b's suite was running concurrently and owns files matching that glob. E96 predicted
+exactly this; this is the first observation of it firing.
+
+**Step.** Give each lane a private scratch subdirectory (lane b used `scratchpad/laneb/` from the point
+it noticed), and fix E96 so a concurrent sibling suite cannot red a lane's run. The E96 fix is the
+load-bearing one: a lane that cannot trust `rc 0` cannot trust anything downstream of it.
+
+### E115 — `pathMatches()`'s own perf note has the generator gap that was just fixed one doc-block above it
+
+**Recorded 2026-08-22 by the round-44 lane-b fix agent.** Severity: low, measurement-hygiene.
+**Not fixed here — deliberately scoped out**, recorded so it is not mistaken for having been checked.
+
+**What.** F5 of the round-44 lane-b review found that `$compiledPathPatterns`'s memoisation figures
+quoted a ratio to two decimals from a generator whose free parameters were unstated; that doc-block was
+re-taken with the generator written out, and the honest band turned out to be roughly 7x-10x rather than
+8.53x-8.68x. `pathMatches()`'s FASTER, INCIDENTALLY paragraph describes its generator in exactly the
+same words — *"40 paths of the form `src/` + 8 path segments + a filename"* — and therefore has exactly
+the same hole: segment content sets the per-match cost, and the per-match cost is the denominator.
+
+Two things make it less urgent than F5 was, and both are reasons to record rather than ignore. Its
+figure is an old-predicate/new-predicate ratio, and BOTH arms pay the same match cost, so segment length
+cancels to first order in a way it does not in a memo/no-memo ratio. And the paragraph already says
+*"quote the ratio and re-take the rest"*, which is the right instinct applied to the absolute times. But
+it is still a two-decimal band from an underspecified generator, and `legacyPathMatch()` is still in the
+class, so re-taking it is possible rather than archaeological.
+
+**Step.** Re-take with the segment content written down (measure at 1, 12 and 24 characters, three runs
+each, PHP version stated), and quote the band across those rather than a point. Related: E85, E99.
+
+### E116 — `not-found` and `mcp-config` are the only hyphenated `error.type` names in the contract
+
+**Recorded 2026-08-22 by the round-44 lane-b fix agent.** Severity: low, API-consistency. **A contract
+decision, not a defect — recorded because the guard now makes either answer cheap and someone should
+pick one.**
+
+**What.** The shipped `error.type` set is `backend`, `encoding`, `installation`, `mcp-config`,
+`not-found`, `provider_configuration`, `usage`. Five are single words or `snake_case`; two are
+`kebab-case`, and they are the two `src/Cli/Subcommands.php` added. Nothing is broken — a consumer
+matches strings — but a set that spells the same idea two ways invites a consumer to guess wrong once.
+The hyphens are also what the drift guard's old `[a-z_]+` alphabet could not express, which is how both
+types stayed invisible to it for a round; the alphabet is now `[a-z][a-z0-9_-]*` and reds on anything it
+cannot read, so a rename would be caught either way.
+
+**Step.** Decide: rename to `not_found` / `mcp_config` for consistency with
+`provider_configuration`, or keep and note in README that the set is mixed-case-by-history. If renaming,
+the derivation in `ReadmeJsonErrorContractDriftTest` will red until README.md is updated to match, which
+is the intended order. Pre-1.0, so no compatibility cost.
+
+### E117 — the memoisation and cap-cost TIMING figures are documented but not pinned
+
+**Recorded 2026-08-22 by the round-44 lane-b fix agent.** Severity: low, coverage. **Deliberate;
+recorded so the gap is not read as an oversight the next time someone audits this file.**
+
+**What.** Round 44 pinned every ROSTER-derived and CONSTANT-derived figure in
+`SkillRegistry::MAX_COMPILED_PATTERNS`'s doc-block — twelve built-ins, four distinct globs, five
+entries, two per skill, 256x, ~200 skills, peak 1,024, settles at 544. It deliberately did NOT pin the
+timing figures (7.5x-9.7x memoisation, +1.0%-4.9% cap cost, 2.16-2.19 us per translation) or the memory
+totals (3,549,976 B at 20,000 entries, 154,904 B at 1,024). Those are an allocator's and a scheduler's
+answers: they move with the PHP build, with what else is running on the box, and this box has only PHP
+8.3.6 while CI runs 8.3 AND 8.4. A test asserting them would red on the 8.4 leg for no defect, which is
+the failure mode that gets guards deleted.
+
+The residual is real, though, and this is what it is: those figures can rot in the doc-block exactly the
+way the roster figures could before round 44, and nothing will say so. They carry their generator and
+their instrument now, which makes them re-takeable by hand, and that is the whole of the mitigation.
+
+**Step.** If this ever matters enough, the shape that would work is a tolerance-banded benchmark test
+skipped unless an env var is set, so it is a tool someone runs deliberately rather than a suite member
+that reds on a busy CI runner. Do NOT add an unbanded assertion. Related: E87, E99.
+### E118 — promote the transcript-seam call-site count to a `public const` on `Bootstrap`
+
+**Recorded 2026-08-22 by the round-44 lane-c implementer.** Severity: low.
+
+**What.** `tests/Cli/BootstrapTranscriptSeamCallSiteCensusTest::EXPECTED_CALL_SITES` (16) holds the count
+of `warnPermissionConfigInTranscript(` call sites because `src/Cli/Bootstrap.php` belonged to lane `a`
+the round the test was written. It belongs next to the thing it counts, as
+`Bootstrap::TRANSCRIPT_SEAM_CALL_SITES`, so the nine prose sites can `{@see}` it instead of spelling an
+English number word. (Four when this entry was written; round 44's review found five more and they are
+all `PROSE_SITES` rows now.)
+
+**Step.** Add the const; have the test assert the const and its own token scan agree, so
+`EXPECTED_CALL_SITES` becomes a second opinion rather than the only one. Note the token scan now carries
+a first-class-callable exclusion (`self::seam(...)` lexes with the paren immediately after the name on
+PHP 8.3.6, so the paren test alone counts it as a call); a `grep`-shaped second opinion will disagree
+with it the day such a callable exists. Sibling of **E104** (extracting
+`Bootstrap`'s stderr `sprintf` formats to constants) — same file, same motive, worth one PR.
+
+### E119 — `Bootstrap.php` still says "eleven other sources" on the skill-skip seam call
+
+**Recorded 2026-08-22 by the round-44 lane-c implementer.** Severity: low.
+
+**What.** E97 corrected the stale seam call-site count in `src/Chat.php` and
+`tests/Cli/BootstrapLaunchNoticeRoutingTest.php` and pinned all of them with
+`BootstrapTranscriptSeamCallSiteCensusTest`. A **fourth** instance is in `src/Cli/Bootstrap.php`, in the
+comment above `reportSkillSkips()`'s seam call: "safe to put in a transcript that also has to carry
+**eleven** other sources". The token scan counts 16 call sites, so it should read fifteen.
+
+`Bootstrap.php` was lane `a`'s file in round 44, so lane `c` could not edit it. Everything else in that
+file is correct at `8ade35dd`: the "SIXTEEN call sites now routed" comment and the "the other fifteen
+call sites" comment in `mcpClient()`'s catch both check out, and both are `PROSE_SITES` rows as of round
+44's fix pass (a row only READS the file, so lane ownership was never a reason to leave them uncovered).
+
+**What this entry got wrong when it was written.** It presented itself as closing the family — "a
+**fourth** instance", "everything else in that file is correct" — and the second clause is true only of
+`Bootstrap.php`. `docs/SETTINGS.md` was also stale, saying **fifteen** while quoting a generator
+(`grep -c 'self::warnPermissionConfigInTranscript(' src/Cli/Bootstrap.php`) that returns sixteen, so the
+page contradicted itself and nothing anchored it. That was fixed and made a `PROSE_SITES` row in round
+44's fix pass; this entry is now the only member of the family still open.
+
+**Step.** Fix the one word, then add the site to `BootstrapTranscriptSeamCallSiteCensusTest::PROSE_SITES`
+with `offset: 1` and **delete
+`BootstrapTranscriptSeamCallSiteCensusTest::testTheKnownStaleSentenceOutsideThisLaneIsStillStale()`** in
+the same commit — that test asserts the sentence is STILL stale, precisely so this hole in the census
+cannot go quiet, and it will fail the moment this is fixed. Its failure message says the same thing.
+
+### E120 — the suite prints 62 unowned `sugarcrush:` stderr lines, and only one of them was ever argued for
+
+**Recorded 2026-08-22 by the round-44 lane-c implementer.** Severity: low, but see the measurement trap.
+
+**What.** `McpToolWiringTest.php` alone → 1; `tests/Integration` → 2; **the full suite → 62**, in 32
+distinct message shapes.
+
+**Generator** (a figure without one is not a measurement): PHP 8.3.6, `vendor/bin/phpunit > cap.txt 2>&1`
+from `sugar-crush/`, then `grep -ac 'sugarcrush:' cap.txt` for the total and
+`grep -ao "sugarcrush: .\{0,40\}" cap.txt | sed 's|/tmp/[^ ]*|PATH|g' | sort | uniq -c | sort -rn` for the
+breakdown. The `-a` is load-bearing (see the trap below) and the 40-char window plus the path
+normalisation is what collapses per-run tmpdirs into one row.
+
+Exact breakdown, summing to 62 with nothing dropped: session retention/pruning **9**
+(`retention removed` 3, plus `stale` 2 / `ancient` / `gone` / `older` / `tenDaysOld` 1 each),
+`provider …` **9** (three spellings), the one-shot different-backend refusal **7**,
+`permissionRules*` **7** (three spellings: `… in <path>` 2, `is not a list of rules` 1, `[N] …` 4),
+`no prompt given` **6**, refused project hook files (`… was NOT loaded`) **6**,
+`trustedProjectHooks*` **3**, `disabledTools` cut-tool reports **2**, `permissionMode in …` **2**,
+`ignoring …` **2**, skipped skill files **2**, and **7** singletons — E95's MCP line,
+`piped stdin exceeds 10MB cap`, `agent presets unavailable`, `no provider configured`,
+`allowedTools/disabledTools left no tools`, `unrecognized option: --bogus`, and
+`--root /no/such/dir: no such directory`.
+
+Rounds 43 and 44 both reasoned about E95's MCP line as though it were nearly the suite's only unowned
+stderr output — round 43 accepted it partly because "one diagnostic line is what this suite already
+tolerates elsewhere (the workflow-tier refusal prints one too)", naming one sibling where there are 61.
+The decision survives the correction and the rewritten doc-block on
+`McpToolWiringTest::testAClientWhoseConfigThrewPartWayThroughIsStillReachableByTheShutdownSeam()` now
+argues it from 62 rather than from 1. What does not survive is the idea that anyone would notice a new
+line: with no baseline, 63 looks exactly like 62.
+
+**🔴 THE MEASUREMENT TRAP, recorded because it burned an hour and will recur.** The first take of the
+full-suite figure came back **0**, and it was very nearly written into two doc-blocks as a finding
+("a diagnostic that vanishes when the suite grows"). It was a broken harness: PHPUnit's captured output
+contains control bytes, `grep` classifies the file as binary, and **`grep -c` then prints nothing at all
+and exits 1** — indistinguishable at a glance from a real zero. `grep -a` gives 62. A second harness in
+the same round failed the same way, reporting 0 PHP children for a file that spawns 33, because it
+wrapped `php` on `PATH` while the spawns use `PHP_BINARY`. Both were caught only by running a
+known-answer control through the same command. **Do that first, always.**
+
+**Step.** Record the per-warning roster as a checked-in figure (with its generator: the `grep -a`
+command, PHP version, and full-suite scope) so a 63rd line is visible. Then triage per warning — several
+are real diagnostics whose own tests assert they were emitted, so silencing is the wrong default.
+
+### E121 — the shared-`/tmp` before/after census: run, negative, and its residual
+
+**Recorded 2026-08-22 by the round-44 lane-c implementer.** Severity: informational.
+
+**What.** Two leak detectors have now been converted from a before/after `glob()` over the shared temp
+directory to `ToolIpcFiles`' identity ledger, one round apart and each after firing on a sibling lane's
+files: `ChatTest` (E63, round 38) and `ParallelToolCallsTest` (E96, round 44 — its two call sites both
+failed on round 44's own baseline run). Nobody had swept for a third.
+
+**The census.** Pattern: `glob(`/`scandir(` whose argument reaches `sys_get_temp_dir()` or a literal
+`/tmp`, over `src/` and `tests/`. Deliberately **not** keyed on the `sc_runtime_tool_`/`sc_chat_tool_`
+prefixes — an alphabet built from the two known cases can only rediscover them, and
+`crush-hook-payload-` is a third prefix `ToolIpcFiles` sweeps.
+
+**What this entry claimed, and what is true.** WHAT IT SAID: "run and found none … zero in `src/`; in
+`tests/`, only `ChatTest`". WHAT IS TRUE NOW, re-run in round 44's fix pass
+(`grep -rnE '\b(glob|scandir)\s*\(' --include=*.php src tests | grep -i tmp`, GNU grep 3.11): zero in
+`src/` holds — `ToolIpcFiles::sweep()` is an age sweep over a `$dir` parameter, not a diff, and every
+other `glob()` in `src/` is over a project directory. The `tests/` half was **wrong in both
+directions**. It missed `tests/Support/ToolIpcFilesTest.php`'s
+`glob(sys_get_temp_dir() . CHAT_PREFIX . '*')`, a second instance of the benign `assertContains`-on-its-
+own-fixture shape the entry does name; harmless, but a roster that names one of two is not a roster. And
+it missed a REAL one, forty lines from the fix the entry is about:
+`ParallelToolCallsTest::testAChildsPayloadIsNeverReadableByAnotherUser()`'s probe tool snapshotted
+`glob('/tmp/sc_runtime_tool_*')` in its constructor and read the mode of the first path that was not in
+the snapshot — the same before/after diff over the same shared directory with the same prefix that E96
+had just removed. Fixed in round 44's fix pass by moving attribution to the parent, which is the only
+side that holds `ToolIpcFiles::reservations()`.
+
+**Why the census could not see it, which is the transferable part.** The census is keyed on the
+ARGUMENT reaching `sys_get_temp_dir()`. There, it reaches it through a constructor hop —
+`new class (sys_get_temp_dir())` and then `glob($this->tmp . '/sc_runtime_tool_*')` — so no syntactic
+pattern anchored on the call site can find it. The entry's residual paragraph named this class of miss
+in the abstract and then stated a concrete negative that the same paragraph explains away. **A census
+that admits a blind spot and then reports zero has reported nothing.**
+
+**Residual, restated.** The census reads syntax, so it cannot see a snapshot assembled indirectly (a
+helper returning a listing, a value carried through a constructor or a field, a `FilesystemIterator`
+over a path built elsewhere), and it says nothing about shared directories other than the temp dir. The
+defect is "before/after diff of anything concurrently written"; only the temp-dir spelling, spelled
+literally at the call site, has been swept. A stronger sweep would key on the SHAPE — a directory
+listing captured into a variable before an action and compared after it — which is not a grep.
+
+**Step.** Re-run the census when a new dispatcher or payload prefix appears; widen it to
+`FilesystemIterator`/`DirectoryIterator` if either ever shows up in a test; and prefer the shape-keyed
+sweep above to the argument-keyed one, since the one real instance it missed was missed on the
+argument.
+
+### E122 — the E81 four-doors guard has the same "satisfied by its own retraction" hole, currently masked by luck
+
+**Recorded 2026-08-22 by the round-44 lane-c fix pass.** Severity: low, but it is a guard that can stop
+guarding without anything going red.
+
+**What.** `ConfigWriteProducerDocumentationDriftTest::testOneParagraphNamesAllFourDoors()` searches EVERY
+paragraph of `LayeredSettings`' class doc-block (and of `docs/SETTINGS.md`) for one that names all four
+doors. A retraction written in the repo's three-part form quotes the wording that omitted a door and then
+names the missing door in its correction, so it can name the full roster BY ITSELF — at which point the
+guard is satisfied by the apology and the live enumeration is free to go stale again. That is exactly
+what happened to the sibling guard this file was copied into
+(`ChatConfigChangeDoorsDocumentationDriftTest`, E106): both of its doc-blocks' retractions scored 4/4 and
+reverting the live enumeration left all six tests green (round 44 review, mutations D1/D2). Fixed there
+by excluding retraction paragraphs from the search and asserting the exclusion removes exactly one.
+
+**Why it does not fire here today, measured** (`php -r` over the class doc-block's paragraphs, PHP 8.3.6,
+this commit): `LayeredSettings`' paragraphs score `[6] 4/4` for the live enumeration and `[7] 2/4` for the
+retraction, which names "Switch Model" and `/model` and neither theme door. So the live paragraph is the
+only one that can satisfy the guard — **by accident of how that retraction happens to be worded**, not by
+design. Reword paragraph 7 to mention `/theme` while correcting it and the guard silently goes hollow.
+
+**Step.** Port the fix: give the E81 file the same `isRetraction()` exclusion (match `RETRACTED`, plus
+`WHAT IT SAID`/`WHAT THIS SAID` — that file's retraction uses the `IT` spelling and the E106 file uses
+`THIS`, so both are needed), and assert the exclusion removes exactly one paragraph per document so it
+cannot pass by excluding nothing or by excluding the enumeration. Not done in round 44 because
+`tests/Config/` was not this lane's; the change is ~15 lines and carries its own mutation (revert the
+live enumeration to the omitting form, keep the retraction, expect red).
+
+### E123 — `docs/*.md` and `README.md` name `SUGARCRUSH_*` variables that no oracle covers
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low, doc-coverage.
+
+**What.** Round 44's `EnvRosterDriftTest` compares the `SUGARCRUSH_*` variables `src/` and `bin/`
+actually read against `docs/ENVIRONMENT.md`'s **tables** — and nothing else. Measured by lane a:
+`README.md` names **10** such variables and the eleven non-`ENVIRONMENT` `docs/*.md` pages name **14**,
+none of them under any oracle.
+
+**Step.** This is a design question, not a scope widening. A second oracle must distinguish a tabulated
+PROMISE from a prose MENTION, because `docs/ENVIRONMENT.md` deliberately discusses
+`SUGARCRUSH_TOOL_CALL_PARSER` and `SUGARCRUSH_REASONING_EFFORT` in prose **precisely because nothing
+reads them** — a naive widening would red on the two sentences that exist to record that fact.
+
+### E124 — `docs/_data/sugar-crush.json` is a fourth documentation surface outside every oracle
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low.
+**Monorepo-root scope — needs a supervisor decision before any lane can own it.**
+
+**What.** `docs/_data/sugar-crush.json` + `docs/_data/sugar-crush.body.html` generate
+`docs/lib/sugar-crush.html` via `tools/gen-docs.php`, and carry env names and glob claims of their own.
+No `sugar-crush` oracle reads them. The generated page must never be hand-edited, so any pin has to sit
+on the `_data` sources, which live outside `sugar-crush/` — outside every lane's file split to date.
+
+**Step.** Decide whether the `_data` sources are in scope for the `sugar-crush` doc-drift guards at all.
+If they are, the guard belongs beside `tools/gen-docs.php`, not in `sugar-crush/tests/`.
+
+### E125 — the `paragraphs()` splitter exists in three independent copies
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low, test-quality.
+
+**What.** `GlobFigureDriftTest`, `ConfigWriteProducerDocumentationDriftTest` and
+`ThemePersistenceFramingTest` each carry their own private paragraph splitter. Beyond the duplication
+they share a defect surface: **a stale sentence inside a fenced code block or a table row is one
+paragraph-unit to all three**, so a claim hidden in either is invisible to every doc-drift guard at once.
+
+**Step.** Consolidate into one helper (`tests/Config/Support/` now exists, from `EnvReadScanner`), so the
+fenced-block question is answerable in one place instead of three. Related: E108, E129.
+
+### E126 — `SymbolCitationDriftTest` pins citations to TEST symbols only
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low, and it is a
+**stated limit**, not an oversight.
+
+**What.** The new census resolves `{@see …Tests\…::method()}` in four syntactic shapes — 94 citations at
+merge — but only where the TARGET is a test symbol. `{@see self::foo()}`, `{@see Foo::CONST}`,
+`{@see $this->bar}` and plain production class references are far more numerous, have more shapes, and
+none is measured.
+
+**Step.** The test subset was chosen because `src/` cannot autoload `tests/`, so nothing but prose links
+them — that is what makes the test half both cheap and uniquely rot-prone. The production half is a
+separate, larger instrument. The doc-block says so; this entry exists so the limit is not mistaken for
+coverage.
+
+### E127 — `EnvReadScanner`'s S3 forwarding resolves a callee by bare method name within one file
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low.
+**Inherited and re-confirmed in round 44, not introduced by it.**
+
+**What.** The forwarding rule matches the callee's bare method name inside a single file, so two
+same-named methods — a trait's and the using class's — would resolve to whichever the scanner reaches
+first. No such case exists in `src/` today.
+
+**Step.** Resolve through the declaring scope rather than the file. Local fix; worth taking the next time
+the scanner is touched, not on its own.
+
+### E128 — `tabulatedNames()` scrapes the first table column only, deliberately
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low. **A decision,
+recorded so a later round does not "fix" it in isolation.**
+
+**What.** The `docs/ENVIRONMENT.md` table scrape reads column one only. Lane a declined to widen it on
+purpose: the narrow scrape is the conservative direction, because a read-but-undocumented name still reds
+(the code set is built from `src/`), whereas widening would turn **every prose mention inside a cell**
+into a promise the code must keep.
+
+**Step.** None, unless widening — and if it is ever widened, the documented-but-unread direction has to
+be re-thought in the same commit or the guard starts reding on E123's two deliberate prose entries.
+
+### E129 — the stale-figure retraction exemption is still semantic, not an identity test
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low, **known
+residual**.
+
+**What.** Round 44 tightened the exemption materially — a paragraph must now quote the glob **and** spell
+the current count to be exempt, where round 43 accepted a bare `\bfive\b` — but it remains semantic. A
+paragraph that quotes `[!B]*`, says "five" for an unrelated reason, and also spells the stale figure
+would be exempt without being a retraction. Measured: three exempt paragraphs in scope today, all
+genuine retractions.
+
+**Step.** None for now. The obvious alternative — a filename exemption list — is **precisely what went
+stale in round 43**, when a copy was fixed and its list entry was not. The trade is taken deliberately.
+
+### E130 — no glob / token / timing / memory claim from round 44 has been exercised on PHP 8.4
+
+**Recorded 2026-08-22 by the supervisor.** Severity: low, coverage. Severity rises if CI's 8.4 leg reds.
+
+**What.** Every figure in all three round-44 lanes is stated for **PHP 8.3.6**, the only interpreter on
+this box; CI runs 8.3 **and** 8.4. The largest new exposure is lane a's token work —
+`T_START_HEREDOC` / `T_END_HEREDOC` / `T_ENCAPSED_AND_WHITESPACE` / `T_CURLY_OPEN` /
+`T_DOLLAR_OPEN_CURLY_BRACES`, with `T_END_HEREDOC` carrying the closing marker's indentation since 7.3 —
+followed by lane b's `fnmatch` and allocator figures, which are deliberately unpinned (E117).
+
+**Step.** CI's 8.4 leg is the first thing to run any of it. Read that run before trusting a round-44
+token or timing figure on 8.4.
+
+### E131 — ~~`LayeredSettings`' 66/68 `strlen` census was stale on arrival at master~~ FIXED in round 44
+
+**Recorded and fixed 2026-08-22 by the supervisor**, at merge, from the round-44 digest.
+
+**What.** `src/Config/LayeredSettings.php` stated that `grep -rl 'strlen(' tests --include='*.php'`
+"counts 66 files and `grep -rl 'strlen'` counts 68". Both were **correct** in
+`/home/sites/crush-lane-a`, where lane a measured them, and both were **wrong** at `98d59bfb` — **71 and
+73** — because lanes b and c each added test files containing `strlen` while lane a was measuring.
+
+**Fixed** by dropping the two cardinalities and keeping the generator. The paragraph's actual claim is a
+NEGATIVE — that no `strlen()` in `tests/` is applied to `COUNTEREXAMPLE_GLOB` or to any spelling of
+`[!B]*` — re-verified at HEAD, and it survived the merge untouched. **The totals never supported the
+claim; they only looked like evidence.**
+
+🔴 **THE TRANSFERABLE RULE: A CARDINALITY MEASURED OVER `tests/` (OR `src/`, OR `docs/`) IN ONE LANE'S
+WORKTREE IS INVALIDATED BY ANY SIBLING LANE'S MERGE.** Either re-take it at merge, or do not ship a
+cardinality at all — ship the generator and the claim it supports. Same family as the assertion-count
+non-additivity measured at this merge (see the round-44 worklog entry).
+
+### E132 — `exitCodeAfter()` cannot read a ternary return, so the bare-`result` guard over-approximates
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-b report.** Severity: low.
+
+**What.** `testAFailureWithNoErrorObjectIsDocumentedExactlyWhenOneExists` collects every `EXIT_*` in the
+enclosing function after a `result`-only document, rather than resolving which one that branch actually
+takes, because `doctor`'s return is a ternary the exact walk cannot read. The over-approximation is in
+the **safe** direction for the claim being pinned, and the test says so in its own comment.
+
+**Residual.** A function emitting a bare `result` on a success path and returning non-zero from an
+unrelated later branch would satisfy it wrongly.
+
+**Step.** Teach `exitCodeAfter()` to read a ternary return.
+
+### E133 — the payload-mode probe still globs shared `/tmp`; only attribution moved
+
+**Recorded 2026-08-22 by the supervisor from the round-44 lane-c report.** Severity: low, flake.
+**E96 is closed for the ASSERTION; this is what E96 did not close.**
+
+**What.** Round 44 moved *attribution* to the parent (`ToolIpcFiles::reservations()`), so a foreign file
+can be sighted but can no longer be read for an answer. The glob itself, and `SETTLE_SECONDS = 0.25`,
+remain. **Residual:** on a box loaded badly enough that a sibling's fork+write exceeds 250 ms after the
+first foreign sighting, `assertCount(1, $mine)` sees 0 and the test **fails** rather than passing
+wrongly — the right direction, still a flake.
+
+**Step.** Closing it properly needs identity **in the child**, i.e. `Runtime::executeConcurrently()`
+reserving every payload name in phase 1 before forking anything — a `src/Runtime.php` change.
+
+🔴 **RECORD THE NEGATIVE RESULT THAT RULED OUT THE CHEAP FIX:** on PHP 8.3.6 `sys_get_temp_dir()`
+resolves and **caches on first use** and does NOT honour a runtime `putenv('TMPDIR=…')` — measured
+directly by lane c. A test therefore cannot isolate itself into a private temp directory after the fact,
+which is why attribution moved instead of the directory being narrowed.
+
+### E134 — a mutation harness must refuse a dirty tree, not merely revert
+
+**Recorded 2026-08-22 by the supervisor.** Severity: low, process. **Round 44 produced two independent
+instances, in opposite directions.**
+
+**What.** Lane b ran a mutation (`R4b`) that created a **directory**; `git checkout -- .` does not remove
+one, and the harness's pre-flight **refused** the next three mutations rather than attributing their
+verdicts to a tree still carrying someone else's change. **The refusal, not the revert, is what saved
+that run.** Lane c hit the mirror image: reverting a mutation with `git checkout -- <file>` destroyed
+~250 lines of its own uncommitted work in that file (redone, verified identical at 18 tests / 62
+assertions).
+
+**Step.** Make the standing harness contract explicit in every brief: a pre-flight clean check that
+**refuses** rather than cleans, `git clean -fdq` alongside `git checkout -- .`, and a scratchpad backup
+of any file carrying uncommitted work **before** it is mutated.
+
+### E135 — round-44 lanes allocated overlapping backlog E-numbers, and the reports still cite the losers
+
+**Recorded 2026-08-22 by the supervisor.** Severity: low, process. **Partially fixed at merge.**
+
+**What.** Lane b filed E112–E114 (implementer) then E115–E117 (fix agent), while lane c independently
+filed its own E112–E116 from the same base. The merge renumbered lane c's five to **E118–E122**. The
+consequence is silent and durable: **report-c's prose still cites its lane-local numbers**, so its
+"E112"→E118, "E113"→E119, "E114"→E120, "E115"→E121, "E116"→E122 — and every one of those numbers now
+means an unrelated lane-b entry in the shipped backlog.
+
+**Fixed at merge, for code only:** lane c had already written `E112`/`E113` into
+`BootstrapTranscriptSeamCallSiteCensusTest`'s doc-blocks and failure messages, including the tripwire
+that tells a future reader which entry to consult; those were renumbered in `c4a799ab`. **An in-code
+citation of a backlog id is a cross-file reference the merge cannot see** — checking for one is now part
+of the merge step.
+
+**Step.** Either a supervisor-allocated number block per lane, or lane-prefixed provisional ids
+(`Eb1`, `Ec1`) renumbered once at merge with the report text rewritten at the same time. E114 covers the
+shared scratchpad but not this.

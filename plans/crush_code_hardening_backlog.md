@@ -7966,3 +7966,629 @@ and only the second one still needs the finding acted on.
 **Step.** None — recorded so the pattern is countable. The rule it supports is already standing: measure a
 prescription against the tree before implementing it.
 
+
+### E221 — `AgentWorkerPool`'s `pcntl_fork() === -1` arm warns about nothing at all
+
+`src/Agents/AgentWorkerPool.php`'s `startAgent()` has TWO paths to sequential execution and only one of
+them says so. (This entry said `executeOne()`; that method is two lines — resolve the executor, call
+`execute()` — and holds neither arm. Both are in `startAgent()`.) The `!pcntlForkAvailable()` arm calls `warnSequentialFallback()`; the arm immediately below
+it — `$pid = pcntl_fork(); if ($pid === -1)` — falls through to the same synchronous
+`$executor->execute()` + `storeResult()` with **no diagnostic of any kind**, not even on stderr. A real
+`fork()` failure (EAGAIN under an `RLIMIT_NPROC` ceiling, or a memory ceiling) is a far more interesting
+event than a missing extension, and it is the silent one.
+
+Found while applying E192's routing rule to the pool's single site; deliberately not fixed there, because
+adding an emitter is a different change from routing the ones that exist and would have moved the
+channel-3 roster in the same commit as E192's decision not to move it.
+
+**Step.** Give the `-1` arm a diagnostic. It is a fork that FAILED rather than a fork that was never
+available, so unlike `warnSequentialFallback()` it may deserve the seam under the E192 rule — the pool
+still produces every result, but a fork ceiling reached mid-session will keep being reached, and the
+model retrying a large parallel dispatch is exactly the behaviour a transcript row could change. Decide
+that with the rule, not by symmetry with the arm above it.
+
+### E222 — `removeWorktree()` cannot tell "removed" from "still on disk"
+
+`src/Agents/WorktreeManager.php`'s `removeWorktree()` runs `removeDirectory($worktreePath)` when the
+directory survives git, then unconditionally drops the registry entry and saves. `removeDirectory()`'s
+failure (a permission error, a busy mount, a file the process cannot unlink) is not checked, so the
+method can return normally having left the worktree on disk while the manager now believes it is gone.
+That state is worse than the failure E192 just routed: the NEXT `createWorktree()` for that agent id
+fails `worktreeExists()`-free and then fails at git, and nothing anywhere reported the first failure.
+
+MEASURED (git 2.43.0, Linux 6.8) for the related residue only: with the directory removed behind git's
+back, `git worktree list` reports the path `prunable` and a re-`add` at the same path fails with
+`fatal: '<path>' is a missing but already registered worktree`. The `removeDirectory()` failure itself is
+UNMEASURED — recorded from source.
+
+**Step.** Have `removeDirectory()` report whether it emptied the tree, and refuse to drop the registry
+entry when it did not. A registry that lies about what exists is the thing to fix; the notice is
+secondary and would follow the E192 rule.
+
+### E223 — the seam has no reader in a hosted `Chat`
+
+E193 gives the mid-session seam an edge-driven wake-up armed from `Chat::init()`. `init()` is called by
+`SugarCraft\Core\Program`, and only by it. A `Chat` driven by an embedder that never builds a `Program` —
+the hosted-pane shape `Chat::withSize()`'s doc-block describes — therefore never arms the watcher, and is
+back to "the notice waits for the next Msg the host happens to deliver". That is strictly no worse than
+before E193 and is not a regression, but it is now the only path where the gap remains and it is not
+written down anywhere in `src/`.
+
+**Step.** Either expose the wake Cmd so a host can run it, or state in `Chat::init()`'s doc-block that the
+seam's idle wake-up is a `Program` feature and a host that drives `update()` itself owns the pumping. Pin
+whichever is chosen; today neither is asserted.
+
+### E224 — E196's two `flattened()` copies have already drifted, in the prose
+
+MEASURED at round 48 by comparing the two declarations token by token with whitespace and comments
+dropped: `tests/Cli/StderrEmitterCensusTest.php`'s and
+`tests/Cli/BootstrapTranscriptSeamCallSiteCensusTest.php`'s bodies are IDENTICAL. The justifications were
+not — the sibling carried a paragraph explaining why the second pattern is `\s+` and not `[ \t]+`, and
+the census copy did not. Round 48 brought that paragraph across, so the two are level again, but the
+episode is the evidence E196 was missing: the drift arrives in the reasoning before it arrives in the
+code, and a consolidation that keeps one implementation and one of the two justifications re-creates the
+asymmetry inside the trait.
+
+Not consolidated in round 48: the sibling census file is outside lane `a`'s test file set, and a
+half-consolidation (a trait with one consumer, the duplicate still in place) buys nothing — the drift
+risk is unchanged while the indirection is added.
+
+**Step.** E196 as written, plus: the trait carries the implementation AND the union of both
+justifications, and EACH consuming test keeps its own known-positive control (E125).
+
+### E225 — E195's Step is wrong about channel 5
+
+E195 says a `use`-statement resolver in `StderrEmitterCensusTest::scan()` "would close the alias case and
+would also strengthen channels 1, 2 and 5". MEASURED, PHP 8.3.6: the channel-5 half is false. Channel 5
+matches on the METHOD name plus a scope operator and never inspects the receiver, so
+`use X\Bootstrap as B; B::warnPermissionConfigOnce("x")` already scans **1**. A class alias cannot hide a
+`warnPermissionConfig*` call from it.
+
+The channels-1-and-2 half is true and was closed in round 48 by a different instrument: `use const
+STDERR as E; fwrite(E, "x")` and `use function fwrite as w; w(STDERR, "x")` both RUN and both write fd 2
+(measured), and under the first, channel 1 scores 0 while channel 2 scores 1 — for the `use` line, not
+for the write.
+
+**Step.** None — recorded so the count of wrong prescriptions stays honest. This is the eighth.
+
+### E226 — four stacked doc-comment pairs remain in `src/`, in files round 48 did not own
+
+Round 48's `Chat::pumpRuntimeNotices()` had E193's reasoning landed as a SECOND doc-comment above the
+block already there. PHP attaches only the LAST doc-comment of a run, so the earlier one documents
+nothing: the method had lost its `@return array{0:Chat,1:?\Closure}` tag entirely (VERIFIED by
+`ReflectionMethod::getDocComment()`) and two paragraphs of reasoning were orphaned.
+
+Scanning for the shape found it is not a one-off. SIX pairs existed in `src/` plus `bin/sugarcrush`
+(MEASURED, PHP 8.3.6, adjacent `T_DOC_COMMENT` tokens with nothing significant between). Three were in
+`src/Chat.php` and were fixed; the other two there were WORSE than the pump's, because the stranded block
+belonged to a DIFFERENT method: `refuseInFlightCommand()` and `dispatchCommand()` both read as
+undocumented while their prose sat above `refuseEmptyCustomCommand()` and `expandCustomCommand()`
+respectively — and `expandCustomCommand()` returns `?string` while the block stranded above it carried
+`@return array{0: self, 1: ?\Closure}|null`.
+
+FOUR remain, all outside lane `a`'s file set and therefore untouched and UNEXAMINED — nobody has checked
+whether these are the harmless kind (two blocks that merge) or the expensive kind (a method silently
+undocumented and another mis-described):
+
+- `src/Commands/CommandSpec.php:816`
+- `src/Runtime.php:73`
+- `src/Tools/BuiltIn/Glob.php:969`
+- `src/Tui/Components/MenuBar.php:368`
+
+The guard shipped in round 48 (`RuntimeNoticeSinkDeliveryTest::testChatCarriesNoStackedDocComments()`) is
+scoped to `Chat.php` ON PURPOSE: widening it would have redded four files belonging to work in flight in
+sibling lanes, which is a merge conflict dressed as a finding.
+
+**Step.** Once the parallel lanes have merged, check each of the four for a lost `@return` or a
+mis-attributed block, fix them, then widen the existing guard from `Chat.php` to `src/` plus
+`bin/sugarcrush`. The scanner and both its fixtures already exist and move as-is; only the file list
+changes. The generator for the census is
+`stackedDocCommentLines()` in that test.
+
+### E227 — `SglangProvider`'s reachability was never asked, though `WorktreeManager`'s was
+
+Round 48 routed six refusals onto the mid-session seam: four in `WorktreeManager` and two in
+`SglangProvider::decodeToolArguments()`. It then went to considerable length establishing that
+`WorktreeManager` is DORMANT — nothing in `src/` or `bin/` constructs it — and pinned that with
+`StderrEmitterCensusTest::testTheWorktreeManagerSeamSitesAreDormantBecauseNothingConstructsIt()`.
+
+No symmetric question was asked of `SglangProvider`. If it is also unreachable, then two of the round's
+six seam moves rest on the same unstated assumption the dormancy guard exists to correct, and the
+doc-blocks describing when those two notices fire are the same kind of unverified reachability claim that
+the `WorktreeManager` rewrite was needed to undo.
+
+UNMEASURED. Recorded from the shape of the round, not from a scan.
+
+**Step.** Run `constructionSites('SglangProvider', …)` — the scanner now exists and handles the `::new()`
+factory shape — over `src/` and `bin/`, and over the provider registry's dispatch as well, since a
+provider is likelier to be reached through a name-keyed table than through a literal `new`. Then either
+pin the dormancy the way `WorktreeManager`'s is pinned, or state the live path in the doc-block.
+
+### E228 — the comment fixture that could not fail, and the class of fixture it belongs to
+
+Round 48's first draft of `constructionSites()`'s guard asserted `0` over an all-comments source, with the
+message "constructionSites() reads comments, so it would red on prose about the constructor". That
+assertion CANNOT go red for any token-based scanner: `token_get_all()` returns a whole comment as a single
+`T_DOC_COMMENT`/`T_COMMENT` token (MEASURED, PHP 8.3.6), so no `T_NEW` ever appears inside one. Mutating
+`significantTokens()` out of the scanner entirely — the exact mutation the fixture names — left it green.
+
+It was fixed by asserting ONE over a source carrying a commented construction AND a live one, which fails
+in both directions. But the general shape is worth a sweep: a fixture whose expected value is the value
+the instrument returns when it is DEAD proves nothing, and "assert 0 on a comments-only source" is a
+common and comfortable-looking instance of exactly that. It is rule 15 one level down — the known-positive
+control was present in that test and still did not save the fixture next to it, because the fixture had
+its own independent hole.
+
+**Step.** Sweep the census tests for fixtures whose expected value is `0`, `[]` or `''` and ask, per
+fixture, what mutation of the instrument that fixture would survive. Where the answer is "all of them",
+give the fixture a positive component so the number it asserts is one only a live instrument produces.
+### E229 — a forked child's plain `exit()` republishes the parent's OUTPUT BUFFER
+
+**Recorded 2026-08-22 by round-48 lane b.** Severity: harness. **Measured.** Extends E201; does not
+contradict it.
+
+**What.** E201 was re-derived independently this round rather than inherited, with a fresh two-process
+probe under the vendored PHPUnit 10.5.64 on PHP 8.3.6, and it holds exactly as written: a child leaving
+through a plain `exit()` runs destructors and `register_shutdown_function` callbacks under its own pid
+and never reaches `tearDown()`/`@after`, which fire once in the parent. The FALL-THROUGH child is the one
+that re-enters the runner — the probe's fall-through child ran `tearDown()`, then went on to run the NEXT
+test method, forked a grandchild of its own, and printed a second complete PHPUnit summary.
+
+**The new part.** The probe also showed a THIRD consequence of the plain exit that no doc-block in this
+tree carried. `TestCase::runBare()` calls `startOutputBuffering()` before invoking the test method, so at
+the moment a test forks, the child inherits a COPY of an open `ob_start()` level holding everything the
+parent has echoed. PHP flushes open buffers during shutdown, so the child writes that copy out and one
+`echo` appears TWICE in the runner's output. Observed directly: `ob_level=1`, `ob_len=21` inside the
+child, and the marker printed twice.
+
+**Why it matters more than the other two.** Both consequences already written down are DEFUSED in this
+tree — candy-core's PID-aware `PosixBackend::restore()` defuses the termios destructor, and
+`tests/bootstrap.php`'s `Loop::set()` CALL defuses React's shutdown hook. Nothing defuses an inherited
+output buffer, and it is the one a scanner cannot see.
+
+**Correction to the sentence above, made in the same round it was written.** This entry first said "
+`tests/bootstrap.php`'s `StreamSelectLoop` defuses React's shutdown hook", naming the loop CLASS as the
+agent. That is inverted. Read out of `vendor/react/event-loop/src/Loop.php`: `Loop::get()` registers the
+autorun `register_shutdown_function`, and only on the branch where `self::$instance` is not yet a
+`LoopInterface`; `Loop::set()` registers nothing whatever loop it is handed. Measured with three probes on
+PHP 8.3.6 with ext-uv loaded, each arming a 3600-second timer and then falling off the end of the script:
+`Loop::set(new StreamSelectLoop())` then `get()` exits immediately (rc 0, no hook), `Loop::set(new
+ExtUvLoop())` then `get()` exits immediately (rc 0, no hook), and `Loop::get()` alone blocks until killed
+(rc 124 under `timeout 8` — the hook ran the loop). The agent is the `Loop::set()` CALL happening before
+any `Loop::get()`. The correction makes the warning sharper rather than weaker: `tests/bootstrap.php`
+justifies that line purely on ext-uv stale-clock grounds and never mentions a shutdown hook, so the
+dangerous rework is one that DELETES the `Loop::set()` call, not one that swaps the loop class — which is
+what the original sentence would have had a reader watch for. Both doc-block copies in
+`ForkedChildExitConventionTest` were rewritten in the rule-7 three-part form.
+
+**Status.** Pinned behaviourally by
+`ForkedChildExitConventionTest::testAPlainExitInAForkedChildRepublishesTheOutputBufferItInherited()`, in a
+plain `php` subprocess so the demonstration's duplicate lands on a pipe rather than on the suite's own
+stdout, with the `exitNow()` control asserted FIRST (a count of 1 in both runs would otherwise read as a
+pass). The class doc-block's consequence list gained the third bullet.
+
+### E230 — E208's hazard does not reproduce, and its file count is wrong
+
+**Recorded 2026-08-22 by round-48 lane b.** Severity: doc accuracy. **Measured**, PHP 8.3.6.
+
+**What E208 said.** `T_DOLLAR_OPEN_CURLY_BRACES` is 8.2-deprecated, is referenced from two files, and "a
+deprecation notice on 8.4 is a real risk you cannot test".
+
+**What is true.** The constant is defined (value 395). REFERENCING it emits nothing — the 8.2 deprecation
+is on the `"${a}"` SYNTAX, not on the token. `token_get_all()` over a source that does use that syntax
+still produces the token and still emits nothing, because it lexes rather than compiles. And the syntax
+occurs ZERO times across `src/` and `tests/` combined. So there is no 8.4 deprecation notice to risk.
+The real hazard is REMOVAL — further out than 8.4, and a hard `Error: Undefined constant` rather than a
+notice. The token is also referenced from NINE files, not two, which is why editing the literal pair was
+the wrong shape of fix: most of them belong to other lanes.
+
+**Status.** Handled by construction instead: `tests/Support/InterpolationOpenerTokenTest.php` derives the
+opener roster from the running interpreter (tokenise real interpolation spellings, keep any array token
+whose text ends in `{`) and requires every brace-walking scanner to name every token in it. The deprecated
+spelling is supplied as a single-quoted SOURCE STRING, so the file never compiles it and adds zero
+occurrences to the census.
+
+**Correction to the Status above, made in the same round.** This entry first said the guard requires every
+brace-walking scanner "under `tests/Support/`". That was true of the guard as first committed and stopped
+being true two commits later, when the walk was widened to all of `tests/` AND `src/` — that commit's own
+message is *"ITS FILE ALPHABET COULD NOT EXPRESS A LIVE OFFENDER."* Verified at the current head:
+`phpFilesToScan()` walks `['tests', 'src']` from the library root. The backlog is the durable artefact and
+was recording the superseded, narrower scope; the widening is the whole point of the entry, because it is
+what let the guard see the offender in the next entry.
+
+**A hole it had, and closed.** The derivation is only as wide as its own alphabet — mutation M10 deleted
+the `${a}` row and the guard stayed green with a roster of one. Graceful shrinking is the DESIGNED
+behaviour for the day PHP removes the syntax, so it cannot be forbidden; the guard now asks the
+interpreter whether the constant is still defined and requires a spelling to still produce it if so.
+
+### E231 — E205's two false positives have ZERO occurrences, and the first census that said otherwise was a window artefact
+
+**Recorded 2026-08-22 by round-48 lane b.** Severity: informational. **Measured, twice, and the first
+measurement was wrong.**
+
+**What.** E205 asks whoever attempts the predicate fix to run a tree-wide census before and after. Half
+of that is now done: the blast radius of the two known false positives, over all 95 spawn sites
+`ChildStderrCaptureScanner` finds under `tests/`. Shape A (a quoted inner shell, `sh -c '…'`): **0**.
+Shape B (more than one fd-2 redirection in one command): **0**. Neither false positive has a single
+occurrence anywhere in `tests/`, which is a stronger statement than E205's "no in-scope site has either
+shape" and bounds the value of fixing the predicate at zero live sites today.
+
+**THE FIRST RUN SAID 13, AND ALL THIRTEEN WERE THE HARNESS.** The census read a THREE-LINE window around
+each site's line number, and this tree is full of consecutive one-line `exec('… 2>&1');` calls — so the
+window spanned adjacent calls and counted their redirections together. `MCP/GitCommandHandlersTest.php`
+lines 27 and 28 are two separate `exec()`s with one fd-2 redirection each. Re-run with a one-line window:
+0. The generator's controls passed both times; the controls tested the PREDICATE and the defect was in
+the WINDOW, which is the failure this project has now recorded from three directions.
+
+**Bound on the figure.** A one-line window undercounts a call whose command string wraps. Both numbers
+are stated so the next reader can pick, and the generator is
+`scratchpad/r48b/e205.php` — re-derive rather than trust either.
+
+**Not fixed.** E205's argument stands unchanged: a real fix has to model fd 1's destination as it is
+reassigned, and there is nothing in the tree to verify it against. The per-site before/after census
+harness the entry asks for now exists (`scratchpad/r48b/sites.php`): it prints
+`file line call shape` for every site under `tests/`, with four known-answer controls at the top.
+
+### E232 — a copied test helper drifted because only one copy was ever in a lane's file list
+
+**Recorded 2026-08-22 by round-48 lane b.** Severity: process. **Observed.**
+
+**What.** `Backend/EngineBackendTest::isRaw()` and `Support/ForkedChildTest::isRaw()` are the same
+helper: run `stty -a` against a pty and substring-match `-icanon`/`-echo`. Round 47 fixed the `Support/`
+copy — a wrong `-F`/`-f` flag fails with an EMPTY stdout, indistinguishable from "the terminal is
+cooked", so the diagnostic on fd 2 is the only thing telling them apart and it was going to
+`/dev/null`. The `Backend/` copy was in no lane's file list and kept the bug for a full round, one
+directory away from its fixed twin.
+
+**How it surfaced.** Not by reading: by pointing `ChildStderrCaptureScanner` at `tests/Backend/` while
+adopting `Chat/` and `MCP/` for E206. The guard named the site.
+
+**Step.** The general shape is worth a guard of its own — two same-named private helpers in different
+test directories whose bodies have diverged. Nothing checks for it today, and the lane split makes it
+likelier rather than less likely: a fix lands in whichever copy the round happened to own.
+
+### E233 — `tests/VhsTapeContractTest.php` is a live brace-walker gap in no lane's file list, and the row recording it is self-deleting
+
+**Recorded 2026-08-23 by round-48 lane b.** Severity: harness / cross-lane coordination. **Measured**, PHP
+8.3.6, at the lane head that added `InterpolationOpenerTokenTest`.
+
+**What.** `VhsTapeContractTest::statements()` and `::callArgument()` are both brace walkers that increment
+depth on `\T_CURLY_OPEN || \T_ATTRIBUTE` and never on `\T_DOLLAR_OPEN_CURLY_BRACES`. Confirmed by reading
+both depth counters: neither names the deprecated opener anywhere. A `"${a}"` in a file either walker
+scans would therefore cost it a level and desynchronise the walk. **Latent, not live** — that syntax
+occurs zero times across `src/` and `tests/` — so this is a two-token fix nobody needs to rush.
+
+**Why it needs an entry of its own rather than a line inside E230.** The file sits at the ROOT of
+`tests/` and was in no lane's file list for round 48, so lane b could see it but not fix it. It is
+currently recorded only as the single row of `InterpolationOpenerTokenTest::KNOWN_GAPS`, i.e. the
+obligation lives inside another lane's test constant, where nothing outside that lane will look for it.
+
+**It is a merge landmine in BOTH directions, which is the actual reason this is written down.** The
+`KNOWN_GAPS` check runs against the tree in both directions: a row whose file no longer has the gap fails
+with *"Delete its row — a deferral that has been overtaken is how a file silently stops being guarded."*
+So: if nobody fixes `VhsTapeContractTest`, the gap persists unrecorded outside a test constant; and if a
+sibling lane DOES fix it without touching `InterpolationOpenerTokenTest`, lane b's guard goes red on a
+correct change. Whoever fixes the two depth counters must delete the `KNOWN_GAPS` row in the same
+change-set.
+
+**Step.** Add `\T_DOLLAR_OPEN_CURLY_BRACES` to both depth conditions in `tests/VhsTapeContractTest.php`,
+and delete the `tests/VhsTapeContractTest.php` row from
+`tests/Support/InterpolationOpenerTokenTest.php::KNOWN_GAPS` in the same commit. Needs an owner assigned,
+since the two files were in different lanes' lists.
+
+### E234 — the child-stderr scanner called EVERY positional `proc_open()` descriptor spec `inherited`
+
+**Recorded 2026-08-23 by round-48 lane b.** Severity: harness correctness. **Measured**, PHP 8.3.6.
+**Fixed in the same round.**
+
+**What.** `ChildStderrCaptureScanner::classifySpec()` opened with `if (!namesFdTwo($spec)) return
+SHAPE_INHERITED;`, and `namesFdTwo()` requires a literal `2 =>` key. But `proc_open()` reads a POSITIONAL
+descriptor array **by position** — element 2 *is* fd 2 — so a spec spelled
+`[['file','/dev/null','r'], ['file','/dev/null','w'], ['file','/dev/null','w']]` never reached the
+classifier at all.
+
+**Measured before the fix, four spellings through the tree's own scanner.** Positional `/dev/null` (truth:
+discarded) → `inherited`. Positional pipe (truth: captured) → `inherited`. A two-element spec (truth:
+inherited) → `inherited`. A positional element 2 that is a variable (truth: unreadable) → `inherited`.
+**Four different truths, one answer.** And `inherited` is a DEFINITE claim rather than an "I cannot tell",
+so the branch was wrong in both polarities at once: it understates a real discard *and* it reds a real
+capture.
+
+**Why it is the same defect the method's own doc-block is about.** That doc-block already argues "a guard
+that quietly ignores what it cannot parse has a hole shaped exactly like the next defect", and had been
+rewritten twice to push non-literal ENTRIES and non-literal MEMBERS into `unclassified`. The positional
+case sat one branch *earlier* than any of that reasoning looked.
+
+**Blast radius, full-tree census with the old scanner and the new, 95 sites on both sides.** Exactly two
+sites move — `ImageRenderingTest::runQuietly()` and `BackgroundSupervisorTest::deadPid()`, both
+`inherited` → `discarded`, both genuinely `['file','/dev/null','w']` at position 2. Both were already
+outside SCOPE, so no guard changed colour. Nothing became `unclassified`. The 95/61-captured totals
+independently re-derive the round's other census of the same tree.
+
+**Status.** Fixed: a token-based top-level element splitter reads positional element 2, fewer than three
+elements stays a real `inherited` (that is the truth, not a failure to read), and anything the splitter
+cannot follow is `unclassified`. All five positional shapes are pinned in the unit fixture test and the
+positional discard is the liveness helper's fourth discard path. Mutating `positionalShape()` back to the
+old always-`inherited` answer is killed by all five tests in the file.
+
+### E235 — thirteen prefixes now carry an argued OUT_OF_SCOPE row in the child-stderr guard, and each is a standing obligation on its owning lane
+
+**Recorded 2026-08-23 by round-48 lane b.** Severity: cross-lane coordination. **Measured**, and the map
+is checked in both directions.
+
+**What.** `ChildStderrCaptureTest` had a SCOPE of six directories and nothing that gave membership any
+signal: narrowing SCOPE all the way to `['Integration/']` left the guard green with the *same* assertion
+count as the unmutated run. SCOPE and `OUT_OF_SCOPE` are now jointly total over the offenders, mirroring
+`ForkedChildReaperAdoptionTest`, so a spawn whose stderr reaches the suite must be matched by one list or
+the other.
+
+**The obligation.** Eleven directories plus the two files at the root of `tests/` — `Cli/`, `Commands/`,
+`Config/`, `Context/`, `Diagnostics/`, `Hooks/`, `Providers/`, `Renderer/`, `Sessions/`, `Tools/`,
+`Workflows/`, `BaseSystemPromptTest.php`, `ChatTest.php` — each hold at least one offending spawn and each
+sit in another lane's file list, which is why they are rows rather than fixes. The rows carry no site
+counts on purpose (a cardinality measured over `tests/` in one worktree is wrong by the next merge); both
+tests derive what they need from the tree.
+
+**Three natural batches, from the shapes measured at this commit.** The bare-`exec()` cluster
+(`Commands/`, `Cli/`, `Diagnostics/`, `Workflows/`, `BaseSystemPromptTest.php`) is the cheap shape — the
+child has an obvious home for fd 2 and nothing reads its output. The `git init`/`git config` fixture
+cluster (`Context/`, `Tools/`, `Providers/`) is one problem wearing three hats and should be settled
+together rather than piecemeal. The deliberate-discard pair (`Renderer/`, `Sessions/`) wants an argued
+exemption row, not a fix: in both the discard is the helper's entire purpose, and both were invisible
+until E234 fixed the classifier.
+
+**The row is self-deleting, in both directions.** A row whose directory has been cleaned up fails with
+"Move the prefix into SCOPE and delete this row"; an offender in a directory matched by neither list fails
+the partition. So a lane that fixes its directory must move the prefix in the same change-set, exactly as
+in E233.
+---
+
+### E236 — `Chat` has three hand-rolled denial-prefix producers, and E211's `NonInteractive` half is only half the roster problem
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: correctness (silent misclassification). **Measured.**
+
+**What.** E210/E211 gave `Runtime` three named prefixes (`Runtime::DENIAL_HOOK` / `DENIAL_REFUSED` /
+`DENIAL_UNANSWERED`), all three of them entries in `Chat::DENIED_ERROR_PREFIXES`, and
+`DenialPrefixRosterTest` pins the coupling. `src/Chat.php` was left alone because it is another lane's
+file, and it still spells three denial prefixes by hand.
+
+MEASURED on PHP 8.3.6 with a `token_get_all()` scan accepting both `T_CONSTANT_ENCAPSED_STRING` and
+`T_ENCAPSED_AND_WHITESPACE`, matching `/^(Hook|Permission) [a-z]+:/`:
+
+| file | symbol | literal |
+|---|---|---|
+| `src/Chat.php` | `answerPermission()` | `"Permission denied: {$request->toolCall->name} was not run."` |
+| `src/Chat.php` | `forkToolCalls()` | `"Permission required: {$toolCall->name} was not approved."` |
+| `src/Chat.php` | `gateToolCall()` | `"Hook denied: {$hookResult->message}"` |
+| `src/Chat.php` | `DENIED_ERROR_PREFIXES` | the roster's own three entries |
+| `src/Runtime.php` | `DENIAL_*` | the three constants, and nothing else |
+
+The failure mode is silent and one-directional: a producer whose spelling drifts off the roster renders a
+BLOCKED call as an ordinary tool ERROR — struck-through state lost in the TUI, entry missing from the
+`--output-format json` `refusals` array, and the model told the call failed rather than that it was
+refused.
+
+**Step.** Route `Chat`'s three producers through the roster (or through `Runtime`'s constants), and extend
+`DenialPrefixRosterTest::testRuntimeSpellsNoDenialPrefixOutsideItsConstants()` to scan `src/Chat.php` with
+the roster's own declaration lines carved out. Owner: whoever holds `src/Chat.php`. Note the scanner must
+keep reading `T_ENCAPSED_AND_WHITESPACE` — see E237.
+
+**Amended 2026-08-23, round-48 lane c fix stage — the Step above had a trap in it, and the trap is now
+gone.** Under the alphabet this entry was written against (`/^(Hook|Permission) [a-z]+:/`) the widened
+scan over `src/Chat.php` returns a FOURTH constant hit that is not a denial prefix at all:
+`'Permission mode: %s — from %s'`, the `sprintf` template behind the permission-summary line. Carving out
+"the roster's own declaration lines" would therefore have left that one in and reddened the widened guard
+on the day it landed, on a string that is entirely correct. The scanner's alphabet has since been replaced
+with a frame plus a denial VOCABULARY, and re-measured on PHP 8.3.6 the scan over `src/Chat.php` is now
+exactly the six real spellings (the three interpolated producers above and the roster's three entries) with
+`Permission mode:` correctly absent — so the carve-out needed is the three roster declaration lines and
+nothing more. The other two obvious targets were measured at the same time and need no carve-out at all:
+`src/Renderer.php` and `src/Cli/NonInteractive.php` each return **zero**, i.e. both consumers classify
+against the roster rather than spelling a prefix themselves. All of this is measured by driving the SHIPPED
+`DenialPrefixRosterTest::denialLiteralsIn()` through reflection rather than a copy of it, on PHP 8.3.6 only
+— CI also runs 8.4, and no token-kind claim here has been checked there.
+
+---
+
+### E237 — a scanner that reads only `T_CONSTANT_ENCAPSED_STRING` cannot see this tree's denial strings at all
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: process. **Measured; caught in my own new guard.**
+
+**What.** The first cut of `DenialPrefixRosterTest`'s "no second spelling" scanner read
+`T_CONSTANT_ENCAPSED_STRING` only. Every denial producer in this tree is an INTERPOLATED string, whose
+literal run is `T_ENCAPSED_AND_WHITESPACE`. The guard was green over a tree where all three producers were
+hand-rolled.
+
+**The figure this entry first carried was wrong, and is corrected rather than removed.** WHAT IT SAID: the
+constant-only scanner reported "**3** hits in `src/Chat.php` — all three the roster's own constant
+entries". WHAT IS TRUE, re-derived 2026-08-23 on PHP 8.3.6 by running the guard's own `denialLiteralsIn()`
+logic under the OLD regex over `src/Chat.php`: **4** constant hits — the roster's three plus
+`'Permission mode: %s — from %s'`, which is not a denial prefix — and, unchanged, **zero** for any of the
+three interpolated producers in E236's table, including the exact line E210 replaced. WHY THE ENTRY
+STILL EARNS ITS PLACE: the finding is the ZERO, not the three. A constant-only scanner sees none of this
+tree's denial producers, which is the whole point, and the miscounted control hits made the guard look
+MORE alive than it was rather than less.
+
+This is the rule-2 shape (the mutation survives because the assertion's WINDOW is wrong) occurring inside
+a guard written the same hour the lane was warned about it.
+
+**Step.** None — fixed in `DenialPrefixRosterTest`, which now asserts both token kinds through
+known-positive fixtures in the same test. Recorded so the next author of a source scanner over this tree
+starts from both token kinds.
+
+---
+
+### E238 — `RuntimeTest::testExecuteToolCallsYieldsErrorWhenHookDenies` passes with the prefix deleted
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: test-coverage. **Measured.**
+
+**What.** That test registers a hook whose own message is `'Hook denied this tool'` and then asserts
+`assertStringContainsString('Hook denied', $results[0]->content())`. The hook's message already contains
+the asserted substring, so the assertion says nothing about the prefix `Runtime::gate()` adds. MEASURED on
+PHP 8.3.6 through the round-48 mutation harness: substituting `"Hook denied: {$hookResult->message}"` with
+`"Hook refused: {$hookResult->message}"` left that test GREEN (`OK (1 test, 4 assertions)`).
+
+The same run showed `testAskWithNoApproverFailsClosedAndSaysPermissionWasRequired` surviving for the
+mirror reason — it asserts `'Permission required'`, which was present in `settleAsk()`'s own message
+regardless of what `gate()` prefixed.
+
+**Step.** Change the hook's message to something that does not contain the prefix (`'this tool is not
+allowed'`) and assert `assertStringStartsWith(Runtime::DENIAL_HOOK . ' ', …)`. `tests/RuntimeTest.php` was
+out of round-48 lane c's file list; `DenialPrefixRosterTest` now covers the behaviour from outside, so
+this is a strengthening rather than a hole.
+
+---
+
+### E239 — the denial roster lives on `Chat`, which is why the engine cannot read it
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: design. **Measured.**
+
+**What.** `Chat::DENIED_ERROR_PREFIXES` is the single roster two surfaces classify against, and it lives on
+the TUI model. `Runtime::gate()` therefore cannot read it: doing so would autoload `Chat` on the first
+gated tool call of EVERY run, including the `-p` one-shot path that exists partly so a run never builds
+one — `NonInteractive::refusalFrom()` goes to documented lengths to keep that load lazy and would be
+undone by it. So `Runtime` carries a pinned copy (`DENIAL_*`) and a test enforces the coupling, which
+works but is a copy.
+
+**Step.** Move the roster to a neutral leaf (`src/Permissions/DenialKind.php`, or an enum whose cases carry
+their prefix — which would also give the three kinds a TYPE rather than a string prefix, closing E210
+properly at the event rather than in the text). `Chat` and `Runtime` both re-export from it; the
+`DenialPrefixRosterTest` coupling test becomes unnecessary rather than merely satisfied. Touches
+`src/Chat.php`, so it needs the lane that owns it.
+
+---
+
+### E240 — an ASK refused at a terminal now writes two stderr lines
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: cosmetic. **Known and deliberate.**
+
+**What.** E219 added `NonInteractive::noticeRefusal()`, which writes one line per refusal from the
+tool-lifecycle observer. `HeadlessPermissionPrompt::__invoke()` already writes `sugarcrush: refused
+<tool>.` when a person answers anything non-affirmative at a real terminal. That one case therefore
+produces two lines: the approver's (the ANSWER) and the observer's (the OUTCOME, carrying the reason the
+model was handed).
+
+Not suppressed, because suppression would require the observer closure to know which refusals some
+approver had already announced, and the approver is constructed four frames away inside
+`Bootstrap::backend()`. Inventing that coupling for a cosmetic duplicate is worse than the duplicate.
+
+**Step.** If it is ever worth removing, the cheap version is for `HeadlessPermissionPrompt` to drop its own
+terse line now that the observer carries a fuller one — the prompt's other three shapes (the question, the
+no-tty refusal, the EOF line) all say things the observer cannot.
+
+---
+
+### E241 — the background-session daemon gets no refusal notice
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: observability. **Measured.**
+
+**What.** E219's line is written by `NonInteractive::run()`'s refusal observer. The OTHER headless caller,
+`Sessions\BackgroundSessionRunner`, attaches `HeadlessPermissionPrompt` for its refusal text but calls
+`$backend->complete([Message::user($this->task)], $onToken)` with **no `$onEvent` argument** — MEASURED at
+`src/Sessions/BackgroundSessionRunner.php`, the single `complete(` call in the file. So a hook DENY inside
+a background session reaches the session log on no channel at all, exactly the gap E219 closed for `-p`.
+An ASK still reaches it, via the prompt's no-tty refusal branch (that daemon's fd 0 is `/dev/null`).
+
+**Step.** Pass an observer there too. The line belongs in whatever `BackgroundSessionRunner` uses for its
+log rather than raw `STDERR` — its fd 2 is the session log file, so a plain `noticeRefusal()` would in fact
+land correctly, but that should be verified rather than assumed. Not done in round 48: `src/Sessions/` was
+out of lane c's file list.
+
+---
+
+### E242 — `tests/bootstrap.php`'s temp sandbox is keyed by uid alone, so concurrent lanes share it
+
+**Recorded 2026-08-22 by round-48 lane c.** Severity: test-infrastructure. **Observed, not fully diagnosed.**
+
+**What.** `tests/bootstrap.php` builds the suite's throwaway directory as
+`sys_get_temp_dir() . '/sc_suite_tmp_' . posix_geteuid()` and exports it as `TMPDIR` for every child
+process the suite spawns. The key is the uid and nothing else, so **two lanes running the suite at the
+same time as the same user share one sandbox** — and the comment above it explains the directory is
+deliberately stable rather than per-run and is never torn down.
+
+OBSERVED in round 48: with lane b's suite running concurrently, this lane's identical run went from
+4m 26s wall (measured alone at `5a3fe80b`: `Time: 04:34`, and again at `8b8ece84`: `Time: 04:26`) to
+crawling at roughly 160 tests per ten minutes over the same test range — on a 48-core box at load 6, i.e.
+**not CPU-bound**. That points at wall-clock waits rather than scheduling. A shared `TMPDIR` between two
+suites, plus `ToolIpcFiles`' sweep semantics over it, is the most obvious candidate and was not proved.
+
+NOT PROVED, stated plainly: the slowdown was observed, the mechanism was not isolated, and there are other
+shared resources in play (ports, `/tmp` proper, the MCP handshake children). The figure is one
+observation, not a benchmark — no repeats, no control.
+
+**Step.** First reproduce it deliberately (two suites, one box, timed) before changing anything. If it
+holds, key the sandbox by uid **plus** the checkout's real path, which is the coordinate that actually
+distinguishes two lanes — and check what that does to the `ToolIpcFiles::sweepOnce()` reasoning in the
+same comment, which assumes one sandbox per uid. `tests/bootstrap.php` is shared infrastructure: a change
+there reds every lane at merge, so this wants its own round rather than a corner of one.
+### E243 — `HeadlessPermissionPrompt`'s `?? \STDIN` default is the second half of E212's hazard family
+
+**Recorded 2026-08-23 by round-48 lane c (fix stage).** Severity: latent hang, bounded. **Measured, PHP 8.3.6.**
+
+**What.** E212 closed one `?? \STDIN` default — `NonInteractive::readStdinIfPiped()` now resolves through
+`NonInteractive::stdinDefault()`, pinned in `tests/bootstrap.php`. There is a second one and it was neither
+closed nor recorded: `HeadlessPermissionPrompt::__construct()` does `$this->in = $in ?? \STDIN;`, and
+`Bootstrap::withConsolePermissionPrompt()` constructs it as `new HeadlessPermissionPrompt($gate->mode())`
+with no `$in` at all — so an approver attached that way reads whatever descriptor 0 the runner inherited.
+
+**The bound, verified by symbol rather than assumed.** `\fgets($this->in)` sits inside `__invoke()`'s
+interactive arm, behind `isInteractive()`, which is `\is_resource($this->in) && \stream_isatty($this->in)`.
+A held-open PIPE is not a tty, so it takes the no-tty refusal arm and returns false immediately — this
+CANNOT hang the way E212's `stream_get_contents()` could. What it can do is block for a human answer when
+the suite is run from a real terminal, which is exactly the shape E212 existed to remove.
+
+**Not established.** Whether any test in `tests/` actually reaches the constructed approver with fd 0 a
+tty — the callers of `Bootstrap::backendFor()` with `$consolePermissionPrompt: true` were not enumerated.
+If one does, running the suite interactively is a latent block; if none does, that dormancy is worth
+pinning rather than leaving to be rediscovered.
+
+**Step.** Either extend the E212 seam to this class (a `pinStdinDefault()` equivalent, or pass the pinned
+stream at the `Bootstrap` construction site), or write the `stream_isatty()` bound down as an intentional
+property with a test that pins it. Do NOT close it by making `fgets` non-blocking; the tty arm answering a
+human is the feature.
+
+---
+
+### E244 — `stderrWritesIn()` still cannot see a `proc_open()` descriptor spec
+
+**Recorded 2026-08-23 by round-48 lane c (fix stage).** Severity: guard coverage. **Partly measured.**
+
+**What.** `NonInteractiveRefusalDocumentTest::stderrWritesIn()` is the scanner behind
+`testRuntimeStillWritesNothingToStderrBecauseTheTuiForksIntoIt()`, which is now a SAFETY guard: a write to
+descriptor 2 from `Runtime` lands on top of a live alternate screen, because `EngineBackend::completeAsync()`
+forks and the child inherits fd 2 from a `Program` that opened one. Its alphabet was widened this round
+after `php://fd/2` was MEASURED as a surviving mutation (PHP 8.3.6); `php://fd/2` and `/dev/err` are now
+alternatives in their own right, with fixtures.
+
+**What still escapes.** A `proc_open()` descriptor spec — `2 => ['pipe', 'w']`, or `2 => \STDERR` passed
+through to a child — and anything that computes the stream name at runtime. A `2\s*=>` alternative was
+considered and rejected because it matches any array literal keyed 2, which is a false positive the guard
+cannot absorb (it asserts an empty set). `src/Runtime.php` contains no `proc_open` today, measured, so the
+hole is real but not currently reachable — and the reaper code in that file is exactly the kind that grows
+one.
+
+**Step.** When `Runtime` acquires a `proc_open`, decide then whether the guard becomes token-based over the
+descriptor array rather than regex-based over the source. Recorded now so that decision is not made by
+whoever notices the guard stayed green.
+
+---
+
+### E245 — `StderrEmitterCensusTest`'s method name states a cardinality its body no longer carries
+
+**Recorded 2026-08-23 by round-48 lane c (fix stage).** Severity: cosmetic / rot. **Measured.** Lane a's file.
+
+**What.** E219 added a seventh `fwrite(\STDERR, …)` site to `src/Cli/NonInteractive.php`, and lane c bumped
+the three census rosters that went red on it (`6` → `7` in two rosters, and the prose `eleven sites` →
+`twelve sites`). The guard body is generic — it reads whatever number word the prose carries — so nothing
+is broken. But the METHOD NAME is now false:
+`StderrEmitterCensusTest::testTheInheritedElevenSiteCensusStillAgreesWithTheScan()` validates a census that
+says twelve.
+
+**Step.** Rename it to something cardinality-free (`testTheInheritedCensusStillAgreesWithTheScan()`). Owner:
+whoever holds `tests/Cli/StderrEmitterCensusTest.php` — lane c deliberately did not rename a method in
+another lane's file, since a rename is not the minimal edit a guard forced. This is the general lesson too:
+a cardinality baked into a test METHOD NAME rots exactly like one baked into prose, and unlike the prose it
+has no generator to catch it.
+
+---
+

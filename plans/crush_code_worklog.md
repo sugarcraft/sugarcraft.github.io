@@ -10931,3 +10931,140 @@ Zero code overlap for the third round running; the only collision was the backlo
 `check-path-repos --no-lib-path-repos` rc 0 · only the root `composer.lock` tracked · **skips exactly 1**,
 confirmed by name. Every lane file byte-identical in master except the renumbered backlog and the two
 files the merge fix touched. Branches merged and deleted, lane dirs removed after the floor was measured.
+
+
+## ROUND 48 — a second session limit, a salvage that was half-written, and a census two lanes shared that git merged without a conflict
+
+**Launched 2026-08-22, resumed 2026-08-23 after a session limit.** Three lanes × implement → adversarial
+review → fix. Base floor **OBSERVED** at `5a3fe80b`: `9445 / 132167 / 1 skipped / rc 0`.
+
+**Items.** Lane `a` (seam): **E192 + E193 together** — route `SglangProvider`, `AgentWorkerPool` and
+`WorktreeManager` onto the mid-session seam E171 built, plus the idle-tick, because either alone ships a
+defect; also **E195** (channel-6 alphabet) and E196. Lane `b` (forks): 🔴 **E201 first — it may falsify
+three rounds of bare-exit work**; **E202 + E209 as one item**, since fixing `tests/Backend/` removes the
+reaper scanner's only real-tree known-positive; **E206**, E203/E205/E208. Lane `c` (denial): 🔴 **E219**
+(a hook DENY reaches neither stderr nor `--output-format text`, and five places say otherwise), **E210**,
+**E211**'s `NonInteractive` half, and **E212** (every `NonInteractive::run()` test reads the real STDIN and
+a stdin that never EOFs **hangs the suite**).
+
+### Two supervisor actions taken at launch
+
+**E194 deferred, deliberately** — it was flagged in §0-NOW-48 as a supervisor decision. It wants a
+`PHPUnit\Runner\Extension` registered through `sugar-crush/phpunit.xml`. Deferred until after E192 lands,
+on the entry's own evidence: its generator note says *"re-run before acting; the answer changes as E192
+lands"*, and E192 changes which classes arm the sink. Registering a global test extension also shifts test
+infrastructure and the floor with it. Sequence is E192 → re-run the generator → decide.
+
+**The supervisor's own harness was fixed.** Round 47's lanes independently filed the SAME finding twice
+(E204 and E218): all three lanes wrote into one shared scratchpad and two collided on a generic filename —
+which means a mutation verdict attributed to the wrong tree. Each lane now gets
+`…/scratchpad/r48{a,b,c}/`, as rule 24. Round 47's predecessor-work section was also **removed** from the
+brief: it was true then and false now, and would have sent all three lanes hunting for commits that did
+not exist.
+
+### The session limit, second occurrence in two rounds
+
+The first launch ended with **5 of 9 agents done** — all three implementers plus lanes a and b's reviews.
+`fix:a-seam`, `fix:b-forks`, `review:c-denial` and `fix:c-denial` died. **Resumed** (not relaunched) since
+a cache existed, as `w6b7udp0n`.
+
+Lanes a and b were dirty. **Inspected before reverting, per round 47's lesson — and again it was real
+work, not mutations.** Lane a held a rule-7 three-part rewrite recording that **nothing in `src/` or
+`bin/` constructs a `WorktreeManager`**, so all four of its sites are DORMANT — which falsifies part of
+this round's own brief, where the supervisor called those four "the most valuable". Lane b held a precision
+rewrite stating what its interpreter-level control does and does not buy. Both parse; both committed as
+`SALVAGE (unverified)` at `9baf0394` and `b438814a`, naming the supervisor as committer and stating that
+nothing had been checked.
+
+⚠️ **Lane HEADs are now ahead of what the cached reviews describe**, which is exactly rule 22's scenario;
+the brief already instructs each fix agent to re-derive HEAD with `git log --oneline <base>..HEAD` and to
+verify inherited commits by mutation rather than redo or trust them.
+
+### The resume finished the round: 9 of 9, zero errors
+
+Second launch completed all four dead agents plus replays. **Every lane green and self-consistent:**
+
+| lane | HEAD | tests | assertions | skip | rc | symlinks | figures agree | out-of-lane |
+|------|------|-------|-----------|------|----|----------|---------------|-------------|
+| a (seam)   | `291d06f4` | 9474 | 133202 | 1 | 0 | 18 | yes | none |
+| b (forks)  | `43cbadf2` | 9451 | 132412 | 1 | 0 | 18 | yes | none |
+| c (denial) | `fa472f43` | 9462 | 132303 | 1 | 0 | 18 | yes | none |
+
+**All three lanes observed the base floor themselves** — each checked `5a3fe80b` out detached, re-verified
+18 symlinks *at that commit*, ran the full suite and reproduced `9445 / 132167 / 1 / rc 0` to the unit,
+then returned to its own HEAD clean. That is E167 applied by the lanes rather than asserted by the brief,
+on all three at once for the first time.
+
+**The salvage was worth committing AND worth labelling unverified.** Lane a's fix agent found that
+`9baf0394` *called* `constructionSites()` and never *defined* it — the killed agent had committed a
+half-written helper. `82520ba4` writes it. Lane b's reviewer likewise found a live defect in the code it
+was reviewing (below).
+
+### The merge — one collision that git did not flag
+
+Merged `a` → `b` → `c` at `68189e5e`, `198ce2f3`, `3c1f8aa8`; renumbered at `2b57cd9c`.
+
+The backlog conflicted on b and on c — append-vs-append both times, resolved by keeping both sides with
+the heading count checked before and after (229 → 229 each time).
+
+🔴 **`tests/Cli/StderrEmitterCensusTest.php` was touched by lane a AND lane c and git auto-merged it with
+no conflict** — the dangerous case, because nothing forced anyone to look. **Verified semantically by
+mutation instead:** replacing lane c's `\fwrite(\STDERR, …)` in `src/Cli/NonInteractive.php` with a comment
+reds the census with **3 failures**, one being `Failed asserting that 12 is identical to 11`. The two
+lanes' changes genuinely composed.
+
+**Why it was safe is the transferable part:** lane a's census asserts **exact per-file cardinalities**.
+Either half of lane c's change arriving without the other reds it. A `>=`, a subset check or a "contains"
+would have merged textually and stayed green while wrong.
+
+**A supervisor slip worth recording.** The first attempt at that mutation ran `sed -i "${L}s|.*|…|"` with
+`$L` empty; the address vanished and the substitution overwrote **every line of `NonInteractive.php`**.
+Recovered whole by `git checkout --` only because the merge was already committed. Redone in Python with
+`assert len(hits)==1`. **Commit before mutating; never let a shell variable be an address.**
+
+### Merged floor
+
+**`9497 / 133585 / 1 skipped / rc 0` at `2b57cd9c`**, measured twice — at the merge and again after the
+renumber, byte-identical (04:32.542, 280.40 MB), `sugar-crush` LINKED.
+
+**Prediction: tests 9497 EXACT, sixth consecutive round** (9445 + 29 + 6 + 17). **Assertions predicted as
+a lower bound of 133583 and landed at 133585** — the first genuinely loose bound, and the mechanism is
+E191's exactly: lane c's new stderr site fell inside lane a's census **predicate**, not merely its scan
+scope, so the merged census makes assertions neither lane made alone. The rule is now confirmed in both
+directions.
+
+**Skip confirmed BY NAME:** `MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`,
+the expected one. 18/18 symlinks by `is_link()` · config md5 `05480c743aff302fd6c06c5a4a4c2210` ·
+`check-path-repos --no-lib-path-repos` rc 0 · no per-lib `composer.lock` tracked · no protected file in
+the diff · all three lane HEADs confirmed ancestors of master by `git merge-base --is-ancestor`.
+
+### What the lanes found that the briefs and reviews got wrong
+
+- **The brief's headline item was falsified.** §0-NOW-48 called `WorktreeManager`'s four refusals "the most
+  valuable"; nothing in `src/` or `bin/` constructs a `WorktreeManager`, so all four are dormant. Lane a
+  routed them anyway on the *dormant is not ungated* doctrine and pinned the dormancy with a guard.
+- **Four more reviewer prescriptions failed measurement**: lane a's B7 (named the alias alphabet; the
+  defect was a hard-coded `'fwrite'` in the channel split — its own table showed this), lane a's B1 (a
+  fixture contract that *cannot* fail, since `token_get_all()` returns a comment as one token), lane c's
+  MAJOR-2 (a regex that reds the guard on two correct strings the day it lands), lane b's MAJOR 2/R1
+  (benign, not a hole — and the same reviewer's NOTE 8 gave that exact reasoning for an identical case).
+- 🔴 **A reviewer missed a live defect in its own subject.** `ChildStderrCaptureScanner::classifySpec()`
+  required a literal `2 =>` key, so **every positional `proc_open()` descriptor spec was answered
+  `inherited` regardless of truth** — wrong in both polarities, two real sites mis-shaped. Reviewers grade
+  the diff; they do not re-run the instrument. They should.
+- **Rule 25, new (E228):** a fixture whose expected value is what a *dead* instrument returns proves
+  nothing. "Assert 0 on a comments-only source" is that shape. It is rule 15 one level down — a
+  known-positive control was present and still did not save the fixture beside it.
+
+### Backlog 214 → 239
+
+E221–E228 (lane a) · E229–E235 (lane b) · E236–E245 (lane c), renumbered longest-id-first. Two merge-time
+notes: lane c filed at `##` where the file uses `###` (normalised — **tell lanes the heading level**), and
+the blanket renumber corrupted the one RESUME sentence that *discussed* the provisional id scheme. Exclude
+the how-to-renumber prose from the renumber.
+
+**E226 is now unblocked and was deferred to exactly this moment**: four stacked doc-comment pairs remain in
+`src/`, unexamined; lane a scoped its guard to `Chat.php` on purpose so it would not red three lanes in
+flight. In `Chat.php` two of the three were the expensive kind — a method silently undocumented while its
+prose sat above an unrelated declaration.
+

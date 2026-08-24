@@ -12013,3 +12013,186 @@ opposite responses.
 ---
 
 ---
+
+### E365 — a test's `php -S` server leaked once per test method and held the CALLER'S STDOUT, so `phpunit | anything` hung after a green run
+
+**Recorded 2026-08-24.** Severity: measurement discipline (the fd half), hygiene (the process half).
+**FIXED + GUARDED this round in `candy-mosaic`.**
+
+`candy-mosaic/tests/ImageSourceSsrfTest.php` spawned a real `php -S` server per test in `setUp()` and
+called `proc_terminate()` + `proc_close()` in `tearDown()`. It did not work. Two independent defects,
+both measured on this box rather than inferred:
+
+**1. The shell intermediary — why the process survived.** `proc_open()` was handed a command STRING, so
+PHP routed it through `/bin/sh -c`. `/bin/sh` here is dash, and dash did **not** exec the php binary:
+measured live, `proc_open()` returned pid *N* running `sh -c '/usr/bin/php8.3' -S …` with the real server
+as a separate child *N+1*. `proc_terminate()` killed the shell; the server was reparented to init
+(`ppid=1`) and ran forever. Note that the obvious shell-side repair does not work either: dash accepts
+only SINGLE-DIGIT fd redirections (`exec 20>&-` → `exec: 20: not found`, rc 127), so the intermediary
+cannot be told to close phpunit's fd 10.
+
+**2. Descriptor inheritance — the half that caused the hangs.** `proc_open()` remaps only the descriptors
+named in its spec, and the spec named 0, 1, 2. Measured fd table of a leaked server:
+
+```
+0 -> pipe:[…]                      1,2 -> /dev/null   (the test's own remap, correct)
+3 -> …/candy-mosaic/vendor/bin/phpunit
+4 -> THE CALLER'S STDOUT           <-- the damage
+5 -> /memfd:opcache_lock           6..10 -> phpunit's own sockets
+```
+
+Because fd 4 is the caller's stdout, an orphaned server holds the write end of that pipe open forever.
+`cd candy-mosaic && vendor/bin/phpunit | tail -5` therefore **never returns**: the suite goes green in
+13 s and the pipeline blocks on an EOF that will not come. Two measurements were lost to exactly this —
+one of 38 minutes and one of 11.5 hours — and both completed within milliseconds of the leaked servers
+being killed, which is the proof of the mechanism.
+
+**Measured evidence.** Exactly **4 leaked per full suite run** (0 before, 4 after, suite green at
+`457 / 7744 / 6 skipped`, rc 0). All four of the file's test methods leak, one each, confirmed by running
+them individually: `testFollowsSameSchemeRedirect`, `testBlocksRedirectToDisallowedFileScheme`,
+`testBlocksRedirectToDisallowedGopherScheme`, `testBlocksRedirectToMetadataIp`. They had been
+accumulating for a long time: **136 found alive**, the oldest **11.5 hours** old.
+
+**Fix** (`candy-mosaic/tests/Support/LoopbackHttpServer.php`, new; `ImageSourceSsrfTest` rewired onto it):
+
+- ARRAY command form to `proc_open()` — no `/bin/sh` at all, so the pid `proc_open()` reports IS the
+  server's pid and `proc_terminate()` reaches it.
+- Blocking reap: SIGTERM, bounded 3 s poll on `proc_get_status()['running']`, escalate to SIGKILL,
+  poll again, then `proc_close()`. The server is dead before the test method returns.
+- Descriptor spec NAMES every inherited fd. PHP exposes no `close(2)` and no close-on-exec control, so
+  each inherited slot is pointed at `['null']` instead. Verified on a live server started by the fixed
+  code under a real phpunit run: fds 0-13 are all `/dev/null` — no `vendor/bin/phpunit`, no caller's
+  stdout, no phpunit socket. **This half must hold even if a server leaks again: a leaked process that
+  does not hold the caller's stdout is a nuisance, one that does is a hang.**
+- Router temp dirs are process-unique (`mosaic-ssrf-<pid>-<uniqid>`), so the census can tell this run's
+  servers from a concurrent checkout's.
+
+**Guard** (`candy-mosaic/tests/SsrfServerLeakTest.php`, 2 tests). It drives the real spawner, not a
+re-implementation. `testServerLifecycleOrphansNoProcess` asserts the `/proc` census is empty on entry
+(this class sorts after `ImageSourceSsrfTest`, so that arm catches the original defect), then runs two
+start/stop cycles asserting `[] -> [pid] -> []`. The middle assertion is the point: **a leak detector
+that reads zero because it is looking in the wrong place passes vacuously**, so the census is required to
+SEE the running server before its zeroes are allowed to mean anything.
+`testServerInheritsNoneOfPhpunitsDescriptors` reads both `/proc/<phpunit>/fd` and `/proc/<server>/fd` and
+asserts the intersection is empty.
+
+**Known-positive control.** Both defects were reintroduced (string command form, `proc_terminate()` with
+no wait and no escalation) and the guard went **RED on 2 of 2 tests**, naming the four orphaned pids and
+the two inherited descriptors (`…/vendor/bin/phpunit` and the caller's redirect target). Restored: green.
+
+**Verification.** `459 / 7753 / 6 skipped / rc 0` in 13 s (baseline `457 / 7744`; delta **+2 tests,
++9 assertions** — the guard). Server census **0 -> 0** across a full run. `vendor/bin/phpunit | tail -5`
+now **returns**, rc 0.
+
+**Latent elsewhere — NOT fixed, scheduled.** The same shape (a long-lived child spawned with only 0/1/2
+in the descriptor spec) is a `proc_open` sweep away in other libs; see the sweep in the round report.
+Anything that spawns a child which can outlive the call inherits phpunit's stdout the same way.
+
+---
+
+### E366 — the `proc_open` sweep E365 asked for: the fd-inheritance half is monorepo-wide, the ORPHANING is not
+
+**Recorded 2026-08-24.** Severity: hygiene, plus a handle-leak-into-third-party-subprocess concern.
+**FINDING ONLY — deliberately not fixed** (functionality before hardening; the finding is what must not
+be lost). Follows E365, which fixed the one lib where both halves fired at once.
+
+Two questions, answered separately, because conflating them is how E365 hid for so long.
+
+**Q1: does any other lib leak processes?** Measured, not reasoned about. Thirteen libs' suites run
+individually, orphan census (`ppid==1`, matching php/ffmpeg/git/ssh) sampled before and after each:
+
+| lib | suite | new orphans |
+|---|---|---|
+| candy-serve | 344 / 718 | 0 |
+| candy-wish | 193 / 485 | 0 |
+| candy-shell | 333 / 691 | 0 |
+| candy-freeze | 315 / 619 | 0 |
+| candy-testing | 129 / 230 | 0 |
+| candy-core | 799 / 7210 | 0 |
+| sugar-reel | 352 / 2423 | 0 |
+| sugar-dash | 5853 / 9154 | 0 |
+| sugar-spark | 205 / 659 | 0 |
+| sugar-skate | 206 / 427 | 0 |
+| sugar-tick | 144 / 349 | 0 |
+| sugar-stash | 218 / 606 | 0 |
+
+Every one rc 0. **The six reporting PHPUnit's `OK (…)` form had ZERO skips**, which is the part that makes
+this evidence rather than an absence: a lib can post zero orphans because its spawning tests gated
+themselves out, and that is not what happened here. **Answer: no. The orphaning was candy-mosaic-specific.**
+
+⚠️ **`candy-mosaic`'s own row in that sweep is void** — E365's fix (`e7c777b9`) landed while the sweep was
+in flight, so the row measured already-fixed code. The pre-fix evidence is the separate direct
+measurement in E365 (0 servers before a run, 4 after, reproduced).
+
+⚠️ **NOT COVERED, and neither is an all-clear.** `candy-pty` was excluded on purpose: its suite spawns
+PTYs through FFI and this project already knows `timeout` does not reliably kill a hung PTY child, so
+testing it needs a pid-scoped watchdog and three lanes were mid-round. `sugar-crush` was excluded as
+lane-owned and too much load during a measurement window — and it has by far the most sites, ~40.
+
+**Q2: is the fd-inheritance half local?** No. **No `proc_open()` descriptor spec anywhere in the monorepo
+names an fd above 2** — verified twice, independently, from both directions. So every child inherits the
+parent's fd 3+; it is harmless only because everywhere else the child is reaped promptly. Long-lived
+children ranked by exposure:
+
+**HIGH — long-lived child, only 0/1/2, and teardown that does not wait:**
+- `sugar-dash/src/Plugin/ExternalModule.php:152` — persistent third-party plugin daemon, **no
+  `proc_terminate()` at all**; `__destruct()` does a bare `proc_close()`. Worst of the set.
+- `sugar-crush/src/ClaudeCodeMcpClient.php:105` — third-party stdio MCP server; `disconnect()` is fclose
+  + bare `proc_close()`. The unfixed twin of `MCP/StdioMcpServer.php`, which already has SIGTERM → poll →
+  SIGKILL.
+- `sugar-crush/src/LSP/LspConnection.php:60` — language server; `stopProcess()` terminates and
+  immediately closes. No `__destruct()`.
+- `sugar-crush/src/Sessions/BackgroundSupervisor.php:188` — STRING command (the dash mismatch is
+  acknowledged in its own comment at :226); deliberately double-forks; the happy path never reaps.
+- `sugar-reel/src/AudioPlayer.php:79` — ffplay/mpv; `stop()`/`pause()`/`resume()` all terminate-then-close
+  with no wait. No `__destruct()`.
+
+**MEDIUM:** `sugar-reel/src/Decode/FfmpegDecoder.php:160` · `candy-core/src/WorkerPool.php:286` ·
+`sugar-crush/src/Agents/ProcessExecutor.php:426` (split personality — `escalateAndKill()` is correct,
+`cancel()`/`cancelAll()` are not) · `sugar-crush/src/Providers/ClaudeCodeProvider.php:109` +
+`ClaudeCodeInvocation.php:109` (no deadline at all) · `candy-core/src/Program.php:792`.
+
+**LOW / already correct:** candy-serve's five sites are one-shot and drained (no timeout, string commands)
+· candy-pty is clean judged on its own PTY terms · `sugar-stash/src/Process.php` is correct · several
+sugar-crush sites are already hardened reference implementations.
+
+**The user-facing shape of this, stated plainly:** sugar-crush's MCP servers, language servers and
+sugar-dash's plugin binaries are long-lived THIRD-PARTY children that inherit whatever descriptors the
+host had open at spawn. They are reaped correctly enough today that nothing hangs, so this is a
+handle-leak-into-untrusted-subprocess concern, not a live outage.
+
+**Best-in-tree pattern the HIGHs should adopt** — `sugar-crush/tests/Integration/BinSugarcrushDispatchTest.php:1999`:
+`armWatchdog()` arms a detached watchdog WITH pid-reuse checking *before* calling `proc_terminate(9)`,
+precisely because `proc_close()` waits.
+
+**The mechanical repair, and why it beats fixing five call sites by hand.**
+`sugar-crush/tests/Support/ChildStderrCaptureScanner.php` is ALREADY a static scanner over `proc_open()`
+descriptor-spec shapes. Extending it to flag "long-lived child + nothing said about fd ≥ 3" makes E365
+non-recurring instead of fixing today's five and meeting the sixth next year. **Do this before the hand
+fixes.**
+
+---
+
+### E367 — `ClaudeCodeProvider` reads `$pipes[2]` after fclosing it
+
+**Recorded 2026-08-24.** Severity: correctness (silent loss of a child's stderr).
+**FINDING ONLY — not fixed.** Found incidentally during E366's sweep, unrelated to descriptors.
+
+`sugar-crush/src/Providers/ClaudeCodeProvider.php` fcloses `$pipes[2]` at :155 and then reads it at :160
+(verified at `e7c777b9`; line numbers rot — grep `pipes\[2\]`). A read from a closed stream yields
+nothing, so the throw immediately below it always reads
+
+```
+Claude Code exited with code N:
+```
+
+with the reason blank — precisely on the failure path where the child's stderr is the only diagnostic
+there is.
+
+⚠️ **Round 52's lane b has this file open.** Reconcile at the merge before touching it.
+
+**Do not fix by reordering alone.** Establish first, by measurement, whether any caller currently depends
+on the empty-string result — a provider error path that has always returned `''` may have a test pinning
+that. Rule 15/25 applies: a fixture whose expected value is what a dead instrument returns proves nothing.
+
+---

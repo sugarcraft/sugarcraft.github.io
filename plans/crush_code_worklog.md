@@ -8,6 +8,88 @@ Summary + Implementation Plan, 209-2160 are the 13 research dossiers.
 
 ---
 
+## Out-of-band work on master during round 52 (2026-08-24)
+
+Two fixes landed on `master` while round 52's three lanes were running, both from user-reported symptoms
+rather than from the plan. Recorded here because they shift the round-52 merge arithmetic: the lanes are
+based at `b9abd2fb`, these sit on top of it, and the merged floor is base + lane deltas + these.
+
+### `a921b834` — sugar-crush reads third-party frontmatter the way the ecosystem writes it
+
+`SUGARCRUSH_DEBUG_SKILLS=1` showed six SKILL.md files skipped at launch, every one with
+`A colon cannot be used in an unquoted mapping value at line 2`. The files were not at fault: a
+`description:` whose prose contains `: ` is what agent-tool frontmatter looks like, Claude Code reads
+these exact files, and two of the six live under `/home/my/.claude/skills/` where "fix your SKILL.md" is
+not advice a sugar-crush user can act on. The loader's own `recordSkip()` doc-comment already argued that
+these are other tools' files; it just never fixed the parse underneath.
+
+Seven `Yaml::parse()` frontmatter sites shared the defect. All now route through
+`src/Support/Frontmatter.php` — strict YAML first, and only on `ParseException` are offending top-level
+plain scalars single-quoted and the block re-parsed, so lists, nesting, block scalars and type coercion
+keep working and a malformed file still throws rather than becoming silent empty metadata.
+`Hooks/HookConfig.php` deliberately stays strict: it parses a config file the user wrote for us.
+
+A census of the real files on this box showed **34 agent-preset and command frontmatter files, 0
+rejected** — those readers were LATENTLY broken, not actively, because their descriptions are terse while
+skill descriptions are long prose. That makes the synthetic per-site fixtures the only evidence those
+sites were ever broken, so they were kept per-site and reported individually.
+
+Second defect found in the same pass and fixed: `AgentPresetRegistry::parsePermissionMode()` matched
+kebab-case only, with a `default =>` catch-all, so `acceptEdits`/`bypassPermissions`/`dontAsk` all
+silently became `PermissionMode::Default`. `.sugar-crush/agents/coder.md` — tracked, one of three presets
+we ship — says `permissionMode: acceptEdits` and was losing it. The sibling `ForeignAgentPresetRegistry`
+already had a documented camel→kebab retry and argued that a silent fallback here "would be an unreported
+loss"; the native path never got it. Extracted to `src/Support/EnumSpelling.php`, now shared. **The data
+file was deliberately NOT edited** — changing `coder.md` to kebab would have hidden the parser defect.
+
+Known-positive control: 43 of 48 new tests red with the fix stashed; the 5 that stayed green are the
+deliberate no-regression pins. Verified independently by the supervisor: 0 "Failed to load skill" lines
+at launch, down from 12 plus the notice. **9730 / 143168 → 9781 / 143427**, skips still exactly 1.
+
+### `e7c777b9` — E365, and the measurement hazard it had been causing all along
+
+Chasing a candy-mosaic measurement that had been "running" for 38 minutes turned up a job from a PREVIOUS
+session stuck for **11.5 hours**. Neither was computing anything: both were blocked on `tail`.
+
+`ImageSourceSsrfTest` spawned a `php -S` server per test and orphaned every one of them. **136 were alive
+on the box, the oldest 11.5 hours.** Two independent defects, both measured: `proc_open()` was given a
+command STRING so dash sat between the test and the server and absorbed the SIGTERM; and the descriptor
+spec named only 0/1/2, so the child inherited fd 3 (phpunit's script), **fd 4 (the caller's stdout)** and
+phpunit's sockets. The second is why `phpunit | anything` never returned — the suite went green in 13
+seconds and the pipeline waited on an EOF a leaked server was holding open.
+
+Killing the 136 by explicit pid released both stuck jobs within milliseconds, which is the proof. What
+they had been sitting on: candy-mosaic's base floor `457 / 7744 / 6`, and **round 51's mutation control,
+which had passed** — the `PaletteCapabilityReferenceTest` guard did catch its mutation, and that evidence
+had been unread for 11.5 hours.
+
+Fixed with an array command form (no shell), a blocking SIGTERM → 3 s poll → SIGKILL reap, and a
+descriptor spec that names every inherited fd and points it at `/dev/null` (PHP exposes no close-on-exec
+control, so remapping is the only mechanism available; verified on a live server, fds 0–13 all
+`/dev/null`). Guard `SsrfServerLeakTest` proven red-then-green, and structurally anti-vacuous: the census
+must SEE the server running (`[] → [pid] → []`) before its zeroes count. **457 / 7744 → 459 / 7753.**
+
+### The sweep, and what it does and does not clear
+
+Thirteen libs' suites run individually with an orphan census before and after: **all 0**. The six
+reporting `OK (…)` had zero skips, so their spawning tests genuinely ran — that is what makes it evidence
+rather than an absence. candy-mosaic's own row is void (the fix landed mid-sweep). **candy-pty and
+sugar-crush were NOT covered** — the first because a hung PTY child does not die to `timeout` and a
+pattern kill was unacceptable with three lanes live, the second because it is lane-owned and its suite is
+five minutes of load during a measurement window.
+
+So the orphaning was candy-mosaic-specific. The fd-inheritance half is monorepo-wide: **no `proc_open()`
+descriptor spec anywhere names an fd above 2.** Filed as E366 with a HIGH/MEDIUM/LOW ranking of the
+long-lived-child sites, finding only. The recommended repair is mechanical, not manual — extend the
+existing `ChildStderrCaptureScanner` to flag "long-lived child + nothing said about fd ≥ 3" so this cannot
+recur, rather than hand-fixing today's five and meeting the sixth next year.
+
+E367 filed separately: `ClaudeCodeProvider` fcloses `$pipes[2]` and then reads it, so its failure path
+throws `Claude Code exited with code N:` with the reason blank. Lane b has that file open — reconcile at
+the merge.
+
+---
+
 ## The loop (per step, one at a time — never in parallel)
 
 1. Spawn an agent to implement the step.
@@ -11067,6 +11149,76 @@ the how-to-renumber prose from the renumber.
 `src/`, unexamined; lane a scoped its guard to `Chat.php` on purpose so it would not red three lanes in
 flight. In `Chat.php` two of the three were the expensive kind — a method silently undocumented while its
 prose sat above an unrelated declaration.
+
+## ROUND 52 — IN FLIGHT (base `b9abd2fb`, THREE lanes, run `wf_5f1a8d38-5b8`)
+
+**Launched 2026-08-24.** Base floor `9730 / 143168 / 1 skipped / rc 0` observed at `b9abd2fb`, clean, no
+60s aborts. Lane dirs verified across all three packages this round touches — sugar-crush 18/18,
+candy-core 3/3, candy-mosaic 7/7.
+
+**Lane `a` — the fd defect family, and it is mostly NOT in `sugar-crush`.** E336: `TtyDetect::isAtty()`
+casts a STREAM to `(int)` and treats the result as a file descriptor — a resource id is not a descriptor
+number and coincides with one only by accident on small ids, in `candy-core`, the package everything else
+sits on. E340: `Program::runExec()`'s closed-stream guard now falls back to a closed stream, because it
+was written before the suite began closing descriptor 0. E341: `Detect::stdinFd()` can answer `null` into
+a `@param resource` at `candy-core` — a contract violation ACROSS a package boundary, the kind no single
+package's suite catches. E339: dormant `EnvDetect::isConsoleStdin()`, to be wired or documented as a seam,
+**never deleted**.
+
+**The through-line the lane is asked to state once and well:** candy-core and candy-mosaic were written
+when descriptor 0 was always a live tty, and sugar-crush's suite now closes it. One guard that pins the
+family beats four that each pin a symptom. **The lane owes three suites' figures (rule 28).**
+
+**Lane `b` — sugar-crush runtime.** It opens with a contradiction to settle rather than a fix to make:
+**E344 says E328's recorded mechanism does not reproduce** — E328 was fixed on a race theory, E344 says
+the hazard was reachability — **and both entries are in the tree, so one is wrong.** Then E345 (the
+hardened audit write fails SILENTLY, which is worse than no audit log because it looks authoritative),
+E351 (the suite creates and populates the REAL production audit directory and nothing removes it), E338
+(round 51 measured that guarding only the named call RELOCATES the `TypeError`, because `@` suppresses
+diagnostics and not exceptions), E346/E347/E348, and E352 — the wire-id period the supervisor's own
+round-49 sweep introduced.
+
+**Lane `c` — measurement hygiene, and two entries that close a long-running mystery.**
+
+### 🔴 E362 EXPLAINS E333, INCLUDING THE DETAIL E333 COULD NOT ACCOUNT FOR
+
+E333 recorded two 60-second aborts in one merged-floor run that did not reproduce, and filed evidence
+rather than a mechanism because the obvious candidates had been ruled out. **E362 supplies the mechanism,
+measured**: `BootstrapSkillSkipsTest` spawns children under `timeout -s KILL 60`; under concurrent load a
+child that would finish in a second misses the wall clock; PHPUnit reports **RISKY rather than red**, and
+the run **sheds the assertions that arm would have made.** That shed is exactly the 3-assertion gap E333
+recorded between its red and clean runs without being able to explain it.
+
+**Refusing to name a mechanism in E333 was the right call and this is the payoff** — the entry stayed
+accurate, and a later observation resolved it rather than having to un-say a guess. The standing
+consequence: **a risky or red verdict on that file during a parallel round is re-run alone before it is
+attributed to anything.**
+
+### 🔴 E361 — RULE 26 ONE LEVEL DOWN, WITH NO SWEEP INVOLVED
+
+A doc-comment that NAMES a PHPUnit annotation IS that annotation. Removing a requires-annotation and
+writing a paragraph explaining why **re-created it**: the metadata parser read the name out of the
+explanatory comment and the test skipped, inside the change whose entire purpose was that it never should.
+The suite reported `Skipped: 1` for a file carrying no `markTestSkipped` at all. Caught before shipping,
+so the skip invariant held. **Live for every annotation the tooling reads out of comments.** Lane c builds
+the guard, and is told its guard must be immune to its own trap.
+
+### 🔴 E354 CHANGES HOW THIS PROJECT PREDICTS
+
+A per-file assertion in several censuses makes the suite's assertion total a function of the FILE COUNT.
+That is the mechanism behind every loose assertion bound recorded here, and behind E364, where a
+merge-time row deletion put the total BELOW its lower bound. Lane c is asked to quantify it — assertions
+per added file, per census — because a number there converts a bounded prediction into an exact one.
+
+### TWO NEW STANDING RULES, AND A BRIEF-WRITING ONE
+
+`COMMON` gained **rule 28** (a lane touching a second library owes that library's figures separately) and
+**rule 29** (file ids under THIS round's number, not the one you see around you). Both come from round 51:
+the first because the floor became two numbers, the second because a lane copied its neighbours' id
+convention instead of following its brief.
+
+And **every path in this round's briefs was verified to exist before the brief was written** — E334's
+lesson, after round 51 sent a lane to a file in the wrong package.
 
 ## ROUND 51 — CLOSED (`8629df24`, floor `9730 / 143168 / 1 skipped / rc 0`, THREE lanes)
 

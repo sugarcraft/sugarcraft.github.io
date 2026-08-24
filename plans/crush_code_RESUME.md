@@ -6,6 +6,112 @@ Nothing here depends on a prior conversation's context.
 
 ---
 
+## ⏳ ROUND 52 IS IN FLIGHT RIGHT NOW — read this before starting anything
+
+**Launched 2026-08-24 from master `b9abd2fb`, tree clean. THREE lanes.**
+**Run `wf_5f1a8d38-5b8`, task `wtwesdyk8`.** Script (DURABLE path):
+`/home/my/.claude/projects/-home-sites-sugarcraft/18689526-3e9c-4588-b33e-7326941eaed0/workflows/scripts/crush-round-52.js`
+
+**Base floor `9730 / 143168 / 1 skipped / rc 0` OBSERVED at `b9abd2fb` itself** (E167), clean, no 60s
+aborts. **Lane dirs** `/home/sites/crush-lane-{a,b,c}` are `cp -a` copies at `b9abd2fb`, each verified
+across all THREE packages this round touches: sugar-crush 18/18, candy-core 3/3, candy-mosaic 7/7
+symlinks resolving in-lane by `realpath()`. ⚠️ **DO NOT DELETE until the merged floor is measured.**
+
+🔴 **Standard hazards on a kill** (unchanged): resume if any lane completed, relaunch if none; check every
+lane for a dirty tree AND for commits its report omits (E168, E190); **inspect before reverting**; check
+`git branch`/`git reflog` before believing a lane lost work; **never edit `COMMON` while the run is
+resumable**.
+
+### 🔴 MASTER MOVED WHILE ROUND 52 WAS IN FLIGHT — THE MERGE ARITHMETIC HAS THREE TERMS NOW
+
+Two out-of-band fixes landed on `master` ON TOP of the commit the lanes branched from. **The lanes are
+still based at `b9abd2fb` and their deltas are relative to THAT**, so the merged floor is
+`b9abd2fb` + lane deltas + these, not base + lane deltas. Do not report an additive-prediction
+violation without subtracting these first (E364's lesson, one level up).
+
+| commit | what | sugar-crush | candy-mosaic |
+|---|---|---|---|
+| `b9abd2fb` | the lanes' base | 9730 / 143168 / 1 | 457 / 7744 / 6 |
+| `a921b834` | lenient frontmatter parser | **9781 / 143427 / 1** (+51 / +259) | — |
+| `e7c777b9` | E365 `php -S` leak fix + guard | — | **459 / 7753 / 6** (+2 / +9) |
+
+**candy-core is unchanged at `799 / 7210 / 25 / rc 0`** — measured at `b9abd2fb` and again mid-sweep.
+All three packages' base floors are now on record, which rule 28 needs for lane a.
+
+**`a921b834` — frontmatter.** Six SKILL.md files (four ours, two the user's own, outside this repo) were
+rejected by `Yaml::parse()` for `description: … : …` — an unquoted plain scalar with a colon, which is
+what the whole agent-tool ecosystem writes and what Claude Code reads without complaint. All seven
+frontmatter sites now route through `sugar-crush/src/Support/Frontmatter.php`: strict YAML first, and only
+on `ParseException` are offending plain scalars quoted and re-parsed, so lists/nesting/block scalars keep
+full semantics and a genuinely malformed file still fails hard. `HookConfig` deliberately stays strict —
+it parses a config file the USER wrote, where the error is actionable by its author. Also fixed:
+`AgentPresetRegistry` matched kebab-case only and silently mapped `acceptEdits` → `PermissionMode::Default`,
+which `.sugar-crush/agents/coder.md` (tracked, shipped) triggers today. The data file was left alone on
+purpose — editing it would have hidden the parser defect.
+
+**`e7c777b9` — E365.** See the backlog entry. The part that matters for THIS file: **`phpunit | anything`
+against candy-mosaic used to hang forever after a green run**, because an orphaned `php -S` held the
+caller's stdout on an inherited fd 4. Two supervisor measurements were lost to it, one of 38 minutes and
+one of **11.5 hours** — the latter was round 51's mutation control, which had in fact PASSED and sat
+unread. **Redirect to a FILE, not a pipe, when measuring anything that spawns children.**
+
+**Backlog 364 → 367.** E365 (fixed + guarded), E366 (the monorepo `proc_open` sweep — finding only),
+E367 (`ClaudeCodeProvider` reads `$pipes[2]` after fclosing it — finding only, and **lane b has that file
+open**). **Renumber round 52's lane ids from E368**, not E365.
+
+### THE LANES
+
+- **a — candy-core + candy-mosaic fd defects. 🔴 MOSTLY OUTSIDE sugar-crush, and it owes THREE suites'
+  figures** (rule 28). E336 (`TtyDetect::isAtty()` casts a STREAM to `(int)` and treats it as a file
+  descriptor — a real bug in the foundation package), E340 (`Program::runExec()`'s closed-stream guard now
+  falls back to a closed stream), E341 (`Detect::stdinFd()` answers null into a `@param resource` across a
+  package boundary), E339 (dormant `EnvDetect::isConsoleStdin()` — **wire or document, never delete**).
+  **The through-line: candy-core and candy-mosaic were written when descriptor 0 was always a live tty,
+  and sugar-crush's suite now closes it.**
+- **b — sugar-crush runtime correctness.** 🔴 **E344 says E328's recorded mechanism does not reproduce —
+  one of those two entries is wrong and both are in the tree; settle it first.** Then E345 (the hardened
+  audit write fails SILENTLY), E351 (the suite writes to the REAL production audit directory), E338 (the
+  `TypeError` that relocates rather than disappears if guarded at the wrong call), E346/E347/E348 (the
+  denial loose ends — E307 was declared closed and was not), E352.
+- **c — measurement hygiene, tests only.** 🔴 **E362 + E333 are the same phenomenon and both can close**
+  (see below). E361's guard. **E354, which changes how this project predicts.** Plus E355/E357/E360/E363.
+
+### 🔴 E362 EXPLAINS E333: RISKY IS NOT RED, AND A RISKY RUN SHEDS ASSERTIONS
+
+`BootstrapSkillSkipsTest` spawns children under `timeout -s KILL 60`. Under concurrent load a child that
+would finish in a second misses the wall clock; PHPUnit reports **RISKY rather than red**, and the run
+**sheds the assertions that arm would have made** — which is precisely the 3-assertion shed E333 recorded
+and could not explain. **A risky or red verdict on that file during a parallel round must be re-run alone
+before it is attributed to anything.** Lane c takes option (b): an explicit named budget constant with the
+reason beside it. **Not simply raising it** — that trades a diagnosis for a longer red when a child
+genuinely hangs.
+
+### 🔴 E361 — A DOC-COMMENT THAT NAMES AN ANNOTATION *IS* THAT ANNOTATION
+
+Removing a requires-annotation and writing a paragraph explaining why **re-created it**: PHPUnit's
+metadata parser read the name out of the explanatory comment, and the test skipped inside the change whose
+whole purpose was that it never should. Caught before shipping, so the skip invariant held at exactly 1.
+**This is rule 26 one level down — no sweep involved, a comment corrupting itself by quoting a directive.**
+Live for every annotation the tooling reads from comments, `CALIBER_LEARNINGS.md` fragments included.
+When prose must name one, spell it without the sigil.
+
+### 🔴 TWO NEW STANDING RULES IN `COMMON`, BOTH FROM ROUND 51's MISTAKES
+
+**28. A lane that touches a second library owes that library's suite figures separately.** Round 51 made
+the merged floor two numbers; round 52's lane a spans three packages.
+**29. File backlog ids under THIS round's number, not the one you see around you.** Round 51's lane c
+copied the convention from neighbouring entries instead of its brief. **The merge check is the control,
+not the instruction.**
+
+### AND THE BRIEF-WRITING RULE THAT CAME OUT OF E334
+
+**Every path in this round's briefs was verified to exist before the brief was written.** Round 51 sent a
+lane to `candy-palette/src/Probe/Detect.php`; `Detect` is in `candy-mosaic`. Confirmed this round:
+`TtyDetect`, `EnvDetect` and `Program` are candy-core; `Detect` is candy-mosaic; `readStdinIfPiped` and
+`noticeRefusal` are sugar-crush.
+
+---
+
 ## 0-NOW-52. ROUND 51 CLOSED (floor 9730) — read this first, then §0 for the standing rules
 
 **SUITE FLOOR: `9730 / 143168 / 1 skipped / rc 0` at `8629df24`** (merges `8bc556ed` a, `0cd0846e` b,

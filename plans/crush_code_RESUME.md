@@ -6,12 +6,193 @@ Nothing here depends on a prior conversation's context.
 
 ---
 
-## 0-NOW-49. ROUND 48 CLOSED (floor 9497) — read this first, then §0 for the standing rules
+## 0-NOW-52. ROUND 51 CLOSED (floor 9730) — read this first, then §0 for the standing rules
+
+**SUITE FLOOR: `9730 / 143168 / 1 skipped / rc 0` at `8629df24`** (merges `8bc556ed` a, `0cd0846e` b,
+`88dcc3ec` c). **`candy-mosaic` separately: `457 / 7744 / rc 0`** — round 51 is the first round a lane's
+work spanned two libraries, so **the merged floor is now TWO figures, not one.**
+Supersedes every earlier figure (9661 was round 51's base and round 50's close).
+**Skips MUST stay exactly 1** — `MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`.
+18/18 symlinks by `is_link()` + `realpath()` prefix; `check-path-repos --no-lib-path-repos` rc 0; config
+md5 `05480c743aff302fd6c06c5a4a4c2210`; zero tracked per-lib locks. Backlog **333 → 364**, round-51 ids
+**E334–E363** plus **E364**.
+
+**Tests predicted EXACTLY for the ninth consecutive round.** 🔴 **The assertion LOWER BOUND was violated
+for the first time — and by the supervisor, not the lanes. See E364 below.**
+
+🔴 **MEASURE THE NEXT ROUND'S FLOOR AT THE COMMIT THE LANES BRANCH FROM** (E167), and have the lanes
+observe it themselves. **A lane that touches a second library owes that library's figures separately.**
+
+### 🔴 E364 — THE ASSERTION BOUND ASSUMES A MONOTONIC MERGE
+
+Predicted at least `143171`; measured `143168`, three below. The merge-time resolution **deleted two
+roster rows**, and deleting data rows removes the assertions they generate. **The additive bound is a
+LOWER bound given no merge-time deletions.** Before reporting a violation, recompute the expectation from
+the lane deltas MINUS whatever the resolution removed. This was the guard working, not a defect.
+
+### 🔴 THE THIRD CROSS-LANE CATCH IN THREE ROUNDS — AND THE FIRST A LANE PREDICTED
+
+Lane c's `NonBlockingVocabularyTest` rostered two contradictory O_NONBLOCK sentences in a file **lane a
+owns**; lane a fixed them; the census red at the merge **and its failure message named the correct
+resolution** — delete the rows, "a data edit here, not a weaker check". Its `why` had already said the
+repair *"must land WITH this row's deletion or the census reds at the merge."*
+
+**Write guards this way.** A guard over files another lane owns should say, in its failure text, which of
+the two possible resolutions is right — because the person reading it at 3am is resolving a merge, not
+debugging a test.
+
+⚠️ **Deleting the rows emptied `UNREADABLE_ROSTER`.** An absence assertion with no positive input is the
+dead-instrument shape — **checked, not assumed**: disabling `negatesTheVerb()` reds the file with 14
+failures from fixtures independent of the rosters. Safe here. Where it is not, add a control fixture;
+never keep a stale row to keep a count non-zero.
+
+### TWO THINGS THAT WILL RECUR IF NOT WATCHED
+
+1. **A lane infers convention from the file it is appending to, not from the brief.** `COMMON` now
+   parameterises the round number and lanes a and b obeyed it — **lane c filed under `Ec49-` anyway**,
+   copying its neighbours. Harmless twice now only because prior rounds' ids had been renumbered away.
+   **The merge check is the control, not the instruction.**
+2. **Check which library a symbol lives in before assigning it.** Lane a's brief sent it to
+   `candy-palette/src/Probe/Detect.php`; `Detect` is in `candy-mosaic`. The lane found the right file and
+   flagged the discrepancy rather than following the wrong path.
+
+---
+
+## SUPERSEDED — round 50's block, kept for its reasoning (its floor 9661 is superseded by §0-NOW-52; its rules are NOT) — read this first, then §0 for the standing rules
+
+**SUITE FLOOR: `9661 / 142165 / 1 skipped / rc 0` at `674cdf7b`** (merges `7973b4c9` a, `032a7c2f` b,
+`be9c0aa3` c; normalise + renumber `0b36f911`; E333 `674cdf7b`), 04:50.670, 304.64 MB. Supersedes every
+earlier figure (9582 was round 50's base, 9581 closed round 49, 9497 round 48).
+**Skips MUST stay exactly 1** — `MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`.
+18/18 symlinks by `is_link()` **plus a `realpath()` prefix check**; `check-path-repos --no-lib-path-repos`
+rc 0; config md5 `05480c743aff302fd6c06c5a4a4c2210`; zero tracked per-lib locks. Backlog **297 → 327**,
+round-50 ids **E304–E333**.
+
+**Tests predicted EXACTLY for the eighth consecutive round.** Assertions predicted as a lower bound of
+142141, landed 142165 — loose by 24 for the stated E191 reason. **ZERO cross-lane file overlap for the
+second round running.**
+
+🔴 **MEASURE THE NEXT ROUND'S FLOOR AT THE COMMIT THE LANES BRANCH FROM** (E167), and have the lanes
+observe it themselves.
+
+### ⚠️ THE FIRST FLOOR RUN WENT RED AND THE SECOND DID NOT — SEE E333 BEFORE TRUSTING ONE RED RUN
+
+`BootstrapSkillSkipsTest`'s two real-binary spawns each aborted at 60s in the first merged run; the
+immediate re-run at the same commit was clean. **Ruled out by measurement**: the file alone, the
+injected-Termios seam that writes O_NONBLOCK onto the runner's fd 0, lane b's prepend-residual test, and
+the supervisor's own probes (they ran during the CLEAN run). **E333 records the evidence and refuses to
+name a mechanism**, because round 49 blamed sibling-suite contention for the identical signature and this
+occurrence had no sibling suite. **Next time it reds: capture `/proc/<pid>/fd/0` of the hung child inside
+the 60s window.** One re-run is the bounded cost; do not chase it from one observation.
+
+### 🔴 THE ROUND'S BEST WORK WAS A LANE REFUTING ITS OWN REVIEWER, WITH NUMBERS
+
+Lane a was told to widen the denial frame's opener to `[A-Za-z]`. It measured instead: over 200,000 random
+strings, four seeds, the lookbehind changes the verdict **639–691 times with the capitalised opener and
+ZERO times widened** — a frame that may start with any letter always matches at a word start. **The
+prescription would have closed the gap and left a live-looking assertion doing nothing, manufacturing
+exactly the dormant code rule 6 exists about.** It fixed the real mechanism instead.
+**A reviewer's prescription is a hypothesis. Measure it before implementing it (rule 16).**
+
+Also: `filesNamingBoth()` returning `[]` left the WHOLE SUITE green — one caller, so a whole-suite
+survival.
+
+### WHAT LANE b DID NOT DO, WHICH MATTERS FOR ROUND 51
+
+**E296 IS STILL OPEN.** Lane b changed no `src/` file and no `tests/bootstrap.php`; its 2064 lines are
+three test files. It **measured option (a)'s viability** (three named readers), built the fd-0 reader
+roster, and found **E302's second defect is still open** — `Detect::stdinFd()` hands out an unguarded
+`?? STDIN`, so the `candy-mosaic` fix closed one of two. Round 51 can now implement the repair against a
+measured cost instead of a guess.
+
+### 🔴 TWO BRIEF DEFECTS TO FIX BEFORE ROUND 51 LAUNCHES
+
+1. **Parameterise the round number in `COMMON`.** Round 50's script reused round 49's verbatim, so all
+   three lanes filed under `E<lane>49-N`. Harmless only because round 49's ids had been renumbered away
+   before round 50 branched — verified zero at base. It will NOT be harmless the first time it is not.
+2. **The merge's heading count must match `^#{2,3} E`, not `^### E`.** Lane a filed six entries at `##`
+   (as round 48's lane c did), so the count read unchanged after its merge and the entries were nearly
+   missed.
+
+---
+
+## SUPERSEDED — round 49's block, kept for its reasoning (its floor 9581 is superseded by §0-NOW-52; its rules are NOT) — read this first, then §0 for the standing rules
+
+**SUITE FLOOR: `9581 / 135471 / 1 skipped / rc 0` at `1a2caebb`** (merges `2cd49de9` a, `92aaa179` b,
+`3d3b9119` c, `ef46913e` d, `8964bfde` e; census bump `dfb01d2f`; renumber `90926b58`; drift fix
+`504d9a43`; candy-mosaic fix `1a2caebb`), `sugar-crush` LINKED (04:45.418, 300.12 MB). Supersedes every
+earlier figure (9499 was the round-49 base, 9497 held round 48, 9445 round 47, 9378 round 46).
+**Skips MUST stay exactly 1**, confirmed BY NAME:
+`MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`. A second skip means the
+closure is gone and every figure is void. 18/18 symlinks by `is_link()` **plus a `realpath()` prefix
+check**; `check-path-repos --no-lib-path-repos` rc 0; config md5 `05480c743aff302fd6c06c5a4a4c2210`; zero
+tracked per-lib locks. Backlog **239 → 297** entries, round-49 ids **E246–E303**.
+
+🔴 **MEASURE THE NEXT ROUND'S FLOOR AT THE COMMIT THE LANES BRANCH FROM** (E167), and have the lanes
+observe it themselves.
+
+### 🔴 THE HEADLINE: A GUARD FROM ONE LANE CAUGHT A DEFECT FROM ANOTHER
+
+The merge red on exactly ONE test. `Support\DuplicatedTestHelperDriftTest` — **lane d's** guard — found
+two copies of `withErrorLogDiscarded()` that **lane b** had written into two of its OWN files, bodies
+identical but for the `tempnam()` prefix. **Neither lane could see it**: both copies were lane b's, and
+the guard was lane d's. It reds on the merged tree and nowhere else.
+
+**This is the argument for the whole lane system, demonstrated rather than asserted** — build guards in
+one lane against code another lane writes, and the merge is where they earn their keep. Fixed by
+extraction to `tests/Support/DiscardsErrorLogTrait.php` (union doc-block), not by an accepted-divergence
+row.
+
+### PREDICTION HELD FOR THE SEVENTH ROUND, AND THE BOUND WAS LOOSE FOR THE STATED REASON
+
+Tests predicted additively and **exact**: 9499 + (15+18+9+12+28) = 9581. Assertions predicted as a lower
+bound of 135467, landed **135471** — loose by 4, for the reason named in advance (E191: lane c owns the
+`src/`-wide censuses, four siblings write into them). **Write the prediction to a file before the run
+finishes**; that is what makes it a prediction.
+
+### A LIVE FATAL IN A SIBLING LIB, AND WHY IT WAS INVISIBLE
+
+`candy-mosaic`'s `Mosaic::autoFromPalette()` named `PaletteCapability::Iterm2Image`; the enum spells it
+`ITerm2`. Enum cases resolve at USE time, so it parsed and loaded and threw for every terminal that missed
+the Kitty branch. **Nothing ever reached the line** until lane e closed descriptor 0 and made
+`Detect::probe()` throw. Fixed at `1a2caebb` with a SOURCE-SCAN guard, because the failure mode is a name
+and branch coverage cannot express "every case named anywhere in `src/`".
+
+### 🔴 THREE HARNESS RULES LEARNED THE HARD WAY THIS ROUND
+
+1. **Launch workflows from a DURABLE script path** (`.../workflows/scripts/`). A resume target under
+   `/tmp/.../scratchpad/` fails with **"adopt scriptPath rejected"** when the background fork tries to
+   take it over — that killed run 2 outright.
+2. **A resume's cache key is `(prompt, opts)`, so `COMMON` is untouchable while a run is resumable.** One
+   character there re-runs every lane, including the ones already cached and paid for.
+3. **FINISH, DO NOT RESTART.** When a run dies mid-review, inject each lane's real HEAD, commit list and
+   uncommitted files into the next brief. Restarting would have discarded 5–7 review commits per lane.
+   ⚠️ **Make the hazard prose CONDITIONAL on the injected state** — lane d was told to finish an
+   uncommitted edit it did not have and warned it was detached when it was not, and said so.
+
+### AND THE ONE THAT KEEPS RECURRING
+
+**Two lanes were caught holding LIVE MUTATION PROBES at the moment their agents died** (lane a a reverted
+`DenialKind` call, lane e a `false &&`) — E168 observed directly rather than inferred. **Lane d came back
+`HEAD detached at db90e768` with 0 commits, looking like a total loss; `master` still held all 16.**
+🔴 **Check `git branch` and `git reflog` before believing a lane lost anything**, and inspect a dirty tree
+before reverting it — in this round two dirty trees were probes and two were real work, and only reading
+the diffs told them apart.
+
+**A `cd` followed by a relative path destroyed a file twice this session** (once `NonInteractive.php`, once
+an over-greedy regex across two test files). Both were fully recoverable **only because the work was
+committed first.** Commit before measuring; commit before mutating.
+
+---
+
+## SUPERSEDED — round 48's block, kept for its reasoning (its floor 9497 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `9497 / 133585 / 1 skipped / rc 0` at `2b57cd9c`** (merges `68189e5e` a, `198ce2f3` b,
 `3c1f8aa8` c; renumbering `2b57cd9c`), supervisor-measured twice in the live tree — once at the merge and
 again after the renumber, byte-identical both times — `sugar-crush` LINKED (04:32.542, 280.40 MB).
 Supersedes every earlier figure (9445 held round 47, 9378 round 46, 9308 round 45, 9215 round 44).
+⚠️ **The CURRENT master floor is `9499 / 133587` at `db90e768`** — the pre-round-49 `uniqid`
+fix added two tests (its guard). 9497 is round 48's close; 9499 is what round 49's lanes branch from.
 **Skips MUST stay exactly 1**, confirmed BY NAME this round:
 `MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`. A second skip means the
 closure is gone and every figure is void. 18/18 symlinks by `is_link()`; config md5
@@ -155,7 +336,7 @@ because the merge had been committed first. **Commit before mutating, and comput
 `assert len(hits)==1` guard rather than a shell variable that can be empty.**
 
 ---
-## SUPERSEDED — round 47's block, kept for its reasoning (its floor 9445 is superseded by §0-NOW-49; its rules are NOT)
+## SUPERSEDED — round 47's block, kept for its reasoning (its floor 9445 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `9445 / 132167 / 1 skipped / rc 0` at `fb2d13d8`** (merges `e8e35fa4`, renumbering
 `8a4421c9`, merge fix `fb2d13d8`), supervisor-measured in the live tree, `sugar-crush` LINKED
@@ -272,7 +453,7 @@ that outlives the whole PHPUnit process**; `tearDown()` closes the abort case on
 
 ---
 
-## SUPERSEDED — round 46's block, kept for its reasoning (its floor 9378 is superseded by §0-NOW-49; its rules are NOT)
+## SUPERSEDED — round 46's block, kept for its reasoning (its floor 9378 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `9378 / 131610 / 1 skipped / rc 0` at `dbb8e834`** (renumbering `15fb34ff`, backlog
 `c4a810a1`), supervisor-measured in the live tree after merging all three round-46 lanes (04:25.272,
@@ -383,7 +564,7 @@ supervisor-owned — that is a DECISION, not an edit.
 
 ---
 
-## SUPERSEDED — round 45's block, kept for its reasoning (its floor 9308 is superseded by §0-NOW-49; its rules are NOT)
+## SUPERSEDED — round 45's block, kept for its reasoning (its floor 9308 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `9308 / 130874 / 1 skipped / rc 0` at `ee77252c`** (backlog additions at `5daa7420`),
 supervisor-measured in the live tree after merging all three round-45 lanes (04:19.629, 276.40 MB).
@@ -529,7 +710,7 @@ E141) that had already produced one false KILL verdict on an unrelated mutation.
 
 ---
 
-## SUPERSEDED — round 44's block, kept for its reasoning (its floor 9215 is superseded by §0-NOW-49; its rules are NOT)
+## SUPERSEDED — round 44's block, kept for its reasoning (its floor 9215 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `9215 / 127781 / 1 skipped / rc 0` at `98d59bfb`**, supervisor-measured in the live tree
 after merging all three round-44 lanes (04:17.446, 276 MB). Supersedes every earlier figure (9078 held
@@ -696,7 +877,7 @@ attribute the +48 assertion gap, and it would have been unrecoverable an hour la
 
 ---
 
-## SUPERSEDED — round 43's block, kept for its reasoning (its floor 9078 is superseded by §0-NOW-49; its rules are NOT)
+## SUPERSEDED — round 43's block, kept for its reasoning (its floor 9078 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `9078 / 105590 / 1 skipped / rc 0` at `628f50f1`**, supervisor-measured in the live tree
 after merging all three round-43 lanes (04:12.390, 270 MB). Supersedes every earlier figure (8996 held
@@ -879,7 +1060,7 @@ for the same reason. Do it in that order; a lane dir removed before the check is
 
 ---
 
-## SUPERSEDED — round 42's block, kept for its reasoning (its floor 8996 is superseded by §0-NOW-49; its rules are NOT)
+## SUPERSEDED — round 42's block, kept for its reasoning (its floor 8996 is superseded by §0-NOW-52; its rules are NOT)
 
 **SUITE FLOOR: `8996 / 105179 / 1 skipped / rc 0` at `c204015e`**, supervisor-measured in the live tree
 after merging all three round-42 lanes (04:12.080). Supersedes every earlier figure (8978 held the
@@ -1293,7 +1474,7 @@ trusting a single further figure.**
 
 ---
 
-## SUPERSEDED — round 40's block, kept for its reasoning (its floor 8905 and its spawning cap are BOTH superseded by §0-NOW-49; its lessons are not)
+## SUPERSEDED — round 40's block, kept for its reasoning (its floor 8905 and its spawning cap are BOTH superseded by §0-NOW-52; its lessons are not)
 
 **SUITE FLOOR: `8905 / 101022 / 1 skipped / rc 0` at `33f97cb1`**, supervisor-measured in the live tree
 after merging all three lanes. Supersedes every earlier figure (8879 held the round-39 boundary).
@@ -1310,7 +1491,7 @@ sugar-bits 493/1015, sugar-gallery 92/252, sugar-stickers 215/420, sugar-toast 1
 sugar-veil 201/406, sugar-dash 5853/9154, sugar-table 456/1024, sugar-charts 543/1259,
 sugar-calendar 147/364. Do this whenever a lane touches `candy-core`.
 
-### 🔴 SUPERSEDED — the round-40 spawning cap. Concurrency is now **3** by explicit instruction; see §0-NOW-49. Kept because the reasoning about who did what by hand is load-bearing for reading round 40's stamps.
+### 🔴 SUPERSEDED — the round-40 spawning cap. Concurrency is now **3** by explicit instruction; see §0-NOW-52. Kept because the reasoning about who did what by hand is load-bearing for reading round 40's stamps.
 
 **Standing instruction, given mid-round-40: _"no more spawning additional agents until session
 resets"_, followed by _"after these steps are all done being merged into the main dirs and lanes
@@ -1359,7 +1540,7 @@ nothing: `cmd`'s `Read` nudge test (green with the nudge disabled), the `app()` 
 with the two bases mismatched), and every tab assertion (green for any `TAB_WIDTH`). **Mutate the
 clause, or you have not pinned it.**
 
-### SUPERSEDED — ROUND 41's ORIGINAL SCOPE MEASUREMENT, kept for its figures. ⚠️ ALL of it is now DONE: E52 and E61(S) at `ae30fee5`, then `statusLine`, E73 and E70–E72 via lanes a/b/c at `7852d79e`. Read §0-NOW-49 for current state.
+### SUPERSEDED — ROUND 41's ORIGINAL SCOPE MEASUREMENT, kept for its figures. ⚠️ ALL of it is now DONE: E52 and E61(S) at `ae30fee5`, then `statusLine`, E73 and E70–E72 via lanes a/b/c at `7852d79e`. Read §0-NOW-52 for current state.
 
 A scout re-measured the queue at `8add627b`; all figures are its, not the record's.
 
@@ -2611,7 +2792,7 @@ deps (`candy-focus`, `sugar-veil`, `candy-sprinkles`, `candy-kit`) are ALREADY i
 
 ---
 
-## SUPERSEDED — round 32's block. It is NOT "read this first" any more; §0-NOW-49 is. Kept for the standing rules and the DeepSeek record.
+## SUPERSEDED — round 32's block. It is NOT "read this first" any more; §0-NOW-52 is. Kept for the standing rules and the DeepSeek record.
 
 **`master` = `d97580ab`. Live tree clean, 0 ahead / 0 behind. NOTHING IS IN FLIGHT.**
 The three lane dirs (`crush-lane-cmd`, `crush-lane-lsp`, `crush-lane-sglang`) were all clean, idle and
@@ -3000,7 +3181,7 @@ now set it to max as default for this model"**.
 authorised.
 
 
-## SUPERSEDED — the 2026-08-20 compact block. NOT "read this first"; §0-NOW-49 is. Kept for its reasoning.
+## SUPERSEDED — the 2026-08-20 compact block. NOT "read this first"; §0-NOW-52 is. Kept for its reasoning.
 
 **HEAD is `a2221578`, tree CLEAN, in sync with `origin/master` (0 ahead / 0 behind).**
 **Suite baseline: `7782 tests / 90237 assertions / 1 skipped / rc 0`, ~3m12s** — supervisor-measured

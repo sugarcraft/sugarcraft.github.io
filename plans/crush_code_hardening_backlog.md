@@ -8523,6 +8523,13 @@ same comment, which assumes one sandbox per uid. `tests/bootstrap.php` is shared
 there reds every lane at merge, so this wants its own round rather than a corner of one.
 ### E243 — `HeadlessPermissionPrompt`'s `?? \STDIN` default is the second half of E212's hazard family
 
+🟢 **CLOSED before round 50 started; marked here in round 51 by lane a (E311).** Option one of the Step
+below was taken and the entry was never updated. `HeadlessPermissionPrompt::__construct()` is
+`$this->in = $in ?? NonInteractive::stdinDefault();` — verified by symbol in this lane at `8882092d` —
+so the class shares E212's one pin instead of reading the constant, `NonInteractive::stdinDefault()`'s
+doc-block records the change in three-part form ("TWO READERS NOW, NOT ONE (E243)"), and
+`tests/Cli/HeadlessPermissionPromptStdinDefaultTest.php` pins it.
+
 **Recorded 2026-08-23 by round-48 lane c (fix stage).** Severity: latent hang, bounded. **Measured, PHP 8.3.6.**
 
 **What.** E212 closed one `?? \STDIN` default — `NonInteractive::readStdinIfPiped()` now resolves through
@@ -8542,10 +8549,11 @@ tty — the callers of `Bootstrap::backendFor()` with `$consolePermissionPrompt:
 If one does, running the suite interactively is a latent block; if none does, that dormancy is worth
 pinning rather than leaving to be rediscovered.
 
-**Step.** Either extend the E212 seam to this class (a `pinStdinDefault()` equivalent, or pass the pinned
-stream at the `Bootstrap` construction site), or write the `stream_isatty()` bound down as an intentional
-property with a test that pins it. Do NOT close it by making `fgets` non-blocking; the tty arm answering a
-human is the feature.
+**Step — DONE, kept for the record rather than as work.** It read: "either extend the E212 seam to this
+class (a `pinStdinDefault()` equivalent, or pass the pinned stream at the `Bootstrap` construction site), or
+write the `stream_isatty()` bound down as an intentional property with a test that pins it. Do NOT close it
+by making `fgets` non-blocking; the tty arm answering a human is the feature." The first option was taken
+and the `fgets` warning was respected. Nothing further to do here.
 
 ---
 
@@ -8592,3 +8600,3416 @@ has no generator to catch it.
 
 ---
 
+### E246 — `Runtime`'s three `DENIAL_*` constants are the last copy of the roster
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: design (the remainder of E239). **Measured.**
+
+**What.** E239 is done on the `Chat` side: `src/Permissions/DenialKind.php` is a dependency-free backed
+enum whose three cases carry the three prefixes, `Chat::DENIED_ERROR_PREFIXES` is a projection of it,
+`Chat::isDeniedResult()` delegates to `DenialKind::classify()`, all three of `Chat`'s hand-rolled
+producers build their reason with `DenialKind::reason()`, and `NonInteractive::refusalFrom()` classifies
+against the enum instead of the TUI model — MEASURED on PHP 8.3.6, `class_exists(Chat::class, false)`
+after one classification went from false-then-TRUE to false-then-false.
+
+`src/Runtime.php` was another lane's file this round, so `Runtime::DENIAL_HOOK` / `DENIAL_REFUSED` /
+`DENIAL_UNANSWERED` are still three string literals and still a copy. The autoload objection that
+justified the copy no longer applies: the enum has no `use` statements and loads nothing.
+
+**Step.** Re-point the three constants at the enum's cases (`= DenialKind::Hook->value`, which is a valid
+constant expression on PHP 8.3.6 — verified — and has been since 8.2). Then
+`DenialPrefixRosterTest::testEveryDenialPrefixRuntimeProducesIsOnChatsRoster()` and
+`testTheClassifierRecognisesEachPrefixAndStillRefusesAPlainError()` become tautologies and should be
+DELETED with the change rather than left green; the file's class doc-block says so in as many words.
+`testRuntimeSpellsNoDenialPrefixOutsideItsConstants()` and the new
+`testTheLeafIsTheOnlyFileInTheFamilyThatSpellsADenialPrefix()` both stay — they are about second
+spellings, not about the copy.
+
+---
+
+### E247 — the denial vocabulary matches a string in `src/Agents/TaskBlockedException.php`
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: guard scoping. **Measured, PHP 8.3.6.**
+
+**What.** `DenialPrefixRosterTest::denialLiteralsIn()`'s frame-plus-vocabulary alphabet matches
+`'Task creation blocked: '` in `src/Agents/TaskBlockedException.php` (the `block(ed)?` term). Running the
+shipped scanner over the whole of `src/` returns that file alongside `Runtime.php` and
+`Permissions/DenialKind.php` and nothing else — so a guard scoped to `src/` rather than to a named file
+roster would red on it. That is why round 49's new guard uses a named `FAMILY_SPELLINGS` map (which also
+keeps it immune to a sibling lane adding a file, E-rule 18) rather than a tree walk.
+
+**Not established.** Whether that message can ever become the `content()` of an errored `ToolResult` —
+i.e. whether a `Task`-shaped tool catches `TaskBlockedException` and reports its message. If it can, it is
+a fourth refusal shape that is on NO roster, and `Chat::isDeniedResult()` would render it as an ordinary
+tool ERROR: struck-through state lost, missing from the `--output-format json` `refusals` array. That is
+exactly the failure mode E236 describes, in a file nobody has looked at for it. `src/Agents/TaskList.php`
+is the only thrower (one site, measured).
+
+**Step.** Trace whether the exception's message reaches a `ToolResult`. If it does, give it a
+`DenialKind` case; if it does not, say so in a doc-block on the exception so the next person running a
+denial scan over `src/` does not have to re-derive it.
+
+---
+
+### E248 — E238's mirror claim no longer reproduces
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: process (backlog correction). **Measured.**
+
+**What.** E238 records two surviving mutations, and only the first still survives. MEASURED at
+`db90e768` on PHP 8.3.6 through round 49's harness:
+
+| mutation | test | verdict |
+|---|---|---|
+| `gate()`'s `$prefix = self::DENIAL_HOOK;` → literal `'Hook refused:'` | `RuntimeTest::testExecuteToolCallsYieldsErrorWhenHookDenies` | **SURVIVED** (reproduces; now fixed) |
+| `gate()`'s `self::DENIAL_UNANSWERED` → literal `'Permission blocked:'` | `RuntimeTest::testAskWithNoApproverFailsClosedAndSaysPermissionWasRequired` | **KILLED** |
+
+The mirror is dead because round 48's own E210 fix removed the words "Permission required" from
+`settleAsk()`'s message — it now returns `HookResult::deny("no approver is attached to this run: …")`, so
+the test's `assertStringContainsString('Permission required', …)` depends entirely on the prefix `gate()`
+adds. The entry was written before that landed and describes the tree as it then was.
+
+**Step.** None — recorded so the entry's second paragraph is not acted on. The general point is the one
+worth keeping: a surviving-mutation table is a measurement with a commit attached, and E238's first row
+carries no sha.
+
+---
+
+### E249 — E240's "at a terminal" is the smaller half; the no-tty arm doubles too
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: cosmetic / decision recorded. **Measured, PHP 8.3.6.**
+
+**What.** E240 records that an ASK refused **at a terminal** writes two stderr lines and offers a cheap
+removal (drop `HeadlessPermissionPrompt`'s terse `sugarcrush: refused <tool>.`). MEASURED by driving a real
+`EngineBackend` turn through a gate that ASKs, once per arm, in a child process with fd 2 on a plain file:
+
+| arm | bytes on fd 2 | lines | producers |
+|---|---|---|---|
+| tty, answered `n` | 266 | 8 | the 6-line question block, `sugarcrush: refused Bash.`, the observer's line |
+| no tty | 526 | 9 | the 8-line refusal block, the observer's line |
+| plain hook DENY | 66 | 1 | the observer's line only |
+
+Two corrections. The doubling is **not** tty-only, so the prescribed removal would take it out of one of
+the two arms that have it rather than out of the behaviour. And — the decisive one — the observer's line
+**cannot tell the two arms apart**: both end in a reason opening `DenialKind::Refused`
+(`Permission denied:`), because in both an approver was attached and answered no. The prompt's own text is
+the only thing on stderr separating "a person typed n" from "there was nobody at the keyboard".
+
+**Step.** None — the pair STAYS, and this is why. Both measurements are pinned by
+`tests/Cli/RefusalStderrSurfaceTest.php` (with a hook-DENY row as its known-positive control), and the
+justification is rewritten in three-part form on `HeadlessPermissionPrompt`'s class doc-block and on
+`NonInteractive::noticeRefusal()`. Reopening it needs a new measurement, not the entry's text.
+
+---
+
+### E250 — `DenialKind` is a TYPE that nothing yet consumes as one
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: design (the rest of E210). **Not measured; structural.**
+
+**What.** E239's Step notes that an enum "would also give the three kinds a TYPE rather than a string
+prefix, closing E210 properly at the event rather than in the text". The enum now exists and every
+producer and consumer in `Chat` and `NonInteractive` goes through it — but every one of them still crosses
+the wire as a STRING. `Events\ToolFinished` carries a `ToolResult` whose `content()` is the finished reason;
+`NonInteractive::refusalFrom()` re-derives the kind by `str_starts_with` on the way out; the
+`--output-format json` `refusals` array publishes `{tool, reason}` with the kind embedded in prose.
+
+**Step.** Carry the `DenialKind` on the event (or on the refusal entry) so a consumer switches on a case
+rather than re-parsing a prefix, and add it to the JSON document as its own key. Note the compatibility
+cost before doing it: the `refusals` array's shape is published and
+`NonInteractiveRefusalDocumentTest` pins it, so the kind should be an ADDED key, never a re-shaped
+`reason`. Blocked on nothing; it was simply out of round 49's item list.
+
+---
+
+### E251 — `E245` names lane a as the owner of a file round 49 assigned to lane c
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: process. **Not a code defect.**
+
+**What.** E245 ("`StderrEmitterCensusTest`'s method name states a cardinality its body no longer carries")
+says "Owner: whoever holds `tests/Cli/StderrEmitterCensusTest.php` — lane a's file". In round 49's
+ownership map that file is **lane c's**, and lane a's test set does not include it. The rename was
+therefore not done in round 49 either, for the same reason lane c did not do it in round 48.
+
+**Step.** None beyond doing the rename in whatever round owns the file. Recorded because an ownership note
+written into a backlog entry is round-specific and reads as durable — the second time in two rounds this
+entry has been skipped by the lane it names.
+
+---
+### E252 — three `src/`-wide cardinalities are literals in a test nobody owns, and one is restated in `src/`
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: process. **Measured; it fired.**
+
+**What.** Adding ONE file to `src/` (`src/Permissions/DenialKind.php`, E239's leaf) reddened
+`tests/Tools/BuiltInToolCorpusTest.php` on three assertions —
+`assertSame(290, $files)`, the `['concrete' => 240, 'enum' => 26, …]` kind map, and
+`assertSame(290, count($files)) / assertSame(309, $declarations)` — and that test in turn asserts that
+`src/Context/RepoMapBlock.php`'s prose restates both figures, so the bump reached a `src/` file too. Five
+literals, in two files, neither of them in round 49's ownership map at all. Lane a made the minimal edit
+and reported it as a forced out-of-lane edit (E191's rule).
+
+This is E-rule 18 firing exactly as written, and it is worth noting that the file already KNOWS: its own
+doc-block says "a cardinality in prose is stale the next time one is added" in one paragraph and carries
+`290`, `309`, `240` and `26` as literals in the next. The narrative paragraph in
+`testTheSecondaryDeclarationCensus()` still quotes `288 .php files, 307 top-level declarations`, which was
+already two rounds stale before this round touched anything — asserted nowhere, so nothing caught it.
+
+**Step.** Two options, and the second is cheaper than it looks. (a) Keep the assertions and accept that
+every lane adding a `src/` file edits this test — but then say so at the top of the file, because today a
+lane discovers it from a red at the end of a four-minute run. (b) Keep the INVARIANTS the file is
+actually about — `testEverySourceFileDeclaresItsPsr4Symbol()` (pinned at zero, derived),
+`testNoSecondaryDeclarationIsADispatchableTool()`, and the per-file secondary map, which names files
+rather than counting them — and drop the three totals, which measure only how big the tree is. The
+`RepoMapBlock` restatement can stay asserted against the DERIVED figure without any literal in the test.
+Note that dropping them removes the only thing that would notice a file appearing in `src/` unnoticed, so
+if that is wanted it should be a named-file roster (the shape round 49's `DenialPrefixRosterTest` used for
+the same reason) rather than a total.
+
+---
+### E253 — E223's premise is wrong: the in-tree hosted shell already arms the seam
+
+**Recorded 2026-08-24 by round-49 lane a.** Severity: process (entry correction). **Measured.**
+
+**What.** E223 says `Chat::init()` "is called by `SugarCraft\Core\Program`, and only by it", and that a
+`Chat` driven by an embedder — "the hosted-pane shape `Chat::withSize()`'s doc-block describes" —
+therefore never arms the mid-session seam's watcher. MEASURED by grepping `src/` and `bin/` for the call:
+there are **two** in-tree callers, and the second one is that very shape.
+`SugarCraft\Crush\App\App::init()` batches `$this->chat?->init()` with its own OSC 11 query, and
+`App::delegateToChat()` returns `Chat::update()`'s Cmd through every branch untouched — so the shell that
+hosts the chat pane already discharges both halves of the obligation.
+
+Round 49 wrote the same false sentence into a fresh doc-block before checking it, and caught it only on a
+deliberate re-derivation pass. That is the third round running in which a mechanism claim was written down
+with confidence and was inverted in fact (E-rule 8).
+
+**The residue is real but smaller than the entry states**, and it is now written down and pinned:
+
+  - A THIRD-PARTY embedder outside this tree still owns the pumping, which is what `Chat::init()`'s
+    doc-block now says.
+  - `App`'s forwarding was asserted by NOTHING. Deleting `$this->chat?->init()` from that batch leaves a
+    shell that starts, paints and silently never arms the seam; `Cmd::batch()` drops nulls, so there is no
+    error either. `tests/Chat/HostedRuntimeNoticeWakeTest::testTheHostedShellForwardsTheChatsStartupCmd()`
+    now pins it — and walks the `BatchMsg` by hand, because `Cmd::batch()` does not RUN its children: it
+    returns a Cmd yielding a sentinel that `Program::runCmd()` explodes. A host embedding `App` rather
+    than `Chat` therefore has a second obligation the entry never mentions.
+
+**Step.** None on `Chat`/`App`. If a hosted-embedder guide is ever written, the `BatchMsg` fan-out belongs
+in it beside the two `init()`/`update()` obligations.
+
+---
+
+### E254 — the denial-literal scanner's `^` anchor could not see this tree's own refusal note
+
+**Recorded 2026-08-24 by round-49 lane a's reviewer.** Severity: test-coverage. **Measured; fixed same round.**
+
+**What.** `DenialPrefixRosterTest::FAMILY_SPELLINGS` asserts `'src/Chat.php' => 0` — no denial prefix
+spelled outside the leaf. `DENIAL_SHAPE` was `/^[A-Z][A-Za-z]*(?: [A-Za-z]+){0,3}:/`, anchored at the
+start of the literal. `Chat::answerPermission()`'s refusal note was written
+`Message::system("_Permission denied: {$name} was not run._")`, whose `T_ENCAPSED_AND_WHITESPACE` run
+opens with `_`, so the frame never matched it.
+
+MEASURED on PHP 8.3.6 by re-introducing that exact line and running the guard: **SURVIVED**, green on
+`0`. The guard could not see the one producer its own row is named after. A leading space and a frame
+following a sentence were invisible for the same reason.
+
+The doc-block above it asserted "the scan over that file is now exactly the six real spellings". Counted
+at `db90e768`, `src/Chat.php` carried **seven** denial spellings outside comments; the scan saw six. The
+rounding was in the direction that makes an incomplete guard read as an exhaustive one, and it is why the
+hole stood for a round.
+
+**Fixed** in `de2394bb`: the frame is `(?<![A-Za-z])`-guarded instead of `^`-anchored; three
+known-positive fixtures cover the decorated shapes; the completeness sentence is rewritten in the
+three-part form. Acceptance MEASURED by mutating the FIX — the same re-introduction is now **KILLED**.
+Cost of the widening, measured over the whole of `src/`: both alphabets name the same three files and the
+same seven literals, and all five family rows are unmoved.
+
+**Step.** None. Recorded because rule 11 keeps producing this shape: the alphabet was written to match the
+cases already known, and the case it could not express was the one in the tree.
+
+---
+
+### E255 — `RefusalStderrSurfaceTest`'s hook-DENY row asserted `''` with no instrument attached
+
+**Recorded 2026-08-24 by round-49 lane a's reviewer.** Severity: test-coverage. **Measured; fixed same round.**
+
+**What.** `testAPlainHookDenyNeverReachesThePromptAndStillReachesTheObserver` asserts the prompt wrote
+nothing. Its helper attached the approver only when the verdict was `ask`, so on the deny arm no
+`HeadlessPermissionPrompt` was ever constructed: `''` was what the ABSENCE of the instrument returned.
+The failure message additionally claimed the DENY "went through the approver", which was false — there
+was no approver. Rule 25 exactly, and the row was itself written as the file's rule-15 control.
+
+MEASURED on PHP 8.3.6: with `approver()` mutated to write to its `$err` unconditionally, the pre-fix
+version was **SURVIVED** (green, 3 tests / 22 assertions); with the approver attached on both arms it is
+**KILLED** on that row.
+
+**Fixed** in `e8045036`: the approver is attached unconditionally, so the empty string now says the gate
+returns on the DENY before `settleAsk()` is reached.
+
+**Step.** None.
+
+---
+
+### E256 — E240's byte/line figures live only in two doc-blocks and no test derives them
+
+**Recorded 2026-08-24 by round-49 lane a's reviewer.** Severity: process. **Partly measured.**
+
+**What.** `HeadlessPermissionPrompt`'s and `RefusalStderrSurfaceTest`'s doc-blocks both carry "526 bytes
+over 9 lines" for the no-tty arm and "266 over 8" for the terminal arm, MEASURED in a child process with
+fd 2 on a plain file. The shipped test uses `php://memory` handles and asserts neither figure, so the
+generator is described but not runnable, and the numbers will rot silently the first time either message
+is reworded. The adjacent structural claim WAS re-derived this round and holds: `refusal()` emits exactly
+eight `\n`, so "eight-line refusal block" is correct.
+
+**Step.** Either derive the two figures in the test (which needs the child-process harness
+`NonInteractiveRefusalDocumentTest` already pays for) or reduce them to the structural claim that is
+checkable — "the no-tty arm writes strictly more than the terminal arm, and both are doubled by the
+observer's line".
+
+---
+
+### E257 — adding one `src/` file moves the suite total by +1 beyond the lane's own test methods
+
+**Recorded 2026-08-24 by round-49 lane a's reviewer.** Severity: process (merge arithmetic). **Measured.**
+
+**What.** Round 49 lane a added 14 test methods and the suite total moved by 15 (9499 → 9514, MEASURED by
+`--list-tests` at both revisions). The fifteenth is
+`Integration\BinSugarcrushWiringTest::testNoRootResolvingSiteFallsBackToBareGetcwd`, whose
+`@dataProvider crushSourceFiles` yields one case per file under `src/`. The usual
+`grep -c '^+ *yield '` cross-check closes nothing here, because the provider walks a directory rather
+than spelling cases in the diff.
+
+Combined with E252, ONE new `src/` file therefore costs a lane: +1 suite test, three literal
+cardinalities in `tests/Tools/BuiltInToolCorpusTest.php`, and two restated figures in
+`src/Context/RepoMapBlock.php` — five edits in two files, neither in any lane's ownership map.
+
+**Step.** Worth stating at the top of `BuiltInToolCorpusTest` alongside E252's option (a), so a lane
+adding a `src/` file learns the cost before a four-minute run tells it.
+
+### E258 — `constructionSites()` reports a false ZERO for any class built through a named static factory
+
+**Recorded 2026-08-24 by round-49 lane b.** Severity: correctness of an INSTRUMENT. **Measured, PHP 8.3.6.**
+Lane c's file (`tests/Cli/StderrEmitterCensusTest.php`).
+
+**What.** `constructionSites()` recognises exactly two construction shapes: `new Foo` (bare, qualified,
+fully-qualified) and the project's canonical `Foo::new()` factory. A class built through a
+DIFFERENTLY-NAMED static factory is invisible to it, and it answers `0` — which reads identically to the
+`0` that established `WorktreeManager`'s dormancy. Run over `src/` plus `bin/sugarcrush` it answers `0` for
+`SglangProvider`, which is constructed on every run through
+`SglangProvider::openAiCompatible()` (body: `return new self(...)`), selected out of a name-keyed `match`
+arm in `ProviderFactory::instantiateProvider()`. Neither the factory's name nor the string key is visible to
+a `T_NEW`-adjacency walk.
+
+The existing doc-block already names the holes it knows about (`new $variable`, `new class extends`,
+`ReflectionClass::newInstance()`, container resolution). The named-factory hole is not among them, and it is
+the one that fires in this package today.
+
+**Step.** Either (a) give `constructionSites()` a second arm reporting static calls of any name on the
+target — the shape `SglangProviderReachabilityTest::constructionShapes()` and
+`WorktreeRemovalReportingTest::constructionShapes()` both implement, either of which can be lifted — or (b)
+leave the scanner alone and add the hole to its doc-block's list, so the next dormancy claim built on a zero
+has to say why a named factory is ruled out. Do NOT leave it as-is: two lanes have now independently written
+a superset scanner because the shared one could not answer, which is drift in the making.
+
+---
+
+### E259 — `cleanupStaleWorktrees()` swallows every removal failure with a bare `catch (\Throwable)`
+
+**Recorded 2026-08-24 by round-49 lane b.** Severity: diagnosability. **Measured.** Lane b's file, deferred
+deliberately.
+
+**What.** E222 gave `removeWorktree()` the ability to refuse — it now throws and keeps the registry entry
+when the worktree is still on disk. `cleanupStaleWorktrees()`'s loop catches that with
+`catch (\Throwable) { }` and a comment reading "Skip worktrees that fail to remove (e.g., locked files)".
+The accounting is now honest (`$removed` is not incremented), but the operator learns nothing: a sweep that
+failed to remove every single worktree it tried returns the same `0` as a sweep with nothing to do.
+
+**Why deferred rather than fixed.** The natural fix is a `RuntimeNoticeSink::warn()` in the catch, and that
+would take `RUNTIME_NOTICE_SITES['src/Agents/WorktreeManager.php']` from `4` to `5` — a roster bump in lane
+c's file PLUS the literal `4` asserted inside
+`testTheWorktreeManagerSeamSitesAreDormantBecauseNothingConstructsIt()`. Two coupled edits in a concurrent
+lane's file, for a class nothing constructs, was not worth it this round. Note also that every throw path
+E222 added is ALREADY preceded by the existing `git worktree remove` failure warn (git failing is what
+leaves the directory there in the first place), so the uncovered case is narrow: git reports exit 0 and the
+directory survives anyway.
+
+**Step.** When lane c's census is not in flight, add the warn and bump both numbers together.
+
+---
+
+### E260 — `removeDirectory()` follows a directory SYMLINK and deletes the target's contents
+
+**Recorded 2026-08-24 by round-49 lane b.** Severity: security / data loss. **Measured, PHP 8.3.6.**
+Lane b's file, deferred under "functionality before hardening".
+
+**What.** `WorktreeManager::removeDirectory()` decides how to treat an entry with `is_dir($itemPath)`, which
+FOLLOWS symlinks. A symlink inside a worktree pointing at a directory outside it is therefore recursed into
+and emptied, and only then does `rmdir()` fail on the link itself. A `.worktreeinclude` that copies a link,
+or an agent that creates one, is enough. E222 left the traversal semantics byte-for-byte unchanged on
+purpose — it was a reporting change, and altering what gets deleted is not a reporting change.
+
+**Step.** Guard the recursion with `!is_link($itemPath)` and `unlink()` the link instead. That is also
+strictly more correct for the boolean E222 added: `rmdir()` on a symlink fails, so today a worktree
+containing one can never report `true` no matter how much was removed. Add a fixture with a symlink to a
+populated directory and assert the target's contents SURVIVE.
+
+**CLOSED IN THE SAME ROUND — read this before acting on the paragraphs above.** WHAT THIS ENTRY SAID: the
+finding was "deferred under functionality-before-hardening" and the Step was outstanding. WHAT IS TRUE NOW:
+round-49 lane b's review pass implemented exactly that Step. `removeDirectory()` refuses a symlinked
+`$path` at the top and `unlink()`s a link inside the loop instead of recursing through it; the fixtures are
+`WorktreeRemovalReportingTest::testADirectorySymlinkIsUnlinkedAndItsTargetIsLeftAlone()` and
+`::testASymlinkGivenAsThePathIsRefusedRatherThanFollowed()`, and both mutations (dropping the loop guard,
+dropping the top-level guard) were KILLED. WHY THE ENTRY STILL EARNS ITS PLACE: the mechanism paragraph is
+the only written record of what the traversal used to do and why `is_dir()` was the wrong predicate — delete
+it and the next reader deletes the `is_link()` checks as redundant belt-and-braces.
+
+**CLOSED IN ROUND 49 BY LANE b's REVIEW-AND-FIX PASS — and the entry is rewritten rather than deleted,
+because the reasoning is what stops the guard being removed again.** WHAT THIS ENTRY SAID: deferred under
+"functionality before hardening", on the grounds that E222 was a reporting change and altering what gets
+deleted is not one. WHAT IS TRUE NOW: the claim was CONFIRMED by measurement before being acted on — a
+file at `outside/precious/DO_NOT_DELETE.txt`, reached only through a link inside the tree, was deleted,
+while the link and the target directory both survived (PHP 8.3.6, this box). Both ends are now guarded:
+`is_dir($itemPath) && !is_link($itemPath)` in the loop, and `!is_dir($path) || is_link($path)` at the top
+level, since `is_dir()` follows a link handed in as `$path` too. Two tests in
+`WorktreeRemovalReportingTest` pin it, and both mutations die. WHY IT STILL EARNS ITS PLACE: the deferral
+reasoning was sound and the thing that overturned it was the second sentence of the Step — the boolean
+E222 added is UNWINNABLE while a link can be in the tree, so this stopped being purely a hardening item
+and became part of making E222's own report honest. A future reader tempted to simplify the traversal
+back needs that, not just the CVE-shaped half.
+
+---
+
+### E261 — `warnForkFailed()` reports the first fork failure per pool and never the count
+
+**Recorded 2026-08-24 by round-49 lane b.** Severity: cosmetic / observability. **Measured.** Lane b's file.
+
+**What.** E221's new diagnostic latches once per `AgentWorkerPool`, matching
+`warnSequentialFallback()`'s anti-spam reasoning: the alternative is one log line per dispatched agent, and
+a pool that has run out of processes is precisely the one about to dispatch many. The cost is that a
+transient failure which clears and later recurs is logged only the first time, and that "one agent fell back"
+and "forty did" are indistinguishable.
+
+**Step.** Count the failures in a counter beside `$forkFailureWarned` and surface the total somewhere a
+caller can read it — most naturally alongside whatever `executeAll()` already returns, or in a second log
+line at pool teardown. Not worth a new public accessor on its own; do it when something else needs pool
+statistics.
+
+---
+
+### E262 — the `-1` fork arm was unreachable from any test until this round, and three sibling arms still are
+
+**Recorded 2026-08-24 by round-49 lane b.** Severity: test coverage. **Measured.** Lane b's file.
+
+**What.** E221 added `forkProcess()` specifically because `startAgent()`'s `pcntl_fork() === -1` branch could
+not be driven: a genuine fork failure needs `RLIMIT_NPROC` exhausted or the machine out of memory, and a test
+that arranged either would take the box down. That is a large part of how the branch went so long emitting
+nothing at all. The lesson generalises — an arm no test can reach accumulates defects silently — and
+`startAgent()` has more of them: the child branch (`$pid === 0`) is only ever exercised by a real fork, and
+an inline comment on that branch says it is "also currently unreachable from `bin/sugarcrush`'s
+live path" (the quoted text is exact; "doc-block" was wrong — it is a `//` comment inside
+`startAgent()`, corrected by round-49 lane b's review pass).
+
+**Step.** Audit `src/` for `=== -1`, `=== false` and `catch` arms that no test reaches, and decide per site
+whether a seam (the `forceXForTesting` pattern, twice over in `AgentWorkerPool` now) is warranted or whether
+the arm should be documented as intentionally unexercised. A count is deliberately not recorded here — it
+would be stale on the next merge; the generator is the point.
+
+---
+
+### E263 — the stacked-doc-comment guard's unreadable-file arm has no fixture
+
+**Recorded 2026-08-24 by round-49 lane b's review pass.** Severity: instrument coverage. **Measured, PHP
+8.3.6.** Lane b's file (`tests/Diagnostics/RuntimeNoticeSinkDeliveryTest.php`).
+
+**What.** `testNoSourceFileCarriesStackedDocComments()` carries a rule-14 arm — `assertIsString($source,
+$file . ' could not be read, …')` — so a file the scan cannot read reds instead of contributing a silent
+zero. Nothing exercises it. Every other assertion in that test has a known-positive control that has been
+watched to fail; this one has not, and it is the arm that would matter on a checkout with a permission
+problem.
+
+**Why not fixed here.** The only honest fixture is an unreadable `.php` file inside `src/`, created and
+chmod-ed by the test — which means writing into the tree under test, in a suite five lanes share, and
+leaving a `0000` file behind if the process dies between create and restore. The alternative is to give
+the scan its roster as a parameter so a fixture roster can name a path in the scratch directory instead;
+that is the right shape and it is a signature change to a guard three other lanes are currently obliged
+by.
+
+**Step.** Give the file loop a roster parameter (default: `phpSourceRoster($root)`), then add a fixture
+that points it at one unreadable scratch file and asserts the test-level failure. The same parameter also
+makes the existing roster control non-tautological for `bin/sugarcrush`.
+
+**CLOSED IN THE SAME ROUND, AND THE FIXTURE FOUND A SECOND HOLE IN THE ARM IT WAS WRITTEN FOR.** WHAT THIS
+ENTRY SAID: no fixture existed and the roster-parameter shape was too invasive while three lanes were
+obliged by the guard. WHAT IS TRUE NOW: the loop is `stackedPairsIn($files, $root)` and
+`testARosterEntryTheScanCannotReadFailsRatherThanScoringZero()` drives it. Writing that fixture established,
+**MEASURED on this box, PHP 8.3.6**, that `file_get_contents()` on a DIRECTORY returns the **empty string**
+and not `false` (warning: `Read of N bytes failed with errno=21 Is a directory`) — so `assertIsString()`
+alone, which was the whole arm, let a non-file roster entry scan as zero stacked pairs. That is precisely
+the silent zero the arm existed to prevent, present inside the arm. An `is_file()` check now precedes the
+read in both this guard and `WorktreeRemovalReportingTest`. WHY THE ENTRY STILL EARNS ITS PLACE: it is the
+worked example of rule 25 one level down — the arm was *there*, was *correct-looking*, and was *wrong*, and
+only writing the fixture showed it.
+
+---
+
+### E264 — `removeDirectory()`'s `$emptied = false` on a failed `unlink()` is unkillable by construction
+
+**Recorded 2026-08-24 by round-49 lane b's review pass.** Severity: NOTE — recorded so the next reviewer
+does not spend the mutation on it. **Measured, PHP 8.3.6.**
+
+**What.** Rewriting `} elseif (!@unlink($itemPath)) { $emptied = false; }` to `} else { @unlink($itemPath);
+}` SURVIVES the whole of `tests/Agents/`. That is not a hole in the tests: a failed `unlink()` leaves the
+entry in place, so `@rmdir($path)` on the same directory then fails with `ENOTEMPTY` and the method returns
+false anyway. The assignment is belt-and-braces and cannot be observed.
+
+**The one case where it is not redundant runs the other way.** If the entry is removed by something else
+between `scandir()` and `unlink()`, `unlink()` fails with `ENOENT` while the directory really is emptying —
+`rmdir()` then succeeds and the current code reports `false` for a tree that is gone. So the surviving
+mutation is arguably MORE correct under a race, and the assignment's real justification is that a
+false-negative is the safe direction for a caller that deletes a registry entry on `true`.
+
+**Step.** None proposed. Leave the assignment; do not spend a fixture on it. If someone ever wants the race
+handled, the shape is `!@unlink($itemPath) && file_exists($itemPath)` — and that needs its own
+`clearstatcache()`, which is a bigger change than the case deserves.
+
+---
+
+### E265 — the process-unique-temp-name guard is blind to the fully-qualified call, which is the codebase's own style
+
+**Recorded 2026-08-24 by round-49 lane b's review pass. MUTATION-PROVEN.** Severity: an instrument that
+reports zero while the offender is present. **Measured, PHP 8.3.6.** Not any lane's file this round
+(`tests/Support/ProcessUniqueTempNameTest.php`), so recorded rather than fixed.
+
+**What.** `ProcessUniqueTempNameTest::offendingLines()` gates on `$token[0] === T_STRING &&
+$token[1] === 'uniqid'`. On PHP 8.3.6 a leading-backslash call does not lex that way: `token_get_all()`
+reports **`T_NAME_FULLY_QUALIFIED`** with the value `\uniqid`, so the gate rejects it and the line-level
+regex is never consulted. The argument-less form written with a leading `\` is therefore invisible to the
+guard that exists to catch it.
+
+**Proven on the real tree, not on a synthetic source.** Two mutations of one call site in
+`tests/Agents/AgentWorkerPoolForkFailureTest.php`, each introducing a genuine argument-less temp-name call
+and each run against `tests/Support/ProcessUniqueTempNameTest.php`:
+
+| mutation | verdict |
+| --- | --- |
+| bare form (control, known answer) | **KILLED** rc 1 |
+| identical offender, fully-qualified form | **SURVIVED** rc 0 |
+
+The control is what makes the survival readable: the harness and the guard both work, and the guard still
+did not see it.
+
+**Why it matters more than a lexer curiosity.** The blind spelling is not hypothetical and is not rare —
+`tests/` already contains the fully-qualified form of this very function, 22 call sites across 6 files
+(`tests/Cli/ArgvParserTest.php`, `tests/Cli/BootstrapConfigPathOverrideTest.php`,
+`tests/Integration/BinSugarcrushDispatchTest.php` among them). They are all the entropic, argument-carrying
+form, so the guard is right not to flag them — but they are sites the **pre-round sweep itself wrote in the
+spelling the guard cannot police**, and a later edit that drops their arguments would pass in silence. The
+leading-backslash house style is general in this suite, not an idiosyncrasy of one file. Generators, not
+pinned counts (they move on every merge, rule 18):
+
+```sh
+cd sugar-crush
+grep -rlE '\\uniqid\(' tests/ | wc -l                 # files using the blind spelling
+grep -rhoE '\\uniqid\(' tests/ | wc -l                # call sites in it
+grep -rlE '\\(strlen|count|sprintf|dirname|implode|file_get_contents|preg_match|sort)\(' tests/ | wc -l
+```
+
+⚠️ **AND A MEASUREMENT OF MINE THAT WAS WRONG, LEFT HERE ON PURPOSE (rule 3).** The first version of this
+entry said "exactly ONE file uses the `\`-prefixed style". That came from an ERE with a doubled escape —
+`'\\\\(strlen|…'` inside shell single quotes is TWO literal backslashes, which matches essentially
+nothing and returned `1`. Written correctly it is **83 of the 398 PHP files under `tests/`**. The wrong
+figure would have made this entry read as an edge case; it is the dominant idiom. The lesson is rule 13's:
+the harness built to check a claim carried the defect the claim was about, and only re-deriving it with a
+known answer in mind caught it.
+
+**Step.** Accept `T_NAME_FULLY_QUALIFIED` whose value is `\` + the function name alongside the `T_STRING`
+case, and extend the line regex to allow an optional leading backslash. Then add the fully-qualified form to
+`testTheScannerSeesTheBadFormAndSparesTheGoodOnes()`'s fixture — built by concatenation like the existing
+one, for rule 26's reason.
+
+---
+
+### E266 — that guard's SCOPE is `tests/` only, and `src/` has five argument-less sites
+
+**Recorded 2026-08-24 by round-49 lane b's review pass.** Severity: NOTE — an alphabet gap with low current
+exposure, recorded so the zero is not read as a clean bill. **Measured, PHP 8.3.6.** Same unowned file.
+
+**What.** `ProcessUniqueTempNameTest::SCOPE` is `['tests']`. The five argument-less sites in
+`src/Workflows/WorkflowEngine.php` — the stage, nested-stage, task, verifier and indexed-agent id builders —
+are outside it and always have been. They are **ids, not paths**, so the collision the guard was written for
+(two suites opening one file under a shared uid-keyed TMPDIR) does not apply to them directly; what does
+apply is that two stages built in the same microtime under the same stage name get the same id. Every
+argument-carrying site in `src/` is fine, and `AgentWorkerPool`'s path-building site already uses the
+more-entropy form.
+
+**Step.** Either widen SCOPE to `['tests', 'src', 'bin']` and give the five sites a prefix — they cost
+nothing to fix — or leave SCOPE alone and say in the doc-block that `src/` is deliberately unscanned and
+why, so the next reader does not take the guard's green as covering the application. Do not leave it silent:
+rule 11 — a census's scope is part of its coverage, and this one's is narrower than its prose implies.
+
+---
+
+### E267 — lane c's census reads all 291 sources with `(string) file_get_contents()` and has no rule-14 arm at all
+
+**Recorded 2026-08-24 by round-49 lane b's review pass.** Severity: instrument coverage. **Measured, PHP
+8.3.6.** Lane c's file (`tests/Cli/StderrEmitterCensusTest.php`), in flight this round.
+
+**What.** Eleven read sites in that file are of the form `(string) file_get_contents($absolute)`. `(string)
+false` is `''`, so a file the census cannot read contributes zero occurrences on every channel and the exact
+per-file cardinalities the whole design rests on silently lose a row. There is no `assertIsString()`, no
+`is_file()`, and no fixture — the arm does not exist rather than being untested. `testEveryFileTheRostersNameExists()`
+catches a DELETED file; it does not catch an unreadable one, and on PHP 8.3.6 it would not catch a directory
+either, because that reads as `''` and not as `false`.
+
+**Why this is worth a step and not a shrug.** Round 44's finding was an emptied census passing green with a
+dead scanner. This is the same failure mode reached by a different door: the scanner is alive and is handed
+nothing. It is also the sibling of the hole round-49 lane b just closed in two of its own guards — same
+`(string)`/`assertIsString()` shape, same empty-string-from-a-directory measurement.
+
+**Step.** Give the census one shared reader — `private static function source(string $absolute): string`
+with `is_file()` + `assertIsString()` arms — and route all eleven sites through it, then drive both arms once
+with `$root` (a directory: guaranteed to exist, guaranteed not to be a file, no chmod, no uid dependence,
+nothing left on disk). That is the shape `WorktreeRemovalReportingTest::sitesIn()` uses now and it can be
+lifted directly.
+### E268 — a `@dataProvider` row expecting `0` can never satisfy rule 15 literally
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: process / structural. **Measured.**
+
+**What.** E228's Step asks, per fixture, what mutation of the instrument the fixture would survive. Both
+census files answer that question through a `@dataProvider`, and a provider row IS its own test — so a row
+expecting `0` has no known-positive control in its own invocation, whatever else the provider contains.
+Rule 15 says the positive must be in the SAME test, and for this shape that is structurally unavailable.
+
+**Why it did not bite this round.** Both providers are dominated by rows expecting a non-zero count, so a
+dead instrument reds them: measured at round 49's lane HEAD by inserting `return 0;` at the top of each
+scanner (PHP 8.3.6), blinding `StderrEmitterCensusTest::scan()` reds **35** provider rows and blinding
+`countSeamCallSites()` reds **8**. The provider as a WHOLE is not vacuous.
+(**Both figures were first written here as 32 and 5** — the counts BEFORE the same commit added three
+non-zero rows to each provider. Corrected by round 49's review, which is the third instance recorded in
+this file of a figure measured mid-commit and never re-derived after the same commit moved its subject.
+The in-source copy of the `countSeamCallSites()` figure had been updated and the in-source copy of the
+`scan()` one had not, so the two statements of one measurement disagreed with each other.) What is unavailable is the per-row
+guarantee, and that is exactly the guarantee E228 was filed about — round 48's fixture sat in a test with a
+working known-positive beside it and still could not fail.
+
+**What this round did instead.** Measured the whole matrix — mutate the instrument, re-run the provider,
+record which rows change answer — and wrote the result into both providers' doc-blocks, so a row credited
+with catching a clause is credited only where that was measured. Where a clause had no killer at all, a row
+was added whose expected value is `1` on a source carrying BOTH the negative shape and a live call: that
+fails at `2` if the clause is dropped and at `0` if the scanner dies.
+
+**Step.** Consider a provider shape that carries the positive with each row — e.g. yielding
+`[$channel, $negativeSource, $positiveSource, $expected]` and asserting both in one test method — so the
+guarantee is per-row rather than per-provider. Not done here: it would rewrite ~70 rows across two files
+for a guarantee the measured matrix already supplies, and a mechanical rewrite of 70 fixtures is precisely
+the blanket textual pass rule 26 warns about.
+
+---
+
+### E269 — `testTheTwoEmitterFunnelsDoNotCountTheSameWrite` states a cardinality nothing keeps honest
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: cosmetic / rot. **Measured.** Lane c's own file.
+
+**What.** E245's general lesson swept across both census files. Two method names carry a number:
+
+- `testTheWarnFamilyDecomposesIntoItsThreeEntryPoints()` — CLEARED. The three is pinned by the method's own
+  last assertion, `$direct + $once + $seam === PREFIXED_WRITER_SITES['src/Cli/Bootstrap.php']`, whose
+  failure message already says "the family gained a fourth entry point". A fourth entry point reds it.
+- `testTheTwoEmitterFunnelsDoNotCountTheSameWrite()` — NOT cleared. The two are channels 5 and 6. Nothing
+  anywhere asserts that the application has exactly two emitter-side funnels, so a third one arriving
+  leaves this name false with nothing red. It is the same defect E245 recorded, in the same file, one
+  method away.
+
+**Not renamed this round**, deliberately: unlike E245's case the name is not yet FALSE, and a rename with
+no accompanying guard just moves the rot. The useful fix is the guard.
+
+**Step.** Either rename it cardinality-free, or — better — add the assertion that makes the number true:
+an emitter-side funnel is a `src/` method that writes fd 2 on behalf of callers who do not, and the two
+known ones are `Bootstrap::warnPermissionConfig*` and `RuntimeNoticeSink::warn()`. A roster of them, pinned
+the way the channels are, is what would make "two" a measurement.
+
+---
+
+### E270 — a failure message's generator is the one part of a green suite that never runs
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: low. **Measured, and fixed for one instance.**
+
+**What.** E228 one level further out. `StderrEmitterCensusTest::message()` builds the text six roster
+assertions fail with (recorded here as "four"; there are six, and there were six when this was written). It is called only on the failing path, so in a green suite it is never executed —
+a version returning `''` would be invisible for as long as the census stayed green and missing at exactly
+the moment it is needed. That is the same shape as a fixture whose expected value is what a dead
+instrument returns: nothing distinguishes working from absent.
+
+**Fixed here for `message()`**: it now derives the per-file delta from the two maps the assertion compares
+(bumped / arrived / gone), and `testTheRosterFailureMessageNamesEveryFileThatMovedAndBothCounts()` runs it
+on known input. Verified end to end by adding one `error_log()` to `src/Chat.php` under the mutation
+harness: the failure text reads `src/Chat.php: the roster says 1, the scan counts 2`.
+
+**Step.** The general case is un-swept. Any `private static function message()`/`describe()`/`explain()`
+helper whose only caller is an assertion's third argument has this property. A cheap guard is a scan for
+private helpers in `tests/` reachable only from an assertion message argument, reported as an inventory;
+a cheaper one is the habit of giving each such helper one known-input test.
+
+---
+
+### E271 — E231 re-derived window-free: still zero, and the re-derivation's own harness had the bug first
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: informational. **Measured, PHP 8.3.6, deterministic
+across three runs.** Generator:
+`scratchpad/r49c/e231.php` (run with `--controls`).
+
+**What.** E231 asked to be re-derived rather than trusted, and flagged its own bound: its one-line window
+undercounts a call whose command string wraps. That bound is now closed. This generator reads the first
+argument out of the TOKEN STREAM — concatenation pieces joined, depth-tracked, no window at all — so
+neither E231's three-line-window error nor its one-line-window bound is available to it.
+
+**Result, confirming E231.** 96 spawn sites under `tests/`. Shape A (a quoted inner shell, `sh -c '…'`):
+**0**. Shape B (more than one fd-2 redirection in one command): **0**. The site count is 96 rather than
+E231's 95 because one has been added since; an independent count through
+`ChildStderrCaptureScanner::scan()` over the same tree agrees at 96 (captured 62, discarded 20,
+inherited 14), so the two instruments find the same set.
+
+**AND THE GENERATOR WAS WRONG ON ITS FIRST RUN, caught by its own controls.** It extracted each string
+piece with `trim($piece, "'\"")`, which strips the SHELL's quotes as well as PHP's: in
+`'sh -c ' . "'inner 2>/dev/null'"` the middle piece's single quotes are part of the command, and trimming
+them turned a shape-A site into a shape-A miss. Six known-answer controls run before the census — E205's
+own three example commands, the shape the predicate gets right, a plain command, and one deliberately
+split across concatenated pieces — and it was the last of the six that failed. Only the delimiter is
+stripped now. This is the third recorded instance in this tree of a measurement harness carrying the
+defect the measurement is about, and the second within E205/E231 specifically.
+
+**E225 not acted on**, as recorded: it exists so the count of wrong prescriptions stays honest.
+
+---
+
+### E272 — HANDOVER TO LANE `d`: the same-named-helper drift guard (E232's general shape)
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: process.
+
+**What.** Round 49 lane c removed one instance of E232's shape by consolidating both `flattened()` copies
+into `tests/Support/FlattensSourceProseTrait.php` (E196/E224). The GUARD E232 asks for is lane `d`'s, so it
+is handed over rather than built here, with two constraints the consolidation measured:
+
+1. **Anchor on `T_FUNCTION`, not on the method-name token.** Round 48's instrument anchored on the name and
+   therefore compared the first CALL site in each file instead of the declaration, and reported "not
+   identical" for two byte-identical bodies. A comparison harness that silently compares the wrong two
+   things is the failure this whole family is about.
+2. **Compare bodies AND flag divergent doc-blocks separately.** E224's measurement was that the two bodies
+   were identical while the justifications had already diverged — the drift arrives in the reasoning first.
+   A guard that only diffs bodies would have called the pre-consolidation pair clean.
+
+**Step.** A test that collects every private/protected method declared under `tests/` with the same name in
+more than one file, and reds when their token streams (whitespace and comments dropped) differ. Its
+known-positive fixture must be two synthetic declarations that differ, run through the same comparator in
+the same test.
+
+---
+### E273 — the guard that pins every cardinality in a file is itself outside the machinery
+
+**Recorded 2026-08-24 by round-49 lane c's review. FIXED in the same round** (`275d86a7`). Severity:
+structural. **Measured, PHP 8.3.6.**
+
+**What.** `StderrEmitterCensusTest::selfCountAnchors()` is the list that gives every prose cardinality in
+that file a generator. Its own doc-block stated the size of that list, in prose, three times — "it shipped
+six of its own", "All six were correct the day they were written", "Two of the six cross a wrap" — and the
+generator says nine. It has never said six: the commit that introduced the list committed SEVEN rows (read
+back out of git, not inferred), so the sentence claiming all of them were correct when written was false on
+the day it was written, in the doc-block of the guard that exists to stop exactly that. Round 48's
+transcript-seam channel took the list to nine and the numeral moved with nothing. The sentence's own
+arithmetic never worked either — "one per channel, plus the two in the channel-5 paragraph" is eight.
+
+**Proved unpinned before being fixed.** Rewriting all three numerals to "nineteen" left the class green:
+90 tests, 1346 assertions, rc 0 at commit `11081a38` (scope: `--filter StderrEmitterCensusTest`, so the
+verdict is "survived the guards in this class", not "survived the suite").
+
+**AND THIS ENTRY FIRST SAID 91.** Recorded rather than quietly corrected, because it is E274's mechanism
+reproducing one commit after E274 was filed, in the same lane, by the reviewer who filed it: the mutation
+ran against a 90-test class, the reviewer read the test count off the class as it stood after the review's
+own first fix had added one, and committed the later number as the measurement. The assertion count was
+right, which is what made it look checked. **A mutation verdict must carry the commit it was measured at**,
+not just the date — that is the only form of the figure that cannot be re-read off a moved tree.
+
+**The transferable shape, and it is not "someone was careless".** Anchoring machinery has a blind spot at
+its own root, and the root is the most natural place to describe the machinery — so it attracts prose about
+its own size. The sibling `BootstrapTranscriptSeamCallSiteCensusTest` had already hit this one level up and
+resolved it by ELIDING the number ("If you find yourself wanting to write the number, add the row
+instead"). That resolution is right at level two and wrong at level one, where a generator is still
+available: this round added it, and the regress now stops one level higher, at a fact nobody states.
+
+**Step (general, not done).** Any file in this tree carrying an anchor list should be checked for prose
+stating that list's own size. Candidates: `BootstrapTranscriptSeamCallSiteCensusTest::PROSE_SITES` and
+`SELF_COUNT_ANCHORS` (checked this round — the present-tense statements are elided and the two remaining
+numerals are dated quoted measurements, correctly exempt), and any list added later. The cheap systemic
+guard is the one this round built: read the size back out of the doc-block and compare it with `count()`.
+
+---
+
+### E274 — a figure measured mid-commit and never re-derived after the same commit moved its subject
+
+**Recorded 2026-08-24 by round-49 lane c's review. FIXED in the same round** (`f59885fb`). Severity: low,
+recurrence: high. **Measured, PHP 8.3.6.**
+
+**What.** `scannerCases()`'s doc-block licensed its bare `<?php echo 1;` controls to have no positive
+component of their own on the strength of one measurement: "That was measured too, by blinding `scan()`:
+thirty-two rows go red." At the commit that wrote that sentence, thirty-five rows went red. Thirty-two was
+the count before the same commit added three non-zero rows to the provider. Two further numerals in the
+same bullet were wrong the same way (five `<?php echo 1;` rows, not four; on five of seven channel
+spellings, not on each). The identical measurement written into the sibling file's doc-block HAD been
+updated, so one commit left two statements of one figure disagreeing with each other.
+
+**Why this recurs and how to stop it.** The measurement is taken while the change is being designed and the
+change then invalidates it. Nothing catches it because a mutation figure looks like history, and history is
+legitimately exempt from anchoring. **The rule that works: a mutation figure must be re-derived as the LAST
+step before commit, or the sentence must not carry a number.**
+
+**What replaced it here, and this is the better half of the finding.** A count was the wrong shape for the
+claim regardless. What the licence needs is not "some total of rows reds" but "no channel is left where
+every row expects `0`" — a provider can hold a hundred non-zero rows on one channel while every row on
+another expects `0`, and the total then reads reassuringly while that channel's scanner is untested against
+its own death. `testEveryChannelInThisProviderHasARowADeadScanWouldRed()` asserts the per-channel form. It
+is strictly stronger than any total, it does not move when a row is added, and it was verified by mutating
+THE FIX: deleting both non-zero `shape` rows reds it and reds nothing else.
+
+**Step.** Apply the same substitution wherever a doc-block justifies a fixture by a total: ask what property
+the total stands in for, and assert that instead.
+
+---
+
+### E275 — a `@dataProvider` row's expected value is not enough to place it in a channel's coverage
+
+**Recorded 2026-08-24 by round-49 lane c's review.** Severity: informational. **Measured.** Not acted on.
+
+**What.** E268 records that a row expecting `0` cannot carry its own positive control. Reviewing it
+surfaced the narrower and more useful statement: the per-provider escape hatch ("a dead scanner reds the
+provider anyway") is only sound PER CHANNEL, because each channel is a separate branch of `scan()` and a
+dead branch is invisible to rows on the other branches. That is now asserted for
+`StderrEmitterCensusTest`. It is NOT asserted for `BootstrapTranscriptSeamCallSiteCensusTest`, which has a
+single scanner and therefore a single channel, so the property holds there trivially today — and would stop
+holding silently the moment that scanner grows a mode.
+
+**Step.** If `countSeamCallSites()` ever takes a mode or channel argument, port
+`testEveryChannelInThisProviderHasARowADeadScanWouldRed()` to it in the same commit.
+
+---
+
+### E276 — three MORE brace walkers, and the first one FAILS OPEN in a guard nobody owns
+
+**Recorded 2026-08-24 by round-49 lane d.** Severity: harness correctness. **Measured**, PHP 8.3.6.
+**Recorded as `KNOWN_GAPS` rows, not fixed** — none of the three files is in any lane's list.
+
+**How they were found, which is the entry rather than the files.** E233's fix closed
+`tests/VhsTapeContractTest.php`. That left `InterpolationOpenerTokenTest::KNOWN_GAPS` empty and the guard
+apparently complete. It was not: its SELECTION predicate is "names `T_CURLY_OPEN` as code", which is a
+brace walker whose author already knew the problem existed. **A walker that counts depth on the BARE
+one-byte strings `'{'` and `'}'` names no token constant at all and was invisible by construction.** The
+alphabet was the set of files that already agreed with the guard — rule 11, in a file whose own doc-block
+had said so twice.
+
+**The widened predicate** — a comparison operator adjacent to a one-byte `'{'` literal AND to a `'}'` one,
+token-based — finds exactly three under `tests/` and zero false positives among the walkers the old
+predicate already covered. **The old predicate covered TEN of them at `db90e768`, not seven** — the round's
+own review re-derived it and the first figure was wrong; generator
+`scratchpad/r49d/r49d_rev_base_walkers.php` reads every `tests/`+`src/` blob out of `git show db90e768:` and
+runs both predicates over it, so the count is not taken from a worktree. Widened-predicate generator:
+`scratchpad/r49d/bare.php`; live re-derivation at HEAD: `scratchpad/r49d/r49d_rev_gaps.php`
+(14 walkers, 3 gaps, all 3 recorded).
+
+**`tests/Cli/BootstrapLaunchFormatConstantsTest.php` FAILS OPEN, and that is why this is severity-real.**
+`methodBody()` counts on the bare `'{'` over a `token_get_all()` stream, where `T_CURLY_OPEN` is an ARRAY
+token that never `===` the bare string while its closer IS the bare string — so the count goes one closer
+over and the body ends early. It misses **the everyday `{$x}` spelling**, not only the deprecated one.
+Measured through the shipped private methods by reflection (`scratchpad/r49d/proof.php`), not a replica:
+one `"{$x}"` inserted into a scanned method cut the body from 16 significant tokens to 6 and made a format
+literal that `testNoMethodThatOwnsANamedFormatAlsoHoldsALiteralOne()` exists to reject **invisible — `[]`
+where the offender should have been**. The direction matters: the sibling assertion
+(`testEveryNamedFormatIsReferencedByTheMethodThatEmitsIt()`) would go RED on truncation, so the file fails
+safe in one direction and open in the other.
+
+**Latent, all three, today.** `scratchpad/r49d/live.php` runs the shipped walk and a corrected one over all
+eight `Bootstrap` methods the file reads: identical on every one, because none carries an interpolation.
+`SlashDispatchTest::dispatchArmNames()` walks `Chat::dispatchCommand()`, which has zero `T_CURLY_OPEN`
+tokens. `ReadmeJsonErrorContractDriftTest` uses `PhpToken` and so handles `T_CURLY_OPEN` **by accident** —
+that token's text IS `{` — and misses only `${`, whose text is `${`.
+
+**Step.** Give each of the three the full opener roster and delete its `KNOWN_GAPS` row in the same
+change-set, exactly as E233 required of `VhsTapeContractTest`. `tests/Cli/` first: it is the one that
+hides a defect rather than inventing one.
+
+**Corrected on review, and the correction is the reusable half.** The first draft of this entry also said
+"none of the **eight** Bootstrap methods it reads carries an interpolation" — derived from a harness
+(`scratchpad/r49d/live.php`) that merged a regex over the test source with a HARD-CODED list of seven names
+and then ran a REPLICA of the walk on both sides. It printed nine rows, two of which were fixture names
+resolving to `null`. Re-derived through the SHIPPED `methodBody()` over the set the SHIPPED `obligations()`
+returns (`scratchpad/r49d/r49d_rev_eight2.php`): **seven** methods, all agreeing with a corrected walk, zero
+interpolation openers. The latency claim survived; the count did not. **A harness that hard-codes half of
+the set it is measuring is measuring the hard-coded half** — rule 13, and the reason the row now ships the
+claim with no number in it at all.
+
+### E277 — the round-49 brief's stated floor does not reproduce, in both figures
+
+**Recorded 2026-08-24 by round-49 lane d.** Severity: process. **Measured** at `db90e768`, PHP 8.3.6.
+
+**What the brief said.** "THE SUITE FLOOR AT `db90e768` IS `9445 tests / 132167 assertions / 1 skipped /
+rc 0` — measured by the supervisor at this exact commit, per E167."
+
+**What is true.** A clean `cp -a` lane at `db90e768`, 18/18 in-lane symlinks verified with `is_link`,
+`vendor/bin/phpunit` with no filter: **`9499 tests / 133587 assertions / 1 skipped / rc 0`**. Both figures
+are higher, so this is not a lane missing tests; it is the brief quoting a stale pair. The RESUME section
+of the same round quotes 9497, which is a third number and also not it.
+
+**Why it matters more than it looks.** The floor is the one figure a lane cannot re-derive from anywhere
+else, and it is what a reviewer checks a lane's delta against. A lane that trusts the brief and reports
+"+54 tests" has mis-stated its own change by an order of magnitude.
+
+### E278 — E232's live instance was already fixed, and the guard built for it had to find its own positive
+
+**Recorded 2026-08-24 by round-49 lane d.** Severity: informational. **Measured.**
+
+**What E232 said.** `Backend/EngineBackendTest::isRaw()` "was in no lane's file list and kept the bug for a
+full round, one directory away from its fixed twin."
+
+**What is true at `db90e768`.** Round 48 fixed it. The two copies now differ by exactly one token, and that
+token is the temp-name prefix each uses for the stderr file it reads back — a difference that MUST exist,
+per the same round's process-unique-temp-name work. So the guard E232 asked for could not use its own
+motivating case as a known positive: it is now an ACCEPTED row, not an offender. The positive is synthetic
+instead, and goes through the same `driftReport()` the tree does.
+
+**The general point, which is the reusable half.** A guard commissioned by a finding will usually arrive
+after the finding has been fixed. Round 48's E209 hit this and answered it the same way. **Assume the
+motivating instance will be gone and plan the synthetic positive from the start** — otherwise the guard
+ships with its known-positive slot filled by a case that is about to disappear, and the next round deletes
+it as stale.
+
+### E279 — `DuplicatedTestHelperDriftTest`'s bound is one token, and two is unexplored
+
+**Recorded 2026-08-24 by round-49 lane d.** Severity: coverage. **Measured**, PHP 8.3.6.
+
+**What.** The new drift guard flags same-named private helpers in different files whose bodies agree except
+for at most ONE token per side after the common prefix and suffix are trimmed. Twelve names are inside that
+bound and each carries an argued row. Relaxing `DRIFT_BOUND` to 2 or 3 brings in further names; sampled,
+most are `self::` against `$this->`, which is noise — but "most" is not "all" and nothing has checked.
+
+**Why the bound is where it is.** One token is the shape of the defect the guard was commissioned for: the
+whole helper agrees and a single flag, literal or name does not. Widening is a round of its own with rows
+to argue, not a constant to nudge. Generator: `scratchpad/r49d/core.php` prints every cross-file pair with
+its core size, sorted.
+
+**Also unexplored, and stated because the alphabet is the coverage:** protected and public helpers are out
+of scope; a helper copied and RENAMED is out of reach by construction; and two classes in one file are
+never compared (measured: no file in `tests/` declares one private name twice today).
+
+### E280 — `awaitPromise()`'s two bounds are the one accepted divergence that is behavioural
+
+**Recorded 2026-08-24 by round-49 lane d.** Severity: informational. **Measured.**
+
+**What.** Of the twelve rows in `DuplicatedTestHelperDriftTest::ACCEPTED_DIVERGENCE`, eleven are spelling —
+a leading `\` on a global call, an FQN against an import, a parameter name, a failure-message string, a
+temp-name prefix that must differ. One is not: `awaitPromise()` waits **10.0** seconds in
+`Backend/EngineBackendTest` and `Integration/UsageWiringTest`, and **15.0** in
+`Integration/StreamingWiringTest`. Both are defensible — a streaming wiring test legitimately needs longer
+than an engine unit test — but a timeout is exactly the thing a copied helper drifts in, and the row is the
+only place anybody would notice a fourth copy arriving with a fourth number.
+
+**Step.** Either extract the helper with the bound as a parameter, or leave the row and let it carry the
+argument. No action is required today; the entry exists so the decision is made deliberately the next time
+a copy is added.
+
+### E281 — `Agents/TeamTest`'s real-home footprint guard reds on a SIBLING LANE's writes
+
+**Recorded 2026-08-24 by round-49 lane d.** Severity: cross-lane harness. **Observed**, then reproduced by
+elimination.
+
+**What.** `TeamTest::tearDown()` asserts that the real `~/.sugar-crush` footprint is unchanged across each
+test. During lane d's full run it failed in that `tearDown()` footprint assertion, on
+`testAddTeammateOverwritesExistingWithSameId`, with a diff listing **2,522** entries under
+`/home/my/.sugar-crush/teams/` named `throwing-*`. Re-run alone, the same file is green — 26 tests, 78
+assertions. Nothing in lane d touches `Agents/`.
+
+**Mechanism.** The guard compares a snapshot taken in `setUp()` against one taken in `tearDown()`. `HOME`
+is redirected per test, but the snapshot is of the REAL home, and five lanes run concurrently on one
+machine with one real home. Another lane's `Team` test writing a `throwing-*` directory between this
+lane's two snapshots is indistinguishable from this lane's own test doing it.
+
+**Why it is not simply "flaky".** The guard is correct and worth keeping — it catches a test writing into
+the real home, which is the failure it was built for. What it cannot do is attribute the write. The cheap
+fix is to compare only entries the test's own process could have created (a per-process name prefix is
+already the convention after E242); the expensive one is a per-lane `HOME`.
+
+**Also worth noting:** the 2,522 leftover directories are themselves evidence that something is not
+cleaning up. They were not deleted — sibling lanes were running and a glob delete under a shared home is
+the hazard this round's brief spends a paragraph on.
+
+---
+
+### E282 — a TEXT-keyed brace walk makes its token-id disjunct dormant, and a spelling roster cannot tell
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: harness correctness. **Measured**,
+PHP 8.3.6. **Fixed in the same round** for the one instance found; the shape is the entry.
+
+**What.** `InterpolationOpenerTokenTest::testEveryBraceWalkingScannerNamesEveryOpener()` requires every
+brace walker to NAME every opener the lexer produces. It reads what a walker *names*. It cannot tell
+whether the walk *works* — and for one class of walker the two answers diverge.
+
+**The class.** A walk that keys on the token's TEXT (`$text = is_array($t) ? $t[1] : $t;` then
+`$text === '{'`) already increments on `T_CURLY_OPEN`, because that token's text IS that one byte. The
+explicit `$id === T_CURLY_OPEN` disjunct beside it is then a NO-OP on every input. `T_DOLLAR_OPEN_CURLY_BRACES`
+is the opposite: its text is two bytes, the text arm cannot see it, and its disjunct is load-bearing.
+Measured on `DuplicatedTestHelperDriftTest::bodyOf()`: dropping the first changed no body on any fixture
+and SURVIVED that file's own tests; dropping the second also SURVIVED that file's own tests, and both were
+caught only by the roster guard in another file. So the roster was enforcing a spelling of which one half
+did nothing and the other half was untested.
+
+**Why it matters beyond the one site.** The roster guard is what the tree relies on to keep brace walks
+correct, and its verdict is about spelling. A lane that adds the token to satisfy it has satisfied the
+guard without exercising the walk — and if the walk is text-keyed, the token it added cannot be exercised
+at all. **A spelling guard and a behaviour guard are not substitutes, and this tree has one of each for
+this problem with nothing saying which claim is which.**
+
+**Step.** When auditing a walker's roster, classify the walk first: keyed on TEXT, on the token ID, or on
+the bare string. Only the last two make a `T_CURLY_OPEN` disjunct load-bearing. For a text-keyed walk,
+pin the dormancy from the interpreter (assert the token's text) rather than leaving the line to be deleted
+as dead — and pin the deprecated opener behaviourally, since its truncation makes two drifted copies
+compare EQUAL, which reads as "no drift" rather than as an error.
+
+### E283 — a deferral keyed on the FILENAME is silent on a partial fix
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: harness correctness. **Fixed** for
+`InterpolationOpenerTokenTest::KNOWN_GAPS` in the same round; the shape is the entry.
+
+**What.** This tree now has several deferral maps of the form `key => reason`, checked in "both
+directions": a key with no offence is *overtaken*, an offence with no key is *unrecorded*. Both directions
+ask a BOOLEAN question — is there still an offence here. Neither asks whether it is still THE offence the
+row describes.
+
+**The direction that is silent.** A partial fix. A walker missing two openers that gains one of them still
+has a gap, so the row still matches, and the row's argued prose — written about the wider gap — silently
+becomes false. The remaining half is then deferred by accident, under an argument for something else. Same
+applies to any `SCOPE`/`OUT_OF_SCOPE` pair whose rows describe a *cluster* of sites: fix three of four and
+the row survives describing four.
+
+**Step.** Where a row's reason describes a specific extent, record the extent as data and compare it, not
+just its non-emptiness — and intersect the recorded extent with whatever the running environment can still
+produce before comparing, or the map reds wholesale on the language change it was written to survive.
+`ChildStderrCaptureTest::OUT_OF_SCOPE` and `ForkedChildReaperAdoptionTest::OUT_OF_SCOPE` both have rows of
+this shape (`Context/`: "`git init` / `git config` fixture setup with `2>/dev/null` on each line") and
+neither records a count — deliberately, per their own doc-blocks, because a count over `tests/` rots. The
+open question this entry leaves is what a rot-proof extent looks like for those two.
+
+### E284 — a harness that hard-codes half of the set it measures is measuring the hard-coded half
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: process. **Three figures retracted.**
+
+**What was wrong.** Round 49 lane d's own implementer stage shipped three numbers a review could not
+re-derive. All three are corrected in place with their generators; the mechanism is the entry.
+
+  * "none of the **eight** Bootstrap methods it reads" (shipped in a `KNOWN_GAPS` reason). It is seven.
+    The generator merged a regex over the test source with a HARD-CODED list of seven method names, and
+    ran a REPLICA of the walk on both sides rather than the shipped one. Its table printed nine rows, two
+    of them fixture names resolving to `null`.
+  * "the **seven** walkers the old predicate already covered" (backlog). It is ten, re-derived by running
+    both predicates over every `tests/`+`src/` blob read out of `git show db90e768:`.
+  * "`KNOWN_GAPS` is empty at this commit" (shipped doc-block). It had three rows in the same commit that
+    wrote the sentence — the change-set that emptied it of its one row widened the selection and refilled
+    it.
+
+**The common cause is not carelessness.** Each figure was produced by a harness that was *partly* derived.
+A regex plus a hand-written list; a replica of the walk instead of the walk; a sentence written before the
+last hunk of the same commit. **Rule 13 says the harness can carry the defect the claim is about; this is
+the sub-case where the harness carries HALF the answer as a literal.** The reviewable property is not
+"was it measured" but "is every element of the measured set derived".
+
+**Step.** For any set-valued measurement, print the set and its size, derive both from the shipped code,
+and state the accessor used. A figure whose generator contains a literal list of the things being counted
+is not a measurement of them.
+
+### E285 — the drift guard compares BODIES, so a signature divergence is invisible
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: coverage. **Measured**, PHP 8.3.6.
+**Documented, not fixed.**
+
+**What.** `DuplicatedTestHelperDriftTest` compares two same-named private helpers by normalising their
+BODIES, and `bodyOf()` starts at the body's opening brace. A divergence in the PARAMETER LIST — an added
+parameter, a changed default, a widened type — is therefore invisible, and two copies whose signatures
+disagree can compare as byte-identical bodies.
+
+**Not hypothetical.** `reviewerAgent`'s own accepted row is exactly that shape (one copy takes the active
+flag as a parameter, the other hard-codes it) and is in the report only because the divergence also
+reaches the body.
+
+**Why it was not simply widened.** Including the signature folds every promoted-property and default-value
+spelling difference into the divergence core and pushes most real pairs past `DRIFT_BOUND`, which is a
+different guard rather than a wider one. Widening wants its own round with rows to argue — the same
+conclusion E279 reaches for the bound itself, and probably the same round.
+
+---
+
+### E286 — a reader that slices `file(__FILE__)` with reflection's line numbers, unchecked in both directions
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: correctness of an instrument.
+**FIXED**, with mutation proof in both halves.
+
+**What.** `VhsTapeContractTest::modelMethodTokens()` took `getStartLine()`/`getEndLine()` from
+`ReflectionMethod` and sliced `file(__FILE__)` with them. Nothing checked that the two addressed the same
+text, and the two ways they can disagree have different mechanisms:
+
+  * **Another file.** For a method imported from a trait, `getFileName()` is the TRAIT's file and the line
+    numbers are the trait's lines. Measured on PHP 8.3.6: slicing the using class's file with them returns
+    unrelated source with no error of any kind. Reachability is not theoretical — extracting a duplicated
+    test helper into a trait is a thing this tree is actively doing.
+  * **The same file, shifted.** Reflection's line numbers are fixed when the class loads; `file(__FILE__)`
+    is read on every call. An edit to the file in between shifts every slice while the file name still
+    matches. **This half was OBSERVED**: in a run where the file changed on disk mid-suite, every body came
+    back one declaration out of step and the census reported `directiveValues()`'s figures under
+    `scanRegex()`'s name — under a message blaming "a docblock that has gone stale two screens away",
+    which invites the reader to edit the figures.
+
+**Fix.** `assertSame(__FILE__, $reflection->getFileName())` for the first; a `declaredSlice()` that refuses
+unless the slice's first line spells `function <name>` for the second. The second takes its lines as an
+argument so a fixture can hand it offsets that no longer match, which a live reflection cannot be asked to
+produce. Both are pinned by positives: an inherited PHPUnit assertion pushed through the reader, and a
+synthetic nine-line source sliced at the wrong declaration.
+
+**The generalisable part.** A guard whose failure message names a likely cause is a guard that will be
+believed. When the diagnosis and the real cause differ, the message is worse than silence — so the reader
+must refuse states it cannot interpret rather than describe one it has not verified.
+
+### E287 — the drift guard's visibility alphabet was defended by a feeling
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: coverage. **FIXED** (measured, and the
+measurement is now derived by a test rather than written down).
+
+**What.** `DuplicatedTestHelperDriftTest`'s class doc-block lists what its alphabet deliberately cannot
+see. Two bullets carry generators. The third — protected and public helpers — carried "a protected helper
+is usually inherited rather than copied, which is a different failure". Rule 11: an alphabet is coverage,
+and a restriction argued that way is a zero nobody has asked what it cannot express.
+
+**Measured** through the same `driftReport()` with the alphabet widened, PHP 8.3.6: the `protected` run
+brings in **no helper name at all**. Every pair belongs to a PHPUnit lifecycle hook the framework declares
+protected — two classes overriding `setUp()` have implemented the same hook, not copied a helper — and it
+brings them in many times more often than the private run finds anything, so widening would be answered
+by exempting them, which is where the next real drift hides. The conclusion was right; the argument was
+not.
+
+**Fix.** The alphabet is a parameter of `driftReport()` rather than a constant inside the walk, so the
+restriction is measured through the shipped code. `testWideningTheVisibilityAlphabetToProtectedAddsNoHelperAtAll()`
+runs the wide alphabet and reds the day a protected NON-hook helper drifts, with a message saying to widen
+the default rather than exempt the name. The hook roster is read off `TestCase` by reflection so a PHPUnit
+upgrade cannot red it for the wrong reason.
+
+**And a rule-15 hole inside the fix, caught by mutating the fix.** The wide-run assertion is
+`assertSame([], nonHookNames)`, which an EMPTY wide report satisfies perfectly. A mutation that neutralises
+the alphabet parameter so the wide run yields nothing gets past it untouched; only the pair-count
+comparison beside it reds, and with that comparison deleted the mutation survives the whole file. The
+doc-block first credited that comparison with catching a dead report — which
+`assertTheScannerIsAlive()` already owns three assertions earlier — and was corrected to the mechanism it
+really covers.
+
+### E288 — a partition guard with one direction, carried by a loop that runs zero times
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: coverage. **FIXED.**
+
+**What.** `ForkedChildReaperAdoptionTest` keeps a `SCOPE`/`OUT_OF_SCOPE` pair. Its
+`testEveryOutOfScopeDirectoryStillHasAnUnreapedFork()` asserts `!inScope($prefix)` per row, which refuses a
+row whose own key SCOPE covers. Two things get past that. `OUT_OF_SCOPE` is `[]`, so the loop carrying the
+assertion runs zero times and it has never executed against anything. And `inScope()` matches with
+`str_starts_with($relative, $entry)`, so it can only ask whether a ROW sits inside a SCOPE entry — the
+reverse, a SCOPE entry that is a prefix OF a row's key (`Agents/` in SCOPE against an
+`Agents/AgentManagerTest.php` row), is an overlap it cannot express. In that state the SCOPE half satisfies
+the jointly-total test and the row can never be reported.
+
+**Fix.** `testNeitherMapClaimsADirectoryTheOtherAlreadyClaims()` runs both directions through one
+`overlappingClaims()`. Its load-bearing assertions are synthetic, because a real-tree control over an empty
+map is what a deleted predicate returns; the near-miss negative (`Chat/` in SCOPE against a `ChatTest.php`
+row — neither contains the other) stops the predicate being stuck at yes.
+
+**The generalisable part.** `str_starts_with()` is directional, and a containment check written once
+covers one order. Every `SCOPE`/`OUT_OF_SCOPE` pair in this tree should be read for the second order.
+`ChildStderrCaptureTest` grew it this round; the sibling had not, and the sentence recording that gap has
+been rewritten rather than deleted, because the mechanism it names is what both second loops are for.
+
+### E289 — the brace-walker predicate cannot express a `switch` or `match` depth counter
+
+**Recorded 2026-08-24 by round-49 lane d, REVIEW stage.** Severity: coverage. **Measured, not fixed.**
+
+**What.** `InterpolationOpenerTokenTest::comparesAgainstBrace()` selects a bare-brace depth counter by
+looking for a one-byte `'{'`/`'}'` literal with a COMPARISON OPERATOR
+(`T_IS_IDENTICAL`/`T_IS_NOT_IDENTICAL`/`T_IS_EQUAL`/`T_IS_NOT_EQUAL`) as its nearest significant
+neighbour. Its own doc-block names the escape as "a token id it computed, or a regex over text". There is
+a third, and it is the most ordinary spelling of a depth counter there is: `switch ($text) { case '{':
+$depth++; ... }`, and its modern sibling `match`. Neither puts a comparison operator next to the literal,
+so both are invisible to the predicate AND to the `T_CURLY_OPEN`-naming half beside it — a brace walker
+spelled that way is not selected at all, so it can be missing every opener and never appear as a gap.
+
+**Measured today, PHP 8.3.6**, over every `.php` under `tests/` and `src/` in the lane worktree: the files
+holding a bare-brace literal at all are a small set, every literal in them sits next to `,`, `)`, `]`,
+`=>` or `(`, and **no `case` or `match` arm on a brace occurs anywhere**. So the gap is real and currently
+unoccupied. The generator walks `token_get_all()` per file and prints each brace literal's two nearest
+significant neighbours with a CMP/other verdict; it is a dozen lines and is worth shipping as the test
+rather than as a script, because a cardinality taken in a lane worktree is void at the next merge.
+
+**Step.** Add `T_CASE` and a `match`-arm shape to `comparesAgainstBrace()`'s neighbour alphabet, and pin
+the currently-empty population with a synthetic known-positive in the same test (a nowdoc `switch`-based
+walker must be SELECTED and reported as missing `${`). Until then the doc-block's "nothing in the tree
+does that today" is true but unpinned — the first `switch`-based walker anyone writes lands unguarded.
+
+### E290 — E242's slowdown is a held-open descriptor 0 reaching spawned binaries, not concurrency
+
+**Recorded 2026-08-24 by round-49 lane e.** Severity: test-infrastructure. **Measured, PHP 8.3.6. Fixed
+this round** in `tests/bootstrap.php`, pinned by `tests/SuiteChildStdinIsolationTest.php`.
+
+**What E242 said.** A lane's suite went from 4m 26s to "roughly 160 tests per ten minutes" while a
+sibling suite ran; on a 48-core box at load 6, "not CPU-bound — that points at wall-clock waits rather
+than scheduling", with the shared uid-keyed `TMPDIR` named as the most obvious candidate.
+
+**The diagnosis of the symptom was right and the candidate was wrong.** It is wall-clock waits. They come
+from descriptor 0. `bin/sugarcrush -p "hi"` with a sandbox HOME, timing only the fd-0 shape:
+`/dev/null` 0.110s · closed 0.105s · **open, never-written pipe: blocks, SIGKILLed at 25s.** With a writer
+that sends one line after four seconds and then closes, the run ends at 4.1s and those bytes are
+PREPENDED TO THE PROMPT. The block is `stream_get_contents()` inside
+`NonInteractive::readStdinIfPiped()`, placed there by the child's own output: the two `Bootstrap` notices
+that immediately precede that call are printed and nothing after it is.
+
+**Why nobody could see it.** `phpunit.xml` sets `enforceTimeLimit="true" defaultTimeLimit="60"`, so each
+such test is reported RISKY — "aborted after 60 seconds", "did not perform any assertions" — naming
+nothing. Observed here: `BootstrapSkillSkipsTest`'s two `-p` cases, 0.4s for the whole file when run
+alone AND 0.55s each with five copies concurrent, were both aborted at 60s in a full run whose runner had
+its stdin held open by a supervising process. **It reproduces with one process on an idle box.** The
+variable is the fd 0 the runner was started with, which is a property of the harness, not of the tree —
+which is exactly why it looked like it correlated with a sibling lane.
+
+**Relation to E212.** This is E212's other half. That entry closed the runner's own read and said in terms
+that the pin does not reach `src/` or `bin/`; `exec()`/`proc_open()` hand a child THIS process's fd 0, and
+a non-empty set of test files spawns the real binary. (WHAT THIS SAID: "eighteen test files". WHAT IS TRUE:
+see E297 — nobody can re-derive eighteen; three generators answer 41, 15 and 13. WHY THE SENTENCE STILL
+EARNS ITS PLACE: what it is FOR is that the set is not empty and the children are real processes.)
+
+**Fix, THIRD attempt — and the first two are both recorded here because each was refuted by a
+measurement rather than by an opinion.**
+
+*Attempt 1: close fd 0 and reopen `/dev/null` onto it.* WHAT THIS ENTRY SAID of it: "Cost: the `\STDIN`
+constant is a closed resource for the rest of the run … Nothing reaches it today." WHAT WAS TRUE:
+something reached it.
+`tests/Cli/NonInteractiveStdinPinTest::testTheBootstrapHasPinnedTheDefaultStdinAwayFromTheRealOne()` read
+`stream_get_meta_data(\STDIN)` as its OWN known-positive control, and on a closed resource that is a
+`TypeError`. **MEASURED at 85a34cc1 from a non-tty runner: that one file, 5 tests, 1 error.** Red on every
+runner whose fd 0 is not a terminal, green from a terminal, because the tty guard skips the block there —
+which is exactly why it shipped unnoticed.
+
+*Attempt 2: `stream_set_blocking(\STDIN, false)`, leaving the constant alive.* `O_NONBLOCK` lives on the
+open file DESCRIPTION, which is what `fork(2)`/`exec(2)` share, so it does reach every inherited child.
+**MEASURED, PHP 8.3.6, three takes each**, a parent whose fd 0 is an open never-written pipe `exec()`ing a
+child that calls `stream_get_contents(\STDIN)`: inherited as-is → SIGKILLed at 8s, rc 137 (3/3);
+`stream_set_blocking(…, false)` → 0 bytes in 0.000s (3/3); close + reopen `/dev/null` → 0 bytes in 0.000s
+(3/3). Indistinguishable to the child. **WHAT REFUTED IT: the flag does not survive this suite.**
+`tests/Backend/EngineBackendTest::testCompleteAsyncDoesNotResetTheRealTerminalsRawMode()` builds
+`new Tty(null, new PosixTermios($slaveFd))`; candy-core resolves the null stream to `\STDIN`, and the
+injected-Termios seam makes `PosixBackend::enableRawMode()` skip its own `isTty()` guard — so its trailing
+`@stream_set_blocking($this->stream, false)` and `restore()`'s matching `@stream_set_blocking($this->stream,
+true)` both land on descriptor 0. **MEASURED, PHP 8.3.6, three takes, that seam driven directly from a
+process whose fd 0 is an open pipe: clear after the flag is set, still clear after `enableRawMode()`,
+BLOCKED again after `restore()` — 3/3.** A guard on the flag is therefore ORDER-DEPENDENT: green when its
+own file runs alone or before that seam, red after it.
+
+*Attempt 3 — attempt 1 again, with its one known casualty repaired.* Tried, and **refuted by the first
+full suite run anyone had done of it.** WHAT ATTEMPT 3 ASSUMED: that the only in-process reader of the
+`\STDIN` constant was `NonInteractiveStdinPinTest`'s known-positive control, so pointing that control at
+a fresh `php://stdin` handle made closing the descriptor free. WHAT IS TRUE: **the census behind that
+sentence looked in `sugar-crush/{src,bin,tests}`, and the reader that matters is in a SIBLING LIBRARY.**
+`SugarCraft\Mosaic\Detect` resolves its probe stream as `self::$probeStdin ?? STDIN` and hands it to
+`drainStdin()` with no `is_resource()` guard; `Mosaic::auto()` catches the resulting throw and falls into
+`autoFromPalette()`, which references a `Capability` case candy-palette does not have. **MEASURED, full
+suite, PHP 8.3.6, this lane: `9500 tests, 107 errors, rc 2`**, every error
+`Error: Undefined constant SugarCraft\Palette\Probe\Capability::Iterm2Image`. A closed `\STDIN` does not
+cost one control assertion; it moves a whole library onto a code path that has never run. (That fallback
+is broken independently of this file — recorded separately as E302.)
+
+*Attempt 4, SHIPPED — attempt 2, with the thing that refuted it fixed instead of routed around.* The flag
+is what ships. What broke it was `new Tty(null, $injectedTermios)`, and every instance of that shape in
+the tree now passes an explicit `stream_socket_pair()` end and asserts the flag moves on THAT stream in
+both directions (E301). So nothing in the run writes the description any more, and the guard on the
+flag is order-dependent BY DESIGN: it is the only thing that reds when someone writes the next one. The
+order-independent guard beside it is the spawn test, which runs the bootstrap in a child of its own where
+no in-process seam can reach it.
+
+**The lesson worth keeping, since four attempts is a lot for one line.** Both refutations were of the same
+kind: a claim of the form "nothing reaches X", verified by a grep whose scope was the directory the author
+was working in. Attempt 1/3's scope stopped at `sugar-crush/`; attempt 2's stopped at "the site I found"
+rather than the SHAPE. Neither was refutable by reading — one needed a full suite run, the other needed
+the seam driven in isolation three times.
+
+**Residual, deliberately not fixed.** In PRODUCTION `sugarcrush -p` still blocks forever on a held-open
+stdin with no bound. That is arguably the correct read-stdin contract, but it is unbounded, and a caller
+that leaves the pipe open hangs the CLI with no message. Deciding that is a separate question from the
+suite's hermeticity.
+
+---
+
+### E291 — `ForkedChild::exitNow()` is unusable where the child's exit CODE is the protocol
+
+**Recorded 2026-08-24 by round-49 lane e.** Severity: convention accuracy. **Measured, PHP 8.3.6.**
+
+**What.** `ForkedChild`'s doc-block says every `pcntl_fork()`'d child in this codebase MUST end with
+`exitNow()` instead of a plain `exit()`, and `ForkedChildExitConventionTest` enforces that over `tests/`.
+`exitNow()` leaves through `posix_kill(getmypid(), SIGKILL)`, so the child is SIGNALLED rather than
+exited and its status carries no exit code at all.
+
+`BackgroundSessionRunner::supervise()` reads exactly that code:
+`pcntl_wifexited($status) && pcntl_wexitstatus($status) === 0`. Measured by driving the real `run()`
+against a real unix socket: plain `exit($code)` → marker printed twice (E229), `run()` returns 0; with
+`exitNow($code)` → marker printed once, **`run()` returns 1**. The conversion would report every
+background session that succeeded as failed.
+
+**Closed at that site** by `exitWorker()`, which drops inherited output buffers and keeps the ordinary
+exit — E229's consequence removed, the code preserved. The general point is what is recorded: the
+convention as written has an unstated precondition ("the child's exit status is not read"), and the next
+site where it is read will meet the same wall.
+
+**Scope hole beside it.** `ForkedChildExitConventionTest::census()` walks `dirname(__DIR__)`, i.e.
+`tests/` only. `src/` has five `pcntl_fork()` CALL sites and they are unscanned — `EngineBackend`,
+`Chat`, `Runtime`, `AgentWorkerPool`, `BackgroundSessionRunner`, re-derived at 85a34cc1 by
+`grep -rn 'pcntl_fork()' src/` minus the `function_exists` guards, plus two more inside the daemon
+bootstrap that `BackgroundSupervisor` builds as a `php -r` string, which no scanner of `src/` would
+attribute to a file anyway; `BackgroundSessionRunner`'s was an
+un-argued bare exit for as long as it existed, and no guard could see it. Widening the census to `src/`
+needs the `ACCEPTED_BARE_EXIT` map to grow an argued row for `AgentWorkerPool` (which has one, reasoned in
+a comment) and for `exitWorker()` itself. Not done: the file is lane d's.
+
+---
+
+### E292 — the refusal classifier is duplicated in two headless callers
+
+**Recorded 2026-08-24 by round-49 lane e.** Severity: drift risk, bounded. **Recorded only.**
+
+**What.** E241 gave `BackgroundSessionRunner` a refusal observer. Its classifier — "a `ToolFinished`
+whose result `isError()` and whose text opens with a `Chat::DENIED_ERROR_PREFIXES` entry" — is twelve
+lines duplicated from `NonInteractive::refusalFrom()`, which is `private static` in another file.
+
+**Why it is bounded rather than urgent.** The ROSTER is read, not copied, so the two cannot disagree
+about what a refusal IS — which is the failure that would matter.
+`BackgroundSessionRunnerTest::testEveryPrefixInTheSharedDenialRosterIsRecordedAsARefusal()` iterates the
+so an added entry the daemon stopped recognising fails there.
+
+**Step.** Hoist it to a shared owner. Blocked this round on ownership: `NonInteractive` is lane a's,
+`Chat` is lane a's, and a new file in `src/` was outside lane e's list. Note the interaction with E239 —
+if the denial kinds move to `src/Permissions/DenialKind.php`, the new owner is probably next to them, and
+both call sites move at once.
+
+---
+
+### E293 — `ProcessUniqueTempNameTest`'s scope is `tests/`, and `src/` has five argument-less `uniqid` calls
+
+**Recorded 2026-08-24 by round-49 lane e.** Severity: latent. **Measured, PHP 8.3.6.**
+
+**The guard is right about its own scope and its own alphabet, and both were checked rather than
+assumed.** Census of every spelling across `src/` and `tests/`: `tests/` has 92 pid-prefixed entropic
+calls, 144 `uniqid('', true)`, and zero argument-less ones. Measured collision rate with eight concurrent
+processes emitting 200 values each, three takes: argument-less **282 / 437 / 353 collisions per 1600**;
+`uniqid('', true)` **0 / 0 / 0**; pid-prefixed entropic **0 / 0 / 0**. So the 144 untouched sites are not
+a hazard and the narrow alphabet is correct, not a hole.
+
+**What is outside it.** `ProcessUniqueTempNameTest::SCOPE` is `['tests']`, and `src/Workflows/WorkflowEngine.php`
+makes five argument-less calls, all building stage/task/verifier IDs. They are identifiers rather than
+paths, so no `open()` collides on them — but two concurrent engines can mint the same stage id, and
+nothing says they may not.
+
+**Step.** Decide whether the guard's scope should include `src/`, and if it should not, say so in the
+guard rather than leaving the omission to be read as an oversight. Lane d's file.
+
+---
+
+### E294 — E244's example list is wrong about one of its two examples
+
+**Recorded 2026-08-24 by round-49 lane e.** Severity: doc accuracy. **Measured.**
+
+**What E244 says.** `NonInteractiveRefusalDocumentTest::stderrWritesIn()` cannot see "a `proc_open()`
+descriptor spec — `2 => ['pipe', 'w']`, **or `2 => \STDERR` passed through to a child**".
+
+**Measured** by pushing known-answer fixtures through the live regex rather than reading it:
+`2 => ['pipe','w']` INVISIBLE · `2 => ['file', $log, 'a']` INVISIBLE · a computed `"php://" . "fd/" . "2"`
+INVISIBLE · **`2 => \STDERR` IS SEEN** (the bare token matches) · controls `fwrite(\STDERR, …)` and
+`error_log(…)` both seen. So the second of the entry's two examples is not a hole at all.
+
+**The rest of E244 stands and stays recorded-only, confirmed at this head:** `src/Runtime.php` contains
+zero `proc_open` — and zero `popen`/`shell_exec`/`passthru`/`system` — so the real hole is unreachable
+from the guarded file.
+
+---
+
+### E295 — `AgentWorkerPool`'s forked child has E229's defect, and its justification argues only the other half
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: latent, live-code. **Out of lane —
+`src/Agents/AgentWorkerPool.php` is lane b's file this round.** Reported, not fixed.
+
+**What.** E229 was closed at `BackgroundSessionRunner::run()`'s worker only. `AgentWorkerPool::startAgent()`
+ends its `pcntl_fork()` child with a plain `exit(0)`, and the comment above it argues that is safe —
+"the one thing that made a bare `exit()` dangerous — an inherited raw-mode `Tty`'s destructor clobbering
+the real terminal on the way out — is now fixed at the ROOT in candy-core's `PosixBackend::restore()`".
+That is the TTY consequence of E201. It is not the OUTPUT-BUFFER consequence, which is E229, which the
+comment does not mention and which a plain `exit()` still has: PHP's shutdown flushes every open `ob_*`
+level, so a child forked while the parent holds a buffer republishes the parent's buffered bytes.
+
+**Why it is latent rather than live today, measured at 85a34cc1.** `startAgent()` takes the fork arm only
+with the default `ProcessExecutor` (`$this->customExecutor` short-circuits first, and the pool's own tests
+inject mocks), so no test in this suite reaches it with `TestCase::runBare()`'s buffer open. That is a
+property of how the tests are written, not of the site.
+
+**Step.** Either route it through a buffer-dropping exit of the same shape as
+`BackgroundSessionRunner::exitWorker()` (its exit CODE is not read — `waitForCompletion()` settles on the
+reap — so `ForkedChild::exitNow()` is also available there, unlike at the runner), or extend the existing
+comment with the third consequence and why it does not apply. Do not leave the comment asserting safety on
+one of two grounds.
+
+---
+
+### E296 — the suite's fd-0 repair closes the BLOCKING half of E212 and not the PREPEND half — REOPENED
+
+🟢 **CLOSED in round 51 by lane a.** Option (a) shipped: `tests/bootstrap.php` does `fclose(\STDIN)` plus a
+`/dev/null` handle on the freed fd, parked in `$GLOBALS`. Full suite after the bootstrap change alone:
+`9661 tests / 142165 assertions / 1 skipped / rc 0` **measured at `c2b6cafb`**, identical to the observed
+baseline at `a85fcfd6`. That figure is pinned to its commit on purpose and must not be read as the suite's
+present size — later commits in the same lane added tests, and a headcount over `tests/` is stale the hour
+a sibling lane merges (rule 18). See E310 for the price and E318 for the precondition that had to land
+first.
+
+**Recorded 2026-08-24 by round-49 lane e (review pass); CLOSED the same round.** Severity was
+test-hermeticity. **Measured, PHP 8.3.6.**
+
+**WHAT THIS ENTRY SAID.** That `tests/bootstrap.php` cleared `O_NONBLOCK` on descriptor 0 rather than
+replacing the descriptor, because replacing it closes the `\STDIN` constant and that reddens
+`NonInteractiveStdinPinTest` — and that a non-blocking read returns what is *available* rather than
+nothing, so bytes already on the runner's stdin still reach every spawned `bin/sugarcrush -p` child and
+get prepended to its prompt. It offered two Steps and called (a) the better trade, declining it only
+because `tests/Cli/NonInteractive*Test.php` is lane a's file.
+
+**WHAT IS TRUE NOW — and this entry was closed and then REOPENED inside one round, which is the useful
+part.** Option (a) was taken: the known-positive was repointed at a fresh `php://stdin` handle and the
+repair went back to close + reopen `/dev/null`. **The first full suite run of that shape produced 107
+errors** — `SugarCraft\Mosaic\Detect` reads the `\STDIN` constant unguarded from a SIBLING library, which
+no grep of `sugar-crush/` could see (E290's attempt 3, and E302). So option (a) is not merely a
+trade, it is unavailable while any reachable library reads that constant without a guard. The repair is
+the flag again, and this residual is **live**: bytes already sitting on the runner's stdin still reach a
+spawned `bin/sugarcrush -p` child and get prepended to its prompt.
+
+**WHY IT IS SMALLER THAN IT WAS.** The reason the flag failed before — `new Tty(null, $injectedTermios)`
+clearing it via `PosixBackend::restore()` — is fixed at every site in the tree (E301), so the flag now
+holds for a whole run rather than up to the first raw-mode test. The BLOCKING half, which is the one that
+hangs a run for 60s a test with no message, is genuinely closed.
+
+**Step, revised.** Not "close the descriptor". Either (a) fix `SugarCraft\Mosaic\Detect` to guard its
+`?? STDIN` with `is_resource()` and fix the fallback it falls into (E302), then re-try the descriptor
+replacement behind a full suite run — noting that the census must then cover every reachable
+`sugarcraft/*` lib, not `sugar-crush/` — or (b) pin the residual with a test proving bytes on the runner's
+stdin reach a spawned child, so the limit is a recorded fact rather than a gap. (b) is cheap and honest;
+(a) is the only thing that actually closes it.
+
+**And the note this entry earned the first time still stands:** the reason originally given for not acting
+(file ownership) was the wrong reason to stop. A forced out-of-lane edit is reportable, not prohibited
+(rule 23) — the two edits in `tests/Support/ForkedChildTest.php` that make the flag hold are exactly that.
+
+---
+
+### E297 — "eighteen test files spawn a real `bin/sugarcrush`" is not re-derivable
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: doc accuracy. **Measured. Fixed this
+round** in `tests/bootstrap.php` and `tests/SuiteChildStdinIsolationTest.php`.
+
+The sentence predates round 49 in the bootstrap's `TMPDIR` write-up and was copied into two new places
+this round. Three generators over `tests/` at 85a34cc1: **41** files mention the path at all, **15** of
+those also contain a spawn primitive (`exec`/`proc_open`/`popen`/`shell_exec`/`passthru`), and **13** name
+it outside a comment or doc-block (token-accurate, `token_get_all()` on PHP 8.3.6). None is eighteen. Both
+occurrences now say what the sentence is FOR — the set is non-empty and the children are real processes,
+which is why `TMPDIR` has to be exported rather than merely resolved — with no count. Rule 18 in the
+round brief; this is the third round to produce an instance.
+
+---
+
+### E298 — `uniqid` was not the whole of E242: a FIXED shared temp path fails 2-3 runs in 6
+
+🟢 **FIXED pre-round-50 by the supervisor.** The write half now runs at a pid+entropy path and the
+default is asserted as CONSTRUCTED rather than written. Probe validated against a known-answer control
+first (rule 27): the supervisor's FIRST probe gave each concurrent run its own launch `TMPDIR`, so they
+could not collide and the pre-fix code passed 6/6 — a dead instrument. Re-run with ONE shared private
+`TMPDIR`: pre-fix **2, 1, 1 of 6 failed**; post-fix **0, 0, 0 of 6**.
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: test-infrastructure, reproduced.
+**Out of lane — `tests/Hooks/AuditHookTest.php` and `src/Hooks/BuiltIn/AuditHook.php` belong to neither
+lane e nor any lane's list this round.** Reported, not fixed.
+
+**The brief asked whether `uniqid()` was the whole mechanism or only the part that was easy to see. It was
+the part that was easy to see.** The pre-round sweep's ALPHABET was the token `uniqid`, and an alphabet
+cannot express what it has no symbol for (rule 11): a temp path with **no entropy source at all**.
+
+**The generator.** Every line under `tests/` matching `sys_get_temp_dir()` concatenated with a literal
+`/`, minus every line that also mentions `uniqid`, `random_bytes`, `random_int`, `mt_rand`, `getmypid`,
+`tempnam`, `bin2hex`, `microtime` or `getenv`. 18 hits at 3cce483c. Its own known hole, stated because a
+guard that silently drops what it cannot parse has a hole shaped like the next defect (rule 14): it is
+LINE-based, so a concatenation whose entropy sits on the following line reads as entropy-free — four of
+the 18 are that, and were cleared by hand. Of the rest, all but one are inert data (`ToolCall` arguments,
+`Skill::$sourcePath`, doc-block prose) that never reaches `open()`.
+
+**The one that does.** `AuditHookTest::testExecuteCreatesDefaultLogFileWhenNoneProvided()` exercises
+`AuditHook`'s DEFAULT log path, which `src/Hooks/BuiltIn/AuditHook.php` builds as
+`sys_get_temp_dir() . '/sugar-crush-audit.log'` — one fixed name, on the machine's REAL temp directory
+(the `TMPDIR` sandbox does not move `sys_get_temp_dir()` in-process; that is the finding this entry sits
+next to). The test asserts the file exists and then **unlinks it**. Two concurrent copies therefore race:
+one deletes the file between the other's write and its `assertFileExists`.
+
+**MEASURED, PHP 8.3.6, three takes of six concurrent single-test runs**, each take pointed at its own
+private launch-environment `TMPDIR` so the probe could not disturb a sibling lane: **3 of 6, 2 of 6, 2 of
+6 failed**, every failure `Failed asserting that file ".../sugar-crush-audit.log" exists`. That is the
+same signature class E242 reported once and could not reproduce, and unlike the `TMPDIR`-key hypothesis it
+reproduces on demand.
+
+**It is also cross-process vandalism, not only self-interference.** The name is `AuditHook`'s production
+default, so the suite deletes the audit log of any real `sugarcrush` running on the same box — and of any
+sibling lane's suite.
+
+**Step.** Give the test its own `AuditHook` path derived from pid + entropy and assert the default is
+CONSTRUCTED as expected rather than written (or keep the write and use a private launch-environment
+`TMPDIR` for that one child). Then widen `ProcessUniqueTempNameTest`'s alphabet: a shared-name hazard is
+not a `uniqid` hazard, and the guard as written cannot see this one. See also E293, which found the
+scope hole; this is the alphabet hole beside it.
+
+---
+### E299 — PHPUnit includes `tests/bootstrap.php` inside a METHOD, so a bare local there is not a global
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: doc accuracy on a load-bearing line.
+**Measured, PHP 8.3.6, PHPUnit 10.5.64. Fixed this round** in the same commit that found it.
+
+**What.** E290's shipped repair parks its replacement `/dev/null` handle in
+`$GLOBALS['__sugarcrushSuiteStdin']`. The comment justifying that said it was belt-and-braces — "a local in
+an included file is a global already, but naming the intent stops a future tidy-up from
+garbage-collecting fd 0 back to closed". **That is false, and the line is load-bearing.**
+`PHPUnit\TextUI\Application::loadBootstrapScript()` runs `include_once $filename` from inside a private
+METHOD, so a top-level `$keep = fopen(…)` in the bootstrap is that method's local: it is freed the moment
+`loadBootstrapScript()` returns, which closes the stream and takes descriptor 0 with it.
+
+**The generator.** Two three-line bootstrap fixtures, identical but for `$GLOBALS[...]` versus a bare
+local, each `include_once`d from inside a method of a throwaway class (PHPUnit's own shape) in a child
+whose fd 0 is a pipe, then `readlink('/proc/self/fd/0')`. **Three takes each: `$GLOBALS` answers
+`/dev/null` 3/3; the bare local answers `false` — i.e. fd 0 closed — 3/3.**
+
+**Why it matters beyond the comment.** The two states are not equivalent. `/dev/null` is a descriptor a
+child can read to EOF; a closed fd 0 is a descriptor a child's first `fopen()` will silently CLAIM, so an
+unrelated file handle in a spawned binary can land on descriptor 0. The bootstrap's own prose calls a
+closed fd 0 "benign" on the strength of a timing measurement (0.105s, same as `/dev/null`); that measures
+the blocking hazard only and says nothing about descriptor reuse.
+
+**Pinned by** `tests/SuiteChildStdinIsolationTest::testTheRunnersDescriptorZeroIsDevNullAndNoStreamFlagCanUndoIt()`,
+which asserts the identity rather than the absence of a hang — so the `$GLOBALS`→local regression is a
+red test, not a silent downgrade. Confirmed by mutation this round.
+
+**WHAT IS TRUE NOW, and it does not retract the finding.** The `$GLOBALS` line is GONE, because the
+repair it belonged to is gone: closing descriptor 0 cost 107 errors (E290's attempt 3, E302) and the
+shipped repair is a flag, which needs no handle parked anywhere. **WHY THIS ENTRY STILL EARNS ITS PLACE:**
+the measurement is about PHPUnit, not about that line. Anything a future `tests/bootstrap.php` wants to
+keep alive for the length of a run — a stream, a handle, a temp directory guard object — must be parked in
+`$GLOBALS` or a static, because `Application::loadBootstrapScript()` is a METHOD and a bare local there
+dies on return. That is a fact about the host, and the next person to reach for a local in that file needs
+it.
+
+**Step.** None; recorded because the class of error is worth remembering: "an included file is at file
+scope" is an assumption about a HOST, and the host here is a method.
+
+---
+
+### E300 — the daemon's refusal classifier reads `Chat::DENIED_ERROR_PREFIXES`, which E239 is moving
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: merge-time coordination. **Inherited
+dependency, not a defect.**
+
+**What.** E241's `BackgroundSessionRunner::noticeRefusal()` reads the roster from
+`Chat::DENIED_ERROR_PREFIXES` rather than spelling any prefix literally — deliberately, so the daemon
+cannot drift from the `-p` path or the TUI on what a refusal IS, and so
+`tests/DenialPrefixRosterTest::testEveryDenialPrefixRuntimeProducesIsOnChatsRoster()` keeps covering it.
+Round 49's lane a is moving the denial kinds to `src/Permissions/DenialKind.php` (E239). If that move
+relocates or renames the constant, `src/Sessions/BackgroundSessionRunner.php` and
+`tests/Sessions/BackgroundSessionRunnerTest.php` both need the new symbol — two `use` lines and the
+`foreach` subject, no logic.
+
+**Why it was left as a dependency rather than pre-empted.** Guessing at the destination symbol would hard
+-code a name that does not exist yet, which is worse than a mechanical rename at merge. Nothing here
+duplicates a prefix string, so there is no correctness risk in either ordering — only a compile-time one,
+which is loud.
+
+**Step.** At merge, if `Chat::DENIED_ERROR_PREFIXES` has moved, repoint the two files above at wherever it
+went. Do NOT copy the literals.
+
+---
+### E301 — `new Tty(null, $injectedTermios)` writes O_NONBLOCK onto the RUNNER's descriptor 0
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: test cross-contamination, live.
+**Measured, PHP 8.3.6, three takes.** One of the sites fixed this round; the rest are out of lane.
+
+**What.** `SugarCraft\Core\Util\Tty::__construct()` is `self::backend($stream ?? STDIN, $termios)`, so a
+`null` first argument wraps the calling process's descriptor 0. With an injected `Termios`,
+`PosixBackend::enableRawMode()` takes the branch that SKIPS its own `isTty()` guard, and then runs
+`@stream_set_blocking($this->stream, false)`; `restore()` runs the matching `(…, true)`. Both therefore
+land on the runner's fd 0 — for a test whose entire intent is to drive a PTY it opened itself.
+
+**The generator, not a count** (rule 18): `grep -rn 'new Tty(' src/ tests/ bin/` under `sugar-crush/`;
+every hit whose first argument is `null` is an instance. At `5c5501f1` that is
+`tests/Backend/EngineBackendTest.php` (FIXED this round) and `tests/Support/ForkedChildTest.php` twice
+(lane d's file — not touched). `src/Tui/Renderer.php` passes `STDOUT` explicitly and is not an instance.
+
+**Measured.** A child whose fd 0 is an open pipe, three takes each: with `new Tty(null, new
+PosixTermios($slaveFd))`, fd 0's `blocked` flag goes `true` → `false` across `enableRawMode()` (3/3); with
+an explicit `stream_socket_pair()` end instead, fd 0's flag never moves and the PAIR's flag moves instead
+(3/3).
+
+**Why it matters beyond tidiness.** This is what refuted attempt 2 of E290: an `O_NONBLOCK` repair on
+descriptor 0 in `tests/bootstrap.php` is silently undone by `restore()` at any of these sites, which makes
+any guard written against that flag ORDER-DEPENDENT. The `ForkedChildTest` instances are worse than the
+one that was fixed: they `pcntl_fork()` while holding the `Tty`, so the child inherits it too.
+
+**Fixed at one site, and pinned there.** `EngineBackendTest::testCompleteAsyncDoesNotResetTheRealTerminals
+RawMode()` now passes one end of a `stream_socket_pair()` and asserts the flag moves on THAT stream in
+both directions — so a revert to `null` is red, not merely unnoticed. A socket pair rather than
+`php://memory` is forced: PHP reports a memory stream as blocked whatever is set on it, so it cannot
+distinguish "the seam wrote here" from "the seam wrote elsewhere".
+
+**DONE, all sites, later the same round — and it stopped being optional.** The shipped descriptor-0
+repair in `tests/bootstrap.php` IS the `O_NONBLOCK` flag (E290 attempt 4), so `restore()` at any of
+these sites was silently undoing it for every later test in the run. `tests/Support/ForkedChildTest.php`
+belongs to lane d this round and `tests/ChatTest.php` to no lane at all; all three constructions were
+changed anyway, because the alternative was shipping a repair that stops working at the first raw-mode
+test. **FORCED OUT-OF-LANE EDITS, named at the top of lane e's report (rule 23).** Each now asserts the
+flag in both directions, so a revert is red where it happens.
+
+**AND THE COUNT IN THE PARAGRAPH ABOVE WAS WRONG WHEN IT WAS WRITTEN.** WHAT THIS ENTRY SAID: that the
+instances were `tests/Backend/EngineBackendTest.php` and `tests/Support/ForkedChildTest.php` twice, "at
+`5c5501f1`", derived from `grep -rn 'new Tty(' src/ tests/ bin/`. WHAT IS TRUE: there was a FOURTH, in
+`tests/ChatTest.php`, spelled `new \SugarCraft\Core\Util\Tty(null, …)` — **fully qualified, which that
+grep cannot express** (E303). It was found by the full suite going red at
+`SuiteChildStdinIsolationTest`'s flag guard with the other three already fixed. WHY THE PARAGRAPH STILL
+EARNS ITS PLACE: the generator it names is still the right *idea* and the wrong *instrument*, and that
+distinction is the finding.
+
+**The census is now a test, not a grep.** `tests/TtyStreamArgumentCensusTest.php` walks the token stream,
+so no spelling can hide a site; classifies each construction's first argument; fails on an argument list it
+cannot read to its close (rule 14); and carries thirteen known-answer fixtures including both spellings, so
+an empty result is evidence rather than the silence of a dead scanner (rule 15). Its one honest residual is
+stated in its own doc-block: an expression first argument (`$stream`) is not provably non-null by any
+scanner that does not run the code, and a bare CONSTANT could be defined as null — so the set of constant
+names is asserted rather than their shape.
+
+**Step.** Consider whether candy-core's `Tty` should refuse `null` when an injected `Termios` is supplied
+at all — the combination means "drive this fd" and "wrap that stream", and there is no caller for which the
+process's own descriptor 0 is the right answer to both.
+
+---
+### E302 — `candy-mosaic`'s no-TTY fallback names a `Capability` case candy-palette does not have
+
+🟢 **FIXED at `1a2caebb`**, with `candy-mosaic/tests/PaletteCapabilityReferenceTest.php` as a SOURCE-SCAN
+guard plus a known-positive control. candy-mosaic: 451 tests, 7707 assertions, rc 0.
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: live crash on a reachable path.
+**Measured, PHP 8.3.6. Out of lane — `candy-mosaic/` and `candy-palette/` belong to no lane this round.**
+
+**What.** `candy-mosaic/src/Mosaic.php`'s `autoFromPalette()` — the fallback taken when `Detect::probe()`
+throws, i.e. whenever there is no usable TTY to probe — evaluates
+`$report->has(PaletteCapability::Iterm2Image)`. **There is no such case.**
+`candy-palette/src/Probe/Capability.php` spells it `ITerm2 = 'iterm2'`. The line is a fatal
+`Error: Undefined constant SugarCraft\Palette\Probe\Capability::Iterm2Image`, not a false.
+
+**Why nobody has hit it.** `Mosaic::auto()` wraps the probe in a try/catch and only reaches
+`autoFromPalette()` when the probe throws — and the probe's own stdin read normally succeeds (returning
+nothing) rather than throwing. It took a `\STDIN` that was a CLOSED resource to make the probe throw:
+`Detect::stdinFd()` is `self::$probeStdin ?? STDIN` and `drainStdin()` gets it with no `is_resource()`
+guard.
+
+**How it was found, and the generator.** Round 49 lane e's attempt to replace the suite's descriptor 0
+with `/dev/null` closes the `\STDIN` constant. **Full suite, PHP 8.3.6: `9500 tests, 107 errors, rc 2`,
+every error that undefined constant**, reached through
+`Mosaic.php:166 ← Mosaic.php:122 ← sugar-crush/src/ToolResult.php:280 ← :294 ← src/Cli/Bootstrap.php:1003`.
+To reproduce without that change: `fclose(\STDIN)` before anything calls `Mosaic::auto()`.
+
+**Two defects, not one.**
+ 1. `autoFromPalette()` cannot run at all — it references a nonexistent enum case. Anything reaching that
+    fallback in production (a `sugarcrush` invoked with a closed or unusable fd 0, which is an ordinary
+    thing for a daemon or a hook) gets a fatal instead of a HalfBlock renderer.
+ 2. `Detect::stdinFd()` hands an unguarded `?? STDIN` to stream functions. A closed descriptor 0 is a
+    legitimate state for a process to be in; it should degrade, not throw.
+
+**Step.** Fix the case name in `candy-mosaic` (`ITerm2`, and check the rest of that method against the
+enum the same way — one wrong name means nobody has executed the method). Guard `Detect::stdinFd()`'s
+consumers with `is_resource()`. Neither is a sugar-crush change; both are worth a PR of their own, and (1)
+should carry a test that drives `autoFromPalette()` directly rather than through a thrown probe, since
+the throw is what made it unreachable for so long.
+
+---
+### E303 — a `grep` for `new Tty(` cannot see `new \Fully\Qualified\Tty(`, and it cost a full suite run
+
+**Recorded 2026-08-24 by round-49 lane e (review pass).** Severity: methodology, with a measured cost.
+**Fixed this round** by replacing the generator with a token-based census test.
+
+**What happened, in order.** (1) E301's hazardous shape — `new Tty(null, $injectedTermios)` writing
+`O_NONBLOCK` onto the runner's descriptor 0 — was censused with `grep -rn 'new Tty(' src/ tests/ bin/`,
+which found three sites. (2) All three were fixed and the count was written into two doc-blocks and a
+backlog entry. (3) The full suite went RED at `SuiteChildStdinIsolationTest`'s flag guard. (4) The fourth
+site is `tests/ChatTest.php`, written `new \SugarCraft\Core\Util\Tty(null, new \SugarCraft\Pty\Posix\PosixTermios($fd))`.
+**A grep for `new Tty(` is an alphabet that cannot express a fully-qualified constructor call.**
+
+**And the widened grep written to check it had the same hole**, which is the part worth writing down.
+The follow-up was `grep -rnE 'new\s+(\\?[A-Za-z_][A-Za-z0-9_]*\\)*Tty\s*\('` typed inside single quotes,
+where `\\` reaches the regex engine as a literal backslash pair rather than "an optional backslash" — so
+it silently missed the same line, and its output looked like a clean confirmation. **A harness written to
+check a claim can carry the defect the claim is about**, and the only thing that caught it was pushing a
+known-answer fixture (a fully-qualified call) through the generator before trusting it on the tree.
+
+**The working generator, for the record:**
+`grep -rn 'Tty(' src/ tests/ bin/ | grep -vE ':[[:space:]]*(\*|//)' | grep 'new '` — matching the SHORT
+name only, then filtering, rather than trying to spell the qualification in the pattern.
+
+**Why the fix is a test and not a better grep.** Any pattern over source text gets the two polarities
+wrong in both directions: it misses a spelling it did not anticipate, and it matches the same words inside
+a comment or a string — this very entry, and the doc-blocks describing the shape, contain the literal
+`new Tty(null, $injectedTermios)` as prose. `tests/TtyStreamArgumentCensusTest.php` uses `token_get_all()`,
+where `T_NEW` cannot occur in a comment or a string and the class name arrives already assembled however
+it was spelled.
+
+**Step.** None outstanding. Recorded because the pattern recurs: round 43's fuzz alphabet, round 44's
+`grep -c` on control bytes, round 48's unexecuted scanner, and this. **The common shape is a census
+believed on the strength of its output rather than on the strength of a known-answer control.**
+
+---
+
+### E333 — two tests that spawn the real binary abort at 60s in ONE full-suite run and not the next
+
+**Recorded 2026-08-24 by the supervisor at the round-50 merge.** Severity: test-infrastructure,
+**NOT reproduced on demand.** Cause UNKNOWN — this entry deliberately records evidence rather than a
+mechanism, because the obvious mechanism was checked and did not hold.
+
+**What happened.** The first merged-floor run at `0b36f911` came back
+`9661 / 142162 / 1 skipped / Risky: 2 / rc 1`, both risky rows being
+`Cli\BootstrapSkillSkipsTest::testAOneShotRunReportsSkippedSkillsToo` and
+`::testACleanOneShotRunIsSilent`, each *"aborted after 60 seconds"* and *"did not perform any
+assertions"*. Both spawn a real `bin/sugarcrush` one-shot that inherits descriptor 0. Wall clock 06:50,
+against a 04:45 baseline — **the extra time is the two 60s aborts almost exactly, so nothing else in the
+suite was slow.**
+
+**The immediate re-run at the same commit was clean:** `9661 / 142165 / 1 / rc 0` in 04:50. The
+3-assertion difference IS the two aborted tests' assertions, so the two runs are consistent and
+`142165` is the true figure.
+
+**What was ruled out, by measurement.**
+- The file itself: passes ALONE in 0.412s, 5 tests, 8 assertions.
+- `Backend/EngineBackendTest` immediately before it — the injected-Termios seam of E301 that writes
+  O_NONBLOCK onto the RUNNER's descriptor 0: 39 tests, 103 assertions, clean.
+- Lane b's new `SuiteChildStdinPrependResidualTest` immediately before it — the test that deliberately
+  exercises the prepend residual on descriptor 0: 6 tests, 22 assertions, clean.
+- **Contention from the supervisor's own probes**: those probes ran DURING the clean re-run, not during
+  the red one.
+
+**What is NOT ruled out.** An external process on the same box (the user runs an unrelated agent
+periodically), or an ordering interaction with a predecessor not yet identified. ⚠️ **Round 49's lane b
+saw this exact signature — same file, same two tests, same 60s abort — and attributed it to contention
+from four sibling phpunit processes. That attribution is now doubtful**: this occurrence had no sibling
+suite running, so either there are two causes or that one was wrong too.
+
+**Step.** Do NOT chase a mechanism from one observation. Next time the merged floor reds this way, before
+re-running: capture `uptime`, `ps` and the child's state (`cat /proc/<pid>/stack`, `ls -l /proc/<pid>/fd/0`)
+while it is hung — a 60s window is long enough. A hung spawn's fd 0 tells you in one look whether this is
+the E212/E296 family or something else. Until then this is an unexplained flake with a bounded cost of one
+re-run, and it must NOT be cited as evidence for any fd-0 hypothesis.
+
+---
+
+### E304 — `Chat::DENIED_ERROR_PREFIXES` is public API and the deprecation is only in prose
+
+`Runtime::DENIAL_HOOK` / `DENIAL_REFUSED` / `DENIAL_UNANSWERED` and
+`Chat::DENIED_ERROR_PREFIXES` are now aliases that DERIVE from
+`Permissions\DenialKind`, so they cannot drift. Both doc-blocks call them deprecated. Neither
+carries `@deprecated`, and nothing in the tree tells an embedder to move to the enum: a consumer
+grepping for `@deprecated` finds nothing, and a static analyser sees four supported symbols.
+
+**Step.** Add `@deprecated Use \SugarCraft\Crush\Permissions\DenialKind` to all four, and pin with a
+reflection test that every alias's doc-comment carries the tag AND that its value is still the enum's
+(so the tag cannot be added to something that has quietly become a second copy). Deliberately NOT done
+in round 49: `@deprecated` on a `public const` is an API-signalling decision with a release note
+attached, and this round's mandate was to remove the copies rather than to schedule their removal.
+
+---
+
+### E305 — CLOSED in round 49: the roster's SPELLINGS had no pin of their own, and E246 is what removed the last one
+
+**Status: closed by the round-49 fix pass** (`DenialPrefixRosterTest::testTheRostersBackingValuesAreTheThreePublishedPrefixes()`).
+Kept rather than deleted because the mechanism is the useful part and the original entry got two things
+wrong.
+
+`DenialPrefixRosterTest` derived every expectation from `DenialKind`, so it was self-consistent by
+construction and could not see a respelling. MEASURED on PHP 8.3.6 at round 49 with the mutation
+harness: substituting `case Hook = 'Blocked:';` SURVIVED `--filter DenialPrefixRoster` entirely, and was
+KILLED only at a wider filter by failures across `ChatTest`, `DeniedToolCallTest`,
+`ParallelToolCallsTest`, `BackgroundSessionRunnerTest`, `NonInteractiveRefusalDocumentTest`,
+`ScriptHookTest` and `RuntimeTest` — SEVEN files, each of which happens to spell `Hook denied:` as a
+literal in a fixture. That is a real pin but an accident of fixtures, and it points at the wrong file
+when it reds.
+
+**WHAT THIS ENTRY GOT WRONG, both corrected here rather than overwritten.** (1) Its heading said SIX
+files and its body enumerated seven; seven is right. (2) It reported the survival as "10 tests, 67
+assertions" — a figure taken at an intermediate commit and shipped without one, which is the defect
+E256 exists for. Re-measured at `463c7469`, the survival was 12 tests / 79 assertions.
+
+**AND ITS FRAMING WAS WRONG IN A WAY THAT MATTERED.** This entry called the incidental pin a standing
+condition. It is not: it is coverage E246 removed in the same round. Before E246, `Runtime`'s three
+`DENIAL_*` constants were string LITERALS, so
+`testEveryDenialPrefixRuntimeProducesIsOnChatsRoster()` compared a literal against a derived roster and
+KILLED a respelling. MEASURED on PHP 8.3.6, both halves: with `Runtime`'s constants restored to their
+pre-E246 form the respelling fails that test at its `assertContains`; at HEAD, with both sides deriving
+from the enum, it leaves the whole file green. Re-pointing the constants was still the right fix for
+drift — it just also had a cost, and the cost belonged in the commit that incurred it.
+
+**What landed.** One `assertSame(['Permission denied:', 'Permission required:', 'Hook denied:'],
+DenialKind::prefixes())` with a message saying these are published text, plus the disclosure in the
+class doc-block. The `kind` TOKENS got the same treatment earlier in round 49 for exactly the same
+reason.
+
+---
+
+### E306 — `--output-format text` still carries no `kind`, and the terse arm-distinguishing line is not machine-readable
+
+Round 49 gave every `refusals` entry in the `--output-format json` document a `kind` field
+(`hook` / `refused` / `unanswered`, from `DenialKind::token()`), which is the seam where the enum
+rather than its rendering crosses out to a consumer. Two gaps are left, both deliberate:
+
+1. `--output-format text` puts nothing on stdout about refusals at all — a decision with its own
+   long justification in `NonInteractive::format()` — so the token is available only to a JSON consumer.
+2. `NonInteractive::noticeRefusal()`'s stderr line still says only `sugarcrush: <tool> was not run -
+   <reason>`, and `RefusalStderrSurfaceTest` pins that BOTH `HeadlessPermissionPrompt` arms produce a
+   `Permission denied:` reason, so stderr cannot distinguish "a person typed n" from "there was nobody
+   at the keyboard" except through the prompt's own prose. The kind is now available at that call site
+   as a typed value and is not used there.
+
+**Step.** Decide whether the stderr line should name the kind. It is one string concatenation at one
+existing `fwrite`, so `StderrEmitterCensusTest`'s per-file write count does not move — but it changes
+bytes that `RefusalStderrSurfaceTest::testBothArmsDoubleAndTheseAreTheBytesTheyWrite()` now pins
+exactly, which is the point of that test: the figure is owned by a test rather than by a paragraph, so
+the change is visible.
+
+---
+
+### E307 — `ToolRefusal`'s `kind` has exactly one consumer, and the other caller drops it
+
+`Permissions\ToolRefusal::fromEvent()` answers with a `DenialKind`. `NonInteractive::refusalFrom()`
+carries it out as the document's `kind`; `BackgroundSessionRunner::noticeRefusal()` takes `->tool` and
+`->reason` and discards `->kind`. That is not dormant code — the property is consumed — but the daemon's
+sidecar log is the one surface with no operator watching, and it is the surface where "which of the
+three" is hardest to reconstruct afterwards.
+
+**Step.** Consider `[session:tool:refused] <kind> <tool> was not run - <reason>`.
+`BackgroundSupervisor::restoreOutput()` decides line by line on the `[session:` prefix, so inserting a
+token after the record marker is safe against the line protocol — but
+`BackgroundSessionRunnerTest` asserts on the record's shape and the change is a log-format change, so it
+wants its own step rather than riding on a roster refactor.
+
+---
+
+### E308 — a tool that throws can forge a refusal: `Chat::invokeTool()` puts a raw exception message where the denial classifier reads
+
+`Chat::invokeTool()`'s `catch (\Throwable $e)` returns
+`ToolResult::error($name, $e->getMessage(), $toolCall->id)` — the message VERBATIM, with no prefix of
+its own — and `Chat::isDeniedResult()` reads exactly that field and hands it to
+`DenialKind::classify()`. So any tool whose exception message OPENS with `Permission denied:`,
+`Permission required:` or `Hook denied:` is drawn struck through in the TUI and listed in a
+`--output-format json` document's `refusals` array as a call that never ran — when in fact it ran and
+failed. Verified at round 49 on PHP 8.3.6: `isDeniedResult()` reads `$result->error`; the catch is
+generic, so the throwing class need not name anything the round-49 co-occurrence guard can see.
+
+The engine path is NOT affected and that asymmetry is the interesting part: `Runtime::executionFailure()`
+wraps a throw as `Error: %s failed with %s: %s`, so a forged prefix there is defused by the wrapper. The
+TUI-side callback has no such wrapper.
+
+Nothing in `src/` spells a roster prefix today (the whole-`src/` map in `DenialPrefixRosterTest` asserts
+it), so this is not currently reachable from a built-in tool. It IS reachable from an MCP tool, a
+`Skill`, or any exception text that quotes an OS error — the direction of the failure is that a call the
+model DID make is reported to a machine consumer as one that never happened.
+
+**Step.** Either prefix the caught message the way `Runtime::executionFailure()` does, or classify on a
+typed field rather than on free text (`ToolRefusal` already exists and carries a `DenialKind`). Deferred
+here rather than fixed because both options change a model-visible string, which is a behaviour change
+wanting its own step and its own golden-file pass — and functionality comes before hardening.
+
+---
+
+### E309 — the denial scan's vocabulary is still a hand-written list, and that is the residual limit
+
+Round 49 widened it twice (round-49 implement pass: the `^` anchor and the `[a-z]+` verb; round-49 fix
+pass: `declined`, `prohibited`, `vetoed`, `barred`, plus a case-variant rule and per-frame judging). Both
+widenings were found by someone thinking of a word that was not on the list, which is the point: the
+guard's coverage IS its alphabet, and its alphabet is written to match the cases already known.
+
+MEASURED on PHP 8.3.6 at round 49 (fix pass): with the current list, a dead `private const` in
+`src/Permissions/ToolRefusal.php` carrying `Tool call declined:`, `Tool call prohibited:`, `Vetoed:` or
+`permission denied:` all SURVIVED `--filter DenialPrefixRoster`; all four are KILLED now. The next
+invented verb that is not on the list survives in exactly the same way.
+
+Also recorded, so it is not rediscovered: widening the frame's opener from `[A-Z]` to `[A-Za-z]` — the
+obvious general fix — was measured and NOT taken. Over 200,000 random strings from a 21-token alphabet
+of this tree's own denial words, four seeds (49491 / 20260824 / 777 / 1), the `(?<![A-Za-z])` lookbehind
+changes the verdict 639-691 times with the capitalised opener and ZERO times with a widened one: a
+lowercase-permitted frame always has its leftmost match at a word start, so widening leaves a
+live-looking assertion in the pattern doing nothing.
+
+**Step.** The only structural fix is to stop guessing at vocabulary — e.g. require every producer of a
+tool-result error to go through a factory that names a `DenialKind` or explicitly declines to, so the
+guard becomes "no raw error strings" rather than "no strings that look like denials". That is a
+tree-wide change and wants its own plan.
+---
+
+### E310 — E296 OPTION (a) IS NOW AVAILABLE: the descriptor replacement costs THREE named assertions, not 107 errors
+
+🟢 **IMPLEMENTED in round 51 by lane a, and this entry's measurement REPRODUCED EXACTLY.** The bootstrap
+change alone, against a green `9661 / 142165 / 1 skipped / rc 0` baseline at `a85fcfd6`: `9661 tests, 1
+error, 2 failures, 1 skipped` — the same three named assertions this entry predicted, and not one
+candy-mosaic error. A reviewer prescription that measured true; the first in a while.
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: this is the answer E296 has been blocked on for a
+round. **MEASURED, full suite, PHP 8.3.6, at `a43d4f94` in lane b.** Not shipped — see "why not here".
+
+**WHAT E296 SAID.** "Option (a) is not merely a trade, it is unavailable while any reachable library
+reads that constant without a guard." The evidence was round 49's attempt 3: a full suite with fd 0
+replaced produced `9500 tests, 107 errors, rc 2`, every error
+`Undefined constant SugarCraft\Palette\Probe\Capability::Iterm2Image`.
+
+**WHAT IS TRUE NOW.** That was never 107 costs. It was ONE defect — `candy-mosaic`'s `autoFromPalette()`
+naming an enum case that does not exist — multiplied by every test that reached it. E302 fixed it at
+`1a2caebb`, which is IN the round-50 baseline, and nobody re-ran the experiment afterwards.
+
+**THE MEASUREMENT.** `tests/bootstrap.php`'s repair replaced by E290 attempt 1's shape, with the handle
+parked in `$GLOBALS` per E299:
+
+    if (!stream_isatty(\STDIN)) {
+        fclose(\STDIN);
+        $GLOBALS['__sugarcrushSuiteStdin'] = fopen('/dev/null', 'r');
+    }
+
+Full suite, PHP 8.3.6, lane b, one run:
+**`Tests: 9604, Assertions: 135499, Errors: 1, Failures: 2, Skipped: 1, rc 2`** — against a green
+baseline at the same head (9604 tests, 1 skipped, rc 0; the exact assertion total is in lane b's round
+report, and the three failures below account for the difference). **Not one
+`Capability::Iterm2Image`. Not one candy-mosaic error of any kind.**
+
+**All three are in tests whose entire subject is this repair, and all three are EXPECTED:**
+
+ 1. `NonInteractiveStdinPinTest::testTheBootstrapHasPinnedTheDefaultStdinAwayFromTheRealOne` —
+    `TypeError: stream_get_meta_data(): supplied resource is not a valid stream resource`. This is the
+    known-positive control E290 attempt 1 already tripped over; it reads `\STDIN`'s metadata to prove the
+    probe can tell the two streams apart. Attempt 3's repair for it — repoint the control at a fresh
+    `php://stdin` handle — is still the right one and is a two-line edit.
+ 2. `SuiteChildStdinIsolationTest::testTheBootstrapLeavesTheRunnersStdinConstantUsableAndNonBlocking` —
+    `is_resource(\STDIN)` false. That assertion exists to forbid exactly this change; if the change is
+    made deliberately, the assertion is what has to be rewritten, and its message currently cites the 107
+    errors as the reason, which is the sentence this entry retires.
+ 3. `SuiteChildStdinPrependResidualTest::testBytesOnTheRunnersStdinAreStillPrependedToASpawnedChildsPrompt`
+    — fired its own designed message, "E296's PREPEND residual is CLOSED … delete it and record what
+    closed it". Child output under the replacement was `You said:` / `> hi` with the marker gone. **That
+    is the residual closing, observed.** Delete the file.
+
+**WHY NOT SHIPPED IN THIS LANE, and the reason is not file ownership** (rule 23 says a forced
+out-of-lane edit is reportable, not prohibited):
+
+ - **The Step's own precondition is unmet.** E296's revised Step reads "(a) fix `Detect::stdinFd()` to
+   guard its `?? STDIN` with `is_resource()` **and** fix the fallback it falls into, THEN re-try the
+   descriptor replacement". Only the second half is done. With the fallback repaired the throw is now
+   caught rather than fatal, so the suite is green-ish — but candy-mosaic still leaves its normal path
+   by exception on every call, and "no test noticed" is not the same as "the library is fine". See
+   E318.
+ - **Five lanes are live on `tests/bootstrap.php` this round** and lane e shipped attempt 4 into it
+   hours ago. Attempt 5, landed concurrently by a different lane, is the single highest-conflict edit
+   available in this tree, and it touches three more files to absorb its costs.
+
+**Step, and it is now one commit rather than a research project.** Guard `Detect::stdinFd()`'s three
+consumers (E318), then apply the four-line bootstrap change above, repoint
+`NonInteractiveStdinPinTest`'s control at a fresh `php://stdin` handle, rewrite
+`SuiteChildStdinIsolationTest`'s live-resource assertion into its opposite with the reason, and delete
+`tests/SuiteChildStdinPrependResidualTest.php`. `tests/StdinConstantReaderCensusTest.php` is the roster
+of everything else that would have to be looked at, and it is a test, so it will red on its own if that
+set changes before someone gets to this.
+
+**And the general lesson, which is why this is the first entry and not the last.** A cost that was
+measured ONCE, before a dependency was fixed, was carried forward for a round as a property of the
+design. Nobody re-ran it because 107 is a number that ends a conversation. **A blocking measurement
+should be re-taken after anything in its causal chain changes** — the chain here was one enum case
+name, in another repository, fixed by a different lane, in the same round.
+
+---
+
+---
+
+### E311 — E243 was CLOSED before round 50 started, and two places still say "narrowed"
+
+**Recorded 2026-08-24 by round-50 lane b. 🟢 DONE in round 51 by lane a** — E243 is marked above, its
+Step retired, and `tests/bootstrap.php`'s "E243 stays NARROWED" paragraph rewritten in three-part form.
+Severity: doc accuracy on an item that was re-issued as work. **Measured by symbol at `906fa666`.**
+
+**What.** Lane b's brief carried E243 as carried-forward work ("Round 49 narrowed it rather than closing
+it; close it if the fd-0 work above makes that possible"), and E243's own entry still ends with a Step
+offering two options. Neither is true any more.
+`HeadlessPermissionPrompt::__construct()` is `$this->in = $in ?? NonInteractive::stdinDefault();` — the
+`?? \STDIN` is gone and the class shares E212's one pin. `NonInteractive::stdinDefault()`'s doc-block
+already records the change in three-part form ("TWO READERS NOW, NOT ONE (E243)"), and
+`tests/Cli/HeadlessPermissionPromptStdinDefaultTest.php` pins it.
+
+**Why it is worth an entry rather than a silent fix.** E243's Step said "either extend the E212 seam to
+this class ... or write the `stream_isatty()` bound down as an intentional property". Option one was
+taken and the entry was never marked. A backlog item that is done but still reads as open costs a lane
+its start-of-round orientation, and this is the second round in which a brief has re-issued work already
+in the tree (E190's shape, one level up: there the commits were unreported, here the entry was).
+
+**Step — DONE.** E243 is marked 🟢 and its Step is retired in place rather than deleted (a Step that is
+gone reads as a Step that was never written). The second place was
+`sugar-crush/tests/bootstrap.php`, whose "WHAT IT DOES TO E243 … E243 stays NARROWED, not closed"
+paragraph said the terminal case was still live; it is not, because the default is the suite's
+`php://memory` pin whether or not fd 0 is a tty. Nothing in the code changed.
+
+---
+
+### E312 — the `new Tty(null, …)` census's alphabet was ONE CLASS NAME, and the backend under it has the same constructor
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: guard coverage, latent. **Measured, PHP 8.3.6,
+three takes. FIXED this round** in `tests/TtyStreamArgumentCensusTest.php`.
+
+**What E301/E303 fixed and what they did not.** E303 correctly replaced a `grep` with a token walk,
+because a grep for `new Tty(` cannot express `new \Fully\Qualified\Tty(`. That fixed the SPELLING hole
+and left the ALPHABET one: the scanner matched the short name `Tty` and nothing else. `Tty` is a façade.
+`SugarCraft\Core\Util\Tty\PosixBackend::__construct()` is `$this->stream = $stream ?? STDIN;` — the
+identical resolution — and it is the class that owns BOTH `@stream_set_blocking()` calls, so it is the
+one that does the damage. A caller who wants the backend without the façade's platform dispatch
+constructs it directly and the census reports the tree clean.
+
+**MEASURED, PHP 8.3.6, three takes each**, in a process whose fd 0 is an open never-written pipe with
+`O_NONBLOCK` already set (the shape `tests/bootstrap.php` leaves), driving the backend directly with no
+`Tty` anywhere in the process: `new PosixBackend(null, new PosixTermios($slaveFd))` → fd 0 clear, clear
+after `enableRawMode()`, **BLOCKED after `restore()` 3/3**; `new PosixBackend($socketPairEnd, …)` → fd 0
+never moves 3/3. Identical to the `Tty` shape, one layer down.
+
+**No live instance today** — measured over the package and every reachable sibling — so this was a latent
+hole, not a live defect.
+
+**`WindowsBackend` is deliberately NOT in the alphabet, checked rather than assumed by symmetry.** Its
+constructor is the same `$stream ?? STDIN` with an injected `Kernel32Interface` in the second slot, so it
+LOOKS like the third member of the set. It contains no `stream_set_blocking` call anywhere — verified
+over `candy-core/src/Util/Tty/WindowsBackend.php`, whose `enableRawMode()`/`restore()` go through the
+console-mode API — so it cannot erase the flag this guard protects. Named in the census doc-block and
+pinned by a NEGATIVE fixture, so anyone who "completes" the roster reds and reads the reason first. This
+box is Linux, PHP 8.3.6, and that backend is never selected here: it is a source claim, not a
+measurement, and it is the only one in that doc-block that is not.
+
+**Acceptance, and it is a PAIR rather than a single verdict** (rule 16). Injecting
+`new \SugarCraft\Core\Util\Tty\PosixBackend(null, $termios)` into a package test file KILLS the widened
+census; the same injection with `HAZARD_CLASSES` reverted to `['Tty']` SURVIVES the census arm. Scope:
+both filtered to the single census method, so each is a claim about that guard and not about the suite.
+
+---
+
+### E313 — the fd-0 reader roster nobody had, and the scanner that reported a confident false zero
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: the missing input to E296. **Measured, PHP 8.3.6.
+FIXED this round** by `tests/StdinConstantReaderCensusTest.php`.
+
+**What E296 needs and did not have.** Option (a) — replace descriptor 0 instead of flagging it — is the
+only repair that closes the PREPEND half. PHP has no `dup2`, so replacing fd 0 means `fclose(\STDIN)`,
+and the question that decides the cost is "what reads descriptor 0 in this process". Round 49 answered it
+twice by grepping `sugar-crush/`, and both times the reader that mattered was in a sibling library.
+
+**The scope is REACHABILITY, and the two numbers are what make that the right choice rather than a
+convenient one.** Measured, token-based, controls first: the whole monorepo has **15** libs naming the
+`STDIN` constant under `*/src` or `*/bin`; only **2** of them (`candy-core`, `candy-mosaic`) are in
+`sugar-crush`'s 18-lib reachable closure. "The monorepo" would have added thirteen libraries that cannot
+run in this process; `sugar-crush/` dropped the two that can. Neither directory was the alphabet — the
+DEPENDENCY CLOSURE was.
+
+**THE ALPHABET'S FOURTH SPELLING WAS FOUND BY THE SCANNER BEING WRONG, and that is the part worth
+keeping (rule 13 again).** The obvious alphabet is the `STDIN` constant, because that is what every known
+instance used. It cannot express `fopen('php://fd/0')`, `fopen('php://stdin')` or `fopen('/dev/stdin')`.
+All four are in now — and the first version compared each string token to the name for EQUALITY and
+reported **zero** stream-name hits while `grep` found one. A heredoc/nowdoc body arrives from
+`token_get_all()` as ONE token holding the whole block, so `candy-core/src/WorkerPool.php` — which builds
+a worker script whose first line is `fopen('php://fd/0', 'rb')` — read as a string that simply was not
+equal to `php://fd/0`. Green, confident, false. It is containment now, with nowdoc and heredoc fixtures.
+
+**The roster is its own dead-instrument control** (rule 15/E228): the expectation is a NON-EMPTY exact
+set of nine (file, spelling) pairs, so a scanner that matches nothing fails on the first assertion rather
+than reporting a clean tree. Reverting containment to equality KILLS it; injecting `?? STDIN` into
+`candy-buffer` — the E296 scenario itself, a reachable sibling growing a reader — KILLS it and names the
+file.
+
+**Three of the nine are classified in the guard's doc-block; six deliberately are not.** Classified:
+`candy-mosaic/src/Detect.php` unguarded (the 107-error path); `PosixBackend`'s
+`TermiosFactory::open((int) STDIN)` already inside a `try`/`catch (\Throwable)` that says "STDIN closed
+(CI runner): silently no-op"; `candy-core/src/WorkerPool.php` NOT a reader of this process's fd 0 at all
+(the nowdoc is written to a temp file and run as a CHILD whose fd 0 is a `proc_open()` pipe). Classifying
+the other six by reading is exactly the reasoning-instead-of-measuring that killed three attempts.
+
+---
+
+### E314 — E296's PREPEND residual now executes, and option (a)'s viability is MEASURED rather than argued
+
+🟢 **The residual is CLOSED (round 51, lane a), and the test was INVERTED rather than deleted.** Its
+doc-block's own instruction was "delete it and record what closed it"; deleting it would have discarded the
+only executable apparatus for the question, and inverting is not the widening that instruction forbade. It
+now has THREE arms, because the claim became an absence: an un-bootstrapped known-positive that must come
+back WITH the marker, plus the two guarded arms that must not.
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: test-hermeticity, unchanged; provenance, improved.
+**Measured, PHP 8.3.6.**
+
+**The residual is a test now** — `tests/SuiteChildStdinPrependResidualTest.php`. It had been written down
+twice, in prose, and prose does not go red. Control and treatment share one harness and differ in one
+byte string: a pipe never written → the child answers, the marker is absent, and the offline echo
+provider is provably reached; the same pipe with a marker written and **the write end left open** → the
+child still answers (that is the flag) and the marker comes back BEFORE the prompt text (that is the
+residual). Leaving the writer open is load-bearing: an EOF lets even a blocking read return, so a closed
+writer would prove nothing about the flag.
+
+It also covers a case `SuiteChildStdinIsolationTest` does not. That file's pipe is never written, so it
+pins the blocking half only for an EMPTY stdin. Removing the fd-0 repair kills the new test at rc 137
+(SIGKILL at the bound) — i.e. a runner stdin carrying DATA and no EOF blocks the child too, and that is
+now guarded.
+
+**Its doc-block tells a future reader to DELETE it rather than widen it**, because a red here most likely
+means someone closed the prepend half, which is the outcome E296 wants.
+
+---
+
+### E315 — the prepend residual is a data path from the runner's stdin to a model provider
+
+🟢 **CLOSED for the SUITE in round 51 by lane a**, by the descriptor replacement E296 needed. NOT closed,
+and deliberately not, for a real `sugarcrush`: piped stdin reaching the prompt is that binary's documented
+contract. What changed is that the suite no longer inherits the runner's fd 0.
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: security shape, recorded not fixed
+(functionality-before-hardening). **Measured, PHP 8.3.6.**
+
+**What.** The residual is usually described as untidiness. It is also an unbounded read of whatever
+handed this process descriptor 0, concatenated into a prompt and sent to whatever provider is configured.
+Reproduced directly: `printf 'R49B-STDIN-MARKER\n' | php bin/sugarcrush -p "hi"` echoes
+`> R49B-STDIN-MARKER` back inside the turn. In a suite that is a hermeticity bug; on a CI runner that
+pipes a build log into `phpunit`, or any supervisor that passes its own stdin down, it is that content
+going to a provider — and `NonInteractive::MAX_STDIN_BYTES` is 10MB, so the bound is generous rather than
+absent.
+
+**Not fixed here on purpose.** The only repair that closes it is the descriptor replacement (E313's
+roster is its input), and that is one decision, not two. Recorded so it is not re-discovered as a
+surprise.
+
+---
+
+### E316 — E299 re-derived independently, and nothing else in `tests/bootstrap.php` assumes a local is a global
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: informational, closing an open question.
+**Measured, PHP 8.3.6, PHPUnit 10.5.64, three takes.**
+
+**Re-derived rather than inherited** (rule 12), with lane b's own fixtures: two three-line bootstraps
+identical but for `$GLOBALS['__keep']` versus a bare `$keep`, each `include_once`d from inside a private
+METHOD of a throwaway class (PHPUnit's `Application::loadBootstrapScript()` shape), in a child whose fd 0
+is a pipe, then `readlink('/proc/self/fd/0')`. **`$GLOBALS` → `/dev/null` 3/3; the bare local → `false`,
+i.e. fd 0 closed, 3/3.** E299's measurement reproduces exactly.
+
+**The open question E299 left — "check what else in that file assumes otherwise" — is answered NO.** At
+`906fa666` the file has exactly two top-level assignments. `$sandbox` is a string consumed inside the
+include (`mkdir`, `sweepOnce`, `putenv`), so its lifetime is irrelevant. The one value that must outlive
+the include is the `php://memory` handle passed to `NonInteractive::pinStdinDefault()`, and it is held by
+`NonInteractive::$stdinDefault`, a **static property** — not by a local. The `$GLOBALS` line E299 was
+written about is gone with the repair it belonged to, and nothing replaced it.
+
+**It is also already pinned, by accident of a good assertion.**
+`NonInteractiveStdinPinTest::testTheBootstrapHasPinnedTheDefaultStdinAwayFromTheRealOne()` opens with
+`assertIsResource($pinned)`, and `is_resource()` is FALSE for a closed resource — so if that handle were
+ever parked in a bare local and freed on the include's return, that assertion reds. Worth knowing before
+someone "tidies" it into `assertNotNull()`.
+
+---
+
+### E317 — round 44's `grep` binary-detection trap reproduced live, on a PHPUnit log in this lane
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: methodology, reproduced on demand.
+**Measured, GNU grep on this box.**
+
+**What.** Round 44 recorded that `grep -c` on PHPUnit output can report **nothing at all** (exit 1)
+because the output contains control bytes and grep switches to binary mode — indistinguishable from a
+real zero, and it was nearly written into two doc-blocks as a finding. It happened again here, on the
+first attempt to count `E`/`F` markers in a full-suite log: `grep -o "[EF]" <log> | wc -l` → **0**;
+`grep -ao "[EF]" <log> | wc -l` → **25**, on the same bytes, same second. The brief's own warning is what
+made it get checked.
+
+**Why it is worth a second entry rather than a pointer to the first.** The first instance was described as
+a property of one log. It is a property of ANY full-suite log this tree produces — the launch notices
+carry control bytes early, so every subsequent grep of that file is in binary mode. Anyone counting
+anything out of a `phpunit` capture needs `-a`, every time, and the failure is silent in the direction
+that looks like good news.
+
+**Step.** None beyond remembering it. Recorded because it is the third instance of the same class
+(round 43's fuzz alphabet, round 44's `grep -c`, round 48's unexecuted scanner) and the cheapest to avoid.
+
+---
+
+### E318 — E302's second defect is still open: `Detect::stdinFd()` hands an unguarded `?? STDIN` on
+
+🟢 **FIXED in round 51 by lane a, in `candy-mosaic` (NOT candy-palette — see the round report).**
+`stdinFd()` answers null for a dead handle; `drainStdin()`/`readStdinTimed()` treat null as their existing
+no-answer case; the two inline `?? STDIN` spellings route through the guard; a closed INJECTED probe stream
+no longer short-circuits `isInteractiveTty()` to true. candy-mosaic suite: 451/7707/6-skipped before,
+457/7744/6-skipped after, rc 0 both.
+
+**Recorded 2026-08-24 by round-50 lane b.** Severity: the remaining blocker on E296 option (a).
+**Measured by symbol at `906fa666`. Out of lane — `candy-mosaic/` belongs to no lane.**
+
+**What.** E302 recorded two defects and `1a2caebb` fixed the first (`autoFromPalette()` named a
+`Capability` case candy-palette does not have). The second is untouched:
+`SugarCraft\Mosaic\Detect::stdinFd()` is `return self::$probeStdin ?? STDIN;`, and `drainStdin()` passes
+that straight into `stream_select()` with no `is_resource()`; `probeXtwinoSize()` and
+`probeXtwinoCellCount()` each spell `self::$probeStdin ?? STDIN` inline and hand it to
+`readStdinTimed()`. A closed descriptor 0 is a legitimate state for a process to be in — a daemon, a
+hook, a `sugarcrush` invoked with `0<&-` — and it should degrade rather than throw.
+
+**Why it matters to E296 specifically.** With defect 1 fixed the throw is now CAUGHT and the fallback
+runs, so a closed `\STDIN` no longer fatals — but the library still leaves its normal path on an
+exception rather than on a decision, and that is the difference between "we replaced the descriptor and
+measured the result" and "we replaced the descriptor and a library quietly changed renderer".
+
+**Step.** Guard the three sites with `is_resource()`, and give `Detect` a test that drives them with a
+closed resource directly rather than through a thrown probe. Worth a candy-mosaic PR of its own.
+
+---
+
+---
+
+### E319 — the O_NONBLOCK vocabulary is INVERTED across the suite, and the code is right in every case
+
+**Recorded 2026-08-24 by round-50 lane b (fix pass).** Severity: mechanism prose, tree-wide.
+**MEASURED, PHP 8.3.6, three takes**, reading `/proc/self/fdinfo/0` either side of the call with fd 0 a pipe:
+flag clear at startup → **SET** by `stream_set_blocking($s, false)` → **clear** again after
+`stream_set_blocking($s, true)`.
+
+So `tests/bootstrap.php`'s `stream_set_blocking(\STDIN, false)` **SETS** `O_NONBLOCK`, and that set flag IS
+the fd-0 repair. `PosixBackend::restore()`'s `@stream_set_blocking($this->stream, true)` **CLEARS** it, and
+that clearing is what erases the repair.
+
+**Fixed in this lane** (`tests/TtyStreamArgumentCensusTest.php`,
+`tests/SuiteChildStdinPrependResidualTest.php`). **Still inverted, and OUT OF THIS LANE'S FILE LIST** —
+each verified against the code beside it, where an `assertFalse($meta['blocked'])` after `enableRawMode()`
+(the flag SET) carries a message saying "did not clear O_NONBLOCK", and an `assertTrue($meta['blocked'])`
+after `restore()` (the flag CLEARED) carries "did not put O_NONBLOCK back":
+
+ - `sugar-crush/tests/Support/ForkedChildTest.php` (×2)
+ - `sugar-crush/tests/ChatTest.php` (×2)
+ - `sugar-crush/tests/Backend/EngineBackendTest.php` (×2)
+ - `sugar-crush/tests/SuiteChildStdinIsolationTest.php` (×2)
+ - `sugar-crush/tests/bootstrap.php` — its measured table uses "clear" to mean *non-blocking*, the
+   opposite of the flag sense used two paragraphs earlier
+
+**Step.** One supervisor-level sweep after the merge, in three-part form. The convention that works:
+`O_NONBLOCK` is only ever *set* or *cleared*; the descriptor is only ever *blocking* or *non-blocking*.
+**Do not blanket-regex it** (rule 26): the two files that now DESCRIBE the inversion must keep the wrong
+wording inside their own three-part history paragraphs.
+
+**Why this is worth an entry rather than a silent sweep.** Every measurement in every one of these files
+is correct. Only the sentences are backwards, which is the version of this failure that survives
+re-reading — and the reader who "corrects" the code to match the prose deletes the repair.
+
+---
+
+### E320 — four THIRD-PARTY vendor packages name descriptor 0, and one is inside PHPUnit's own tree
+
+**Recorded 2026-08-24 by round-50 lane b (fix pass).** Severity: E296 input, currently benign.
+**Generator:** `StdinConstantReaderCensusTest::fd0References()` (verbatim copy) over every
+`sugar-crush/vendor/**.php` outside `vendor/sugarcraft/` and outside any `tests/`|`Tests/` path — 8,247
+files, PHP 8.3.6.
+
+    sebastian/environment/src/Console.php                                    => STDIN
+    phpunit/phpunit/src/TextUI/.../GenerateConfigurationCommand.php          => STDIN
+    mtdowling/jmespath.php/bin/jp.php                                        => STDIN
+    symfony/yaml/Command/LintCommand.php                                     => php://stdin
+
+**The first one is in the runner's own dependency tree.** `Console::getNumberOfColumns()` is
+`$this->isInteractive(defined('STDIN') ? STDIN : self::STDIN)`, and `defined('STDIN')` stays **true**
+after `fclose(\STDIN)` (measured 3/3, PHP 8.3.6: `defined()` true, `is_resource()` false), so under
+option (a) it is handed a CLOSED resource.
+
+**And it is safe, which is the half worth writing down.** `isInteractive()` opens with
+`is_resource($fileDescriptor)`; a closed handle takes the int branch, reaches `@posix_isatty()`, and
+degrades to "not interactive" — an 80-column answer, not a break. Observed: the full-suite run with the
+descriptor replacement applied produced no error from it.
+
+**Why these are NOT in the census's asserted set.** `vendor/` is gitignored and composer-managed. A
+roster over content this repository does not version reds on an unrelated upstream bump and trains the
+next reader to widen it away. They are recorded here, and named in the census doc-block with this
+generator, instead.
+
+**Step.** No code change. If option (a) ever ships, re-read the `sebastian/environment` call first.
+
+---
+
+### E321 — the `?? STDIN` resolved ONE FRAME UP is invisible to the Tty census by construction
+
+**Recorded 2026-08-24 by round-50 lane b (fix pass).** Severity: guard coverage, latent.
+**Partially FIXED this round**; the general case is not.
+
+**What was found.** The census's headline claimed nothing in the tree builds a raw-mode backend over the
+process's own descriptor 0 with an injected `Termios`. Verified by symbol, `candy-core/src/Program.php`
+is `$this->input = $options->input ?? STDIN;` and then `new Tty($this->input, $options->termios)`, so
+`new Program($m, new ProgramOptions(termios: $t))` with no `input:` is exactly that hazard — and the
+census reads `new Tty(expression, …)` there and waves it through, correctly, because the `?? STDIN`
+already happened. `ProgramOptions::$termios` is documented in candy-core as a **test seam**.
+
+**Fixed:** a third arm asserting no `ProgramOptions` names `termios` without also naming `input`, over
+the package and every sibling `src`. The join is decidable because both fields travel in one constructor
+call. Measured, PHP 8.3.6: five constructions in scope, none an offender.
+
+**NOT fixed, and this is the entry's point.** `Program` is today's INSTANCE of the shape, not the shape.
+Any `?? STDIN` resolved a frame above the construction and passed along as a variable stays invisible.
+The general guard is: flag a construction whose first argument is a variable assigned from a `?? STDIN`
+in the same constructor. Not built — it needs intra-procedural dataflow, which the token walk does not
+have.
+
+**Step.** Either build that, or accept the `expression` bucket as a permanent residual and say so where
+the headline is, rather than where the bucket is.
+
+---
+
+### E322 — A GUARD'S CLASSIFICATION BRANCHES ARE NOT PINNED BY ITS SCANNER'S FIXTURES
+
+**Recorded 2026-08-24 by round-50 lane b (fix pass).** Severity: this is the round's transferable lesson.
+**Found by mutation, FIXED this round in `tests/TtyStreamArgumentCensusTest.php`.**
+
+**What happened.** A new census arm had three branches: report an unreadable argument list, report a
+positional one, report the hazardous named shape. Rule-16 mutation of the FIX — replace the positional
+branch with `false &&` — left the whole census **green: 35 tests, 40 assertions, OK.**
+
+**Why.** The file had good known-answer fixtures, and every one of them tested the SCANNER
+(`programOptionsConstructions()` returns `positional => true`). Nothing tested what the ARM did with that
+report. The two halves look like one guard and are pinned separately.
+
+**And it was already there.** The same mutation pointed at the two arms that shipped a round earlier —
+dropping their `unparsed` offender branch, in BOTH — also left the suite green (41 tests, 46 assertions,
+OK). The rule-14 branch whose entire purpose is that "I could not read it" is not spelled like "it was
+fine" was itself spelled like nothing at all.
+
+**The repair, and it generalises.** Split classification into a pure function taking one scanner result
+and returning an offender line or null, then give it its own fixture table with BOTH polarities — rows
+that must produce an offender and rows that must produce null. Neither half alone is evidence: without
+the null rows a classifier that reports everything passes; without the offender rows, one that reports
+nothing.
+
+**Step.** Apply the same check to every other census/roster guard in `sugar-crush/tests/`: for each
+branch that appends to an offender list, mutate it to `false &&` and confirm something goes red. A guard
+whose scanner is well-tested is where this hides, because the fixture table looks thorough.
+
+---
+
+### E323 — `SuiteChildStdinIsolationTest`'s failure message still prices option (a) at 107 errors
+
+🟢 **DONE in round 51 by lane a.** Option (a) shipped, so the assertion was INVERTED rather than
+re-worded, with the three-part history in its doc-block: what it said, the re-measured price, and why the
+inverse is worth holding rather than relaxing.
+
+**Recorded 2026-08-24 by round-50 lane b (fix pass).** Severity: doc accuracy on the decision E296 turns
+on. **Out of this lane's file list** — `sugar-crush/tests/SuiteChildStdinIsolationTest.php` is lane e's.
+
+Its `testTheBootstrapLeavesTheRunnersStdinConstantUsableAndNonBlocking` reads
+`tests/bootstrap.php closed the \STDIN constant; SugarCraft\Mosaic\Detect reads it unguarded and 107
+tests error out when it is gone`. Observed verbatim in the option-(a) probe run. That figure predates
+E302 (`1a2caebb`, an ancestor of this tree) and is retired — see E310 and the two doc-blocks this lane
+rewrote. The assertion itself is correct and should stay; only its reason is stale.
+
+**Step.** Rewrite the message in three-part form when that file is next touched. If option (a) ships, the
+assertion is inverted rather than deleted, with its reason.
+### E324 — E266/E293's COUNT is right and its HAZARD is not: `src/`'s five argument-less calls cannot collide on a path
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: none today, one edit away from real. **Measured,
+PHP 8.3.6.** Guard shipped; the `src/` fix deliberately not done (tests-only lane).
+
+**What E266/E293 said.** The process-unique-temp-name guard's scope was `tests/` only and `src/` has five
+argument-less `uniqid` sites. Both true — all five in `src/Workflows/WorkflowEngine.php`.
+
+**What is not true is that they are the hazard the guard exists for.** Each builds a `SubAgent` id as
+`<stage>-` . the call, and the id DOES reach disk: `AgentWorkerPool::resultFile()`/`progressFile()` are
+`$this->resultDir . '/' . hash('sha256', $agentId)`. But `$resultDir` is `makeResultDirPath()`, which is
+`sys_get_temp_dir() . '/sc_pool_' . getmypid() . '_' . bin2hex(random_bytes(8))`. The DIRECTORY already
+carries a pid and 64 bits of entropy, so two processes cannot meet on that path whatever the id is. What
+is left is intra-process uniqueness, which the argument-less call does guarantee — measured, 200 calls in
+one process yield 200 distinct values, PHP sleeps to advance the microtime.
+
+**Why it is still worth a round.** The guarantee is a property of the ENCLOSING DIRECTORY, not of these
+call sites. One edit to `makeResultDirPath()` — a shared pool dir, a `TMPDIR`-relative cache — makes all
+five live at once, and nothing would say so.
+
+**Step.** Give the five a pid prefix and the more-entropy flag. The guard already covers `src/` and carries
+the sites in `ProcessUniqueTempNameTest::ARGUMENTLESS_INVENTORY` with an EXACT count, so a sixth arrives red
+and the row must be deleted when they are fixed.
+
+---
+
+### E325 — E286's fix landed in one reader; the shape recurs, and its OBSERVED half is guarded in one
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: correctness of an instrument. **Measured**, PHP 8.3.6.
+Half fixed with a census; half deferred with the reason.
+
+**What.** `VhsTapeContractTest::modelMethodTokens()` sliced a line array with `ReflectionMethod`'s line
+numbers unchecked. It was fixed in round 49 (E286) in TWO directions: `assertSame(__FILE__, getFileName())`
+for the wrong-file case, and a `declaredSlice()` that refuses unless the slice's first line spells
+`function <name>` for the same-file-shifted case.
+
+**The shape recurs and nothing in the tree said so.** Derived by
+`tests/Support/ReflectionLineSliceReaderCensusTest`: every function under `tests/` that reaches a line-array
+slice with reflection's line numbers. **Direction one — naming the declaring file — is satisfied by all but
+one** (`Cli/HelpTest.php::backendSelectionVariables`), which is rostered.
+
+**CORRECTION, 2026-08-24, from this round's own review.** This entry originally said "ELEVEN take the shape"
+and "ten readers in nine files". Neither figure reproduced, and worse, the census that produced them could
+not see the exemplar it was written about: it required `getStartLine` and `array_slice` in the SAME
+function, and `VhsTapeContractTest::modelMethodTokens()` delegates the indexing to `declaredSlice()`, so
+both halves of that pair fell out. Re-opening E286's direction-one defect verbatim in that exemplar left the
+census GREEN. The census now selects on the reflection read alone and chases the slice one hop into
+same-file callees; a read whose slice is out of that reach is filed rather than skipped. **No cardinality is
+restated here** — it is derived on every run, which is the only form that survives a merge (rule 18).
+
+**Direction two is satisfied by ONE reader, and it is the half that was actually OBSERVED
+failing.** Reflection's line numbers are fixed at class load and `file()` is read per call, so an edit to
+the file in between shifts every slice while the name still matches; in the run where that happened a
+census reported one method's figures under another's name, under a message blaming stale prose — which
+invites the reader to edit the figures. Only `VhsTapeContractTest` refuses it.
+
+**Why the second half is not guarded here.** The roster key would be `<file>::<method>` — with five lanes
+merging concurrently that reds on every rename, for a defect that needs a mid-run edit to fire. It wants one
+round that adds a shared `declaredSlice()` to the readers themselves rather than a census over them.
+
+**Step.** (a) One `assertSame()` in `Cli/HelpTest.php::backendSelectionVariables` — it reflects `Bootstrap`
+and slices a `$lines` read by path, correct by construction until one of those methods arrives through a
+trait. (b) Lift `declaredSlice()` into a shared helper and route the readers through it. **Note on (b),
+which the original entry got wrong:** lifting the helper out of each declaring FILE moves `array_slice`
+past the census's one-hop-within-one-file bound. That no longer blinds the census silently — every affected
+reader lands in `SLICE_UNREACHABLE` and reds with a message saying so — but whoever does (b) must expect
+that red and answer it by widening the census's resolution or rostering the readers, NOT by deleting the
+census.
+
+---
+
+### E326 — three of round 49's own review findings were ALREADY FIXED at or in the round's base commit
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: process. **Verified in the tree at `906fa666`.**
+**Corrected from "two" to "three" 2026-08-24:** E298's fix *is* `906fa666` itself, so it belongs in this
+count alongside E287 and E286. The miscount is the entry's own lesson happening to the entry.
+
+Lane c's brief asked for E287 (the drift guard's visibility alphabet "was defended by a feeling") and E286
+(a reader slicing `file(__FILE__)` with reflection's line numbers "unchecked in both directions") as work
+items. Both were already done at the lane's base commit — `DuplicatedTestHelperDriftTest` carries
+`testWideningTheVisibilityAlphabetToProtectedAddsNoHelperAtAll()` with the hook roster read off `TestCase`
+by reflection, and `VhsTapeContractTest::modelMethodTokens()` carries both the `getFileName()` assertion and
+`declaredSlice()`. Both were re-verified by mutation rather than by reading: neutralising the alphabet
+parameter is KILLED, and the readers census below found the fix present.
+
+**The generalisable part.** A brief assembled from backlog entries inherits their state at the moment they
+were WRITTEN, not at the moment the round starts. Entries marked FIXED in the same file the brief was drawn
+from were still restated as work. Cheap mitigation: a lane's first act on any item should be to check the
+entry's own status line and the tree, and a fixed item is a mutation to run rather than a fix to write.
+
+---
+
+### E327 — E289's `match`-arm gate guards a shape the tree does not have, and the first prose describing it was inverted
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: none (a widening). **Measured**, PHP 8.3.6. **Fixed.**
+
+`InterpolationOpenerTokenTest::comparesAgainstBrace()` now takes `case '{':` and a `match` arm beside the
+comparison operators. Two things are worth keeping.
+
+**The arrow arm looks FORWARD only**, because a `match` arm's subject is the KEY. Measured over every `.php`
+under `tests/` and `src/`: three brace literals neighbour a `T_DOUBLE_ARROW` and **all three are VALUES**
+(`['T_CURLY_OPEN' => '{']`), **none is a key**. So the arm selects nothing today and the `match` gate is
+guarding a shape that has not arrived — an array literal `['{' => 1, '}' => -1]` would be
+indistinguishable from a `match` walker on the arrow alone.
+
+**The first version of that paragraph said the opposite** — that every arrow-adjacent brace in the tree is
+a KEY an ungated arm would select — and the fixture written from it put its braces in value position, so
+un-gating the arm **SURVIVED**. Rule 2 caught it: the mutation was relevant and the assertion's window was
+wrong. Both are corrected and the mutation is now killed.
+
+---
+
+### E328 — `AuditHook`'s default log path is a fixed shared name in PRODUCTION, not only in its test
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: low, cross-process. **Measured.** Not fixed.
+
+E298 fixed the TEST that drove `AuditHook`'s production default, wrote the file and unlinked it. The
+default itself is unchanged and is `sys_get_temp_dir() . '/sugar-crush-audit.log'` — one fixed name, world-
+writable temp dir, no pid and no entropy. Two `sugarcrush` processes on one box append to one file
+(interleaved, and a partial write from either can split a record), and any local user can pre-create it as
+a symlink to somewhere else before the first run.
+
+**Why it is recorded rather than fixed.** An audit log that moves every run is not an audit log, and a
+caller who wants a private one passes it in — so the fixed name is the intended behaviour and changing it
+is a product decision, not a bug fix. The site is carried in
+`ProcessUniqueTempNameTest::STATIC_TEMP_PATH_INVENTORY`, where it also serves as that scanner's only
+real-tree liveness control.
+
+**Step.** Decide: keep the fixed default and open it with `O_APPEND` plus an `is_link()` refusal, or move
+the default under a per-user directory the process owns.
+
+---
+
+### E329 — four `src/` `uniqid()` calls carried a literal prefix and therefore no entropy at all
+
+**Recorded 2026-08-24 by round-49 lane c's fix stage, from its own review.** Severity: same family as
+`E324`. **Measured**, PHP 8.3.6.
+
+**What.** `ProcessUniqueTempNameTest`'s guard banned the ARGUMENT-LESS call. `uniqid($p)` is `$p` followed
+by the *same* 13-hex microtime suffix the bare call returns — 20000/20000 prefixed values conform,
+and `uniqid('A_')` / `uniqid('B_')` at one instant give `A_6a8bc9d22f617` / `B_6a8bc9d22f618` — so a
+constant literal prefix contributes **zero** cross-process entropy and a call carrying one is precisely
+what the guard's own sentence describes. Four `src/` sites were spared by it:
+`src/Agents/AgentManager.php` (`subagent_`), `src/App/App.php` (`skill_fork_`),
+`src/Hooks/ScriptHook.php` (`hook_`), `src/Providers/ClaudeCodeProvider.php` (`tool_`).
+
+**The guard has been widened** — the predicate is now "no more-entropy flag" — and all four are rostered in
+`NO_ENTROPY_FLAG_INVENTORY` with traced reasons. Censused over the 249 call sites in scope: 240 carry the
+flag, 9 do not, 0 are undecidable.
+
+**Traced, not assumed.** `AgentManager` and `App` build `SubAgent` ids that reach
+`AgentWorkerPool::resultFile()`/`progressFile()` under `makeResultDirPath()`, which already carries a pid
+and 64 bits — same containment argument as `E324`, and it fails at the same moment. `ScriptHook`'s value
+is a display NAME (the payload file is `tempnam()`-generated at a different site) and
+`ClaudeCodeProvider`'s is a tool-call id (the `sc_runtime_tool_*` / `sc_chat_tool_*` files are named by
+`ToolIpcFiles::reserve()`); neither reaches a filename.
+
+**Step.** Fix all nine sites in one edit — `uniqid($prefix . getmypid() . '_', true)` — and delete the five
+inventory rows. It is a `src/` edit, out of a tests-only lane. Doing it with `E324` is one change, not two.
+
+---
+
+### E330 — the static-path scanner's alphabet still cannot express four shapes, and now says so in a test
+
+**Recorded 2026-08-24 by round-49 lane c's fix stage.** Severity: stated bound. **Measured**, PHP 8.3.6.
+
+`ProcessUniqueTempNameTest`'s second scanner gained constructors (`new \SQLite3`, `new \PDO` — the shape
+E242 actually took, and one a global-function alphabet could not see even with a fully fixed path),
+`/var/tmp`, `DIRECTORY_SEPARATOR`, and per-argument rather than first-argument-only classification.
+
+Four shapes are still missed, each now pinned by
+`testTheStaticPathScannerSaysWhatItCannotSee()` with a known-positive control beside it so the
+expected-empty rows are not satisfied by a dead instrument: a heredoc path, a path reached through a class
+constant, a `unix://` socket URI (the literal does not begin at the root), and `proc_open()`'s cwd. Each
+reds that test if it is ever fixed, which forces the paragraph describing the bound to be rewritten with it.
+
+**Step.** Widen the alphabet: `T_START_HEREDOC` runs, a `stream_socket_server`/`stream_socket_client` arm
+that strips a scheme before matching the root, `proc_open`'s fourth argument, and a class-constant
+resolution within the declaring file. Delete the corresponding row from the test with each.
+
+---
+
+### E331 — a fifth `significantTokens()` copy arrived in the round that widened the drift guard's bound
+
+**Recorded 2026-08-24 by round-49 lane c's fix stage, from its own review.** Severity: latent duplication.
+
+`ProcessUniqueTempNameTest::significantTokens()` joins the copies in `StderrEmitterCensusTest`,
+`ContainedPathInventoryTest`, `HomeDirectoryPathReaderInventoryTest` and `ReadmeJsonErrorContractDriftTest`.
+They are semantically identical and spelled far enough apart (`$out` / `$tokens` / `$significant`,
+`\token_get_all` vs `token_get_all`, brace placement) that the divergence exceeds `DRIFT_BOUND` at 1 **and**
+at 2, so the guard the same round strengthened cannot see them.
+
+Not a defect today — it is exactly the family the widened bound exists for, arriving one notch outside it.
+
+**Step.** Either extract one shared `significantTokens()` (it has no lib-local behaviour in any copy), or
+measure bound 3 (see `E324`'s neighbour on the unexplored bound) and decide whether the guard should
+reach this far. Extraction is the cheaper of the two and removes the question.
+
+---
+
+### E332 — `readOrFail()` and its refusal test are now duplicated across three census files
+
+**Recorded 2026-08-24 by round-49 lane c's fix stage, from its own review.** Severity: latent duplication.
+
+`readOrFail()` and `testTheCensusRefusesASourceItCannotOpenInsteadOfScanningItAsEmpty()` are byte-identical
+in two files and near-identical in a third (`ProcessUniqueTempNameTest`'s message differs). Nothing reds:
+the drift guard skips identical bodies, and the public test method is not `T_PRIVATE`. The family therefore
+arrives already two spellings apart, which is how the previous four-copy families started.
+
+**Step.** Extract both into one trait beside `TokenFunctionRanges` — the arm exists so an unreadable source
+cannot read as a clean one, and three copies of that arm is three places for it to be quietly reverted.
+
+---
+
+---
+
+### E364 — the additive assertion LOWER BOUND is only a bound if the merge neither adds nor removes
+
+**Recorded 2026-08-24 by the supervisor at the round-51 merge.** Severity: process. **First violation of a
+bound that had held for nine rounds, and the cause is the supervisor's own merge-time edit.**
+
+**What happened.** Round 51's lanes measured `+1`, `+27` and `+41` tests and `+9`, `+182`, `+815`
+assertions over `9661 / 142165`. Predicted: tests `9730` exactly, assertions **at least** `143171`.
+Measured at the merge: `9730 / 143168 / 1 skipped / rc 0`. Tests exact for the ninth consecutive round;
+**assertions THREE BELOW the floor of the bound.**
+
+**Why, exactly.** The merge red on lane c's `NonBlockingVocabularyTest`, whose roster listed two
+contradictory sentences in a file lane a owns — and lane a had fixed them. The guard's own failure message
+prescribed the resolution: delete the rows. **Deleting two data rows removes the assertions those rows
+generated.** 143171 − 3 = 143168.
+
+**The rule this establishes.** "Predict assertions as a LOWER BOUND" (E191) assumes the merge is
+monotonic — that composition can only ADD assertions (a census absorbing a sibling's new sites) and never
+remove them. **A merge-time resolution that DELETES roster or fixture data breaks the bound downward, and
+that is not a defect, it is the guard working.** State the direction with the prediction: a bound is a
+LOWER bound *given no merge-time deletions*, and when a deletion is made, adjust the bound by the deleted
+rows' assertion cost and say so.
+
+**Step.** At merge, after resolving any red, recompute the expected assertion figure from the lane deltas
+MINUS the cost of anything the resolution deleted, before comparing to the measured total. Do not report a
+bound violation without first checking whether the merge itself removed assertions.
+
+---
+
+### E334 — my brief named `candy-palette/src/Probe/Detect.php`, and there is no such file
+
+**Recorded 2026-08-24 by round-51 lane a.** Severity: brief accuracy, on the item's whole subject.
+**Measured by `find`.**
+
+The round-51 lane a brief's ITEM 2 read "Close this one, in `candy-palette`, with its own guard", and its
+file list carried `candy-palette/src/Probe/Detect.php` and `candy-palette/tests/`. Neither exists. There is
+exactly ONE `Detect.php` outside `vendor/` in this monorepo and it is `candy-mosaic/src/Detect.php`, which
+is what E318 — the entry the brief cites — names correctly. `candy-palette/src` and `candy-palette/tests`
+contain zero references to `STDIN`, `php://stdin`, `php://fd/0` or `/dev/stdin`, measured.
+
+**Why the confusion is worth an entry rather than a shrug.** E302 spans both libraries — the FAULT was a
+candy-mosaic caller naming `Capability::Iterm2Image`, and the enum it named wrongly is
+`candy-palette/src/Probe/Capability.php`. A summary that keeps "Probe" and "Capability" and swaps the
+library is the exact error a two-library finding invites. E318's own text is unambiguous ("Out of lane —
+`candy-mosaic/` belongs to no lane"), so the brief is the only place that was wrong.
+
+**What was done.** The fix landed in `candy-mosaic`, with a new `candy-mosaic/tests/DetectClosedStdinTest.php`.
+candy-palette's suite was run anyway, before and after: `266 tests, 529 assertions, 0 skipped, rc 0` both
+times, unchanged.
+
+**Step.** None. Recorded so the next brief writer does not re-derive the same swap from E302.
+
+---
+
+### E335 — the flag repair produced two 60-second RISKY aborts in one full run of two, and the replacement produced none
+
+**Recorded 2026-08-24 by round-51 lane a.** Severity: evidence, NOT mechanism. **Measured, PHP 8.3.6, two
+takes, and it did not reproduce.**
+
+While mutation-testing the descriptor replacement, the revert-to-the-flag mutation (`B1`) was run twice as
+a full suite from a runner whose own stdin was an open, never-written pipe:
+
+    take 1   9661 tests, 2 failures, 1 skipped, RISKY 2   (BootstrapSkillSkipsTest, both -p cases,
+                                                           "aborted after 60 seconds")
+    take 2   9662 tests, 4 failures, 1 skipped, RISKY 0
+
+The two failures/four failures difference is accounted for: take 2 ran after a new tty-branch test landed.
+The RISKY difference is not accounted for, and it is interesting because `BootstrapSkillSkipsTest`'s two
+`-p` cases are the EXACT instance `tests/bootstrap.php`'s doc-block names as the observed E212 symptom. The
+green baseline at `a85fcfd6` — same runner, same held-open stdin, the flag repair shipped — had zero risky.
+
+**What this is and is not.** It is one observation that the flag repair is not reliably sufficient under a
+held-open runner stdin, which would mean something clears `O_NONBLOCK` mid-run in some orderings. It is NOT
+a mechanism: n=1 of 2, and rule 3 says three takes before a delta is signal. The descriptor replacement
+cannot have this failure mode at all (there is no flag to clear), so the finding does not block anything —
+it is recorded because it is cheap to lose and would be expensive to re-discover.
+
+**Step.** If anyone ever needs to justify the descriptor replacement over the flag beyond the prepend half,
+run the flag shape five times under a held-open stdin and count RISKY. Do not cite the observation above as
+a rate.
+
+---
+
+### E336 — `TtyDetect::isAtty()` casts a stream to `(int)` and treats the result as a file descriptor
+
+**Recorded 2026-08-24 by round-51 lane a.** Severity: correctness, latent. **Measured, PHP 8.3.6.
+Out of lane — `candy-core/src/Util/TtyDetect.php` belongs to no lane this round. Reported, not fixed.**
+
+`candy-core/src/Util/TtyDetect::isAtty($stream)` is `$fd = (int) $stream;` followed by
+`TermiosFactory::open($fd)->isAtty()`. `(int)` on a PHP stream yields its RESOURCE ID, not its file
+descriptor, and the two coincide only by accident of allocation order. Observed while measuring the fd-0
+replacement: immediately after `fclose(\STDIN)` and `fopen('/dev/null', 'r')`, `/proc/self/fd/0` reads
+`/dev/null` — the descriptor really is 0 — while `(int)` on that same handle is **5**. So a caller asking
+"is this stream a tty" can be answered about an unrelated descriptor.
+
+**Why it is latent rather than live, and the mechanism is an OFF-BY-ONE rather than an alignment — this
+paragraph originally said the ids "happen to line up", which is the wrong description of a correct
+conclusion.** Measured in a fresh CLI process, three takes, PHP 8.3.6: `(int) STDIN` is **1**, `(int) STDOUT`
+is **2**, `(int) STDERR` is **3**, while the descriptors behind them are 0, 1 and 2 — every one of the three
+is off by one, and none of them "lines up". The answers have nevertheless been right because all three
+usually address the SAME terminal, so asking about fd 1 when you meant fd 0 returns the same verdict, and
+because `TermiosFactory::open()` is wrapped in a `try`/`catch (\Throwable)` that degrades to false. Nothing
+in this tree is known to be wrong today.
+The hazard is that the coincidence is not a property of anything — any process that opens streams before
+asking gets a different id, and the E296 replacement is precisely such a process.
+
+**Step.** Give `TtyDetect` a real descriptor. There is no portable PHP call for "the fd behind this stream",
+but the three constants can be special-cased by identity (`$stream === \STDIN` => 0, and so on) and
+everything else answered `false` rather than guessed, or the whole thing routed through
+`stream_isatty($stream)`, which takes the stream and needs no fd at all. Note that `stream_isatty()` THROWS
+on a closed resource, so an `is_resource()` guard has to come first — which `isAtty()` already has.
+
+---
+
+### E337 — RETRACTED BEFORE IT SHIPPED: the two `composer.lock` files are NOT committed, and `ls` cannot tell
+
+**Recorded and refuted 2026-08-24 by round-51 lane a, in that order.** Severity: none — there is no defect.
+Kept as a methodology instance, because the refutation came from the entry's own stated generator.
+
+**WHAT THIS ENTRY SAID**, drafted and committed: "`candy-mosaic/composer.lock` and
+`candy-palette/composer.lock` are present in the tree at `a85fcfd6`", filed against the rule that
+`AGENTS.md` and `CONTRIBUTING.md` both state — never commit a per-lib `composer.lock`, because
+`composer install` then resolves from it and silently ignores CI's path-repo injection.
+
+**WHAT IS TRUE.** `git ls-files '*/composer.lock'` returns **nothing**. Both files exist on disk and both
+are UNTRACKED: `/*/composer.lock` is gitignored, and these are ordinary local build artefacts of the sort
+every lib with a `vendor/` has. No rule is broken and there is nothing to remove.
+`php tools/check-path-repos.php --no-lib-path-repos` exits 0 ("scanned 58 libs … no sibling path-repos in
+per-lib manifests").
+
+**WHY IT IS KEPT RATHER THAN DELETED.** The evidence was `ls candy-palette/` — a listing of the WORKING
+TREE — used to support a claim about what is COMMITTED. Those are different questions and the cheap command
+answers the wrong one, silently and in the direction that looks like a finding. It is the same shape as
+round 44's `ls -l | grep -c '^l'` printing a correct-looking 18 over real directories, and as round 44's
+`grep -c` reporting a confident zero on binary output: an instrument that answers a nearby question. The
+entry was written, committed, and then refuted by running the generator it had itself named — which is the
+only reason it did not ship as a finding, and an argument for naming the generator even when the claim
+feels obvious.
+
+**Step.** None.
+
+---
+
+### E338 — the fd-0 replacement made `NonInteractive::readStdinIfPiped()` a latent `TypeError`, and guarding only the call the reviewer named would move the throw rather than remove it
+
+**Recorded 2026-08-24 by round-51 lane a (fix pass).** Severity: correctness, latent — introduced by this
+lane's own change. **Measured, PHP 8.3.6. Out of lane — `sugar-crush/src/Cli/NonInteractive.php` is a `src/`
+file this lane does not own. Reported, not fixed.**
+
+`NonInteractive::stdinDefault()` is `self::$stdinDefault ?? \STDIN`. `readStdinIfPiped()` is
+`$stream ??= self::stdinDefault();` and then `\stream_isatty($stream)` with no `is_resource()` guard. Before
+E296's option (a), the `?? \STDIN` fallback handed back a LIVE handle; inside the suite it now hands back a
+CLOSED one, because `tests/bootstrap.php` does `fclose(\STDIN)` on every non-tty run.
+
+**Measured.** `stream_isatty()` on a closed resource throws
+`TypeError: stream_isatty(): supplied resource is not a valid stream resource`. **And so does the
+`@\stream_get_contents($stream, …)` two lines later** — `@` suppresses diagnostics, not a thrown `TypeError`
+(same measurement, same box). A fix that guards only the `stream_isatty()` call, which is the one shape a
+reader spots first, relocates the throw to the next line. Both need the guard, or the resolution does.
+
+**Why it is not live today.** `pinStdinDefault(null)` has exactly two callers —
+`NonInteractiveStdinPinTest::testClearingThePinRestoresTheRealStdinAsTheDefault()` and
+`HeadlessPermissionPromptStdinDefaultTest::testWithNoPinInstalledTheDefaultIsTheRealStdin()` — and neither
+then reads. That is the whole of the reachability, so it is one new test away from being live: the next
+test that unpins and reads gets a `TypeError` where it used to get `null`.
+
+**Step.** Either guard both reads in `readStdinIfPiped()` with `is_resource($stream)` (answering `null`,
+which is already the method's no-answer value for every caller), or — better, because it fixes every
+consumer at once — make `stdinDefault()` itself answer the way `Detect::stdinFd()` now does after E318:
+resolve `?? \STDIN`, then hand back the handle only when `is_resource()` says it is live. Note that
+`stdinDefault()` is declared as returning a resource and `HeadlessPermissionPrompt::__construct()` also
+consumes it, so the null-answering shape needs its two callers checked, not just this one.
+
+---
+
+### E339 — `EnvDetect::isConsoleStdin()` is an unguarded `stream_isatty(STDIN)` with no caller anywhere
+
+**Recorded 2026-08-24 by round-51 lane a (fix pass).** Severity: correctness, dormant. **Measured,
+PHP 8.3.6. Out of lane — `candy-core/src/Util/Tty/EnvDetect.php` belongs to no lane this round. Reported,
+not fixed, and NOT to be removed.**
+
+`SugarCraft\Core\Util\Tty\EnvDetect::isConsoleStdin()` is a bare `return stream_isatty(STDIN);`. After
+E296's option (a) that call throws inside the suite (see E338 for the measurement). It is dormant rather
+than live: grepped across `sugar-crush`'s `src`, `bin` and `tests` and across `src`/`bin` of every sibling
+in the 18-lib closure, the only occurrence of the name is its own declaration — `Tty::backend()` reaches
+`isWsl()`, `isMintty()` and `isCygwin()` from the same class but never this one.
+
+**Do not delete it** (standing no-removal rule): it is the native-Windows console probe the `WindowsBackend`
+path would use, and its own doc-block describes that role. The dormancy is now recorded as a judged row in
+`sugar-crush/tests/StdinConstantReaderCensusTest`'s doc-block, which is the guard that will surface it again
+if a caller appears.
+
+**Step.** Give it the same `is_resource()` guard the rest of the family has, so that wiring it later cannot
+introduce a throw; or wire it, if the Windows console path is being taken up. Either counts.
+
+---
+
+### E340 — `Program::runExec()`'s closed-stream guard now falls back to a closed stream
+
+**Recorded 2026-08-24 by round-51 lane a (fix pass).** Severity: correctness, dormant. **Measured,
+PHP 8.3.6. Out of lane — `candy-core/src/Program.php` belongs to no lane this round. Reported, not fixed.**
+
+`Program::runExec()` builds its child's descriptor array from
+`$childIn = is_resource($this->input) ? $this->input : STDIN;`, and its own comment says the guard exists to
+"fall back to STDIN/STDOUT/STDERR when those resources are gone (e.g. tests that closed the streams)". The
+constructor sets `$this->input = $options->input ?? STDIN`. Once the suite closes the constant, BOTH arms of
+that ternary are dead handles for any program constructed without an explicit input — the guard's fallback
+is the very thing it was guarding against.
+
+**Measured.** `proc_open()` with a closed resource in the descriptor array throws
+`TypeError: proc_open(): supplied resource is not a valid stream resource`. So the shape degrades by
+exception rather than by falling back, which is the opposite of the guard's stated intent.
+
+**Why it is dormant.** `runExec()` is private and driven only by an `ExecRequest` command, and `ExecRequest`
+appears nowhere in `sugar-crush`'s `src` or `bin` (verified). No test in this package reaches it.
+
+**Step.** Fall back to a freshly opened `/dev/null` (or answer with an explicit error) rather than to a
+constant whose liveness is exactly what the guard already doubted. The same reasoning applies to the
+`$childOut`/`STDERR` arms on the next lines, which were not measured here.
+
+---
+
+### E341 — `Detect::stdinFd()` can now answer null into a `@param resource` at `candy-core`
+
+**Recorded 2026-08-24 by round-51 lane a (fix pass), confirming the reviewer's NOTE.** Severity:
+documentation/type accuracy, not a defect. **Verified by symbol. Out of lane — `candy-core/src/Util/TtyDetect.php`.**
+
+E318 made `SugarCraft\Mosaic\Detect::stdinFd()` nullable. `Detect::isInteractiveTty()` passes its result
+straight to `TtyDetect::isAtty(self::stdinFd())`, whose signature documents `@param resource $stream`. The
+runtime behaviour is correct and unchanged — `isAtty()` opens with `is_resource($stream)` and
+`is_resource(null)` is false, which is the identical answer the old closed-`\STDIN` argument produced — so
+there is nothing to fix in the code. The doc-block is simply now narrower than the call sites.
+
+**Step.** Widen `TtyDetect::isAtty()`'s `@param` to `resource|null`. Cheap, and it stops a future static-
+analysis pass reporting a false positive on a correct call. Related to E336, which wants the same method
+changed for a different reason; do both together.
+
+---
+
+### E342 — E319's inverted `O_NONBLOCK` prose is live in three files, and the counts previously recorded for it were half right
+
+**Recorded 2026-08-24 by round-51 lane a (fix pass).** Severity: documentation, misleading.
+**Counts re-derived by `grep -n O_NONBLOCK` per file at this lane's HEAD. Out of lane — none of the three
+files is this lane's. Reported, not fixed.**
+
+The polarity, restated so nobody re-derives it: `PosixBackend::enableRawMode()` ends in
+`@stream_set_blocking($this->stream, false)`, which SETS `O_NONBLOCK`; `restore()` does `(…, true)`, which
+CLEARS it. So a failure message saying `enableRawMode() did not clear O_NONBLOCK` is backwards, and so is
+`restore() did not put O_NONBLOCK back`.
+
+Live occurrences, measured rather than carried over — an earlier note recorded "×2" for all three files and
+that is wrong for the first:
+
+| File | inverted failure messages |
+| --- | --- |
+| `sugar-crush/tests/Support/ForkedChildTest.php` | **4** |
+| `sugar-crush/tests/ChatTest.php` | 2 |
+| `sugar-crush/tests/Backend/EngineBackendTest.php` | 2 |
+
+**AND `EngineBackendTest.php` CARRIES A THIRD, DIFFERENT DEFECT THAT THE COUNT ABOVE DOES NOT COVER**, of
+exactly the class this round has been closing elsewhere: its inline comment states that "the descriptor-0
+repair in `tests/bootstrap.php` IS an `O_NONBLOCK` flag on fd 0, and `restore()` here was clearing it back
+for every later test in the run". That was true of the flag repair and is false at HEAD — the repair is
+`fclose(\STDIN)` plus a `/dev/null` reopen, holds no flag, and `PosixBackend::restore()`'s
+`stream_set_blocking()` is `is_resource()` guarded so it cannot touch the closed constant at all. The TEST
+is still worth keeping — "the seam writes to the stream it was given, not to fd 0" is a real property — but
+its stated WHY is now a mechanism that does not exist. This is the same stale-justification shape that was
+repaired in `TtyStreamArgumentCensusTest` during the implement pass; that sweep did not reach this file.
+
+**Step.** Invert the eight failure messages, and rewrite the `EngineBackendTest` comment in three-part form
+(WHAT IT SAID / WHAT IS TRUE NOW / WHY IT STILL EARNS ITS PLACE) rather than deleting it. **Do not do this
+with a blanket regex** (rule 26): the files that now DESCRIBE the inversion must keep the wrong wording
+inside their own history paragraphs, and a pattern sweep cannot tell an offender from a description of one.
+
+---
+
+### E343 — the stderr census resolves a descriptor spec only within the enclosing function, and nothing says so at the call sites that depend on it
+
+**Recorded 2026-08-24 by round-51 lane a (fix pass), found while refuting a doc-block claim.** Severity:
+guard sharpness, latent. **Measured by pushing known-answer sources through
+`ChildStderrCaptureScanner::scan()` itself, PHP 8.3.6.**
+
+`ChildStderrCaptureScanner` resolves a `proc_open()` descriptor spec passed as a VARIABLE when that variable
+is assigned an array literal in the SAME function, and reports `unclassified` when it is not. Four
+known-answer controls in one probe:
+
+| spec spelling | scanner answer |
+| --- | --- |
+| variable assigned an array literal in the same function | `captured` |
+| same literal assigned in ANOTHER function | `unclassified` |
+| same-function literal whose fd 2 is `/dev/null` | `discarded` |
+| variable never assigned | `unclassified` |
+
+The behaviour is right, and the scope bound is deliberate — `ChildStderrCaptureTest` has a test about it.
+The hazard is that the bound is invisible where it bites. A spawn site whose spec is a same-function local
+passes today; the ordinary next refactor — lifting that spec to a property or a class constant so two
+methods can share it — crosses the bound and turns the site `unclassified`, which
+`testNoDirectoryWithAnUnguardedSpawnIsUnaccountedFor()` refuses. That reds a guard for a change that did not
+alter what any child does with fd 2.
+
+**Why this is filed rather than fixed.** It is arguably correct as-is (rule 14: report what you cannot read
+rather than passing it), and widening resolution to properties and class constants is real work in another
+lane's file. What is cheap and was NOT there is the warning: `SuiteChildStdinIsolationTest::bootstrapUnder()`
+now records the bound in its own doc-block, which is where a reader tempted to hoist those two specs will
+be standing.
+
+**Step.** Either resolve class-constant and property specs too (they are as literal as a local), or have the
+`unclassified` failure message name the scope bound explicitly, so the reader is told why a spec they can
+plainly read came back unreadable.
+### E344 — E328's recorded mechanism does not reproduce: the hazard was reachability, not a race
+
+**Recorded 2026-08-24 by round-51 lane b, which fixed E328.** Severity: correction of a fixed entry.
+**Measured**, PHP 8.3.6, generator in the round's scratchpad (`probe_append.php`).
+
+E328 said two `sugarcrush` processes on one box "write and truncate each other's audit log
+(interleaved, and a partial write from either can split a record)". Neither half reproduces.
+`AuditHook::execute()` writes with `FILE_APPEND | LOCK_EX`: `FILE_APPEND` never truncates, and `LOCK_EX`
+serialises cooperating writers. **Measured**: 8 concurrent processes × 200 records × 9000 bytes each
+(past `PIPE_BUF` and past one page), three takes — 1600 intact lines every time, byte total exact, zero
+split or interleaved records.
+
+**What WAS true, and is what the fix closed.** The leaf was one name in a world-writable directory, so
+(a) any other local user could pre-create it as a symlink and have the hook append through it, and (b)
+the file the hook creates is mode 0664 under the ordinary umask 0002 — **measured** — i.e. every other
+user on the box could READ a log carrying every tool's arguments and the first 200 bytes of its output.
+The default is now `sys_get_temp_dir() . '/sugar-crush-audit-<euid>/audit.log'`, the directory created
+0700 and refused when it is a symlink, a non-directory, or not owned by this euid.
+
+**Why this matters beyond bookkeeping.** A reader who trusted the recorded mechanism would have reached
+for locking, which was already there, and left the reachability untouched.
+
+---
+
+### E345 — the hardened audit write fails SILENTLY, and the alternative costs one stderr write per tool call
+
+**Recorded 2026-08-24 by round-51 lane b.** Severity: observability. Not fixed, deliberately.
+
+`AuditHook::append()` answers `false` and returns when the directory is not this euid's or the leaf is a
+symlink, and `execute()` discards that answer. An operator whose audit directory has been squatted
+therefore learns nothing until they look. The reasoning for swallowing it is in the method's doc-block:
+this is a `PostToolUse` hook, the tool has already run, a `HookResult::deny()` would be a lie about a
+call that happened, and throwing would take down a run over a log line.
+
+**What is left is a notice, and it is not free.** `AuditHook` writes to fd 2 nowhere today, so a notice
+adds a file to `StderrEmitterCensusTest`'s per-file map — and on a squatted box it is one line per tool
+call for the whole run, which is the shape that trains an operator to ignore stderr.
+
+**Step.** Either a once-per-process notice (a static latch, which is process state on a class that has
+none) or a `HookResult::allow('<message>')` carrying the failure, IF a `PostToolUse` allow message has a
+consumer — check before designing, it may have none.
+
+> **Raised in value, same round.** `directoryIsOurs()` now also refuses a directory whose mode lets
+> anybody else in, and that arm has a failure mode the other two do not: it fires on a directory the
+> operator created THEMSELVES, by hand, with an ordinary `mkdir -p` under umask 0022 — no attacker, no
+> squatting, nothing visibly wrong. The symlink and foreign-owner arms only fire when something is
+> genuinely amiss and an operator has a reason to go looking. This one turns a perfectly reasonable
+> setup step into an audit log that silently never appears, and the remedy (`chmod 700`) is invisible
+> from the symptom. **A notice matters more now than when this entry was filed**, and the once-per-
+> process latch is the shape that fits: the mode does not change mid-run, so one line is the whole of
+> what needs saying.
+
+---
+
+### E346 — E307 is still open: `BackgroundSessionRunner::noticeRefusal()` drops `->kind`, and it was out of lane
+
+**Recorded 2026-08-24 by round-51 lane b.** Severity: as E307. Not fixed — `src/Sessions/` was not in
+this lane's file list and the split was strict.
+
+`Permissions\ToolRefusal::fromEvent()` answers with a `DenialKind`. As of this round it has TWO consumers
+rather than one — `NonInteractive::refusalFrom()` carries it out as the document's `kind`, and
+`NonInteractive::noticeRefusal()` now puts `token()` on the stderr line (E306) — so E307's headline
+("exactly one consumer") is no longer accurate. The daemon's sidecar log is still the surface that drops
+it, and it is still the surface with no operator watching.
+
+**The patch, ready to apply.** In `BackgroundSessionRunner::noticeRefusal()`, the record is built as
+`REFUSAL_RECORD . ' ' . $refusal->tool . ' was not run - ' . $this->oneLine($refusal->reason)`. Insert
+`'[' . $refusal->kind->token() . '] '` after the record marker, matching the shape
+`NonInteractive::refusalNotice()` now uses. `BackgroundSupervisor::restoreOutput()` decides line by line
+on the `[session:` prefix, so a token after the marker is safe against the line protocol.
+`tests/Sessions/BackgroundSessionRunnerTest.php` asserts the record's shape at five sites (search
+`was not run`) and each needs the token inserted.
+
+---
+
+### E347 — E306's stated gap was arm-distinguishing, and naming the kind cannot close it
+
+**Recorded 2026-08-24 by round-51 lane b, which implemented E306.** Severity: premise correction.
+**Measured** — asserted by a test rather than argued.
+
+E306 offered the stderr line's second gap as: `RefusalStderrSurfaceTest` pins that BOTH
+`HeadlessPermissionPrompt` arms produce a `Permission denied:` reason, "so stderr cannot distinguish 'a
+person typed n' from 'there was nobody at the keyboard'", and proposed naming the kind on that line.
+**Naming the kind cannot distinguish those two arms, because both are `DenialKind::Refused` and their
+token is the same word.** `RefusalStderrSurfaceTest::testBothArmsDoubleAndTheseAreTheBytesTheyWrite()`
+asserts the two arms' observer lines are byte-identical, and it still passes after the change — which is
+the measurement.
+
+> **Correction, same round.** When this entry was written that test compared the two arms'
+> `observerBytes`, i.e. two INTS — equal LENGTH, not equal bytes, which two different reasons of the
+> same size would have satisfied. The citation was therefore weaker than the claim it was carrying, and
+> this claim is the whole of why E306's premise was refuted rather than implemented. The test now
+> compares the strings themselves and keeps the length figures beside them. **The conclusion did not
+> move** — the strings are in fact identical, confirmed by the corrected assertion passing — but the
+> evidence for it was not what this entry said it was.
+
+**What the change DID close is E306's first gap**, and that one has a consumer: under
+`--output-format text` stdout carries nothing about refusals by design, so stderr is the whole machine
+surface, and it published the classification only as a prefix inside the reason — the exact
+`str_starts_with` against published prose that `DenialKind::token()` exists so a consumer never has to
+write. Both formats now hand out the same three words.
+
+**What is still open for the ARM question.** The distinction lives in `HeadlessPermissionPrompt`'s own
+prose and nowhere machine-readable. Closing it needs a fourth kind, or a second field on the prompt's
+line — a decision about the published vocabulary, not a formatting change.
+
+---
+
+### E348 — E308 closed the catch; a tool callback returning a `ToolResult` can still assert a refusal
+
+**Recorded 2026-08-24 by round-51 lane b, which fixed E308.** Severity: stated bound, probably intended
+behaviour. Not fixed.
+
+E308's forgery route was `Chat::invokeTool()`'s `catch (\Throwable $e)` putting `$e->getMessage()` where
+`isDeniedResult()` reads. That is closed — the text now opens with `Error: <tool> failed with <class>:`,
+which is on no roster. **The pass-through branch above it is not closed and was not in scope**: a
+callback that returns a `ToolResult` directly has its `error` field carried through verbatim, so a tool
+can hand back `ToolResult::error($name, 'Permission denied: …')` and be drawn struck through and listed
+in a `refusals` array.
+
+**Why that is probably right rather than a hole.** A callback CHOOSING that text is making a claim about
+its own call — an MCP tool whose server refused really did have the call blocked — where an exception
+message is not a claim about anything. But it is the difference between a bound that was reasoned about
+and one nobody noticed, and nothing in the tree says which this is.
+
+**Step.** Decide and pin it: either a test asserting a callback-authored roster prefix IS honoured (with
+the reason), or a typed field on `ToolResult` so a refusal is declared rather than spelled.
+
+---
+
+### E349 — E324's five sites are still argument-less, and there is now a measured collision figure for the family
+
+**Recorded 2026-08-24 by round-51 lane b, which fixed E329's four.** Severity: as E324. Not fixed —
+`src/Workflows/` was out of this lane's list and E324 is its own entry.
+
+E329's four literal-prefix sites now spell `uniqid($prefix . getmypid() . '_', true)`. E324's five in
+`src/Workflows/WorkflowEngine.php` still spell the bare call, and its `NO_ENTROPY_FLAG_INVENTORY` row is
+now the ONLY one — which also makes it the only real-tree positive keeping that channel's walk honest,
+so whoever fixes it must give the channel another one (E328's fix took the other channel's, and the
+replacement is `tests/Support/Fixtures/StaticTempPathWalkControl.php`; do the same).
+
+**The figure E324 did not have.** Generator in the round's scratchpad (`probe_uniqid.php`): 40 processes
+released at one wall-clock barrier, 25 ids each, three takes, PHP 8.3.6. The literal-prefix form emitted
+1000 ids and 241–270 DISTINCT values — 730–759 collisions. The replacement emitted 1000 and collided 0
+times, all three takes. E324's containment argument (the pid+64-bit enclosing directory) is what stands
+between that and a real path collision, and it is a property of `makeResultDirPath()` rather than of the
+call sites.
+
+---
+
+### E350 — two stated bounds on the new audit-log guard, both derived rather than narrated
+
+**Recorded 2026-08-24 by round-51 lane b.** Severity: stated bounds. No action wanted today.
+
+(a) **The ownership arm is vacuous for a root process.** `AuditHook::directoryIsOurs()` refuses a
+directory this euid does not own; a suite or a daemon running as root owns everything, so a mutation
+deleting the uid comparison survives on that box. It is not a hole that can be closed, only one that
+must not be forgotten.
+
+> **Amended, same round.** The test named here took the temp root as its input and derived its
+> expectation from that root's real owner. Once the accept path also began refusing on mode, that input
+> stopped isolating the ownership arm at all: `/tmp` is 1777, so the MODE arm refuses it whatever its
+> owner is, and a mutation deleting the uid comparison would have survived it under every uid rather
+> than only under root. `testADirectoryThisUserDoesNotOwnIsRefused()` now derives its input instead of
+> its expectation — the first directory on a short candidate list that is foreign-owned AND already
+> tight enough to clear the mode arm (`/root` on this box) — and carries a positive control for the
+> root case, where the list comes back empty. **The bound itself is unchanged; what changed is that the
+> arm now has an input only it can refuse.**
+
+(b) **A build without ext-posix shares one directory.** With no `posix_geteuid()` the scope falls back to
+a literal, so every such user on one box lands in `sugar-crush-audit-noposix`. The failure mode is the
+SECOND user losing their audit log rather than the second user reading the first's. The alternatives were
+worse: `getmyuid()` answers the script file's owner, which for a shared installation is one answer for
+everybody and a wrong one.
+
+> **Correction, same round: the mechanism stated here was inverted.** This entry said "the 0700 creation
+> and the OWNERSHIP REFUSAL still hold" on such a build, copying a sentence from
+> `AuditHook::defaultLogDirectory()`'s doc-block. There is no ownership refusal on that build:
+> `directoryIsOurs()` has no uid to compare and SKIPS the comparison — a fact stated forty lines further
+> down the same file, in the opposite direction. What actually holds is the MODE. The second user
+> reaches a real, non-symlink, mode-clean directory, is ACCEPTED by the guard, and then fails on the
+> kernel's own permission check inside `file_put_contents()`. The outcome is the one recorded above, so
+> the entry's conclusion survives — but a reader acting on the old mechanism would have gone hunting for
+> a uid comparison to harden and found none. Both the doc-block and this entry now say the same true
+> thing, and the fallback arm has a test (`directoryFor()`) rather than only a paragraph: renaming the
+> literal was a mutation the entire `AuditHook` suite survived when this entry was filed, and now kills.
+
+---
+
+### E351 — the suite creates and populates the REAL production audit directory, and nothing removes it
+
+**Recorded 2026-08-24 by round-49 lane b's fix agent, from the review's NOTE 10.** Severity: cross-process
+hygiene. Not fixed — the fix is a wiring change on `HookManager::registerBuiltIns()`, out of this lane.
+
+**Observed on this box during the round.** `/tmp/sugar-crush-audit-1000/` created 09:13, `drwx------`,
+its `audit.log` grown to 6808 bytes by 09:39 — written by the suite, not by any real `sugarcrush`. E328
+is a clear improvement on the shared world-readable leaf it replaced (which was still growing at
+`/tmp/sugar-crush-audit.log` from the lanes sitting at the pre-E328 commit), but the suite still drives
+`new AuditHook()` at the production default through `registerBuiltIns()`.
+
+**`TMPDIR` cannot move it, MEASURED (PHP 8.3.6):** `putenv('TMPDIR=…')` then `sys_get_temp_dir()` still
+answers `/tmp`, because PHP resolves and caches it once per process. This is the same fact
+`ToolIpcFiles::sweep()`'s doc-block records for its own `$dir` parameter, and the same remedy applies —
+a seam the suite can point at.
+
+**Why it is not merely untidy.** `AuditHookTest` was rewritten (E298) specifically to stop driving writes
+at the production default, and it no longer does; the leak is now from every OTHER suite that reaches
+`registerBuiltIns()`. So the guard that exists covers the one file that already behaves.
+
+**Step.** Give `registerBuiltIns()` (or `AuditHook`'s default) the same test-only directory seam
+`ToolIpcFiles::sweep()` has, spent once from `tests/bootstrap.php`. Pin it with a test asserting the
+production directory is not created during a suite run.
+
+---
+
+### E352 — `uniqid(…, true)` puts a `.` into a tool-call id that goes on the wire
+
+**Recorded 2026-08-24 by round-49 lane b's fix agent, from the review's NOTE 11.** Severity: stated bound,
+low risk. Not fixed.
+
+E329's fix gives `ClaudeCodeProvider`'s fallback id the shape `tool_<pid>_<13hex>.<8hex>` — the
+more-entropy flag appends a period and eight more hex digits. That value is echoed back to the provider
+as `tool_call_id`. The other three E329 sites name local files, where a period is unremarkable; this one
+names a protocol field, and nobody weighed its character set when the flag was added.
+
+**Why it is probably fine and is recorded anyway.** It is the FALLBACK id — reached only when the
+provider did not supply one — and a period is legal in every id field surveyed. But "legal in the fields
+we happen to have looked at" is not the same as a decision, and a downstream consumer that splits on `.`
+would fail intermittently, on the fallback path only, which is the hardest kind of bug to reproduce.
+
+**Step.** Either state the bound in the call site's comment (cheapest, and honest), or spell the id from
+an alphabet chosen for the wire — `bin2hex(random_bytes(…))` already used by `ToolIpcFiles::reserve()`
+gives the same entropy with no period.
+
+---
+
+### E353 — `sugar-crush/docs/HOOKS.md` documents runtime defaults and no test reads it
+
+**Recorded 2026-08-24 by round-49 lane b's fix agent.** Severity: documentation drift. Partly mitigated.
+
+E328 changed a user-facing default and `HOOKS.md`'s built-in table went on documenting the old path for
+a full round. Grepped `tests/` for the filename: the only hits are `ScriptHook`/`Bootstrap` guards, none
+of which reads this table. **Nothing in the tree can notice when a row here stops being true.**
+
+**What was done rather than left.** The `AuditHook` row now cites `AuditHook::defaultLogFile()` instead
+of restating the literal, so that row cannot rot on the path VALUE. The other rows still restate
+behaviour in prose, and the document has three more tables of the same kind (events, precedence, the
+built-in registration order).
+
+**Step.** Decide whether this document is worth a guard at all. If it is, the cheap version is the shape
+`ProcessUniqueTempNameTest` uses for its inventories — an assertion that each named symbol still exists
+and still has the property the row claims — and not a golden-file comparison, which would red on every
+prose edit.
+
+### E354 — a per-file assertion in several censuses makes the suite's assertion total a function of the file COUNT
+
+**Recorded 2026-08-24 by round-49 lane c; CORRECTED the same day by the same lane after review.**
+Severity: measurement hygiene, and it voided this lane's own first baseline.
+
+**⚠️ THE FIRST VERSION OF THIS ENTRY SHIPPED THE NUMBER AND NOT THE GENERATOR, AND THE NUMBER WAS STALE
+TWO COMMITS LATER — inside the entry about measurement hygiene.** It said the delta was **four**, from
+`Support/ProcessUniqueTempNameTest` (3) and `Support/ReflectionLineSliceReaderCensusTest` (1). By the HEAD
+that shipped it the delta was **five**: the lane's own new `Support/NonBlockingVocabularyTest` calls
+`readOrFail()` once per file over `tests` **and** `src` in
+`testEveryContradictorySentenceIsOnTheRoster`, and `readOrFail()` asserts. That is rule 18 exactly — a
+cardinality measured over `tests/` is invalidated by the next commit, this lane's included.
+
+**So the claim, stated without a number.** Several censuses under `sugar-crush/tests/Support/` assert
+ONCE PER FILE in scope. The suite's assertion total is therefore a function of how many `.php` files
+`tests/` (and, for the scanners that also walk `src`, `src/`) contains — not of the tree's behaviour.
+**A floor figure is meaningful only with the commit it was taken at, and adjusting one arithmetically
+across a commit that adds or removes a test FILE is wrong even when the arithmetic is right.**
+
+**The generator, so the current delta can always be re-derived instead of quoted.** PHP 8.3.6,
+deterministic (no seed — it is a whole-population walk, not a sample), three takes on the control side:
+
+```sh
+cd sugar-crush
+vendor/bin/phpunit tests/Support tests/Cli tests/Config          # control
+printf '<?php\n' > tests/Support/<a name nothing else uses>.php  # exact-path create
+vendor/bin/phpunit tests/Support tests/Cli tests/Config          # probe
+rm -f tests/Support/<that exact path>                            # exact-path delete, never a glob
+git status --porcelain                                           # must be empty
+```
+
+Attribute the delta by re-running each suspect file alone with and without the probe. Observed values,
+each tagged with the commit they were taken at because that is the whole point of this entry: **+4 at
+`a85fcfd6`** (2243→2246 `ProcessUniqueTempNameTest`, 447→448 `ReflectionLineSliceReaderCensusTest`);
+**+5 at `5b3ee274`** (the same two, plus 751→752 `NonBlockingVocabularyTest`).
+
+**Why it matters.** This lane's first baseline read `142169` against a brief stating `142165`, and the
+difference was not the tree — the lane created two trait files WHILE the baseline run was in flight, so
+some censuses saw them and others did not. The brief's floor was right. Any lane that writes a file in
+`tests/` during a suite run gets a figure that belongs to no tree.
+
+**Step.** Three things, none urgent. (a) Quote a floor as `<tests> / <assertions> @ <sha>` and re-derive
+it, never adjust it. (b) Never start a baseline before the lane's first edit — or take it, then do not
+touch `tests/` until it finishes. (c) If a future round wants this delta as a fact rather than a
+footnote, it must be DERIVED BY A TEST and not written into prose (rule 18); the honest version of that
+is a guard asserting "every per-file census in `tests/Support/` is registered here", not a hard-coded
+count.
+
+---
+
+### E355 — three of `ReflectionLineSliceReaderCensusTest`'s offender arms were unpinned, and the sweep E322 asked for found them
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: guard coverage. **Measured, PHP 8.3.6. FIXED this
+round.**
+
+E322's step is "apply the same check to every other census/roster guard in `sugar-crush/tests/`: for each
+branch that appends to an offender list, mutate it to `false &&` and confirm something goes red." Run
+over this lane's files. `DuplicatedTestHelperDriftTest`'s two rule-14 branches are killed.
+`ProcessUniqueTempNameTest`'s two census arms and all three of
+`ReflectionLineSliceReaderCensusTest`'s arms **survived** — each run filtered to its own file, so each
+verdict is a claim about the guards in that file rather than about the suite.
+
+Both files are fixed with a pure classifier plus a table in both polarities, and the fix is verified by
+the rule-16 pair rather than by a green: with the table disabled the same mutation is green
+(`OK, 11 tests, 2231 assertions` / `OK, 2 tests, 439 assertions`), and with it present all five are
+killed.
+
+**The transferable half, one level past E322.** The branch a clean population cannot pin is the
+offender-PRODUCING one, not the roster-SPARING one — this lane wrote the opposite into a doc-block and
+the mutation refuted it within the hour. A roster branch IS pinned by the tree whenever the roster has
+rows, because disabling it turns every rostered file into an offender. So the question to ask of a census
+arm is not "is this branch fixtured" but "does this branch produce anything on the real population" — and
+if the answer is no, nothing but a table can pin it.
+
+**Step.** The same sweep over the guards no lane held this round: `tests/Cli/`, `tests/Config/`,
+`tests/Diagnostics/`. **NOT `TtyStreamArgumentCensusTest`** — this entry's first draft named its two
+`constants[]` arms as unextracted and therefore suspect, which was an assertion and not a measurement.
+Measured before shipping the sentence: gating BOTH on `false` is KILLED (46 tests, 51 assertions,
+1 failure, filtered to that file). Lane b's repair covers them; only the `offenders[]` halves go through
+`ttyOffender()`/`optionsOffender()`, and the `constants[]` halves are pinned by the exact-roster
+assertion beneath them instead. Recorded because the *shape* looked exactly like the finding above and
+was not one.
+
+---
+
+### E356 — consolidating a helper exposes which consumers were never testing half of it
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: the round's transferable lesson. **Measured, PHP
+8.3.6. FIXED this round.**
+
+`significantTokens()` had five declarations plus a sixth spelling written inline inside
+`BootstrapTranscriptSeamCallSiteCensusTest::countSeamCallSites()` (E331 counted the five; a search for a
+declaration cannot find the sixth). Extracted into `DropsInsignificantTokensTrait`.
+
+**What the extraction made visible, which five copies had hidden.** Mutating the SHARED strip to stop
+dropping `T_COMMENT`/`T_DOC_COMMENT` reddened only THREE of the five consumers.
+`ContainedPathInventoryTest` and `ProcessUniqueTempNameTest` had controls for the whitespace half and
+NONE for the comment half — invisible while each owned its own copy, because no test compares two
+consumers' coverage of one helper. Both now carry a fixture verified in both directions, and the comment
+has to sit where the walk reads a NEIGHBOUR, since adjacency is what the strip buys.
+
+**Generalise it.** A shared helper is the only place from which "which consumers actually test this" is a
+single mutation. Every future consolidation should end with one mutation of the shared body per drop, and
+a list of which consumers reddened — the ones that did not are the finding.
+
+**The fifth copy is deliberately not a consumer, and the reason is a measurement.**
+`Config/ReadmeJsonErrorContractDriftTest::significantTokens()` returns `list<PhpToken>` from
+`PhpToken::tokenize()`, and its callers read `$t->text` and `$t->is([...])`. Folding it in is a rewrite of
+that file's every walk, not a consolidation. **Step:** either port that file to the trait's return type
+in a round that owns `tests/Config/`, or record the two shapes as deliberate and pin the divergence.
+
+---
+
+### E357 — `readOrFail()` survives in three MORE files, and none of the three has a fixture reaching its arm
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: latent, and a narrower version of E332.
+
+E332 named three census files; there are six. The three this lane consolidated into
+`RefusesAnUnreadableSourceTrait` each had a fixture reaching the refusal. The three left —
+`Config/DocumentParagraphsTest`, `Config/ConfigWriteProducerDocumentationDriftTest` and
+`Config/GlobFigureDriftTest` — have **no fixture at all**, so reverting any of them to
+`(string) file_get_contents()` is a mutation nothing in the tree can kill.
+
+They were left deliberately: two carry a `could not be read` message and one carries `the census over it
+is void`, which is the one-token pair `DuplicatedTestHelperDriftTest::ACCEPTED_DIVERGENCE` has its
+`readOrFail` row for. Folding all three in would strand that row inside a consolidation, which is a data
+edit hiding in a refactor.
+
+**Step.** In a round that owns `tests/Config/`: fold the three into the trait, and delete the
+`readOrFail` row from `ACCEPTED_DIVERGENCE` in the same commit, with the reason in the commit message.
+
+---
+
+### E358 — E319's own figures are wrong in two places, derived rather than quoted
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: entry accuracy. **Measured, PHP 8.3.6, by
+`tests/Support/NonBlockingVocabularyTest`, which derives it on every run.**
+
+E319 lists `tests/Support/ForkedChildTest.php (×2)`. The tree has **four** — two copies of the pair. That
+correction stands.
+
+**⚠️ THE SECOND HALF OF THIS ENTRY WAS ITSELF WRONG, and the entry was the output of the instrument that
+was wrong.** It said of `tests/SuiteChildStdinIsolationTest.php`'s two sites that one is CONSISTENT —
+`assertTrue($meta['blocked'])` beside a sentence naming the clearing verb, "which is the correct
+pairing". It is not the correct pairing, and E319 was RIGHT to list that file. The site is the tree's
+only AFFIRMATIVELY-phrased message, `rank()` graded affirmative messages backwards (see E360), and this
+entry faithfully reported what the broken scanner returned. Deriving a figure instead of quoting one
+protects against a stale figure; it does not protect against a wrong instrument, and this is what that
+looks like from the inside.
+
+Verified against the CODE and not against the rule (rule 8): `tests/bootstrap.php` ends in
+`if (!stream_isatty(\STDIN)) { stream_set_blocking(\STDIN, false); }`, so the only act it could perform
+on a tty is a flag SET. The sentence says "cleared". Inverted.
+
+Measured total over `tests/` and `src/` after the `rank()` repair: **nine** contradictory sentences in
+four files, and one unrankable (the `:189` sentence naming both directions, which is a different defect
+and is rostered as its own kind). All rostered in both directions.
+
+**Step.** The supervisor sweep E319 asks for still wants doing — this lane owns none of the four files.
+When it happens, the roster rows red and must be DELETED, which is the success case and is said so in the
+failure text. `tests/SuiteChildStdinIsolationTest.php` needs BOTH of its sentences repaired and BOTH of
+its rows deleted, in the same commit as the repair.
+
+---
+
+### E359 — the static-path scanner's four stated holes are closed, and the residual is now five different shapes
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: coverage, closed. **Measured, PHP 8.3.6. FIXED this
+round** (E330).
+
+Heredoc/nowdoc bodies, class constants resolved within the declaring file, a scheme stripped before the
+anchored root match, and `proc_open` plus the two `stream_socket_*` builders. Over `tests`, `src` and
+`bin/sugarcrush`: **zero** new offenders, so the widening bought coverage rather than a roster.
+
+The bound test now carries a positive row per closed hole and six negatives, because deleting a
+"cannot see" row is only half of closing one — without a row that reds when the widening is reverted, the
+capability is exactly as unpinned as the absence was.
+
+**What is still outside**, each pinned by a row: a path assembled by a call such as `sprintf()`; a
+constant declared in ANOTHER file; a `define()`d global constant; a write reached through a method rather
+than a global call; an interpolating double-quoted string. **Step.** The cheapest two are the global
+constant (one more pre-pass, same shape as the class-constant one) and the cross-file class constant
+(needs a two-pass scan over the population, which the census already builds).
+
+**AMENDED the same day, after review, by the same lane.** The class-constant pre-pass's comment claimed
+it registered a constant "under EVERY spelling it can be reached by within the file". It registered
+three — `self::`, `static::` and the bare declaring-class name. Measured through the real scanner:
+`\Ns\A::LOG_PATH` and `parent::LOG_PATH` both answered `[]`, and **neither was on the derived "cannot
+see" list either**, so the bound this entry calls "pinned by a row" was incomplete in the same direction
+as the prose it was written to replace. Both are registered now (namespace-qualified whenever the file
+declares a namespace; `parent` whenever something in the file extends the declaring class), each with a
+positive row, and the comment writes its list of five out instead of quantifying. Three MORE shapes join
+the residual, all derived: a RELATIVE qualified name (`Sub\A::P` under `namespace Ns;` resolves to
+`Ns\Sub\A`), a name reached through a `use … as` alias, and `parent::` where the parent class lives in
+another file. All three need the file's import table or a second file, which is the same missing
+machinery as the existing cross-file row.
+
+**The transferable part is not the spellings.** A quantifier in a comment ("every", "all", "any") cannot
+be checked by reading and is not checked by the suite. Where a bound matters, WRITE THE LIST — a list
+that goes stale is visibly a list, and a reader can count it against the code in a way they cannot count
+a quantifier.
+
+---
+
+### E360 — a known-answer table can have every row in one grammatical shape, and the shape it omits is the one the code gets backwards
+
+**Recorded 2026-08-24 by round-49 lane c, from its own reviewer's BLOCKING finding.** Severity:
+correctness of a guard. **FIXED this round.**
+
+`NonBlockingVocabularyTest::rank()` graded every failure message against the flag direction its assertion
+DEMANDS. That is correct only for the NEGATED form. A failure message is read at the instant the
+assertion fails, so:
+
+- NEGATED — `assertFalse($m['blocked'], 'did not <verb> the flag')` names the demanded act and reports it
+  missing, so the correct verb IS the demanded direction.
+- AFFIRMATIVE — `assertTrue($m['blocked'], 'X <verb>ed the flag')` describes the state AT FAILURE, which
+  is the OPPOSITE of the demand, so the correct verb is the opposite one.
+
+The rule was therefore **inverted, not merely blind**, on the affirmative shape — wrong in both
+polarities — and the tree has exactly one affirmative site, which it false-cleaned:
+`tests/SuiteChildStdinIsolationTest.php`'s TERMINAL arm came back `consistent`, the file was rostered as
+carrying zero inverted sentences, and the census would have gone **red if anybody repaired it**.
+
+**Why the file's own known-answer table did not catch it (rule 11, one turn further than the round-43
+finding that produced rule 11).** All four polarity rows were the negated form: `did not clear`, `did not
+put … back`, `did not set`, `did not clear`. The table did not lack a row for a case it knew about; the
+shape it mis-ranked was **outside its own alphabet by construction**. A polarity table needs a row per
+GRAMMATICAL SHAPE × direction, not per direction.
+
+**Two things the fix had to add beyond the flip.** (a) `negatesTheVerb()` returns `null` — `unreadable` —
+when a message carries a negation it cannot attach to the verb, because `the bootstrap cleared the flag,
+which is not allowed` is affirmative about the verb and negated about the consequence, and a bare
+`str_contains($body, 'not')` inverts it silently (rule 14). (b) A measured reach: the widest gap in the
+real population is two words (`did not put O_NONBLOCK back`), the bound is four, and a five-word gap is
+reported unreadable rather than guessed.
+
+**Step, and it must land TOGETHER with the prose fix.** The repair to
+`tests/SuiteChildStdinIsolationTest.php:181`'s sentence — "cleared" → "set", because
+`tests/bootstrap.php` ends in `if (!stream_isatty(STDIN)) { stream_set_blocking(STDIN, false); }` and the
+only act it could perform on a tty is a flag SET — is **lane e's**, and it must be committed WITH the
+deletion of that file's `INVERTED_ROSTER` row. Either alone reds the census. That file also owns the one
+`UNREADABLE_ROSTER` row (the :189 sentence naming both directions), which is a separate repair.
+
+---
+
+### E361 — a doc-block that NAMES a PHPUnit annotation IS that annotation, and it skipped the test written to stop skipping
+
+**Recorded 2026-08-24 by round-49 lane c, against itself.** Severity: trap, cost about four minutes.
+**Measured, PHP 8.3.6, PHPUnit 10.5.64. FIXED before it shipped.**
+
+Removing a requires-annotation from a test and writing a paragraph explaining why it was removed
+**re-created it**: the annotation name appeared in the replacement doc-block, PHPUnit's metadata parser
+read it out of the comment exactly as it had read the original, and the test skipped — inside the change
+whose entire purpose was that it should never skip. The suite reported `Skipped: 1` for a file that
+carries no `markTestSkipped` at all.
+
+This is rule 26 one level down. Rule 26 is about a textual SWEEP corrupting the prose that describes the
+pattern it rewrites; this is a doc-comment corrupting itself simply by quoting a directive, with no sweep
+involved. **A doc-comment is not an inert place to quote a doc-comment directive.** The same trap is live
+for every other annotation the tooling reads out of comments — a provider, a group, a depends, a
+covers — in any explanatory paragraph, `CALIBER_LEARNINGS.md` fragments included.
+
+**Step.** When a paragraph must name an annotation, spell it without the sigil ("an OS-Linux
+requires-annotation"). Cheap guard for a later round: assert that no test method in `tests/` is reported
+skipped for a reason its own file does not contain a `markTestSkipped` for — which is exactly the shape
+this produced, and is derivable from PHPUnit's own result output rather than from a text scan.
+
+---
+
+### E362 — `BootstrapSkillSkipsTest` goes RISKY, not red, under parallel-lane load, and the diff in flight gets the blame
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: measurement hygiene / flake attribution.
+**Observed once in five runs of `tests/Support tests/Cli tests/Config` at PHP 8.3.6, with four sibling
+lanes running suites on the same box.**
+
+One three-directory run reported `Tests: 1282, Assertions: 37575, Risky: 2` pointing at
+`tests/Cli/BootstrapSkillSkipsTest.php`. The file passes alone (`OK, 5 tests, 8 assertions`) and the same
+three-directory run reproduced clean immediately after and three times since, at the same commit, with
+`37578` assertions — so the risky run also SHED three assertions, which is the tell.
+
+**Mechanism, and it is not a guess about the test's logic.** The file spawns real child processes under
+`timeout -s KILL 60` with a `sys_get_temp_dir()` working directory. Under four concurrent suites a child
+that would finish in a second can miss a 60-second wall clock; the arm that would have asserted never
+runs, and PHPUnit reports the test as risky rather than failed. Nothing in the file is shared with a
+sibling lane — the temp dir is process-unique — so this is contention for CPU, not for a path.
+
+**Why it needs an entry rather than a shrug.** A risky verdict in the middle of a lane's run reads
+exactly like a defect the lane just introduced, and the lane has no cheap way to tell the difference
+except to re-run. Round 44 lost time to the `/tmp` version of this; this is the CPU version, and it
+survives every `/tmp` precaution because it is not about `/tmp`.
+
+**Step.** Two options, neither taken here. (a) Raise the child budget in that file, which trades a
+diagnosis for a longer red when a child genuinely hangs. (b) Better: make the timeout budget an explicit
+named constant with the reason beside it, so the next reader can raise it knowingly. Until then: **a
+risky or red verdict on this file during a parallel round should be re-run alone before it is attributed
+to anything.**
+
+---
+
+### E363 — a false-positive guard is unpinned by construction, and this suite has at least one
+
+**Recorded 2026-08-24 by round-49 lane c.** Severity: coverage. **FIXED this round for the one instance
+found; the rule is the deliverable.**
+
+`vocabularySites()`'s `$tokens[$i + 1] === '('` stops the body walk starting from a `T_STRING` that is not
+a call. Mutating it to never skip **SURVIVED** `tests/Support tests/Cli tests/Config`, because no bare
+`assertTrue`/`assertFalse` token exists anywhere in the tree.
+
+**The general shape, which is what makes this worth an entry.** A guard that prevents FALSE POSITIVES is
+unpinnable by the real population by definition — the population is exactly the set of inputs on which it
+does nothing. Every mutation-survival audit will report these as survivals, and the temptation is to read
+the survival as "this branch is dead" and delete it. It is not dead; it is untriggered. The fixture has
+to be synthetic, and that is correct rather than a compromise: it is the only input that distinguishes
+the guard from its absence.
+
+**Step.** When a mutation survives, classify the branch before acting: an OFFENDER-PRODUCING branch that
+survives is a coverage hole in the census (E355's rule); a FALSE-POSITIVE guard that survives needs a
+synthetic fixture and must not be deleted (rule 6). The two look identical in a mutation table and want
+opposite responses.
+
+---
+
+---

@@ -11068,3 +11068,415 @@ the how-to-renumber prose from the renumber.
 flight. In `Chat.php` two of the three were the expensive kind — a method silently undocumented while its
 prose sat above an unrelated declaration.
 
+## ROUND 51 — CLOSED (`8629df24`, floor `9730 / 143168 / 1 skipped / rc 0`, THREE lanes)
+
+### THE CLOSE
+
+**Floor `9730 / 143168 / 1 skipped / rc 0`** (merges `8bc556ed` a, `0cd0846e` b, `88dcc3ec` c; renumber
+`5c40e5b1`-era commit; roster retirement; E364). **candy-mosaic separately: `457 / 7744 / rc 0`**, up from
+451 — lane a's six new tests, and the first round where a lane's work spanned two libraries.
+18/18 symlinks, `check-path-repos` rc 0, config md5 unchanged, zero tracked per-lib locks, all three lane
+HEADs ancestors of master. Backlog **333 → 364**, round-51 ids **E334–E363**, plus E364.
+
+**Tests predicted EXACTLY for the ninth consecutive round**: 9661 + (1+27+41) = 9730.
+
+### 🔴 THE ASSERTION LOWER BOUND WAS VIOLATED FOR THE FIRST TIME, AND THE CAUSE WAS THE SUPERVISOR
+
+Predicted at least `143171`; measured `143168`. **Three below.** Not lane arithmetic — the merge-time
+resolution DELETED two roster rows, and deleting data rows removes the assertions they generate. Filed as
+**E364**: the additive bound is a lower bound *given a monotonic merge*, and a resolution that deletes
+roster or fixture data breaks it downward. **That is the guard working, not a defect.** The standing fix
+is to recompute the expectation from the lane deltas minus whatever the resolution removed, before
+reporting any violation.
+
+### 🔴 THE THIRD CROSS-LANE CATCH IN THREE ROUNDS — AND THE FIRST ONE A LANE PREDICTED
+
+Lane c's `NonBlockingVocabularyTest` rostered one inverted and one unrankable O_NONBLOCK sentence in
+`tests/SuiteChildStdinIsolationTest.php` — **a file lane a owns.** Lane a fixed both sentences, so the
+census red at the merge exactly as designed, and its failure message carried the resolution:
+
+> *"IF THEY HAVE BEEN FIXED THIS IS THE SUCCESS CASE and the row must be DELETED — every rostered file is
+> owned by another lane, so this reds at a merge rather than at an edit of this file, and the answer is a
+> data edit here, not a weaker check."*
+
+The row's own `why` had already said the repair *"must land WITH this row's deletion or the census reds at
+the merge."* **A guard that knows it will red at merge, says why, and tells the merger which of the two
+possible fixes is the correct one is a step beyond a guard that merely catches things.** Rounds 49 and 50
+produced guards that caught siblings; this one anticipated the catch.
+
+⚠️ **Deleting both rows EMPTIED `UNREADABLE_ROSTER`** — an absence assertion with no positive input, which
+is the dead-instrument shape this tree keeps producing. Not accepted on green: disabling
+`negatesTheVerb()` reds the file with **14 failures** from known-answer fixtures independent of the
+rosters. The classifier is pinned by FIXTURE rather than by the real sites, so an empty roster is safe
+here. Had it not been, the answer would have been a control fixture, never keeping a stale row.
+
+### THE SHARED FILE THAT AUTO-MERGED, AND WHY IT COMPOSED
+
+Lanes b and c both edited `tests/Support/ProcessUniqueTempNameTest.php` and git merged it with **no
+conflict**. Their changes were complementary: lane b re-pointed `STATIC_TEMP_PATH_INVENTORY` because
+**E328's production fix removed the only real `src/` site**, replacing it with a purpose-built control
+fixture; lane c added the extracted traits and widened the alphabet to `proc_open`,
+`stream_socket_server` and `stream_socket_client`. Mutation-verified at the merge: giving the control
+fixture real entropy reds it with two failures.
+
+**Lane b's reasoning on that swap is the transferable part** — an absence census whose only positive input
+can be *fixed away by improving production code* is a dead instrument waiting to happen, so the control
+belongs in the fixture tree where nobody can close it by accident.
+
+### THE PARAMETERISED ROUND NUMBER WORKED TWO TIMES IN THREE
+
+Lanes a and b filed under `Ea51-`/`Eb51-` as the new `COMMON` instructs. **Lane c filed under `Ec49-`
+anyway** — almost certainly copying the convention from the entries surrounding its own in the file it was
+appending to. Harmless a second time only because rounds 49's and 50's provisional ids had both been
+renumbered away. **The instruction is not sufficient on its own; a lane infers convention from context.
+The merge check is what has to catch it, and now does.**
+
+### AND A CORRECTION TO THE SUPERVISOR'S BRIEF
+
+Lane a was assigned `candy-palette/src/Probe/Detect.php` for E318. **`Detect` lives in `candy-mosaic`.**
+The lane found the right file, worked it, and flagged it as out-of-lane rather than silently following the
+wrong path.
+
+
+**Launched 2026-08-24.** Base floor `9661 / 142165 / 1 skipped / rc 0` observed at `a85fcfd6` — identical
+to round 50's close, since only documentation moved between them, and **clean, with no 60s aborts: E333
+has not recurred in three consecutive runs.**
+
+**Lane `a` — implement E296, at last, and it crosses a library boundary.** Round 50 deliberately did not
+repair E296; it PRICED it, and that is what makes this lane buildable. E310: option (a) — replacing
+descriptor 0 rather than closing it — costs **three named assertions**, not the 107 errors a failure
+message still quotes (E323), a stale figure that stalled this work for two rounds. E314: viability is now
+MEASURED rather than argued. E315 is the reason it matters beyond tidiness — the prepend residual is a
+data path from the runner's stdin to a model provider. The lane also closes **E318**, `Detect::stdinFd()`'s
+unguarded `?? STDIN` in `candy-palette`, which is the second of the two defects the round-49 candy-mosaic
+investigation found and the supervisor's round-50 fix left open.
+
+⚠️ The brief carries round 49's failed attempt explicitly: it closed fd 0 and reopened `/dev/null` on a
+census of `sugar-crush/{src,bin,tests}` that concluded nothing read the `\STDIN` constant, **and the
+reader that mattered was in `candy-mosaic`** — rule 11 where the alphabet was a DIRECTORY. E313's fd-0
+reader roster and E320's four third-party packages naming descriptor 0 already exist as the map; the lane
+is told to extend them, not rebuild them.
+
+**Lane `b` — production defects.** E328: `AuditHook`'s default log path is a fixed shared name **in
+production**, not only in its test — the supervisor fixed the test half pre-round-50 and left this half
+on purpose, because two `sugarcrush` processes on one box truncate each other's audit log, and an audit
+log with a race in it is worse than none because it looks authoritative. E329: four `src/` `uniqid()`
+calls carry a literal prefix, so the argument was mistaken for entropy. **E308: a tool that throws can
+FORGE a refusal** — `Chat::invokeTool()`'s generic `catch` puts the raw exception message where the denial
+prefix goes, and since a generic catch names no class the co-occurrence scan cannot see it in principle,
+so the fix has to be structural. Then E304, E307, E306 close the denial work's loose ends.
+
+**Lane `c` — consolidation, where the TREND is the argument.** A **fifth** `significantTokens()` copy
+arrived in the very round that widened the drift guard's bound (E331), and `readOrFail()` plus its refusal
+test are now duplicated across **three** census files (E332). The drift guard caught a real cross-lane
+defect at the round-49 merge and is the most load-bearing guard in the suite — **and its own neighbourhood
+is accumulating the thing it guards against faster than it is being cleaned up.** Extraction follows
+`FlattensSourceProseTrait` / `DiscardsErrorLogTrait`: one implementation, doc-block carrying the UNION of
+every copy's justification. Plus E322, the three alphabet holes E312/E321/E330, E319's inverted O_NONBLOCK
+vocabulary, and E325/E327.
+
+### THE SUPERVISOR'S OWN TWO DEFECTS FROM ROUND 50, FIXED IN THIS SCRIPT
+
+1. **The round number is now parameterised** — `COMMON` emits `E{LANE}${ROUND}-N` from `const ROUND = 51`.
+   Round 50 reused round 49's `COMMON` verbatim, so all three lanes filed under `E<lane>49-N`; harmless
+   exactly once, because round 49's ids had been renumbered away before round 50 branched.
+2. **The merge's heading count must be `^#{2,3} E`** — round 50's lane a filed six entries at `##`, the
+   same slip round 48's lane c made, and the count read unchanged after its merge.
+
+### AND A HARNESS NOTE THAT COST REAL TIME THIS ROUND
+
+Chained multi-line background commands had their newlines collapsed **three separate times**, each leaving
+a shell alive that never ran the work it was waiting to run. Worse, `pkill -f <pattern>` matches the
+supervisor's OWN command line: one such call killed the calling shell (exit 144). **One step per call, and
+kill by PID after `ps`-ing it.**
+
+## ROUND 50 — CLOSED (`674cdf7b`, floor `9661 / 142165 / 1 skipped / rc 0`, THREE lanes, one clean run)
+
+### THE CLOSE
+
+**Floor `9661 / 142165 / 1 skipped / rc 0` at `674cdf7b`** (04:50.670, 304.64 MB). Merges `7973b4c9` a,
+`032a7c2f` b, `be9c0aa3` c; heading normalise + renumber `0b36f911`; E333 `674cdf7b`. Skip still
+`MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`. 18/18 symlinks with a
+`realpath()` prefix check, `check-path-repos` rc 0, config md5 unchanged, zero tracked per-lib locks, all
+three lane HEADs confirmed ancestors by `git merge-base`. Backlog **297 → 327**, ids **E304–E333**.
+
+**Tests predicted EXACTLY for the eighth consecutive round**: 9582 + (6+56+17) = 9661. **Assertions
+predicted as a lower bound of 142141 and landed at 142165** — loose by 24, for the stated reason
+(E191: lane c widened census alphabets that walk `src/`, and lanes a and b both added `src/` material).
+**ZERO cross-lane file overlap for the second round running.**
+
+### THE FIRST FLOOR RUN WENT RED AND THE SECOND DID NOT — FILED AS E333, WITHOUT A MECHANISM
+
+`BootstrapSkillSkipsTest`'s two real-binary spawns each aborted at 60s in the first run
+(`9661 / 142162 / Risky: 2 / rc 1`, 06:50 — the extra time is the two aborts almost exactly). The
+immediate re-run at the same commit was clean at 04:50, and the 3-assertion gap between the runs IS those
+two tests' assertions.
+
+Ruled out by measurement: the file alone (0.412s); `EngineBackendTest` immediately before it (E301's
+injected-Termios seam, which writes O_NONBLOCK onto the runner's fd 0); lane b's new
+`SuiteChildStdinPrependResidualTest` immediately before it; and contention from the supervisor's own
+probes, **which ran during the CLEAN run rather than the red one.**
+
+⚠️ **Round 49's lane b saw this exact signature and blamed sibling-suite contention. That is now
+doubtful** — this occurrence had no sibling suite. Either there are two causes or that attribution was
+wrong, and **the entry deliberately records evidence instead of a mechanism** with a concrete next step:
+capture the hung child's `/proc/<pid>/fd/0` during the 60s window rather than reason from one
+observation.
+
+### 🔴 LANE a REFUTED ITS OWN REVIEWER TWICE, WITH THE MEASUREMENT EACH TIME
+
+The reviewer prescribed widening the denial frame's opener from `[A-Z]` to `[A-Za-z]`. Lane a measured it
+instead: across 200,000 random strings over a 21-token alphabet, four seeds, the `(?<![A-Za-z])`
+lookbehind changes the verdict **639–691 times with the capitalised opener and ZERO times with a widened
+one** — because a frame that may start with any letter always has its leftmost match at a word start.
+**Taking the advice would have closed the gap AND left a live-looking assertion doing nothing — it
+manufactures exactly the dormant code rule 6 exists about.** It closed the case gap by tying the rule to
+the real mechanism (`str_starts_with` is case-sensitive) and killed all five probe rows.
+
+It also refuted the reviewer's claim that `DenialKind`'s whole class doc-block was false: the stale-tense
+half was, and was rewritten; **the autoload paragraph was still true**, measured from a bare
+`vendor/autoload.php` — `class_exists(Chat::class, false)` is FALSE after `DenialKind::classify()` answers
+and TRUE on the very next line after reading `Chat::DENIED_ERROR_PREFIXES`.
+
+**And a BLOCKING find worth the round on its own:** `filesNamingBoth()` returning `[]` left the whole
+suite green — the helper has exactly one caller, so that was a whole-suite survival, not merely a
+filter-scoped one.
+
+### WHAT LANE b ACTUALLY SHIPPED, WHICH IS NOT WHAT THE BRIEF ASKED FOR
+
+**E296 was NOT repaired.** Lane b changed no `src/` file and no `tests/bootstrap.php` — its 2064 lines are
+three test files. What it did instead is arguably better: it **measured option (a)'s viability** (the
+descriptor replacement costs three named readers), built the fd-0 reader roster nobody had, and found that
+**E302's second defect is still open** — `Detect::stdinFd()` hands out an unguarded `?? STDIN`, so the
+`candy-mosaic` fix closed one of two. It also found the O_NONBLOCK vocabulary is INVERTED across the suite
+while the code is right, and that four THIRD-PARTY vendor packages name descriptor 0, one inside PHPUnit
+itself.
+
+### TWO BRIEF DEFECTS, BOTH THE SUPERVISOR'S
+
+The round-50 script reused round 49's `COMMON` verbatim, so **all three lanes filed under `E<lane>49-N`
+rather than `E<lane>50-N`.** Harmless ONLY because round 49's provisional ids had all been renumbered away
+before round 50 branched — verified, the base carries zero. 🔴 **Parameterise the round number in
+`COMMON`.** And lane a filed at `##` rather than `###`, the same slip round 48's lane c made, which is why
+the heading count still read 297 after its merge and six entries were nearly missed. **The merge check
+must count `^#{2,3} E`, not `^### E`.**
+
+
+**Launched 2026-08-24.** The user set the cap at three lanes for this round. Three file-disjoint lanes ×
+implement → adversarial review → fix, from a DURABLE script path.
+
+**Base floor `9582 / 135473 / 1 skipped / rc 0` observed at `906fa666`** — not round 49's `9581 / 135471`,
+because the pre-round E298 fix replaced one racing test with two.
+
+**Lane `a` — finish the denial roster.** Round 49 gave the roster a home (`src/Permissions/DenialKind.php`)
+and routed `Chat`'s producers through it, then stopped. **Three readers were never told**: `Runtime`'s
+three literal `DENIAL_*` constants (E246), the background daemon's classifier reading
+`Chat::DENIED_ERROR_PREFIXES` — the very constant that moved (E300) — and the classifier duplicated in two
+headless callers (E292). Those are one defect and are briefed as one change. Then E247 (the vocabulary
+matches a `TaskBlockedException` string — fourth kind or coincidence?), E250 (`DenialKind` is a TYPE
+nothing consumes as one), E249 and E256.
+
+**Lane `b` — the fd-0 / `Tty` family, and 🔴 E296 IS REOPENED.** The suite's fd-0 repair closes the
+BLOCKING half of E212 and not the PREPEND half. E296, E290, E301 and E303 are one mechanism from four
+angles. The brief carries round 49's two hard-won lessons on this ground: lane e's census for the repair
+was scoped to `sugar-crush/{src,bin,tests}` and **the reader that mattered was in `candy-mosaic`** — rule
+11 at LIBRARY scope, the alphabet was a DIRECTORY; and the widened `grep` written to check it had doubled
+backslashes inside single quotes and matched nothing, so **the harness carried the defect the claim was
+about** (rule 13). Census by token walk, validated against a known-answer control.
+
+**Lane `c` — scanner alphabets, tests only.** The temp-name guard has a scope hole (E266/E293) AND an
+alphabet hole (E265) **and missed E298's shape entirely** — a path with no entropy source at all, which a
+guard whose alphabet is the token `uniqid` cannot express. The duplicated-helper drift guard earned its
+keep at the round-49 merge and is now the most load-bearing guard in the suite, so its own alphabet
+matters: E285 (compares BODIES, signature divergence invisible), E279 (bound is one token), E287
+(visibility alphabet defended by a feeling). Plus E289/E286, E267, E270.
+
+### THE PRE-ROUND FIXES, AND THE DEAD PROBE THAT NEARLY HID ONE
+
+**E298** — `AuditHookTest` wrote and then unlinked `sys_get_temp_dir() . '/sugar-crush-audit.log'`, a fixed
+name with no entropy on the real temp dir. Concurrent copies race, and it deletes the audit log of any
+real `sugarcrush` on the box. Supervisor-fixed pre-round for the same reason E242 was: shared
+infrastructure, so a lane doing it would red its siblings.
+
+🔴 **The verification nearly shipped on a dead instrument.** The first probe gave each of six concurrent
+runs its OWN launch `TMPDIR` — so they could not collide, and the **pre-fix** code passed 6/6. Re-run with
+one shared private `TMPDIR`: control **2, 1, 1 of 6**; fixed **0, 0, 0 of 6**. This is rule 27 catching the
+supervisor rather than a lane, and lane c's brief carries it as a worked example.
+
+**E302** — `candy-mosaic`'s `Mosaic::autoFromPalette()` named `PaletteCapability::Iterm2Image`; the enum
+spells it `ITerm2`. Enum cases resolve at USE time, so it parsed, loaded, and threw for every terminal
+that missed the Kitty branch. Fixed with a source-scan guard.
+
+## ROUND 49 — CLOSED (`504d9a43`, floor `9581 / 135471 / 1 skipped / rc 0`, FIVE lanes, three runs)
+
+### THE CLOSE
+
+**Floor `9581 / 135471 / 1 skipped / rc 0` at `504d9a43`**, `sugar-crush` LINKED (04:45.418, 300.12 MB).
+Merges `2cd49de9` a, `92aaa179` b, `3d3b9119` c, `ef46913e` d, `8964bfde` e; census bump `dfb01d2f`;
+renumber `90926b58`; drift fix `504d9a43`. Skip confirmed BY NAME — still
+`MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`. 18/18 symlinks by
+`is_link()` **with a `realpath()` prefix check**; `check-path-repos --no-lib-path-repos` rc 0; config md5
+`05480c743aff302fd6c06c5a4a4c2210`; zero tracked per-lib locks. Backlog **239 → 297**, ids **E246–E303**.
+
+**Tests predicted EXACTLY for the seventh consecutive round**: 9499 + (15+18+9+12+28) = 9581.
+**Assertions predicted as a lower bound of 135467 and landed at 135471** — loose by 4, and loose for the
+reason given in advance (E191: lane c owns the `src/`-wide censuses and four siblings write into them).
+The prediction was written to a file before the run finished, not reconstructed after.
+
+### 🔴 THE MERGE RED ON EXACTLY ONE TEST, AND IT WAS A CROSS-LANE CATCH — THE BEST RESULT THE ROUND SYSTEM HAS PRODUCED
+
+`Support\DuplicatedTestHelperDriftTest` — **lane d's** guard — found two copies of a private helper
+`withErrorLogDiscarded()` that **lane b** had written into two of its OWN files, bodies identical except
+the `tempnam()` prefix (`'sc_lane_a_delivery_'` vs `'sc_r49b_sglang_'`).
+
+**Neither lane could have caught it.** Both copies were lane b's, so nothing looked odd from inside lane
+b; the guard was lane d's, and lane d never touched those files. **It reds on the merged tree and nowhere
+else.** That is precisely the defect the drift guard was built for, catching a real instance on its first
+merge — the argument for building guards in one lane against code another lane writes, made by
+demonstration rather than by assertion.
+
+Fixed by EXTRACTING to `tests/Support/DiscardsErrorLogTrait.php`, not by an `ACCEPTED_DIVERGENCE` row, on
+the precedent `FlattensSourceProseTrait` set for E196/E224 **in this same round**. The prefix became a
+parameter — `tempnam()` supplies the uniqueness, the prefix is only a debugging label — and the doc-block
+carries the UNION of both copies' reasons.
+
+### THE SHARED CENSUS FORCED ITS EDIT AGAIN, AND LANE b DID THE RIGHT THING WITH IT
+
+Lane b added a second `error_log()` in `AgentWorkerPool`, which falls inside lane c's `ERROR_LOG_SITES`
+predicate. **Lane b refused to edit lane c's file and reported `rc 1` for its own lane rather than
+hiding it**, escalating the bump to the merge with both halves pre-measured. ⚠️ **The supervisor's first
+reading of that `rc 1` was that the agent had mis-filled its schema field. It had not — the lane really
+was red, by design.** Verified by re-running lane b's suite: `9517 / 134899 / 1 failure`, and the failure
+was that one census row.
+
+Applied at merge and **verified by mutation, not by green**: renaming lane b's new call reds the census
+with `the roster says 2, the scan counts 1`.
+
+### 🔴 A LIVE FATAL IN A SIBLING LIBRARY, FOUND ONLY BECAUSE A LANE BROKE SOMETHING ADJACENT
+
+`candy-mosaic/src/Mosaic.php:166` called `PaletteCapability::Iterm2Image`. `candy-palette`'s enum spells
+that case **`ITerm2`**. PHP resolves an enum case at USE time, so the file parsed, the class loaded, and
+`Mosaic::autoFromPalette()` threw `Error: Undefined constant` for **every terminal that did not match the
+Kitty branch first** — the whole no-TTY fallback was an unconditional fatal.
+
+**It survived because nothing ever reached the line.** Lane e found it from another repository: closing
+descriptor 0 made `Detect::probe()` throw for the first time and drove execution past the Kitty arm.
+Fixed, plus `candy-mosaic/tests/PaletteCapabilityReferenceTest.php` — a SOURCE SCAN rather than more
+branch coverage, because the failure mode is a NAME and the alphabet that matters is "every case named
+anywhere in `src/`". Mutation-verified: reintroducing the bad name reds it and prints
+`Named: KittyKeyboard, Color256, Iterm2Image, TrueColor, NoColor`.
+
+### WHAT THE THREE RUNS COST, AND THE TWO HARNESS LESSONS
+
+Round 49 took three launches. `wf_0bcbe384-775` (five parallel implementers) was stopped by the supervisor
+for a session limit; `wf_e9f19bf7-612` ran lane a serially, lost b–e to the limit, then died on resume
+with **"adopt scriptPath rejected"**; `wf_44d2d1fe-25c` finished b/d/e.
+
+🔴 **LAUNCH FROM A DURABLE SCRIPT PATH.** A resume target under `/tmp/.../scratchpad/` cannot be adopted
+by the background fork. Put scripts in `.../workflows/scripts/`.
+
+🔴 **A RESUME'S CACHE KEY IS `(prompt, opts)`, SO `COMMON` IS UNTOUCHABLE WHILE A RUN IS RESUMABLE.** The
+brief carried two contradictory floors (`9445 / 132167` and `9499 / 133587`); lane a re-ran at the base,
+observed `9499 / 133587`, and refuted it. The correction went into the DURABLE copies only and was
+deliberately reverted in the resume target, because one character in `COMMON` re-runs every lane including
+the ones already cached.
+
+**FINISH, DO NOT RESTART.** The third run's briefs injected each lane's real HEAD, full commit list and
+uncommitted files, observed from the live dirs at launch. A from-scratch re-review would have discarded
+5–7 review commits per lane. Two lanes said the injected state was wrong for them in specific ways
+(lane d had no uncommitted edit and was not detached when it arrived) — **the hazard prose was written
+flat instead of conditional on the injected state, and should be conditional next time.**
+
+
+### 🔴 THE ROUND WAS RESTRUCTURED MID-FLIGHT — AND THE STOP CAUGHT TWO LANES MUTATING
+
+On 2026-08-24, with all five implementers still running, the user said they were near a session limit and
+asked to drop to one agent at a time. The supervisor stopped run `wf_0bcbe384-775`.
+
+**The implement phase turned out to be essentially complete.** 42 commits across the five lanes — a 12,
+b 8, c 5, d 9, e 8 — and *every* lane had already reached its backlog-recording commit, which the brief
+puts last. Lanes a and d had even landed follow-ups past it (a's `E253`: E223's "only `Program` calls
+`init()`" premise is false). **No implementer wrote a report; the stop preempted the report, not the
+work.**
+
+**What the moment of death showed.** `git status` in each lane at the kill:
+
+| lane | state at kill |
+|---|---|
+| a | **dirty** — `src/Chat.php`, a `DenialKind::Refused->reason(…)` call reverted to the hard-coded string |
+| b | clean |
+| c | clean |
+| d | 5 dirty on one poll, **0 on the next** — it committed as the kill landed |
+| e | **dirty** — `tests/bootstrap.php`, the stdin-closing block disabled with `false &&` |
+
+Both dirty files were **live mutation probes whose restore step never ran** — E168 observed directly, in
+two lanes simultaneously, on the first round where anyone looked at the instant of death rather than
+after. The supervisor **inspected before reverting**, which the standing rule demands because rounds 47
+and 48 both had dirty lanes holding *real* work and only round 45's was a mutation. These two were
+unambiguously mutations, and only those two files were restored. All five lanes clean, 42 commits intact.
+
+**The transferable part is the inference, not the incident.** If a restore step can fail to run because
+the agent died, it can also fail to run because the agent moved on — so a mutation can be sitting
+**committed** in a lane diff. Every review brief this round now carries that as an explicit search: scan
+for a `false &&`, a commented-out call, an inverted condition, a fixture expectation quietly adjusted to
+match a broken instrument.
+
+### THE SERIAL CONTINUATION
+
+Run `wf_e9f19bf7-612`, task `wyxy94q0k`. The script reuses round 49's `COMMON`, `OWNERSHIP` and `LANES`
+verbatim and replaces `pipeline()` with a serial `for` loop — **exactly one agent alive at any moment**.
+Review and fix are **combined into a single fresh agent per lane**: the independence that makes the review
+worth anything comes from the agent not having written the code, which a fresh agent still satisfies, and
+combining halves the agent count, which was the entire point of the change.
+
+**The reviewers have no implementer report, so the commit messages are the claim set** — and commit
+messages are precisely the artefact this project keeps catching out ("measured" when the figure was
+derived; "fails under mutation" when it does not). That is a *stronger* review position than the usual
+one, and whether this round's findings are better than usual is worth reading for.
+
+
+**Launched 2026-08-23.** The user raised the lane cap from three to five for this step. Five file-disjoint
+lanes × implement → adversarial review → fix, task `wijsgsm5d`.
+
+**Items.** Lane `a` (denial): **E239 + E236 together** — move the denial roster off `Chat` to a neutral
+leaf and route all three hand-rolled producers through it — plus E238 (a test that passes with the thing
+it tests deleted), E243, E240, E223. Lane `b` (dormancy): 🔴 **E226**, the four stacked doc-comment pairs
+round 48 deliberately deferred to after the merge, plus **E227** (`SglangProvider`'s reachability, never
+asked while `WorktreeManager`'s was), E221, E222. Lane `c` (censuses): 🔴 **E228**, the can't-fail-fixture
+sweep, plus E224 and E245 — tests only. Lane `d` (scanners): E233, E230, E232, E235 — tests only.
+Lane `e` (daemon): E241, E229, and **E242 as a check on the supervisor's diagnosis rather than a redo**.
+
+### The supervisor fixed E242 before launching, and the entry's stated mechanism was wrong
+
+E242 blamed a shared uid-keyed `TMPDIR` for a catastrophic slowdown — a lane crawling at ~160 tests per
+ten minutes. **Measured first, as the entry's own Step demanded. It does not reproduce.** `tests/Cli`:
+9.38s alone, 10.97s with two suites concurrent. `tests/Agents`: 39.95s alone, **41.5s with five**. That is
+4–17%, ordinary contention on a 48-core box, not the ~27× reported.
+
+**What reproduced instead is nondeterminism.** One of five concurrent runs failed with
+`SQLite3Exception: Task not found: dep` in `TaskListTest` — two processes opening one
+`tasklist_test_<id>.sqlite3`. The cause is that an argument-less `uniqid` call is derived from microtime
+and nothing else, so it is **not unique across processes**, and `tests/bootstrap.php` points every
+concurrent suite's `TMPDIR` at one uid-keyed sandbox. **91 call sites across 44 files.**
+
+Fixed with a pid prefix plus the more-entropy flag, and guarded by
+`tests/Support/ProcessUniqueTempNameTest.php` — known-positive control, mutation-verified (reverting one
+site reds it, naming file and line). Floor `9497 → 9499 / 133587`, 1 skipped, rc 0.
+
+**Why the supervisor and why pre-round:** it is shared test infrastructure, so a lane doing it would red
+every other lane; and going from three concurrent lanes to five is what made it urgent. ⚠️ **Rounds 45–48
+all ran three concurrent lanes with this hazard live.** Their figures were green and mutually consistent,
+but any isolated anomalous red in those records could have been this.
+
+### Rule 26, learned twice in one day
+
+The round-48 id renumber corrupted the one sentence in `crush_code_RESUME.md` that *explained how to
+renumber*, turning `Ec48-10`/`-11` into `E245`. Harmless only because that sentence was being deleted.
+Hours later, the `uniqid` sweep ate its own guard's known-positive fixture and mangled the doc-block
+justifying it — **the sweep destroyed the file documenting the sweep.**
+
+A regex cannot tell an offender from a description of an offender. The guard was rewritten so the bad form
+never appears literally in it (the fixture builds it by concatenation), and the immunity is now asserted:
+re-running the blanket pass changes 0 sites and leaves the file's md5 unchanged.
+
+**Nothing merged yet. The merged floor has not been measured.**

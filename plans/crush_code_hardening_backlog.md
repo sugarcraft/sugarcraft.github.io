@@ -11026,22 +11026,56 @@ wrong. Both are corrected and the mutation is now killed.
 
 ### E328 — `AuditHook`'s default log path is a fixed shared name in PRODUCTION, not only in its test
 
-**Recorded 2026-08-24 by round-49 lane c.** Severity: low, cross-process. **Measured.** Not fixed.
+**Recorded 2026-08-24 by round-49 lane c. FIXED at round 51. ITS RECORDED MECHANISM WAS WRONG AND IS
+REWRITTEN BELOW rather than deleted — E344 raised the objection, and round 49 lane b settled it against
+this entry with a generator.** Severity: low, cross-process.
 
 E298 fixed the TEST that drove `AuditHook`'s production default, wrote the file and unlinked it. The
-default itself is unchanged and is `sys_get_temp_dir() . '/sugar-crush-audit.log'` — one fixed name, world-
-writable temp dir, no pid and no entropy. Two `sugarcrush` processes on one box append to one file
-(interleaved, and a partial write from either can split a record), and any local user can pre-create it as
-a symlink to somewhere else before the first run.
+default itself was unchanged and was `sys_get_temp_dir() . '/sugar-crush-audit.log'` — one fixed name,
+world-writable temp dir, no pid and no entropy.
 
-**Why it is recorded rather than fixed.** An audit log that moves every run is not an audit log, and a
-caller who wants a private one passes it in — so the fixed name is the intended behaviour and changing it
-is a product decision, not a bug fix. The site is carried in
-`ProcessUniqueTempNameTest::STATIC_TEMP_PATH_INVENTORY`, where it also serves as that scanner's only
+**WHAT THIS ENTRY SAID.** "Two `sugarcrush` processes on one box append to one file (interleaved, and a
+partial write from either can split a record), and any local user can pre-create it as a symlink to
+somewhere else before the first run."
+
+**WHAT IS TRUE.** The second clause was right and is the whole of what the fix closed. **The first clause
+is false, and was false at the moment this entry was written** — not superseded by the fix. Two things
+were measured, PHP 8.3.6, generator `probe_append_r49b.php` in the round's scratchpad:
+
+- *The write already serialised.* `git show d881f552^:sugar-crush/src/Hooks/BuiltIn/AuditHook.php` — the
+  commit immediately BEFORE the E328 fix — spells `file_put_contents($this->logFile, $entry,
+  FILE_APPEND | LOCK_EX)`. `FILE_APPEND` never truncates and `LOCK_EX` serialises cooperating writers, so
+  the flags this entry's hazard would have needed to be absent were present the whole time.
+- *And it holds under load.* The probe drives the REAL `AuditHook::execute()` from 8 concurrent processes
+  × 200 records × a 9000-byte payload (past `PIPE_BUF` and past one page), with a caller-supplied path so
+  `$ownsPath` is false and the write is byte-for-byte the pre-fix one. Three takes: **1600 lines,
+  1600 whole, 0 split, 0 interleaved, 14467200 bytes, identical every take.**
+
+**AND THE DETECTOR IS NOT DEAD, which is why the zero above is evidence.** The same probe has two
+known-positive control modes, run at the same parameters on the same box. `trunc` (`file_put_contents`
+with no `FILE_APPEND` and no `LOCK_EX`) returned **1 line of 1600** — it sees loss. `nolock` (`fopen('a')`
+plus chunked `fwrite`, no `flock`) returned **1600 lines, 39 whole, 1560 split, 1 interleaved** — it sees
+splitting and interleaving. An "all intact" verdict from an instrument that cannot report damage would
+not have been worth writing down.
+
+**WHY THIS ENTRY STILL EARNS ITS PLACE.** Its conclusion — that the fixed shared leaf had to go — was
+right, and the reachability half it named is the reason: any local user could pre-create the leaf as a
+symlink and have the hook append through it, and the file the hook created was mode 0664 under the
+ordinary umask 0002, i.e. world-readable, carrying every tool's arguments and 200 bytes of its output.
+What the false half costs a reader is a wrong repair: someone who believed it would reach for locking,
+find it already there, conclude the entry was stale, and leave the reachability untouched. That is the
+failure mode E344 was filed about, and it is why the sentence is corrected in place instead of removed.
+
+**Why it was originally recorded rather than fixed.** An audit log that moves every run is not an audit
+log, and a caller who wants a private one passes it in — so the fixed name is the intended behaviour and
+changing it is a product decision, not a bug fix. That argument survived the fix: the leaf name is still
+fixed, it just sits inside a per-user directory now. The site was carried in
+`ProcessUniqueTempNameTest::STATIC_TEMP_PATH_INVENTORY`, where it also served as that scanner's only
 real-tree liveness control.
 
-**Step.** Decide: keep the fixed default and open it with `O_APPEND` plus an `is_link()` refusal, or move
-the default under a per-user directory the process owns.
+**Step — DONE at round 51.** The default is
+`sys_get_temp_dir() . '/sugar-crush-audit-<euid>/audit.log'`, the directory created 0700 and refused when
+it is a symlink, a non-directory, not owned by this euid, or reachable by anybody else.
 
 ---
 
@@ -11457,6 +11491,23 @@ The default is now `sys_get_temp_dir() . '/sugar-crush-audit-<euid>/audit.log'`,
 
 **Why this matters beyond bookkeeping.** A reader who trusted the recorded mechanism would have reached
 for locking, which was already there, and left the reachability untouched.
+
+> **SETTLED IN THIS ENTRY'S FAVOUR at round 49 by lane b, which was sent to decide between this entry and
+> E328 and found one thing this entry did not have.** E344 argued from the CURRENT code, which leaves open
+> the reading that E328 was right when written and the fix made it stale. It was not:
+> `git show d881f552^:sugar-crush/src/Hooks/BuiltIn/AuditHook.php` — the commit immediately before the
+> per-user directory landed — already spells `file_put_contents($this->logFile, $entry,
+> FILE_APPEND | LOCK_EX)`. There was never a version of the class whose appends raced, so E328's first
+> clause was **false at the moment it was recorded**. Independently re-measured with a fresh generator
+> (`probe_append_r49b.php`, PHP 8.3.6) driving the real `AuditHook` at a caller-supplied path so
+> `$ownsPath` is false and the write is byte-for-byte the pre-fix one: 8 processes × 200 records × 9000
+> bytes, three takes, **1600/1600 whole, 0 split, 0 interleaved, 14467200 bytes every take**. The same
+> probe's two control modes fired as they must — `trunc` (no `FILE_APPEND`, no `LOCK_EX`) returned 1 line
+> of 1600, `nolock` (`fopen('a')` + chunked `fwrite`) returned 1600 lines of which 39 were whole and 1560
+> torn — so the zeros above come from an instrument that demonstrably sees damage. **E328 is rewritten in
+> place accordingly**, and the invariant is now derived by
+> `tests/Hooks/AuditHookConcurrentAppendTest.php` rather than restated in two doc-blocks, so the next
+> person to change the write flags is told by a red test rather than by a paragraph.
 
 ---
 
@@ -12194,5 +12245,802 @@ there is.
 **Do not fix by reordering alone.** Establish first, by measurement, whether any caller currently depends
 on the empty-string result — a provider error path that has always returned `''` may have a test pinning
 that. Rule 15/25 applies: a fixture whose expected value is what a dead instrument returns proves nothing.
+### E368 — the resource-id-as-descriptor defect has SIX instances, not three, and one of them is not latent
+
+**Recorded 2026-08-24 by round-52 lane a; AMENDED the same day, after review, by the fix agent.**
+Severity: correctness — five latent, **one live on every `2>file` invocation**. Measured, PHP 8.3.6.
+**Every remaining site is OUT OF LANE — `candy-core/src/Util/Tty/PosixBackend.php` and
+`candy-flip/src/Renderer.php` are not on this lane's file list. Reported, not fixed.**
+
+#### WHAT THIS ENTRY FIRST SAID, AND WHY IT CHANGED
+
+IT SAID: "a token-stream census over the `src/` directory of all 58 libs finds exactly three sites that
+cast a stream resource to `int` and then use the result as a file descriptor" — `TtyDetect::isAtty()` plus
+`PosixBackend::size()` and `PosixBackend::enableRawMode()`.
+
+WHAT IS TRUE NOW: there are six, and the entry named half of them. **WHY it missed the rest is the
+reusable part, and it is worth more than the corrected number.** The first census walked `T_INT_CAST`
+tokens — which does see all of them — and then kept only the hits "whose operand is a stream". That second
+step was written to recognise the operand shapes already in hand, `$this->stream` and `$stream`. An
+operand that was an **array element** (`$tty[0]`) or a **bare constant** (`STDIN`, `STDOUT`) could not be
+expressed in that vocabulary, so it was dropped in silence rather than surfaced as unclassified. The
+classifier's alphabet was a transcript of the known cases, and it reported exactly the cases it already
+knew.
+
+WHY THIS ENTRY STILL EARNS ITS PLACE: the mechanism it documents was right, the carve-out it records is
+still correct, and the remediation advice — that the fix is not "delete the cast" — is unchanged. Only the
+population was wrong.
+
+#### THE REPLACEMENT GENERATOR INVERTS THE ALPHABET
+
+Rather than asking "which int-casts look like a stream", it enumerates the **sinks that consume a file
+descriptor** and prints the first argument of every call to them, with a classification. An operand shape
+cannot hide from it, because operand shape is not what it searches on; and anything it cannot classify is
+printed as `UNCLASSIFIED` and counted rather than dropped.
+
+Sinks, discovered by grep over the tree rather than assumed: `posix_isatty`, `posix_ttyname`, `fcntl`,
+`TermiosFactory::open`, `SizeIoctl::query`. Run over every `.php` under each library's source directory,
+PHP 8.3.6: **1832 files across 58 libraries, 10 sink calls, of which 2 are a direct `(int)` cast of a bare
+constant and 3 more are a variable that a cast assigned one to two lines earlier.** The file/line pairs
+below are a snapshot and will rot; the generator is the durable artefact, and re-running it is the way to
+re-derive this list. Do not trust the count in this paragraph — re-derive it.
+
+#### THE SIX SITES
+
+| # | Site | Cast | Asks about | Latent? |
+|---|---|---|---|---|
+| 1 | `TtyDetect::isAtty()` | `(int) $stream` | resource id | **FIXED this round** |
+| 2 | `PosixBackend::size()`, ioctl arm | `(int) $this->stream` | resource id | latent |
+| 3 | `PosixBackend::size()`, `/dev/tty` arm | `(int) $tty[0]` | resource id | **wrong on every run** |
+| 4 | `PosixBackend::enableRawMode()` | `(int) $this->stream` | resource id | latent |
+| 5 | `PosixBackend::restoreLast()` | `(int) STDIN` | descriptor 1 (STDOUT) | wrong on every run |
+| 6 | `Renderer::withAdaptiveSize()` (candy-flip) | `(int) STDOUT` | descriptor 2 (STDERR) | **NOT latent — see below** |
+
+Sites 3, 5 and 6 were all missed by the first census, and all three for the alphabet reason above.
+
+**Site 3** is the worst of the candy-core group. The other cast sites there are latent-but-usually-right
+because descriptors 0, 1 and 2 name the same device in an ordinary terminal, so asking the wrong one still
+returns the right answer. Site 3 cannot be: `openTty()` **freshly `fopen`s `/dev/tty`**, and a fresh
+handle's resource id can never equal its own descriptor once the low numbers are taken. Measured under a
+real tty, PHP 8.3.6: the handle's resource id is **5** while its actual descriptor is **4**, and the two
+numbers give OPPOSITE answers — `posix_isatty(5)` is `false`, `posix_isatty(4)` is `true`. (The absolute
+numbers depend on how many descriptors the launcher already holds; the inequality is the invariant, not
+the pair.)
+
+**Site 5** takes its "current state from STDIN" — the comment directly above it says so — from
+`(int) STDIN`, which is **1**, i.e. STDOUT. Measured: the three standard streams have resource ids 1, 2, 3
+over descriptors 0, 1, 2.
+
+#### SITE 6 IS NOT LATENT, AND IT IS THE REASON THIS AMENDMENT MATTERS
+
+`candy-flip`'s `Renderer::withAdaptiveSize()` calls `SizeIoctl::query((int) STDOUT)`. `(int) STDOUT` is
+**2**; STDOUT's descriptor is **1**. So it asks the kernel for **STDERR's** window size while its own
+doc-block promises `@throws \RuntimeException if STDOUT is not a TTY`.
+
+That is harmless only while stderr happens to be the same terminal. Redirect stderr and keep stdout on the
+terminal — `php demo.php 2>err.log`, an utterly routine invocation — and the two descriptors stop naming
+the same thing. Measured under a real tty, PHP 8.3.6, three takes, identical every time:
+
+```
+posix_isatty(1)  [real STDOUT] = true          <- stdout IS a terminal
+posix_isatty(2)  [real STDERR] = false         <- stderr is the file
+SizeIoctl::query(1) -> succeeds
+SizeIoctl::query(2) -> RuntimeException: Cannot query size of non-tty fd
+```
+
+So the method **throws on a live terminal**, and the exception a caller sees says STDOUT is not a TTY when
+STDOUT demonstrably is. Wrong behaviour and a wrong diagnostic pointing the next reader away from the
+cause. Unlike sites 2–5 this needs no unusual process state — only a shell redirection.
+
+#### CARVE-OUTS — verified, and any sweep of this pattern must spare them
+
+- `candy-serve/src/StatsServer.php` casts a stream to `int` and is **not** an instance: the value is an
+  array key for handle identity, which is precisely what a resource id is for.
+- `candy-palette/src/Probe/TerminalProbe.php` and `candy-shine/src/Theme.php` call `posix_isatty(STDOUT)`
+  passing the **resource itself**, with no cast. `posix_isatty()` accepts `resource|int`, so this is
+  correct — and it is the shape the other sites should be moving toward, not away from.
+- `candy-vcr/src/Cli/RecordCommand.php` calls `TermiosFactory::open(0)` with a literal `0`. That is a real
+  descriptor number, not a cast. Correct.
+- `candy-pty/src/Posix/PosixPtySystem.php` passes `$masterFd` / `$slaveFd` to `fcntl()`. These come from
+  `posix_openpt` through FFI and are genuine kernel descriptors. Correct.
+
+#### STEP
+
+Give sites 2–6 the treatment `TtyDetect::isAtty()` got **where the question allows it**, and note that it
+often does not. `stream_isatty()` removes the need for a descriptor number, but `ioctl` and `termios`
+genuinely need one, so:
+
+- **Site 6 first** — it is the only one that misbehaves without unusual process state, and it is also the
+  easiest: `SizeIoctl::query()` needs a descriptor, and the descriptor for `STDOUT` is the constant `1`.
+  Passing `1` is correct and total. Add a regression test that redirects stderr to a file and asserts the
+  call still answers.
+- **Sites 2 and 4** need the descriptor carried alongside the stream, or the `stty`/`tput` fallback
+  promoted to primary.
+- **Site 3** should ask about the handle it just opened rather than a number derived from it.
+- **Site 5** should open descriptor `0` explicitly, since STDIN is what the comment says it wants.
+
+**Do not "fix" any of these by deleting the `(int)`** — the call needs a number, and the defect is that it
+is the wrong number.
 
 ---
+
+### E369 — three doc-block rows in `StdinConstantReaderCensusTest` describe defects this round closed
+
+**Recorded 2026-08-24 by round-52 lane a.** Severity: stale justification. **Out of lane —
+`sugar-crush/tests/StdinConstantReaderCensusTest.php` is on no lane's list this round. Reported, not
+edited.**
+
+That file's class doc-block carries a judged row per entry in its roster, and this round's fixes make three
+of them describe a tree that no longer exists. The roster assertion itself stays GREEN (verified by running
+it) because the roster is a set of file paths and none of those changed — this is prose drift, not a red.
+
+  - `candy-core/src/Util/Tty/EnvDetect.php` — says "WOULD THROW, AND IS DORMANT". Still dormant; no longer
+    throws. `isConsoleStdin()` now opens `if (!\defined('STDIN') || !\is_resource(\STDIN)) { return false; }`.
+  - `candy-core/src/Program.php` — says "GUARDED, BUT ITS GUARD'S FALLBACK IS NOW ITSELF DEAD". The fallback
+    is no longer a constant: resolution is own-handle → constant → `/dev/null` file spec, via
+    `Program::childDescriptor()`.
+  - `candy-core/src/Util/RawMode.php` — says both its methods "gate on `TtyDetect::isAtty()`, which opens
+    with `is_resource($stream)` and returns false". Still true, and the sentence after it about the
+    fd→Termios route is not: `isAtty()` no longer reaches candy-pty at all.
+
+**Step.** Rewrite the three rows in the three-part form (rule 7) — WHAT IT SAID / WHAT IS TRUE NOW / WHY THE
+ROW STAYS. Do not delete them; the roster's own instructions say the judgement belongs in the doc-block, and
+a row with no judgement is a row the next reader adds blind.
+
+---
+
+### E370 — two family members degrade rather than throw, and nothing pins that they still do
+
+**Recorded 2026-08-24 by round-52 lane a.** Severity: unpinned invariant. **Verified by symbol. Out of lane
+— `candy-core/src/Util/Tty.php` and `candy-core/src/Util/Tty/WindowsBackend.php`.**
+
+The closed-descriptor-0 guard shipped this round
+(`candy-core/tests/Util/ClosedDescriptorZeroFamilyTest`) drives four members inside a child that has closed
+its own descriptor 0. Two more members exist and are NOT in it:
+
+  - `Tty::__construct()` is `self::backend($stream ?? \STDIN, $termios)`. On this box that reaches
+    `PosixBackend`, whose `isTty()` is `is_resource($this->stream) && stream_isatty($this->stream)` — the
+    liveness test is the LEFT operand, so the throwing call is short-circuited away. Correct today, and
+    correct by an accident of operand order that nothing asserts.
+  - `WindowsBackend::__construct()` has the same `?? \STDIN`, and its `isTty()` guards explicitly. It is
+    unreachable on Linux and in CI (`scripts/affected-libs.php` puts no Windows runner on these suites), so
+    a claim about its live behaviour would be reasoning rather than measurement.
+
+**Why they were left out rather than forgotten.** Both are constructors, and constructing them in the probe
+child would test the constructor rather than the descriptor question; `PosixBackend`'s short-circuit is the
+thing worth pinning, and it wants a test of `isTty()` with a dead stream, not a third child process.
+
+**Step.** Add `PosixBackend::isTty()` with a closed stream to the family probe — one line, and it pins the
+operand order. Leave `WindowsBackend` unjudged for Windows on purpose and say so where the row is added.
+
+---
+
+### E371 — `pgrep -f <pattern>` matches the shell that is running the measurement
+
+**Recorded 2026-08-24 by round-52 lane a.** Severity: methodology. **Measured, PHP 8.3.6 / bash, three
+takes.**
+
+While measuring whether a fix stopped a process leak, the counter was
+`comm -13 <(before) <(pgrep -f "mosaic-ssrf")`. It reported exactly ONE surviving process on every run,
+consistently, after a change that had in fact eliminated all of them — and the survivor was gone by the time
+`ps` was asked about it. The pattern string appears in the command line of the very shell invoking `pgrep`,
+so `pgrep -f` matched the measurement's own wrapper. A consistent, reproducible, non-zero answer, entirely
+manufactured by the instrument.
+
+It is the round-44 `grep -c`-on-binary-output shape one step further along: not a false zero this time but a
+false ONE, which is worse, because a false one looks like a partial fix and invites a second round of work
+on a fix that was already complete.
+
+**The fix that worked**, and the general form: put the pattern in a SCRIPT FILE and call the script, so the
+caller's command line never contains it — and match on `pgrep -x <exact comm>` plus a `/proc/<pid>/cmdline`
+test rather than on `-f`. Build the pattern by concatenation inside the script if the script's own name could
+match. This is rule 26 ("a blanket textual pass corrupts the prose that describes the pattern") applied to a
+process table instead of a source tree.
+
+**Step.** None as a code change. Worth citing the next time a lane counts processes, ports or open
+descriptors from bash.
+
+---
+### Round 49, lane b — a note on the numbering and the ids below
+
+**The round number in this block is 49, which is what this lane's brief calls the round, and the entries
+immediately above it are filed under 50 and 51.** That is not a mistake in either place and it is worth one
+sentence rather than a silent renumber: the supervisor's plan commits and this lane's brief both say round
+49, while several earlier merges filed under 50 and 51. Where an entry below cites "round 51" it is citing
+THAT round's work by its own name — E328's fix landing at `d881f552`, and E338's measurement recorded by
+round-51 lane a — and those citations are accurate as written. Renumbering them to match this block would
+break the reference rather than tidy it.
+
+**The `Eb52-` prefix is a provisional lane-scoped id**, spelled the way this lane's brief prescribed it
+verbatim, so that three lanes appending to this one file cannot collide before the supervisor renumbers at
+merge. No source file cites one — that is the standing rule, and it is what makes the renumber safe.
+
+---
+
+### E372 — `LOCK_EX` is not load-bearing for `AuditHook`'s write on any filesystem this box can offer
+
+**Recorded 2026-08-24 by round-49 lane b, from a mutation of its own fix.** Severity: stated bound.
+**Measured**, PHP 8.3.6, Linux, local ext4. Not a defect; recorded because a surviving mutation that is
+never written down is a guard nobody can defend next time.
+
+Deleting `LOCK_EX` from `AuditHook::append()`'s `file_put_contents()` **SURVIVES**
+`AuditHookConcurrentAppendTest`. Deleting `FILE_APPEND` instead **KILLS** it, so the window is awake and it
+is `O_APPEND` doing the work. Generator `probe_lockex_r49b.php`: with `FILE_APPEND` alone, 8 processes ×
+60 records at payloads of 9000 / 100000 / 1000000 bytes, three takes each — **nine runs, 480/480 whole
+records, zero damage every time**.
+
+**Why the flag stays.** `O_APPEND`'s seek-and-write atomicity is a property of the FILESYSTEM, and it is
+exactly the guarantee NFS is known not to honour. A temp directory on a network mount is ordinary on a
+shared build host, so the flag defends a case this hardware cannot produce. Under the no-removal rule that
+makes a TEXTUAL pin the only honest test the property can have —
+`AuditHookConcurrentAppendTest::testTheWriteStillCarriesBothFlags()`, which strips comment and doc-block
+tokens before matching because both constant names appear in the prose arguing for them, with a
+known-positive fixture proving the scanner can still say no.
+
+**Step.** None wanted. Re-open only if a build target appears where the temp directory can be networked
+and a behavioural test becomes possible.
+
+---
+
+### E373 — `RuntimeNoticeSink::drain()` de-duplicates, and a "how many notices" assertion measures that instead
+
+**Recorded 2026-08-24 by round-49 lane b, from a mutation of its own new test.** Severity: instrument
+trap, general. **Measured** — the mutation survived, then killed after the window was fixed.
+
+`drain()` ends with an `in_array($notice, $unique, true)` filter, so **identical rows collapse to one
+before any caller sees them**. A test that drives N emissions of the SAME message and asserts one notice
+arrived is therefore asserting nothing about the emitter: round 49's first version of
+`AuditHookRefusalNoticeTest`'s latch test did exactly that, and **deleting the once-per-process latch it
+existed to defend SURVIVED it**. Three DISTINCT directories now produce three distinct messages `drain()`
+cannot merge, plus a control asserting the three really are distinct (derived by invoking
+`AuditHook::directoryRefusalReason()`, not by re-spelling its format), and the same mutation is KILLED.
+
+**Why this is filed as a general trap and not as one test's bug.** `drain()` is the shared surface: any
+future test of "does subsystem X warn once / twice / not at all" has the same hole, and nothing at the
+`drain()` call site says so. Grep for `drain()` in `tests/` before trusting any cardinality taken through
+it.
+
+**The dedup is per BATCH, and that is the half that says which tests are exposed.** `drain()` builds its
+`$unique` list as a LOCAL and throws it away on return, so two messages merge only when one `drain()` call
+returns both. A test that drains after every stimulus is therefore already safe; the shape that gets caught
+is the natural one — drive N times, drain once at the end — which is exactly the shape the latch test had.
+`AuditHookRefusalNoticeTest`'s latch test now defends itself twice over (distinct messages AND a drain per
+stimulus), and its doc-block says so, because naming one defence invites a later reader to remove the other
+as redundant.
+
+**Step.** Consider a `drainRaw()` for tests, or a doc-block line on `drain()` naming the hazard. Cheapest
+honest version is the doc-block line, and it should say "per batch" rather than "de-duplicates": the
+unqualified verb is what makes a reader think a drain-per-stimulus test is exposed too.
+
+---
+
+### E374 — E346's "five sites each need the token inserted" is wrong: two do
+
+**Recorded 2026-08-24 by round-49 lane b, which implemented E346.** Severity: premise correction, minor.
+**Measured** — by making the change and reading which tests went red.
+
+E346's ready-to-apply patch said `tests/Sessions/BackgroundSessionRunnerTest.php` "asserts the record's
+shape at five sites (search `was not run`) and each needs the token inserted". There are five hits and
+**exactly two needed the change**: the two that assert the emitted record's full shape. Of the other
+three, one asserts the substring `' Write was not run - '` and passes unchanged because the token lands
+before the tool name; the remaining two are hand-built buffer strings feeding
+`BackgroundSupervisor::bufferReportsFailure()`, which is a different parser and not the emitter's output
+at all — one of them does not even use `REFUSAL_RECORD`.
+
+**Why it is worth recording.** A reader following the patch literally would have edited three assertions
+that were already correct, two of them into fixtures that then no longer matched the parser they were
+written for. The entry's mechanism (token after the marker, safe against the `[session:` line protocol)
+was right and is confirmed by mutation: moving the token BEFORE the marker is killed by five tests.
+
+---
+
+### E375 — the arm question E347 leaves open is a vocabulary decision, and nothing in the tree records who owns it
+
+**Recorded 2026-08-24 by round-49 lane b.** Severity: open design question. Verified, not implemented.
+
+E347's claim was re-checked rather than inherited:
+`RefusalStderrSurfaceTest::testBothArmsDoubleAndTheseAreTheBytesTheyWrite()` does now compare the two
+arms' observer STRINGS (not their lengths), and it passes — so naming the kind on the stderr line
+genuinely cannot distinguish "a person typed n" from "there was nobody at the keyboard", because both are
+`DenialKind::Refused` and their token is one word. **No action was taken and none was available at this
+level.**
+
+What is still open is what E347 says: the distinction lives in `HeadlessPermissionPrompt`'s own prose and
+nowhere machine-readable. Closing it needs either a fourth `DenialKind` case or a second field on the
+prompt's line. Both change the PUBLISHED vocabulary a `--output-format json` consumer reads, which is a
+product decision, and no entry in this file currently owns it.
+
+**Step.** Decide whether `refused-by-person` and `refused-no-terminal` are two kinds or one kind with a
+qualifier, then implement. Until then the two arms are deliberately indistinguishable to a machine and
+`RefusalStderrSurfaceTest` is what says so.
+
+---
+
+### E376 — `HeadlessPermissionPrompt::$in` is documented `@var resource` and can now be null
+
+**Recorded 2026-08-24 by round-49 lane b, which caused it.** Severity: doc drift, no runtime effect.
+**Measured**, PHP 8.3.6. Not fixed — `src/Cli/HeadlessPermissionPrompt.php` was outside this lane.
+
+E338 widened `NonInteractive::stdinDefault()` to `resource|null`, and
+`HeadlessPermissionPrompt::__construct()` resolves its `$in` default through it. The property is untyped
+with a `/** @var resource */` doc-block, so a null is legal at runtime and the annotation is now a lie.
+
+**No behaviour is wrong and that was checked, not assumed.** `$in` is read in exactly two places:
+`\fgets($this->in)`, which sits behind `isInteractive()`, and `isInteractive()` itself, which already
+opens `\is_resource($this->in) && \stream_isatty($this->in)`. A null therefore makes the prompt answer
+"not interactive" — the truth about a process with no descriptor 0 — instead of throwing.
+`HeadlessPermissionPromptStdinDefaultTest::testWithNoPinInstalledTheDefaultIsTheProcesssOwnDescriptorZero()`
+asserts both halves.
+
+**Step, NAMED BY SYMBOL BECAUSE "the two doc-blocks" IS WRONG.** `HeadlessPermissionPrompt` carries two
+`/** @var resource */` lines and only ONE of them is about a value that can now be null: the one on the
+`$in` PROPERTY. The other is on `$err`, which is resolved from `\STDERR` and is not nullable — widening it
+would document a state that cannot occur and would invite an `is_resource()` guard on a path that does not
+need one. The constructor's own `@param resource|null $in` is ALREADY correct and needs nothing. So: one
+line, on the `$in` property's `@var`, when that file is next in a lane. No code change.
+
+An earlier draft of this Step said "change the two doc-blocks", which followed literally would have made
+one of the two worse — a prescription in a backlog entry is a hypothesis exactly as a prescription in a
+review is (rule 16), and this one was measured against the file rather than counted from memory.
+
+---
+
+### E377 — the one refusal arm whose remedy is invisible is the one whose remedy gets clipped first
+
+**Recorded 2026-08-24 by round-49 lane b (fix pass), confirming a reviewer NOTE with its own measurement.**
+Severity: observability, not reachable at the production path. Not fixed.
+
+`AuditHook::directoryRefusalReason()`'s mode arm ends `Fix it with: chmod 700 <dir>`, and the directory is
+interpolated TWICE — once to name it and once inside the remedy. `RuntimeNoticeSink::MAX_CHARS` is 400 and
+clips the TRANSCRIPT row (the `error_log()` copy on stderr is never clipped, so the operator always has the
+full text somewhere).
+
+**Measured, PHP 8.3.6.** Generator, run against the format string as the class spells it:
+
+```php
+$fmt = "audit log disabled: %s is mode %04o, which lets other users on this box reach a log of every "
+     . "tool call and its arguments. Nothing is being recorded. Fix it with: chmod 700 %s";
+for ($n = 1; $n < 400; $n++) { $d = '/' . str_repeat('a', $n);
+    if (strlen(sprintf($fmt, $d, 0755, $d)) > 400) { echo strlen($d); break; } }
+```
+
+- production directory (`/tmp/sugar-crush-audit-1000`, 27 chars) → 224-char message, **not clipped**;
+- the message crosses 400 at a directory path of **116 characters**, and because the remedy is the LAST
+  clause it is the first thing to go.
+
+So the arm documented as "the one whose fix is invisible from the symptom" is also the arm that loses its
+fix first, for any caller with a long `TMPDIR` or a long pinned directory. Nothing in production reaches
+116 characters here, which is why this is recorded rather than fixed.
+
+**Step.** If it is ever worth an edit: move the remedy ahead of the explanatory clause rather than raising
+`MAX_CHARS`. The cap is deliberately generous and defends a different threat (a model-supplied tool name
+spending the session's context), and `AuditHookRefusalNoticeTest` asserts the remedy is PRESENT, not where.
+
+---
+
+### E378 — `tests/Hooks/` now holds an in-process fork and is not in the reaper's SCOPE
+
+**Recorded 2026-08-24 by round-49 lane b, which put the fork there.** Severity: future obligation, no hole
+today. Not fixed — `tests/Support/ForkedChildReaperAdoptionTest.php` is not this lane's file.
+
+`ForkedChildReaperAdoptionTest::SCOPE` is `['Agents/', 'Backend/', 'Diagnostics/', 'Integration/',
+'Support/']` and `OUT_OF_SCOPE` is empty. `tests/Hooks/AuditHookConcurrentAppendTest.php` forks four
+writers in-process and DOES adopt `ReapsForkedChildrenTrait`, so nothing is unaccounted for and the
+catch-all `testNoDirectoryWithUnreapedForksIsUnaccountedFor()` — which reds only on forks with a missing
+reap half — stays green. **Checked, not assumed.**
+
+What is missing is the OBLIGATION: the next fork written under `tests/Hooks/` is not required to adopt, and
+a `pcntl_alarm()` time limit is not inherited across a fork, so an unreaped writer there outlives a
+timed-out parent and goes on appending to a log `tearDown()` has already deleted.
+
+**Step.** Add `'Hooks/'` to `SCOPE`, in alphabetical position between `Diagnostics/` and `Integration/`.
+One word; the only fork in that directory already satisfies it, so it cannot red on landing.
+
+---
+
+### E379 — observing the suite floor at a pre-pin commit writes the production audit path that E351 closed
+
+**Recorded 2026-08-24 by round-49 lane b (fix pass), having done it.** Severity: process, self-limiting.
+No code change wanted.
+
+Lanes are told to OBSERVE their floor by re-running the suite at the round's base commit rather than
+inheriting the number, which is a good rule and produced an exact reproduction here
+(`9730 / 143168 / 1 / rc 0`). The base commit for round 49 is `b9abd2fb`, and
+`git show b9abd2fb:sugar-crush/tests/bootstrap.php | grep -c pinDefaultLogDirectory` answers **0** — the
+audit-directory pin lands later in this very round. So the act of observing the floor runs a full suite
+with `HookManager::registerBuiltIns()` writing every tool call to
+`sys_get_temp_dir() . '/sugar-crush-audit-<euid>/audit.log'`, which is precisely the leak E351 exists to
+stop. The file was 29165 bytes when E351 was written and 52154 bytes after this lane's baseline run; some
+of that is sibling lanes at older commits and some of it is this observation.
+
+**Nothing is wrong with either rule.** They only conflict while the fix for the leak is younger than the
+commit the floor is measured at, which is a one-round window and is now closed for `sugar-crush`. It is
+written down because the shape recurs: any test-isolation fix whose landing round is also the round its
+baseline is measured in has the same property, and a reader finding a grown production file after a
+"read-only" baseline run should not go looking for a leak that was already fixed.
+
+**Step.** None on the code. When the lanes are merged, remove
+`/tmp/sugar-crush-audit-<euid>/audit.log` on the build box once — no lane can safely do it while siblings
+are still running suites at pre-pin commits, and no lane should glob-delete under `/tmp` in any case.
+### E380 — E362's mechanism is refuted: a killed child produces a RED, and the RISKY comes from PHPUnit's own per-test limit
+
+**Recorded 2026-08-24 by round-52 lane c, against its own brief.** Severity: diagnosis.
+**Measured, PHP 8.3.6 / PHPUnit 10.5.64.**
+
+E362 said `BootstrapSkillSkipsTest` goes risky because "under concurrent load a child that would finish
+in a second can miss a 60-second wall clock; the arm that would have asserted never runs, and PHPUnit
+reports the test as risky rather than failed." **The causal chain does not hold.** When
+`timeout -s KILL` kills the child, `exec()` RETURNS — status 137 — and every arm below it runs and
+fails. That path is a red, not a risky.
+
+What produces E362's exact signature is `phpunit.xml`'s own `enforceTimeLimit="true"` +
+`defaultTimeLimit="60"`, enforced through `SebastianBergmann\Invoker\Invoker`: `pcntl_alarm()` plus a
+`SIGALRM` handler that throws. Reproduced in a controlled probe (three tests under a three-second
+limit, two of them spawning a ten-second child): `Tests: 3, Assertions: 1, Risky: 2` — two risky tests
+and **three shed assertions**, which is E333's and E362's number exactly.
+
+**Two things the probe established that change how the next reader should read such a run.** (a) The
+alarm does not interrupt a blocking `exec()`; PHP dispatches the pending signal at the next opcode, so
+the abort lands precisely BETWEEN the child finishing and the assertions running — the shed is total,
+not partial. (b) **`Invoker` interpolates its own configured `$timeout` into the message**, so "This
+test was aborted after 60 seconds" is a statement about the CONFIGURATION and not evidence that sixty
+seconds elapsed. Any stray `SIGALRM` prints the same sentence.
+
+**The load story does not survive either.** One real one-shot child costs **0.28s** (three takes:
+0.28 / 0.28 / 0.28, PHP 8.3.6, load average 6.07 with sibling suites running); the whole file runs in
+0.41s. Reaching a 60s wall clock needs a ~200x slowdown.
+
+**What was fixed.** The budget is now `CHILD_WALL_CLOCK_BUDGET_SECONDS = 20`, named, with the measured
+reason beside it (E362's option (b)), and a guard reads `defaultTimeLimit` out of `phpunit.xml` and reds
+if the budget comes within `BUDGET_HEADROOM_SECONDS` of it.
+
+**CORRECTION, same day, by this round's reviewer and re-measured before acting on it. WHAT THIS ENTRY
+SAID:** "a budget at or above the per-test limit means the file cannot fail at all — it can only be
+aborted", and "above the ceiling it trades the diagnosis for no verdict at all". **WHAT IS TRUE NOW,
+and was true when that was written:** `phpunit.xml` also sets `failOnRisky="true"` — the attribute that
+decides the polarity of the whole argument — and the paragraph was written from `enforceTimeLimit` and
+`defaultTimeLimit` without reading the third attribute two lines below them. The lane's own probe cannot
+have carried it; the probe's rc was never reported. **Re-measured independently, PHP 8.3.6 /
+PHPUnit 10.5.64, two configurations differing in that attribute ALONE, one test whose child outlives a
+three-second limit:**
+
+| `failOnRisky` | banner | rc |
+| --- | --- | --- |
+| `true` (what `phpunit.xml` sets) | `OK, but there were issues!` / `Tests: 2, Assertions: 1, Risky: 1` | **1** |
+| `false` | identical | 0 |
+
+Under the real configuration an abort **fails the run and PHPUnit names the aborted test and its file**
+(`1) RiskyProbeTest::testSpawnsAChildThatOutlivesTheLimit / * This test was aborted after 3 seconds`).
+**WHY THE 60→20 CHANGE STILL EARNS ITS PLACE:** what the abort really costs is (a) the assertions the
+arm would have made, shed from the totals — and a moved assertion count is the signal this project reads
+as evidence its dependency closure is intact — and (b) the diagnosis, which becomes a generic "aborted
+after N seconds / did not perform any assertions" instead of a sentence naming the constant, the child
+and the remedy. **A specific red traded for a generic one, not a red traded for nothing.** The five
+places carrying the wrong version — three doc-blocks, one runtime failure message and this entry — are
+rewritten in the three-part form, and `testAnAbortAtThatCeilingStillFailsTheRun()` now pins
+`failOnRisky` against `phpunit.xml` with a known-answer table, because with it off the original claim
+WOULD be true.
+
+**Generalise it:** the attribute that decides what a failure MODE costs is not always in the paragraph
+you are reading. When an argument turns on "what does the runner do with this verdict", read the whole
+config block, not the two attributes that named your mechanism.
+
+**Step, and this entry does NOT close it.** The stray-`SIGALRM` hypothesis is UNPROVEN.
+`tests/Support tests/Cli tests/Config` contains no `pcntl_alarm()` caller, so if a stray alarm is what
+E362 saw, its source is elsewhere. A test that arms an alarm and dies before cancelling it delivers an
+abort into an arbitrary LATER test, with a message quoting sixty seconds and no relation to the truth.
+**Anyone who sees a risky abort on a fast file should look for the arming test, not at the aborted one.**
+
+---
+
+### E381 — two tests asserting an ABSENCE from a child's stderr passed on a child that never ran
+
+**Recorded 2026-08-24 by round-52 lane c. FIXED this round.** Severity: rule-15 hole, live.
+
+`BootstrapSkillSkipsTest::testACleanLaunchIsSilent()` and `testACleanOneShotRunIsSilent()` assert
+`assertStringNotContainsString('could not be read', $stderr)`. An empty string contains nothing, and a
+child killed before it writes a byte produces an empty string. **Measured both ways:** with the child
+budget cut to 0.001s and the new arm removed, those two tests are `OK (2 tests, 2 assertions)`; with the
+arm present the file goes to four failures.
+
+**Widened the same day, after this round's reviewer measured that the fix did not deliver its own
+heading.** The arm as first shipped refused only status `137`, the budget's own SIGKILL, and its
+doc-block excused the narrow form on the grounds that "the launch child's exit status is otherwise not
+this file's business — it is a TUI process in a pipe". Both halves were wrong. **Measured:** pointing
+the one-shot helper at a nonexistent binary — a child that never ran, status 127 — left
+`testACleanOneShotRunIsSilent()` GREEN, `OK (1 test, 2 assertions)`; and the one-shot child is
+`bin/sugarcrush -p`, not a TUI in a pipe. Both children exit 0 on this host, three takes each, so the
+arm is now `assertSame(0, …)` and refuses 127 and 255 as well as 137. Re-mutated after the widening:
+the nonexistent-binary mutation is KILLED at 1 test / 2 assertions, in both helpers.
+
+**And the arm itself is now pinned in both polarities**, because every real child in that file exits 0 —
+the population that would exercise a refusal never occurs, which is E322's shape and is how the narrow
+form survived a whole round unnoticed. A five-row table hands the arm 0, 137, 127, 255 and 1 and reads
+the sentence it writes back.
+
+**Generalise it:** every `assertStringNotContainsString` / `assertSame([], …)` over output produced by a
+SUBPROCESS needs an assertion that the subprocess ran, and "ran" means EXITED THE WAY IT WAS SUPPOSED
+TO, not "was not killed by the one signal I thought of". `exec()` already returns the status for free.
+
+---
+
+### E382 — a control table whose rows all wear ONE grammatical shape left a whole parser walk dead (E360, second instance)
+
+**Recorded 2026-08-24 by round-52 lane c, against its own new guard.** Severity: coverage.
+**Measured, PHP 8.3.6. FIXED before it shipped.**
+
+The new requirement-directive guard walks class metadata AND method metadata. Its rule-15 control was a
+fixture carrying the directive in its CLASS doc-comment. Deleting the entire METHOD walk was **GREEN** —
+the class-level fixture answered for both, and a directive on a method (the commoner placement by far)
+was invisible.
+
+E360's shape one round later in a different file: not a table missing a row for a case it knew about,
+but a table whose every row wears one shape, so the shape it omits is unrepresented by construction.
+**The question to ask of a control table is not "does it cover the cases" but "how many distinct SHAPES
+does it contain, and how many does the code branch on".** Here the code branched on two and the table
+contained one.
+
+---
+
+### E383 — `BuiltInToolCorpusTest` hard-codes `src/`'s FILE COUNT, so any lane adding a source file reds it
+
+**Recorded 2026-08-24 by round-52 lane c.** Severity: merge hazard, live this round.
+**Measured, PHP 8.3.6, at `b9abd2fb`.**
+
+`tests/Tools/BuiltInToolCorpusTest.php` asserts `assertSame(292, $files, 'php files under src/')` in
+`testTheSymbolKindCensusTheDocBlockQuotes()` and again in `testTheSecondaryDeclarationCensus()`, plus
+`assertSame(311, $declarations, …)` and an exact symbol-kind map
+(`['concrete' => 241, 'enum' => 27, 'abstract' => 0, 'interface' => 18, 'trait' => 6, 'none' => 0]`).
+
+**So a single new file under `src/` reds two assertions there whatever its contents**, and a third
+(`testEverySourceFileDeclaresItsPsr4Symbol`) if it does not declare its PSR-4 symbol. Measured by
+creating one probe file at an exact path and deleting it: bare `<?php` reds three arms; a proper
+`final class` under `SugarCraft\Crush` still reds two.
+
+This is not an argument for deleting the figures — they are derived-and-compared, which is the right
+shape, and E354's rule 18 is why they are computed rather than quoted in prose. It is a note that **a
+lane adding a source file owes those four numbers a bump in the same commit**, and that a red there at
+merge is the guard working. Round 52's lane a adds `src/Permissions/`; nothing else this round adds a
+source file.
+
+---
+
+### E384 — the per-file assertion cost, measured per census, and the grep that derived its population had the hole it warns about
+
+**Recorded 2026-08-24 by round-52 lane c** as E354's step (a)/(b) made concrete. Severity: prediction.
+
+The table and its generator are in the round-52 lane c report. The load-bearing points:
+
+1. The cost is **not one number**. A file added to `tests/` and a file added to `src/` move DIFFERENT
+   censuses by different amounts, so a lane adding only source files perturbs a set of censuses that a
+   lane adding only tests never touches.
+2. Control taken twice, bookending the run: **identical class-by-class**, so the delta is deterministic
+   and does not need a noise floor. That is a property of these instruments (whole-population walks, no
+   sampling), not a general licence.
+3. **The first population was grep-derived and MISSED A RESPONDER** — every `*Test.php` naming a
+   directory-walk primitive AND a `tests`/`src` path literal. `ReflectionLineSliceReaderCensusTest`
+   walks `\dirname(__DIR__)` and names neither literal, so it was outside the alphabet, and E354's own
+   recorded `+1` for it was therefore missing from the first table. **Rule 11, inside the instrument
+   built to measure rule 18.** The widened population drops the path-literal clause entirely.
+
+---
+
+**THE TABLE, measured at `e8227070`, full suite, PHP 8.3.6 / PHPUnit 10.5.64.** Quote it with that sha
+or re-derive it; never adjust it arithmetically across a commit (E354's step (a)).
+
+Generator — one probe file, created and deleted at an EXACT path, never a glob, with the working tree
+verified empty by `git status --porcelain` before and after:
+
+```sh
+cd sugar-crush
+vendor/bin/phpunit --log-junit control.xml                     # control
+printf '<?php\n' > tests/Support/<a name nothing else uses>.php
+vendor/bin/phpunit --log-junit testsprobe.xml
+rm -f tests/Support/<that exact path>
+# ...and the same with a src/ probe declaring a PSR-4 `final class`
+```
+
+Attribution is per class from the JUnit log's `<testsuite assertions=…>`, NOT by re-running suspects.
+Watch for the double count: a data-provider test emits a nested `<testsuite name="Class::method">`
+whose assertions are already inside its class's, so sum class-level suites only.
+
+ONE ADDED `tests/` FILE — **+5 assertions, +0 tests**:
+
+| census | per added tests/ file |
+| --- | --- |
+| `Support/ProcessUniqueTempNameTest` | +3 |
+| `Support/NonBlockingVocabularyTest` | +1 |
+| `Support/ReflectionLineSliceReaderCensusTest` | +1 |
+
+ONE ADDED `src/` FILE — **+48 assertions and +1 TEST on a run where `BuiltInToolCorpusTest` reds
+(E383); +53 counting only the classes that stayed green**:
+
+| census | per added src/ file |
+| --- | --- |
+| `Cli/StderrEmitterCensusTest` | +16 |
+| `Config/EnvRosterDriftTest` | +9 |
+| `Config/GlobFigureDriftTest` | +6 |
+| `Integration/BinSugarcrushWiringTest` | +6 assertions AND **+1 test** (a per-src-file provider) |
+| `Config/DocumentParagraphsTest` | +4 |
+| `SymbolCitationDriftTest` | +3 |
+| `Support/ProcessUniqueTempNameTest` | +3 |
+| `Agents/WorktreeRemovalReportingTest` | +2 |
+| `Diagnostics/RuntimeNoticeSinkDeliveryTest` | +2 |
+| `Support/HomeDirectoryPathReaderInventoryTest` | +1 |
+| `Support/NonBlockingVocabularyTest` | +1 |
+| `Tools/BuiltInToolCorpusTest` | **−5, because it FAILS** — see E383 |
+
+**The asymmetry is the finding.** A source file costs roughly ten times what a test file costs, moves
+four times as many censuses, adds a TEST as well as assertions, and reds a hard-coded figure on the way
+past. A lane that predicts its merged floor by counting the tests it added will be wrong by ~53 per
+source file a sibling adds.
+
+### E385 — the E355 sweep over `tests/Cli/`'s two censuses: eight killed, two survivors, both E363's shape
+
+**Recorded 2026-08-24 by round-52 lane c. FIXED this round.** Severity: guard coverage.
+**Measured, PHP 8.3.6, each run filtered to the file under mutation — so each verdict is a claim about
+the guards in that file, not about the suite.**
+
+`BootstrapTranscriptSeamCallSiteCensusTest`: all five branches of `countSeamCallSites()` KILLED (the
+T_STRING selection, the scope requirement, the paren requirement, the first-class-callable guard, and
+an off-by-one in the previous-token index). Its provider table already covers every branch, which is
+the result the sweep wanted and is worth recording as a negative.
+
+`StderrEmitterCensusTest`: three of five KILLED (both throws with dedicated fixtures, and the
+`]`/`}` balance check). **Two SURVIVED**, and they are the two END-OF-WALK refusals — the `new class`
+header that never opens a body, and the argument list that never closes. Neither is dead code: both
+fire only on a token stream no well-formed source produces, which is E363's shape exactly, and the real
+population cannot pin them by construction. Both now have a synthetic hand-built fixture with a
+TERMINATED control beside it, so the fixture cannot itself pass on a dead walk.
+
+**The transferable half.** Within one file, the refusals with fixtures were the ones a reader had
+thought about; the ones without were both at the BOTTOM of their loop — the "we fell off the end"
+branch. That position is a good heuristic for where an unpinned refusal is hiding: a guard inside a
+loop gets written with an example in mind, and the one after the loop gets written from a feeling.
+
+---
+
+### E386 — `readOrFail()` still has no fixture in three `tests/Config/` files (E357 carried forward)
+
+**Recorded 2026-08-24 by round-52 lane c.** Not actioned: `tests/Config/` is not this lane's.
+
+Re-verified at `b9abd2fb`, unchanged from E357: `Config/DocumentParagraphsTest`,
+`Config/ConfigWriteProducerDocumentationDriftTest` and `Config/GlobFigureDriftTest` each declare their
+own `readOrFail()` and none has a fixture reaching the refusal arm, so reverting any of them to
+`(string) file_get_contents()` is a mutation nothing in the tree can kill. E357's step stands verbatim:
+fold the three into `RefusesAnUnreadableSourceTrait` and delete the `readOrFail` row from
+`DuplicatedTestHelperDriftTest::ACCEPTED_DIVERGENCE` in the same commit.
+
+---
+
+### E387 — a census population with no floor: "at least one file" let a 1-of-N walk report the whole tree clean
+
+**Recorded 2026-08-24 by round-52 lane c's reviewer, FIXED the same day.** Severity: rule-15 hole, live.
+**Measured, PHP 8.3.6 / PHPUnit 10.5.64.**
+
+`RequirementDirectiveProvenanceTest`'s absence census walked every collected test file and asserted that
+none carries a PHPUnit requirement directive. Its only statement about the POPULATION was
+`assertNotSame([], collectedTestFiles())` — at least one file. **Slicing the walk to its first entry,
+one file out of several hundred, left the guard file GREEN at `OK (17 tests, 42 assertions)`,
+byte-identical to the unmutated run, and green at `tests/Support` scope too (`250 tests, 4951
+assertions`).** This is rule 15 one level out: the assertion of an absence survived an instrument that
+was 99.7% dead, because the arm guarding the instrument asked for a floor of one.
+
+**Fixed** by cross-checking the map against a SECOND enumeration written from a different primitive
+(`scandir()` and an explicit stack, not `RecursiveIteratorIterator`) and anchoring both on this test's
+own file, derived from `__FILE__`. Two dead walks would agree on the empty set; the anchor is what
+refuses that. No cardinality is written down — rule 18 — so nothing here rots when a sibling lane merges
+a test file. Re-mutated after the fix, **filtered to the single absence method**: slice-to-one KILLED,
+second walk emptied KILLED, second walk stops recursing KILLED.
+
+**Generalise it:** a floor of "not empty" on a census population is worth almost nothing, because the
+cheapest way for a walk to break is to visit less rather than to visit nothing. Either cross-check the
+population against an independently written enumeration, or anchor it on something the walk must find.
+
+---
+
+### E388 — a rule-15 control that covers ONE component of four, in a comment claiming it is "the whole instrument"
+
+**Recorded 2026-08-24 by round-52 lane c's reviewer, FIXED the same day.** Severity: rule-15 hole, live.
+
+The same census carried the comment *"The derivation below is the whole instrument, and a derivation
+that returns nothing reports every file as clean"*. The derivation (`requirementPredicates()`) is one of
+four components; the scanner (`requirementsOf()`), the population (`collectedTestFiles()`) and the split
+(`partitionByResolvability()`) are the rest, and none was exercised inside that test. **Measured:
+stubbing the scanner to return nothing, filtered to that one method, SURVIVED at `OK (1 test, 6
+assertions)`.** It was KILLED when the whole file ran — by a sibling test — which is exactly why rule 15
+says the control must be IN THE SAME TEST: a sibling is a separately deletable unit, and a lane deleting
+it would see a green suite.
+
+**Fixed** by running the positive fixture through the scanner inside the absence test, adding the
+population cross-check of E387, and asserting the split hands on everything it was given when it
+reports nothing unresolvable. All four components now mutate to a red **filtered to that single method**.
+
+**Generalise it:** when writing a rule-15 control, enumerate the instrument's components and say which
+of them the control covers. A control comment that says "the whole instrument" without a list is a claim
+nobody has counted.
+
+---
+
+### E389 — a known-answer table whose refusal rows all collapse to `assertIsString()`
+
+**Recorded 2026-08-24 by round-52 lane c's reviewer, FIXED the same day.** Severity: instrument hole.
+
+`BootstrapSkillSkipsTest::perTestLimitCases()` distinguishes five refusals in its expected column
+(`'no limit'`, `'unknown'`, `'unparseable'`, `'not xml'`, `'empty'`) and the body asserted only
+`assertIsString($answer)`. The five values were dead data. **Measured: making the unparseable branch
+answer with the "does not set enforceTimeLimit" sentence — literally the confusion the reader's own
+doc-block exists to avoid, and the one that would license any budget at all — SURVIVED, `OK (17 tests,
+26 assertions)`.**
+
+**Fixed:** each refusal now carries a phrase no other refusal carries, and the table asserts the phrase
+with `assertStringContainsString` (a phrase, not a whole sentence, so a rewording that changes nothing
+stays green). Re-mutated: KILLED, two failures. The same shape was then applied to the new
+`failOnRiskyFromConfig()` table.
+
+**Generalise it:** if a provider's expected column has values the test body never reads, the rows are
+decoration and the table only proves the function returned the right TYPE.
+
+---
+
+### E390 — the lane bounding child processes added an unbounded child process, in the same round
+
+**Recorded 2026-08-24 by round-52 lane c's reviewer, FIXED the same day.** Severity: hygiene, live.
+
+Item 1 of the round exists to argue that a child process needs a named wall clock under the per-test
+limit. Item 2 of the same round added `RequirementDirectiveProvenanceTest::
+testPhpunitItselfReportsTheQuotedDirectiveFixtureAsSkipped()`, which spawns a whole second `phpunit`
+through `exec()` with **no `timeout -s KILL`** — bounded only by the per-test alarm, which is precisely
+the verdict item 1 argues is the worse one. `CHILD_WALL_CLOCK_BUDGET_SECONDS` is a `private const` in
+another file, so there was no shared bound to reach for.
+
+**Fixed:** the spawn is bounded by a named constant in its own file, with the measured cost beside it
+(the child run is 0.079s, so the bound is ~250x) and a cross-reference to the file that pins the ceiling
+argument. Verified by mutation: with the budget cut to 1s and the child replaced by a 30s sleep, the arm
+fires and names the budget.
+
+**Step, open:** the two budgets are two `private const`s in two files with the same name and the same
+argument, and the third, fourth and fifth spawn sites (E392) will make three and four. A shared
+constant plus one ceiling guard would be better than five copies — but a shared test helper is a
+cross-lane edit and the ceiling guard's home is not settled.
+
+---
+
+### E391 — the provenance walk cannot see a test method INHERITED from a base class
+
+**Recorded 2026-08-24 by round-52 lane c's reviewer.** Severity: coverage gap, unpopulated today.
+
+`requirementsOf()` skips any method whose `getDeclaringClass()` is not the class under inspection. A
+method imported from a TRAIT survives that filter — reflection answers with the USING class, verified by
+probe — but one INHERITED from a parent does not. So a requirement directive quoted in a base class's
+method doc-comment would be invisible to the census while still skipping the child's run.
+
+**Unpopulated today:** no collected class in this tree extends an in-tree base, and PHPUnit does not
+inherit a CLASS-level directive from an abstract parent either (probed: `forClass(child)` and
+`forClassAndMethod(child, method)` both return nothing for a directive on the parent's class
+doc-comment). The header prose has been corrected to say "declares or imports from a trait" rather than
+"every public method those classes expose", which was false.
+
+**Step:** walk the parent chain in `requirementsOf()` and key an inherited hit on the declaring class,
+with a fixture pair (base carrying the directive, child collecting it) to pin it. Cheap, and it stops
+being unpopulated the first time someone writes an abstract test base.
+
+---
+
+### E392 — the ten `timeout -s KILL 60` sites, RE-ARGUED under the corrected cost model
+
+**Recorded 2026-08-24 by round-52 lane c; supersedes the same lane's earlier deferred framing.**
+
+Ten child budgets equal to `defaultTimeLimit` sit at 10 sites in 6 files: `tests/Cli/
+BootstrapHookFileTest.php`, `BootstrapLaunchNoticeRoutingTest.php`,
+`BootstrapToolAndPermissionSettingsTest.php`, `BootstrapTrustGateSelfGrantTest.php`,
+`tests/Integration/BinSugarcrushAutoloadGuardTest.php`, `McpToolWiringTest.php`. All outside lane c's
+file list.
+
+**The earlier framing said the payoff is "a red instead of nothing". Under E380's correction that is
+wrong: with `failOnRisky="true"` a hang at any of those ten sites ALREADY fails the run.** The payoff is
+smaller and still real — a specific message naming the budget and the child instead of "aborted after 60
+seconds", and the assertions below the spawn kept in the totals rather than shed. **Whoever picks this
+up should weigh it as a diagnostics improvement across ten sites, not as closing a hole.** The pattern
+to copy is `BootstrapSkillSkipsTest`'s: a named constant, a ceiling guard reading `phpunit.xml`, and an
+arm refusing every non-zero status rather than only the kill.

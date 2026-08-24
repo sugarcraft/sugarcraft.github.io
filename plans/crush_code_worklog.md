@@ -8,6 +8,124 @@ Summary + Implementation Plan, 209-2160 are the 13 research dossiers.
 
 ---
 
+## Round 53 — IN FLIGHT (launched 2026-08-24 from `9ed3e200`)
+
+Run `wf_1771adc7-288`, task `wapbf9zqa`. Script:
+`…/18689526-3e9c-4588-b33e-7326941eaed0/workflows/scripts/crush-round-53.js` (durable path).
+
+Base floors observed at `cb0a7c69`, code byte-identical to `9ed3e200` (docs-only diff, verified):
+sugar-crush **9860 / 143784 / 1**, candy-core **807 / 7288 / 25**, candy-mosaic **459 / 7753 / 6**,
+candy-flip **80 / 186 / 2**, all rc 0.
+
+Lanes were refreshed by `git fetch` + `reset --hard`, **not re-copied** — a fresh `cp -a` would repoint the
+vendor symlinks out of the lane. Closure re-verified per lane per package: 18/18, 3/3, 6/6.
+
+**Lane a — the descriptor family, entirely outside sugar-crush.** The two worst instances of E368 are
+still open, left over because round 52's lane a had them out of its file list. `PosixBackend::size()`'s
+`/dev/tty` arm is wrong on every run rather than latent; `restoreLast()` reads descriptor 1 while its
+comment says STDIN. `candy-flip/src/Renderer.php` is the sixth instance, and the brief explicitly permits
+refuting it with a measurement rather than fixing it.
+
+**Lane b — child reaping.** The sugar-crush HIGHs from E366, with `MCP/StdioMcpServer` named as the
+already-correct reference so the lane matches an existing pattern instead of inventing a fourth. Includes
+E367. `BackgroundSupervisor`'s double-fork is flagged as possibly an intentional seam (rule 6).
+
+**Lane c — the scanner guard, tests only.** Extends `ChildStderrCaptureScanner` to flag "long-lived child
++ nothing said about fd >= 3". This is the mechanical repair E366 argued for. Told explicitly not to
+hard-code a count of flagged sites, because lane b is changing four of the five this round and a pinned
+count would red at the merge and look like lane b's defect.
+
+**Lanes b and c overlap deliberately** — c's scanner walks b's files. That control has caught a real
+defect in each of the last three rounds.
+
+Rules 30/31/32 added to `COMMON` from round 52's lessons. The prompt headers, which had said "round-49"
+hard-coded for four rounds, are now parameterised on `ROUND` — that literal is what made round 52's lanes
+argue about which round they were filing under.
+
+---
+
+## Round 52 — CLOSED (2026-08-24). Floor 9860 / 143784 / 1, three packages, tenth exact test prediction
+
+**Base `b9abd2fb`. Three lanes: a candy-core/candy-mosaic fd defects · b sugar-crush runtime correctness ·
+c measurement hygiene.** Merges `3e67a995` a, `ddc343f6` b, `dba03fa4` c; renumber `cb0a7c69`.
+
+| package | floor at `cb0a7c69` |
+|---|---|
+| sugar-crush | **9860 / 143784 / 1 / rc 0** |
+| candy-core | **807 / 7288 / 25 / rc 0** |
+| candy-mosaic | **459 / 7753 / 6 / rc 0** |
+
+Closure 18/18 by `is_link()` + `realpath()`; `check-path-repos` rc 0; config md5 unchanged; zero tracked
+per-lib locks; zero orphaned `php -S` servers. Backlog 364 → 394 (E365–E367 from out-of-band master work,
+E368–E392 the lane ids, E393/E394 this round's process findings). Round 53 files from E395.
+
+### The prediction, and the first exactly-tight assertion bound
+
+Written before the merge, from lane figures only: sugar-crush 9781 (master) + 35 (b) + 44 (c) = **9860
+exact**, assertions ≥ 143427 + 231 + 126 = **143784**. Measured: 9860 / 143784. **Tenth consecutive exact
+test prediction, and the first time the assertion bound landed exactly on itself.**
+
+The prediction file said to expect looseness and got none, which turned out to be the informative part.
+The two new `src/` files arrived on master in `a921b834`, **which bumped `BuiltInToolCorpusTest` 292 → 294
+in the same commit**. The census growth was already absorbed before the lanes merged, so nothing was left
+to inflate. **E191 sharpened: the bound is loose when a census-walked addition lands in the SAME merge as
+the census, and exact when the two were already reconciled upstream.** A tight bound is now evidence the
+reconciliation happened, not evidence something was missed.
+
+candy-mosaic was **deliberately left unpredicted** — see E394; the merge there was a resolution, not a sum.
+
+### Lane a's fix stage "failed" and had already done the work (E393)
+
+`fix:a-core-fd` died on `403 Unable to verify organization membership` after applying every review finding
+and committing four times. The workflow reported the lane errored; the lane was clean at `b9229772` with
+all four fixes in it. Re-running the stage would have handed a fresh agent an already-fixed tree and a
+findings list describing defects that no longer existed. The supervisor measured the missing verification
+instead — and the figures matched the REVIEWER's independent pre-fix measurement exactly, which is what
+established that the four fix commits were prose and guard corrections adding no tests.
+
+Third occurrence of "the harness loses the report while the work survives", third proximate cause.
+
+### The out-of-band collision (E394)
+
+`e7c777b9` (E365, the `php -S` leak) was dispatched from a user-reported symptom while round 52 ran — and
+**lane a fixed the same leak independently in the same file**, because its brief was fd defects and a
+descriptor inherited into a leaked child is one. Master's version was kept whole (a reusable
+`LoopbackHttpServer` plus a dedicated guard proven red-then-green against the wrapper regression); lane a's
+MINOR 4 was already satisfied there. Its `+1 / +3` is therefore absent from the merged figure.
+
+Lane a's report cited ~136 leaked orphans and its reviewer measured 0 and flagged it. **Both are right** —
+the supervisor killed all 136 between the two observations. Recorded so the lane's figure is not filed as
+inflated.
+
+### The merge: three of four predicted conflicts, and the clean one was the suspicious one
+
+`BuiltInToolCorpusTest` did not conflict because master had already moved it and no lane touched it.
+`StderrEmitterCensusTest` **auto-merged textually** despite lane b having edited it out of lane — and a
+clean textual merge proves nothing for a census file whose assertions ARE counts. Run rather than trusted:
+OK, 94 tests, 4935 assertions.
+
+Renumbering 25 provisional ids was done longest-id-first; a naive pass rewrites `Ec52-13` into `E3803` by
+matching `Ec52-1` inside it. Zero provisional ids remain repo-wide.
+
+### The findings that outlive the round
+
+- **Lane a reviewer MAJOR 1** — the new `TtyDetect` doc-block cited `RawMode` as evidence candy-pty is
+  still reached, when that commit severed RawMode's only route to it; the lane's own backlog entry said the
+  opposite in the same diff. Rule 8, third round running.
+- **Lane a reviewer MAJOR 2** — the census under-counted its own family because its classifier's alphabet
+  matched the cases already known (rule 11). It missed an array element and a bare constant, and the missed
+  `size()` `/dev/tty` arm is wrong on every run rather than latent: a freshly opened handle's resource id
+  can never equal its own descriptor.
+- **Lane b BLOCKING-1** — a doc-block claimed "at most once per process" while the call was
+  `noticeRefusalOnce(self::directoryRefusalReason($dir))`; **PHP builds arguments before the call**, so only
+  the warning was latched and the work ran every time. Fixed by making the parameter a `\Closure` so the
+  type enforces it.
+- **Lane b's test-count reconciliation** — +25 declared against +35 executed, all ten explained by running
+  the classes (data providers, a provider expanding by `DenialKind::cases()` cardinality, a trait fixture
+  that executes per consuming class and never shows as a `+` line). Adopt this shape in every brief.
+
+---
+
 ## Out-of-band work on master during round 52 (2026-08-24)
 
 Two fixes landed on `master` while round 52's three lanes were running, both from user-reported symptoms

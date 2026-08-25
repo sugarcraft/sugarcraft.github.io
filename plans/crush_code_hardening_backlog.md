@@ -14795,3 +14795,912 @@ sibling directory (unused path repos are ignored by Composer), then a single `co
 `git checkout -- '*/composer.json'`, then verify. That reached 18/18 · 3/3 · 6/6 · 7/7 in one go. Never
 re-run `--fix` between the append and the update. And **verify with `is_link()` + `realpath()` after the
 LAST step, not after the tool** — the tool exiting 0 says nothing about `vendor/`.
+
+## User-reported (not from a round). E455.
+
+### E455 — 🔴 the chat input box never wraps: a long draft runs off the right edge instead of growing to multiple lines
+
+**Reported 2026-08-25 by the user, typing normal space-separated words into the live TUI.** Severity:
+functional, user-visible, on the single most-used surface in the app. Not a round finding — this came
+from daily-driving `sugar-crush`.
+
+> "when you are typing a long line in sugar-crush it keeps going past the end of the screen instead of
+> expanding the chat input to multiple lines and wrapping to the next line (im putting in diff words with
+> spaces .. so it should have wrapped)"
+
+The report explicitly rules out the usual excuse: the draft is ordinary words with spaces, so there is no
+unbreakable token and a word wrap has somewhere to break.
+
+**Diagnosis.** `Renderer::renderInput()` (`sugar-crush/src/Renderer.php:3776`) composes the draft as ONE
+string — `"> "` + the sanitized buffer with the block cursor spliced in at the cursor column — and hands
+it straight to a bordered `Style` with `padding(0, 1)` and **no `->width()` and no wrap call at all**:
+
+```php
+$body = "> " . mb_substr($clean, 0, $at, 'UTF-8') . $cursor . mb_substr($clean, $at, null, 'UTF-8');
+return Style::new()->border(Border::normal())->borderForeground($theme->border)
+    ->padding(0, 1)->render($body);
+```
+
+`Style::render()` does not word-wrap; `Style::width()` sizes and pads a box, it is not a wrapper. So the
+box grows to the natural width of the draft and emits a single row far wider than the terminal.
+
+**It is the one pane that skips the choke point.** Every other surface in this renderer wraps: the
+transcript goes through `fitToPane($body, $contentWidth)` at `Renderer.php:1067` — described in its own
+comment as "the single choke point where the pane-width invariant is enforced" — and even the permission
+prompt hand-rolls a `wordwrap()` at `Renderer.php:3748`. `InputPane::render()`
+(`sugar-crush/src/Tui/Components/InputPane.php:17`) computes `max(1, $cols - 4)` and sets a width, but
+that class only ever paints the *placeholder* box; the live input is painted here, and here nothing
+constrains it.
+
+**This is a violation of a standing project invariant, not just a cosmetic annoyance.** candy-core's
+`Renderer` repaints changed rows by ABSOLUTE `cursorTo($row, 1)` and has no concept of a line that soft-
+wraps in the terminal. An over-wide logical row occupies two physical rows, so every row below it is off
+by one against what the diff renderer believes is on screen — the same failure class as the round-49
+status-bar collision, arriving from the opposite direction.
+
+**The height half is already solved — do not re-solve it.** `render()`'s tail clip
+(`Renderer.php:1126-1133`) slices `$content` to the LAST `$available` lines, and the input box is at the
+tail. A taller input box therefore costs history rows and stays fully visible on its own. No change to
+`$contentWidth`, to the `max(1, $chat->rows() - 2)` picture budget, or to the status-bar layout is needed;
+a fix that touches them is doing too much.
+
+**STEP:** wrap the composed body to the pane width inside `renderInput()` before the `Style` call.
+Specifics that matter:
+
+- Width is `max(1, $chat->cols() - 4)` — 2 border cells + 2 padding cells. `$chat->cols()` is already
+  reachable from `renderInput()`'s existing `$chat` argument, so **no signature change and no caller
+  edit**; `cols()` is sourced from `WindowSizeMsg`, which is the size truth (never a second
+  `getTerminalSize()` query — see the comment at `Renderer.php:1105`).
+- Use `Width::wrapAnsi()` (`candy-core/src/Util/Width.php:314`), **not** `wordwrap()`. The draft can hold
+  wide/CJK and combining characters, and `wordwrap()` counts bytes, not cells — it would under-wrap a CJK
+  draft into exactly the over-wide row this fixes.
+- The cursor glyph `█` is spliced into the string BEFORE wrapping and is a real cell. It must survive the
+  wrap unsplit and be counted; a wrap that drops or duplicates it breaks cursor tracking, which
+  `renderInput()`'s own doc-comment calls out as the thing that makes cursor motion visible at all.
+- Decide and pin the continuation-row treatment: the `"> "` prefix costs 2 cells on row 1 only, so
+  unindented continuation rows will hang 2 cells left of the text above them. Indenting continuations by
+  2 to align under the first row's text is the better look; either way it needs a test, because it is
+  exactly the kind of thing that regresses silently.
+- 🔴 Regression test must be **width-driven, not length-driven**: assert that for a draft of N
+  space-separated words at a given `cols()`, EVERY row of the rendered box measures `<= cols()` by
+  `Width::of()`, and that the box gained rows. Asserting "the output contains a newline" would pass on a
+  fix that wraps at the wrong column. Include a CJK case and a case where the cursor sits mid-draft.
+
+**Watch for a second instance.** `renderSlashMenu()` is concatenated onto `$content` on the same line as
+the input box (`Renderer.php:1078`) and was not examined here — check whether it constrains its own width
+before assuming this defect is a singleton.
+
+### E456 — 🔴 the 120s idle timer does not count reasoning as progress, so a long think block is killed as a hung provider
+
+**Reported 2026-08-25 by the user, mid-turn against a reasoning model.** Severity: functional, kills real
+work, and the failure message actively misleads. Second user-reported bug of the day; see [[E455]].
+
+> "`[error: Provider request timed out after 120s without progress]` got this while server was generating
+> a response ... i think there was likely some text sent .. probably in a think block... so i doubt it had
+> no progress"
+
+**The report is correct, and the mechanism is exact.** `Runtime::runStreaming()`
+(`sugar-crush/src/Runtime.php:380`):
+
+```php
+$buffer .= $response->content;
+if ($onToken !== null && $response->content !== '') {   // <-- the gate
+    $emitted = true;
+    $onToken($response->content);
+}
+...
+if ($response->reasoning !== null && $response->reasoning !== '') {
+    $reasoning = ($reasoning ?? '') . $response->reasoning;   // accumulated, but silent
+}
+```
+
+A reasoning-only SSE chunk carries `content: ''` and `reasoning: "…"`. It fails the `!== ''` gate, so
+`$onToken` is never called. `$onToken` is the ONLY thing that writes a `token` frame across the fork
+(`EngineBackend.php:988`), and the parent resets its idle deadline **only** when a frame arrives
+(`EngineBackend.php:855`, "Progress of any kind pushes the idle deadline out"). No frame, no reset. After
+`COMPLETE_TIMEOUT_SECONDS = 120` of uninterrupted thinking the parent tears the turn down and reports
+"without progress" — while the child is mid-stream and the socket is busy.
+
+**The chain is intact everywhere except that one gate.** The provider parses `reasoning_content` properly
+(`SglangProvider::parseChunk()` via `extractReasoning()`), yields a chunk per SSE line in wire order, and
+`runStreaming()` accumulates the reasoning and attaches it to the finished `AssistantMessage`, which
+`Renderer.php:2386` knows how to paint. Reasoning is NOT lost data — it is simply invisible until the turn
+ends, and the turn is killed before it ends.
+
+**`EngineBackend`'s own docblock states the invariant this breaks.** Lines 55-59 say the per-fork wall
+clock was replaced precisely because it "SIGKILLed any turn whose legitimate multi-step tool work ran past
+it", and that "every frame the child streams resets it, so a turn that is making visible progress stays
+alive indefinitely". That is true for content deltas and false for every other kind of progress. The
+comment should be corrected as part of the fix, not left asserting a property the code does not have.
+
+**A second instance of the same shape, same gate.** A chunk carrying only tool-call deltas
+(`content: ''`, `toolCalls` set) also writes no frame. A model that spends more than 120s emitting a large
+structured tool-call payload dies identically. Fix the family, not the one report.
+
+🔴 **DO NOT "fix" this by raising `COMPLETE_TIMEOUT_SECONDS` or by removing the timer.** A longer idle
+timer relocates the bug to a longer think; removing it resurrects the hung-provider hang the timer exists
+for. And a blanket total-request timeout on an LLM call is prohibited outright by standing project rule —
+completions can legitimately run for tens of minutes. **The timer is the right design; its definition of
+progress is the defect.**
+
+**STEP:** make every kind of streamed progress cross the fork.
+
+- Give the child a distinct frame kind (`'reasoning'`) rather than reusing `'token'`. Reusing `'token'`
+  would push thinking text into `$buffer`, and `$buffer` becomes the `AssistantMessage` that is fed back
+  to the model on the next agentic step and checkpointed into the transcript — so reusing the channel
+  corrupts the conversation, not just the display. Route it through a new `$onReasoning` observer
+  alongside `$onToken` in `Runtime::runStreaming()`.
+- The parent already resets on **any** frame, so no parent-side change is needed for the timeout itself
+  once the frame exists. Verify that by reading `EngineBackend.php:855` rather than assuming it.
+- Emit for tool-call-only chunks too. Cheapest correct form is a progress/heartbeat frame whenever a chunk
+  is received at all, independent of what it carries.
+- **Then, separately, render it.** Once reasoning crosses the fork live, the TUI can paint thinking as it
+  arrives instead of only after the turn settles — which is the visible half of what the user expected.
+  Keep it out of `$buffer`.
+- 🔴 The regression test must **advance a clock past 120s with only reasoning chunks in flight** and
+  assert the turn survives and completes. A test that merely checks a reasoning frame is emitted would
+  pass on a fix that emits the frame somewhere the timer cannot see it. Add the tool-call-only case.
+  Per rule 16 the acceptance test is a mutation of THE FIX: re-gate the reasoning branch on
+  `content !== ''` and the test must go red.
+
+### E457 — 🔴 `grep` in an agent shell is ugrep, not GNU grep, and `grep -qv` silently always answers "no"
+
+**Measured 2026-08-25 by the round-55 supervisor,** after a monitor raised a false alarm about a lane
+agent that had in fact completed twenty minutes earlier. Severity: it makes a whole class of verification
+step quietly wrong, and nothing errors.
+
+`type -a grep` in an agent shell reports **`grep is a function`** before it reports `/usr/bin/grep`. The
+harness installs a shell function that shadows `grep` and routes to **ugrep** (`ugrep 7.8.4`) via the
+`claude` binary. So every bare `grep` an agent types — including every `grep` in this backlog's own
+verification recipes — is ugrep.
+
+**The measured divergence:**
+
+```
+printf 'aaa started\nbbb result\n' | grep -qv started          # -> exit 1   (ugrep)
+printf 'aaa started\nbbb result\n' | /usr/bin/grep -qv started # -> exit 0   (GNU)
+```
+
+`grep -qv PATTERN` is the standard idiom for *"does any line NOT match?"*. Under ugrep it returns false
+even when such a line plainly exists — verified against a real two-line input where `grep -v` (no `-q`)
+prints the line and exits 0 while `grep -qv` exits 1 on the very same data. **A check written as
+`grep -qv X && fail` therefore never fires,** and a check written as `grep -qv X && pass` never passes.
+Neither prints a warning.
+
+**What this does NOT affect — bounded, and measured rather than assumed:**
+
+- **The backlog counts are sound.** `grep -cE '^#{2,3} E'` returns **456** under both ugrep and
+  `/usr/bin/grep`, and the highest id is 456 under both. Every round's entry count stands.
+- **Scripts and CI are unaffected.** The function is defined but **not exported** (`declare -Fx` does not
+  list it), so a `#!/bin/bash` script, a `tools/*.php` shell-out, or a GitHub Actions step gets real GNU
+  grep. The shadow reaches inline agent commands only.
+- `git grep` is git's own implementation and is unaffected.
+
+**STEP:**
+
+1. **Never write `grep -qv` in a verification step.** Use `! grep -q PATTERN` (negate the exit status
+   outside grep), or `[ "$(grep -cv PATTERN f)" -gt 0 ]`, both of which agree across implementations.
+2. Where a check is load-bearing for a merge figure, call **`/usr/bin/grep` by absolute path** and say in
+   the recipe why. A path that names its implementation cannot be shadowed by a profile change later.
+3. 🔴 **Carry a known-positive control** (rules 15/25). The monitor that found this now opens with
+   `/usr/bin/grep -qv x /dev/null` and prints whether the idiom is sane before it trusts any alarm it
+   raises. A dead instrument and a quiet instrument produce identical silence — see [[E451]] for the same
+   lesson learned about the orphaned-`php -S` count, and rule 35.
+4. Audit the shell idioms in this backlog's own STEP blocks for other GNU-isms assumed of `grep` — `-P`,
+   `-z`, and `--null-data` are already special-cased by the shadow function and fall through to real grep,
+   which means the failure surface is *specifically* the flags it does NOT special-case.
+
+**Postscript, and it is the more useful half.** The first replacement monitor opened with
+`/usr/bin/grep -qv x /dev/null` as its control — and the control reported FAILED. The grep was fine; the
+**control** was broken. `/dev/null` has no lines, so no line can ever be *selected* by an inverted match,
+and the check can only ever exit 1. It was a control that could not pass, which is worth exactly as much
+as no control at all, and it would have discredited every real alarm the monitor went on to raise.
+
+🔴 **A control must be a KNOWN POSITIVE, and it is worth also asserting the KNOWN NEGATIVE.** The working
+form checks both directions, so an implementation that answers "yes" to everything is caught alongside one
+that answers "no" to everything:
+
+```sh
+if printf 'a\nb\n' | grep -qv a && ! printf 'a\na\n' | grep -qv a; then echo sane; fi
+```
+
+That is rule 15/25 aimed one level further in than usual: it is not enough to instrument the measurement,
+the instrument's own self-test has to be capable of failing for the right reason and passing for the right
+reason. Both times today the wrong answer arrived as silence rather than as an error — see [[E451]].
+## Round 55 — lane a (the instruments). E458 … E463.
+
+### E458 — E438 CLOSED: the "exactly 1 skipped" invariant is now asserted, by NAME, and it fails the run
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: plan-instrument. **Fixed, mutation-checked.**
+
+`tests/Support/SuiteSkipRoster.php` + `tests/SuiteSkipRosterTest.php`, installed from `tests/bootstrap.php`.
+The roster is a SET keyed `Class::method`, not a count, and it reports in three directions: a skip not on
+the roster; more skip EVENTS than roster entries (which is how a second data-provider row of an
+already-rostered method would slip past the first check); and a rostered test that RAN without skipping.
+The third only fires when that test was actually prepared, so a `--filter`ed run is silent.
+
+**Why it is not a test method.** Skips happen throughout the run in discovery order, so a test can only
+see the ones that ran before it — roughly half the tree runs after any given file. The verdict is taken
+from a shutdown handler armed by `install()`; `exit()` inside one does change the process status
+(MEASURED, PHP 8.3.6: body `exit(0)`, shutdown handler `exit(7)`, process exits 7). The handler is armed
+only if the subscribers registered (so the several test files that `require tests/bootstrap.php` in a
+plain child PHP process arm nothing), returns immediately when nothing was prepared, and returns
+immediately in a `pcntl_fork()`ed child (owning pid captured at arm time).
+
+**Non-Linux, stated rather than discovered:** off Linux it REPORTS and does not fail, with a header
+naming the platform. That is safe because round 54's `testThisSuiteIsNotOptedIntoAnyNonLinuxCiRunner()`
+reds the day `sugar-crush` enters `WINDOWS_LIBS`/`MACOS_LIBS`. The two together are the pair E438 asked
+for.
+
+**THE ACCEPTANCE TEST IS THE ONE THAT MATTERS.** A second skip was injected into a real, unrelated test
+(`Support/EnumSpellingTest`) and the FULL suite run: PHPUnit printed `OK, but some tests were skipped!`
+/ `Tests: 10004, Assertions: 144869, Skipped: 2` — the silent re-base E438 describes, green — and the
+roster turned it into rc 1 naming the offender. Five further mutations (install removed; `report()`
+returns null; the shutdown `exit(1)` removed; `unexpectedSkips()` returns `[]`;
+`rosterWasFullyReached()` returns true) were all killed, and the harness was run against a known no-op
+and a known kill first.
+
+### E459 — E434/E435 CLOSED: candy-pty's assertion count is a function of its source again
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: measurement hygiene. **Fixed, mutation-checked.**
+
+E435 identified `Integration/ResizeRaceTest::testResizeRaceProducesUntornWidths` as the single test whose
+assertion count moved, because it asserted once per captured line and the number of lines a child emits
+in a ~1 s window is host scheduling. Its per-line checks are now folded into one aggregate assertion over
+a static `readWidths()` reader. MEASURED after the change, PHP 8.3.6, **8 consecutive full-suite takes
+with `--log-junit`**: `607 / 1391 / 16 skipped / 1 warning / rc 0` every time, and a per-`<testcase>`
+comparison across all 8 takes over all 607 tests found **zero** varying entries. E435's "exactly one" is
+confirmed and closed.
+
+An aggregate `assertSame([], …)` is an absence, so `testTheTornReadDetectorSeesATornRead()` pushes a
+KNOWN-TORN transcript (`80 / 1 / 20 / [1]+ Done / 132`) through the same reader. That control is not
+decoration: MEASURED, neutralising the reader's reporting arm SURVIVES the live test run alone
+(`OK (1 test, 4 assertions)`) and is killed only with the fixture in scope.
+
+**The unresolved half of E435 stays unresolved.** The "one red in 37 takes" did not reproduce: 1 baseline
+plus 8 JUnit-logged takes here, all rc 0, taking the running tally to **one red in 46**. All 9 takes were
+JUnit-logged precisely so a red would have named itself.
+
+### E460 — E432 CLOSED: the stty-fallback pin runs, and it found two real defects on its first execution
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: real. **Fixed, mutation-checked.**
+
+`PosixBackendTest::testRawModeWithSttyFallbackOnRealPty()` skipped for its entire life on a gate with
+two independent defects, exactly as E432's amendment predicted: the probe cast a stream to `int`
+(resource id 15 against a real lowest-free descriptor of 4, MEASURED on this box, PHP 8.3.6) and it
+`fclose()`d the handle on the line before stat()ing the path. Both are fixed; the probe now resolves a
+genuine descriptor with `descriptorForStream()` and holds the handle open across it.
+
+**A broken probe now REDS rather than re-skipping.** On Linux with procfs mounted and `/dev/fd` present
+the probe cannot legitimately answer no (`readlink('/dev/fd')` is `/proc/self/fd`), so that combination
+`fail()`s with the two mistakes named. MEASURED: reverting the probe to the resource-id cast is KILLED;
+reverting it to a genuinely-closed descriptor is KILLED. Without that arm both are silent skips.
+
+The body now reads the device with `stty -a` through `SttyReading`'s whole-word matcher at three points
+— cooked, raw, restored — with `SttyReading::cookedFixture()` pushed through the same matcher in the same
+test, and asserts `TermiosFactory::which()` first so the test cannot become an FFI test under an stty
+name. 20 consecutive takes, all green, all `9 assertions`.
+
+### E461 — `PosixBackend::restore()` was a NO-OP under the stty backend
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: real, user-visible. **Fixed.** Found by E460 on
+the pin's first-ever execution.
+
+`restore()` called `apply()` on the `current()` snapshot. For `PosixTermios` that is the right syscall;
+for `SttyTermios` `apply()` opens `if (!$this->raw) { return; }` and a snapshot is never raw, so the
+terminal was never taken back out of raw mode. MEASURED, PHP 8.3.6, GNU coreutils `stty`, a real pty
+slave, reading the device at each step:
+
+| backend | before | after `enableRawMode()` | after `restore()` |
+|---|---|---|---|
+| PosixTermios | cooked | raw | cooked |
+| SttyTermios | cooked | raw | **RAW** |
+
+i.e. a program running without ext-ffi exits leaving the user's terminal raw and echo-less — the
+`reset(1)` bug. `Termios::restore()` is on the contract for exactly this and both implementations
+implement it correctly on a `current()` snapshot, so `$this->saved->restore()` is identical for the FFI
+path and correct for the fallback. `PosixBackendInjectedTermiosTest` followed the verb.
+
+### E462 — `PosixMasterPty::close()` leaked one `/dev/ptmx` descriptor per pty that had been used
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: real. **Fixed.** Found by E460 as a cross-test
+failure: the newly-running pin drove one open/write/close cycle and the NEXT candy-core test's
+`/proc/self/fd` walk found two descriptors on a device where it requires exactly one.
+
+`close()` called `self::libc()->dup($this->fd)` and **discarded the return value**. MEASURED, PHP 8.3.6,
+counting `/proc/self/fd` entries whose readlink is `/dev/ptmx`, five open/write/close cycles: 1, 2, 3, 4,
+5 leaked — linear. Five further cycles that never materialise the stream leak none, which is the control:
+the leak is that branch and not `open()`. Every leaked descriptor still pins the master side of a pty the
+caller believes it has closed, so `tty_hangup()` never fires for it.
+
+The `dup()` is KEPT and the missing half added: the reference is released after the original is closed.
+Pinned by `PosixMasterPtyTest::testClosingAMasterThatWasWrittenToLeaksNoDescriptor()`, which runs both
+branches of `close()` and holds a witness pty open so a census that answered `[]` unconditionally fails
+instead of passing. MEASURED: reintroducing the leak is KILLED; killing the census is KILLED.
+
+⚠️ **CORRECTION, same round, after review.** This entry first said the `dup()` was kept "because the race
+it names is real". **It is not.** MEASURED, PHP 8.3.6, reading `/proc/self/fd/*` either side of each call:
+`fopen('php://fd/N')` **allocates a new descriptor** (original fd 4, stream got 5) and `fclose()` closes
+that new one, leaving 4 open. `$this->fd` is therefore open continuously from `posix_openpt()` to
+`close()` and its number is never free during the window the old comment described, so an unrelated
+`open()` cannot take it. The `dup()` is also taken *after* the `fclose()`, so it could neither detect nor
+prevent that substitution even if it could happen. MEASURED further: removing the `dup()` **and** its
+release together is behaviourally inert — `candy-pty` `--filter Posix` gives `165 / 394 / 1 warning /
+2 skipped / rc 0`, identical to keeping them. It is retained as a deliberate dormant seam (two syscalls),
+not as a race fix, and the justification now says so in all three places it appears: the block in
+`PosixMasterPty::close()`, the `::->close($stableFd)` row in candy-core's
+`DescriptorSinkArgumentCensusTest`, and here. What is still NOT established is that no caller pattern
+anywhere would want a stable reference — only that no test notices; see E466.
+
+⚠️ **`TtyDetectTest`'s guard was CORRECT and the exemption it looked like it wanted was the wrong
+resolution** (rule 33). Its `descriptorBehind()` refuses to guess when two fds match one dev+inode; the
+right answer was to stop leaking, not to loosen the walk.
+
+### E463 — the round-55 lane map and the round-55 lane-a brief disagree about who owns what
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: process. **Stated, not fixable by a lane.**
+
+The brief's own lane map says lane a owns `candy-core/src/Util/Tty/` and `candy-core/tests/Util/Tty/` and
+gives `sugar-crush/tests/` to lanes b and c; the brief's YOUR FILES section gives lane a
+`sugar-crush/tests/`, `candy-pty/tests/` and exactly one file under `candy-core/tests/Util/Tty/`. This is
+E416 recurring in the round that rewrote the map to fix it. Work was done against YOUR FILES, widened
+where a guard or a real defect forced it, and every such edit is named at the top of the lane report.
+
+### E464 — the skip roster was blind to a skipped CLASS, the larger of the two silent re-bases
+
+**Recorded 2026-08-25 by round-55 lane a (review stage).** Severity: real, in the instrument. **Fixed.**
+
+PHPUnit's `Skipped: N` summary line is a SUM of two unrelated event families — MEASURED in
+`TextUI/Output/SummaryPrinter.php`: `numberOfTestSuiteSkippedEvents() + numberOfTestSkippedEvents()`. The
+roster as first shipped registered `Test\PreparedSubscriber` and `Test\SkippedSubscriber` and nothing
+else, so it saw only the second.
+
+A class that skips from `setUpBeforeClass()` (or on class-level `#[Requires…]` metadata) emits
+`TestSuite\Skipped` and then `return false` — MEASURED in
+`Framework/TestSuite.php::invokeMethodsBeforeFirstTest()` — so its test methods never run, never emit
+`Test\Prepared`, and never emit `Test\Skipped`. **MEASURED, PHP 8.3.6 / PHPUnit 10.5.64**, a child suite
+booted from `sugar-crush/tests/bootstrap.php` holding one two-method class skipping in
+`setUpBeforeClass()` plus one ordinary passing test: `OK, but some tests were skipped! / Tests: 1,
+Assertions: 1, Skipped: 1`, **rc 0, no roster output** — two tests gone from the `Tests:` total while the
+printed skip figure moved by one, so even a guard asserting "exactly one skip" on the printed line is
+satisfied by it. Known-answer control through the same harness in the same session: a body-level skip and
+an attribute-level skip both exited 1 and were both named. The gap was specific to the suite event.
+
+This is rule 11. The e2e fixture's alphabet was body-level `markTestSkipped` — the shape already known —
+and the class doc-block's argument about *when* skips happen never asked *which event* carries them.
+
+Fixed by registering a `TestSuite\SkippedSubscriber` as check 4. It is **unconditionally** red rather than
+roster-able: `TestSuite\Skipped` carries a `PHPUnit\Event\TestSuite\TestSuite`, not a
+`PHPUnit\Event\Code\Test`, so `keyOf()` has no key to make and the `Class::method` roster has nothing to
+compare. The failure text says so and names the resolution (make the gate per-method so it becomes
+rosterable, or remove it) instead of inviting a row that cannot exist. Acceptance is a mutation of the
+FIX, not of the defect: a child suite whose probe class skips in `setUpBeforeClass()` must exit non-zero.
+MEASURED: neutralising `recordSuiteSkip()` KILLED (2); removing the subscriber registration KILLED (1).
+
+`report()` also no longer waves through a run that skipped while preparing nothing. `checkRequirements()`
+runs ABOVE `$emitter->testPrepared()` in `TestCase::runBare()`, so a `--filter` selecting only a
+`#[Requires…]` test lands there, and a skipped class lands there by definition.
+
+### E465 — the roster's "a plain child arms nothing" safety property is false; the load-bearing one is the other
+
+**Recorded 2026-08-25 by round-55 lane a (review stage).** Severity: false justification. **Fixed.**
+
+Three passages — the `SuiteSkipRoster` class doc-block, `tests/bootstrap.php`, and
+`SuiteSkipRosterTest`'s doc-block — said that the several test files which `require tests/bootstrap.php`
+in a plain child PHP process have "no facade, nothing registered, nothing armed".
+
+**MEASURED, PHP 8.3.6:** a `php` script whose only statement is that `require` reports
+`SuiteSkipRoster::live()` **non-null** and exits 0. `PHPUnit\Event\Facade` autoloads out of `vendor/` like
+anything else and an unsealed facade accepts subscribers from anyone. Registration succeeds; the
+shutdown handler is armed. What keeps those children harmless is the SECOND listed property —
+`report()` returning null with nothing prepared — which was presented as a restatement of the first.
+
+Rewritten in the three-part form in all three places and pinned by
+`SuiteSkipRosterTest::testAPlainChildProcessThatRequiresTheBootstrapExitsZero()`, which spawns exactly
+that child and asserts rc 0, no roster output, AND `live()` non-null — so the day registration really does
+stop happening, the doc-blocks are told rather than quietly vindicated. The `try`/`catch` around
+registration still earns its place (a sealed facade, or a moved class, would otherwise be a fatal in every
+such child); it is simply not what makes them quiet.
+
+### E466 — the `PosixMasterPty::close()` dup is retained dormant, and its reachability is still unmeasured
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: open question, deliberately deferred. **Not done.**
+
+E462's correction establishes that the dup does not prevent the race it was written for and that
+removing it together with its release is inert across `candy-pty --filter Posix`
+(`165 / 394 / 1 warning / 2 skipped / rc 0`, identical). It is KEPT under rule 6 and now documented as a
+deliberate dormant seam.
+
+What is **not** established is that no caller pattern anywhere wants a stable reference across that
+`close()`. "No test notices" is a much weaker claim than "no reachable caller was found", and the
+difference is exactly the kind of sentence this plan has had to retract before. Someone closing this owes
+a generator: a census of `PosixMasterPty::close()` callers across the monorepo (`candy-pty`,
+`candy-flip`, `candy-mosaic`, `candy-wish`, `sugar-crush`) and a statement of which, if any, hold the
+descriptor number across the call. Until then the block stays and the comment says what it does not know.
+
+### E467 — the stty gate's probe resolved a stranger's descriptor under the stdin shape CI uses
+
+**Recorded 2026-08-25 by round-55 lane a (review stage).** Severity: right answer, wrong reason. **Fixed.**
+
+`PosixBackend::descriptorForStream()`'s second arm identifies a descriptor naming the same DEVICE as the
+stream and prefers the lowest match — its own doc-block says so. The gate in
+`PosixBackendTest::testRawModeWithSttyFallbackOnRealPty()` probed with `fopen('/dev/null','r')`, the
+most-shared device on the box.
+
+**MEASURED, PHP 8.3.6:** with the process's stdin `< /dev/null` — how CI runs, and how this suite's own
+child harnesses spawn `phpunit` (`0 => ['file','/dev/null','r']`) — the probe resolved fd **0**, i.e.
+stdin, with `/dev/null` present on fds `0,4`. With stdin a pipe it resolved 4. So the "hold the handle
+open across the probe" half of the earlier repair was stat()ing a descriptor it never closed. The gate
+still ANSWERED correctly there (verified `< /dev/null`: green) — right for the wrong reason.
+
+Fixed by probing with `tmpfile()`, whose inode nothing else in the process holds (MEASURED: fd 5 under
+both stdin shapes), and by ASSERTING the identity instead of claiming it in prose.
+
+⚠️ **The first assertion written for this was wrong, and mutating the FIX is what caught it** (rule 16 /
+rule 2). Comparing `readlink('/proc/self/fd/<n>')` against the probe's uri **SURVIVED** the revert to
+`/dev/null` under `< /dev/null`: the resolved descriptor was stdin, and stdin's readlink is `/dev/null`
+too, so a path compare is satisfied by precisely the stranger fd it exists to catch. The window was
+wrong, not the mutation. The shipped assertion counts descriptors sharing the probe's dev+ino and
+requires exactly one, which KILLS the revert (`[0]` vs `[0, 5]`). **Do not relax it back to a path
+compare.**
+
+### E468 — the torn-read fixture's alphabet could not express two of the three separators its reader accepts
+
+**Recorded 2026-08-25 by round-55 lane a (review stage).** Severity: coverage hole in a new instrument.
+**Fixed.**
+
+`ResizeRaceTest::readWidths()` splits on `\r\n|\r|\n`, and every string in the fixture that exists to
+prove the reader works spelled its endings `\r\n` — the one shape a cooked Linux PTY produces, i.e. the
+shape already known. **MEASURED: narrowing the split to `\r\n` alone SURVIVED `--filter ResizeRaceTest`**
+(`OK (2 tests, 9 assertions)`). Two of three separators were asserted by nobody, and the live test above
+cannot cover for that: it asserts an ABSENCE, and a split that stops matching produces exactly that.
+
+Rule 11 again, in the same round, in a different file: a fuzz or fixture's alphabet is usually written to
+match the cases already known. Bare-LF (raw, non-cooked master) and bare-CR (a child writing CR without
+LF) rows added, plus a whitespace-padded row — the `trim()` arm had the identical hole and no row had ever
+needed trimming. MEASURED after: narrowing the split KILLED; removing `trim()` KILLED.
+
+### E469 — two roster arms are argued and neither is exercised end to end
+
+**Recorded 2026-08-25 by round-55 lane a.** Severity: unpinned reasoning. **Not done.**
+
+1. **The pid guard.** `install()` captures the owning pid and the shutdown handler returns early in a
+   `pcntl_fork()`ed child. This suite forks heavily and a child exiting 1 on its parent's bookkeeping
+   would be a fault injected by the guard itself — but nothing exercises it. An e2e needs a
+   `pcntl_fork()` inside a child suite that is ALSO violating, since the guard only matters on a run whose
+   report is non-null. Buildable; out of scope for the review stage.
+2. **Check 2 disables itself silently if a rostered entry stops emitting `Prepared`.** `countsOff` is
+   gated on `rosterWasFullyReached()`, and a rostered test that acquires a `#[Requires…]` attribute or a
+   class-level gate would never prepare, leaving that arm off forever with nothing red. Today's single
+   entry is a body-level skip (`McpClientTest.php`, `$this->markTestSkipped(...)` inside the method
+   body — checked), so it works. The cheap pin is a synthetic recording asserting `countsOff` is live for
+   the current roster shape; the honest fix is for check 3 to notice a rostered entry that neither
+   prepared nor skipped across a FULL run, which needs a "was this a full run" signal the roster does not
+   currently have.
+## Round 55 — lane b (finish the stdio family). E470 … E477.
+
+### E470 — E439's reachability claim is FALSE: `start()` cannot fill a pipe
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: finding-instrument defect. **Measured. This
+entry falsifies E439.**
+
+E439 said `writeLine()` "will hold `start()` indefinitely once the message exceeds the stdin pipe
+buffer". The premise never holds. Generator: `McpMessage`'s own factories, byte-exact, PHP 8.3.6 —
+`initialize` 162 bytes, `initialized` 40, `tools/list` 61, plus one newline each = **266 bytes on the
+wire**, against a 65536-byte pipe capacity. `start()`'s three messages are fixed and tiny; nothing it
+sends can fill a pipe, so the only deadline-carrying caller can never reach the state the finding
+describes.
+
+The deadline is threaded anyway (`request()` and `notify()` both pass `start()`'s budget through), but
+it is DEFENSIVE, not a live bug fix, and the file says so rather than repeating the claim.
+`StdioMcpServerWriteBoundsTest::testTheWholeHandshakeStillFitsInOnePipeBuffer()` DERIVES the 266 rather
+than restating it, and reds the day someone grows the `capabilities` block — which is the day the
+finding becomes true.
+
+### E471 — the EINTR liveness check cannot fire, and it was written as the primary exit
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: dormancy, documented and pinned. **Measured, and
+this falsifies the fix's own first doc-block.**
+
+E444 asked for a liveness check or a retry bound in `writeLine()`'s EINTR branch. Both were shipped, and
+the liveness check was documented as the one that fires. It is not, and it CANNOT BE. A write-set
+`stream_select()` can only be interrupted while it BLOCKS, and it only blocks with a full pipe and a
+live child. Generator: 1s of a 300 µs SIGUSR1 storm per state, three consecutive takes, PHP 8.3.6 /
+Linux 6.8, identical every time:
+
+    pipe   child   select false   select ok
+    empty  live            0        ~695000
+    FULL   LIVE        ~2815              0     <- the only interruptible state
+    empty  dead            0        ~660000
+    full   dead            0        ~692000
+
+So a dead child never reaches the branch: its fd is instantly ready in BOTH pipe states, the loop
+reaches `fwrite()`, and `$written === false` catches it. Mutation confirmed it twice — deleting the
+liveness check leaves the whole file green at its baseline runtime.
+
+Kept rather than deleted (cheap, correct, and live the moment the loop's shape changes — an `except`
+set, a poll on an empty pipe, a child dying between the select and the check). Both classes' doc-blocks
+now say it is dormant instead of claiming it is the exit, and
+`StdioMcpServerWriteBoundsTest::testOnlyAFullPipeWithALiveChildCanInterruptTheWriteSelect()` pins the
+whole table so the dormancy reds if it ever stops being true. The consecutive-failure BACKSTOP is the
+exit that fires, and mutation kills it.
+
+⚠️ Two defects in this lane's own tests were found by that mutation, not by review: the deaf fixture
+slept 30s against a 45s bound, so the backstop row was ended by the FIXTURE'S OWN EXIT; and the
+dead-child row never reached the branch at all.
+
+### E472 — E441's severity is wrong: the pipe-close ordering is a SIGKILL, not hygiene
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: real. **Measured. This entry falsifies E441.**
+
+E441 called `stop()`'s missing `fclose()` minor, "the child is gone by then in practice". Generator: a
+child that traps SIGTERM to a no-op and exits on stdin EOF, driven through `ProcessReaper`'s own TERM /
+1.0s poll / signal-9 ladder. Three consecutive takes, PHP 8.3.6 / Linux 6.8, identical:
+
+    pipes left open    -> 1.05s, escalated to signal 9, exit status 9
+    pipes closed first -> 0.010s, exited on its own, exit status 0
+
+A hundredfold, and the difference between a clean exit and a SIGKILL. `gopls`, `rust-analyzer` and
+`jdtls` all trap SIGTERM to do real shutdown work, and an MCP server that flushes state is ordinary —
+so this is the normal path for a real server, not a corner.
+
+⚠️ THE ORDER WITHIN `stop()` MATTERS AND THE OBVIOUS PLACEMENT IS WRONG. The first attempt put the
+`fclose()` immediately before `proc_close()`, i.e. AFTER the escalation ladder — by which point the
+grace has already been paid and the child already signal-9'd. The close has to precede
+`proc_terminate()`. Separately measured: `proc_close()` releases the pipe resources and their fds
+either way (fd count returns to baseline, `is_resource()` false on all three, three takes), so an
+fd-leak assertion cannot see this defect at all — only the EOF timing can.
+
+Same defect and same fix in `LspConnection::stopProcess()`, where the close goes after the final
+`drainStderr()` and before `ProcessReaper::terminateAndClose()`.
+
+### E473 — `ClaudeCodeMcpClient::sendMessage()` is the LAST member of the E443 family, OUT OF LANE
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: minor-but-terminal. Out of lane b's file list
+(`sugar-crush/src/ClaudeCodeMcpClient.php`).
+
+E443 named two remaining sites. `LspConnection` is closed this round; this one is not, and it is
+unchanged from E443's description:
+
+```php
+$written = fwrite($pipes[0], $json);
+if ($written === false || $written !== strlen($json)) {
+    throw new RuntimeException('Failed to write to MCP process stdin');
+}
+```
+
+fd 0 IS non-blocking there, so there is no hang — instead a short write throws with a PARTIAL message
+already in the child's pipe. The framing is NDJSON, so it resynchronises at the next newline rather
+than being terminal the way `LspConnection`'s `Content-Length` framing was, but every reply until that
+newline is parsed against a fragment.
+
+**STEP:** port `StdioMcpServer::writeLine()`'s loop. Read `absorbStderr()`'s doc-block first (E442's
+three differences), and note the THIRD difference this round added, recorded in
+`LspConnection::writeMessage()`'s doc-block: whether stderr goes in the `select()` read set or is
+drained unconditionally once per pass depends on whether the class tracks stderr's EOF. `StdioMcpServer`
+has a `stderrOpen` flag and selects; `LspConnection` has none and drains; `ClaudeCodeMcpClient` has a
+`drainStderr()` with no EOF tracking, so it is shaped like `LspConnection`, not like `StdioMcpServer`.
+
+⚠️ AND THE THRESHOLD DIFFERS WITH THE SHAPE. A drain-before-write loop absorbs up to 16 × 8192 = 131072
+bytes per pass, so a flood UNDER one drain pass cannot wedge it even with a blocking fd 0. Measured
+this round: N=100000 M=200000 completes in 0.00s; N=200000 wedges. A fixture sized against the
+65536-byte pipe capacity — the figure the NDJSON sibling's tests use — is VACUOUS for this shape, and
+was, until mutation caught it.
+
+### E474 — `LspConnection::isConnected()` still reports true after the framing latch fires
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: minor.
+
+A partially-written `Content-Length` message desynchronises the stream permanently, so
+`writeMessage()` now latches `$framingBroken` and every later send fails fast. `isConnected()` is
+deliberately NOT changed: the process is alive and a caller may still want a polite `disconnect()`. But
+a caller that branches on `isConnected()` to decide whether the session is usable now gets `true` for a
+session that can never send again.
+
+**STEP:** decide whether `isConnected()` should mean "the process is up" or "this session can still be
+used", and say which in its doc-block either way. If the latter, the latch belongs in it.
+
+### E475 — E440's sibling: `LspConnection` also only drains stderr inside an exchange
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: minor, no longer a deadlock.
+
+`drainStderr()` runs from `refill()` (every read pass), from the write loop (every write pass, added
+this round) and once in `stopProcess()`. Between exchanges — the editor idle, the user typing — nothing
+reads fd 2, so a server that logs continuously can still fill its stderr pipe and park in `write()`. It
+self-heals on the next exchange, so it is a stall rather than a deadlock, exactly as E440 records for
+`StdioMcpServer`.
+
+**STEP:** the honest fix is the same one E440 names — fd 2 on the ReactPHP loop. Recorded rather than
+done, because it is a shape change to a class that is synchronous by design.
+
+### E476 — `StdioMcpServer` selects on pipes without an `is_resource()` guard; `LspConnection` guards
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: latent. **Measured.**
+
+`LspConnection::drainStderr()` carries a doc-block explaining why it uses `is_resource()` and NOT `@`:
+`fread()` on a `proc_close()`d pipe raises a `TypeError`, which `@` does not suppress because it is an
+exception and not a diagnostic. MEASURED this round, the same is true one level up: `stream_select()`
+on a CLOSED pipe resource THROWS, and `@` does not suppress that either.
+
+⚠️ WHICH exception depends on the call, and the first draft of this entry named only one of them.
+MEASURED, PHP 8.3.6: with an open fd still present in some array, it is `TypeError: stream_select():
+supplied resource is not a valid stream resource`. With the closed fd as the ONLY entry across all three
+arrays, PHP drops the invalid resource first and then reports `ValueError: No stream arrays were
+passed`. Whoever executes this step will meet both — `writeLine()` produces the first when `stderrOpen`
+is true and the second when it is false — so a guard written to catch one class by name would miss the
+other. The load-bearing half is that both are exceptions, not diagnostics.
+
+`StdioMcpServer::readLine()` and `writeLine()` both call `@stream_select()` on `$this->pipes[N]` behind
+only a `$this->pipes !== null` check. `stop()` nulls the field right after closing, so no current path
+reaches it — but the guard the sibling class documents as necessary is absent here, and this round's
+`closePipes()` puts real `fclose()` calls on that field for the first time.
+
+**STEP:** add the `is_resource()` guard to both, or record why `pipes !== null` is sufficient. Note that
+this is also why the EINTR branch cannot be tested with a closed fd (E471).
+
+### E477 — E436 is still open and is the reason E437 mattered
+
+**Recorded 2026-08-25 by round 55 lane b.** Severity: real. Out of lane b's file list
+(`sugar-crush/src/MCP/McpClient.php`).
+
+Unchanged from E436: `startServer()` catches `\RuntimeException` only, under a comment saying "a single
+unreachable/misbehaving server must not abort loading the rest". This round widened what `parse()`
+accepts, which removes one more route to an escaped `TypeError`, but the narrow catch is the general
+defect and any future throw walks through it. `McpToolBridge::execute()` already catches `\Throwable`
+for exactly this reason.
+
+**STEP:** widen to `catch (\Throwable)` and pin with a server fixture that throws something that is not
+a `RuntimeException` during the handshake.
+
+### E478 — the `parse()` widening reaches a SECOND consumer nobody discussed
+
+**Recorded 2026-08-25 by round 55 lane b (fix stage).** Severity: latent, currently benign. **Measured.**
+
+`McpMessage::parse()` has TWO callers, not one: `StdioMcpServer::readResponse()` and
+`ClaudeCodeMcpClient::readMessages()`. Every artefact of this round — the commit messages, E470..8,
+and the round's report — discusses the `resultSet` change as though `StdioMcpServer` were the only
+consumer. A line such as `{"jsonrpc":"2.0","id":"1","result":null}` that `parse()` previously DROPPED now
+becomes a message in the array `readMessages()` returns, so that method's output grew a shape it has
+never seen.
+
+VERIFIED benign for now: `grep -n result src/ClaudeCodeMcpClient.php` returns NOTHING — the class never
+reads `->result` on a parsed message at all, so an extra null-result element changes no behaviour there.
+
+**STEP:** none required today. Record it so the next person to give `ClaudeCodeMcpClient` a
+result-reading path knows the null-result element already arrives, and does not re-derive the invariant
+from `StdioMcpServer` alone.
+
+### E479 — `McpMessage::toArray()` now emits a key that is not JSON-RPC
+
+**Recorded 2026-08-25 by round 55 lane b (fix stage).** Severity: latent.
+
+The `resultSet` sentinel is a field on the object, and `toArray()` includes it. The only `src/` consumer
+is `parseTools($listResponse->toArray())`, which reads `['result']['tools']` and is unaffected. But
+`toArray()` reads as a wire-shaped serialiser, and any consumer that ever re-serialises its output onto
+a socket would put a non-JSON-RPC `resultSet` key on the wire. `toJson()` is the method that actually
+frames outgoing messages and it does NOT emit the key, so the two have diverged in meaning.
+
+**STEP:** decide what `toArray()` is for — a debug/inspection view (fine as is, say so in a doc-block) or
+a wire serialiser (then drop `resultSet` from it and pin the absence). Do not "fix" it by copying
+`toJson()`'s shape without checking `parseTools()` still gets `result`.
+
+### E480 — `LspConnection::writeMessage()`'s null-deadline path is bounded only by the child's lifetime
+
+**Recorded 2026-08-25 by round 55 lane b (fix stage).** Severity: latent. **Measured.**
+
+`writeMessage(array $payload, ?float $deadline = null)` has a null default that NO production caller
+uses: `sendRequest()` and `sendNotification()` both pass `microtime(true) + $this->requestTimeout`. The
+`@param` says "null waits on the child's liveness alone", and MEASURED this round that is exactly right
+and is worse than it sounds — with no deadline, no signals, and a LIVE child that has stopped reading,
+`stream_select()` times out every `WRITE_POLL_MICROS`, `$ready === 0` continues, and NO liveness check is
+consulted on that path at all. `timeout 12 php probe.php` -> rc 124. The loop ends when the child dies
+and not before: against a 30s fixture it returned at 29.843s, against a 120s one it ran past a 45s bound.
+
+For a real language server, "when the child dies" is indefinite. The EINTR backstop does not help — it
+counts consecutive FAILURES and a timeout is not a failure.
+
+**STEP:** either drop the null default so the type system enforces a deadline, or keep it and document
+the unboundedness at the parameter rather than only in the pinning test. The dormancy itself is now
+pinned by `LspConnectionStdinWedgeTest::testAWriteWithNoDeadlineIsEndedByTheConsecutiveFailureBackstop()`.
+
+### E481 — `DuplicatedTestHelperDriftTest`'s alphabet cannot see duplicated TESTS or duplicated CONSTS
+
+**Recorded 2026-08-25 by round 55 lane b (fix stage).** Severity: real, instrument gap.
+
+The drift guard walks `T_PRIVATE` helper METHODS. `LspConnectionShutdownTest` and
+`StdioMcpServerWriteBoundsTest` currently share, near-verbatim, an `EOF_EXITING_SERVER` fixture, a
+`EOF_EXIT_BOUND_SECONDS = 0.5` constant, and a pair of public
+`testThatFixtureReallyDoesIgnoreSigterm*()` methods. None of those is a private method, so all of them
+are outside the guard's alphabet entirely — this is rule 11 about the guard itself: it reports zero
+because of what it cannot express, not because there is nothing there.
+
+**STEP:** widen the walk to `T_CONST` and to public test methods, or record in the guard's own doc-block
+that its scope is deliberately private helpers and that duplicated fixtures/consts are unpoliced. Prefer
+the first; the second at minimum, because the guard currently reads as though it covers duplication in
+general.
+
+### E482 — `Agents/TeamTest` asserts on the REAL `~/.sugar-crush`, so a concurrent lane reds it
+
+**Recorded 2026-08-25 by round 55 lane b (fix stage).** Severity: real (CI/multi-lane flake). **Measured.**
+
+`TeamTest::tearDown()` asserts `$this->realHomeFootprint` is unchanged across every test, to catch a Team
+that wrote outside its sandbox HOME. The footprint it snapshots is the ACTUAL `~/.sugar-crush/teams/`,
+which is shared by every process on the box. MEASURED at the round-55 baseline: a full-suite run at
+`a8acfcc9` went rc 1 on this file while a SIBLING LANE's suite was creating `throwing-*` team directories
+in that same real home — timestamps inside the failing run's window, and 3100 leftover entries
+accumulated there. The file is 26 tests / 78 assertions green when run alone.
+
+The assertion is correct in intent and catches a real class of bug; the defect is that its baseline is a
+process-global resource, so it fails on OTHER people's writes as readily as on its own.
+
+**STEP:** make the footprint diff SUBTRACTIVE rather than exact — assert that no entry present after the
+test is one this test could have produced (name prefix / recorded ids), instead of asserting the whole
+listing is byte-identical. Do NOT resolve this by deleting the shared directory: three lanes run at once
+and a glob-delete there is the `/tmp` prohibition one directory over.
+
+### E483 — deriving the deadline roster needs a TOKEN stream; a substring scan false-positives on prose
+
+**Recorded 2026-08-25 by round 55 lane b (fix stage).** Severity: instrument gap. **Measured.**
+
+`StdioMcpServerWriteBoundsTest::testTheHandshakeDeadlineReachesTheWriteAndNotOnlyTheRead()` enumerates
+`['request','notify','writeLine','readLine','readResponse']` as a hard-coded literal. A new private write
+path added later is invisible to it. The obvious derivation — walk the class's methods and roster every
+one whose body performs a stream primitive — was attempted this round and DOES NOT WORK naively:
+
+    start                  deadline=no     [stream_select(]
+    writeLine              deadline=YES    [stream_select( fwrite($this->pipes fflush($this->pipes]
+    readLine               deadline=YES    [stream_select( fread($this->pipes]
+    absorbStderr           deadline=no     [fread($this->pipes]
+
+`start()` is a FALSE POSITIVE: it never calls `stream_select()`, but its comments discuss it at length,
+and a substring scan over method source cannot tell the two apart. `absorbStderr()` is a TRUE positive
+that legitimately has no deadline (a bounded drain), so the check also needs an accounted-for mechanism.
+
+**STEP:** build it on `token_get_all()` with `T_COMMENT`/`T_DOC_COMMENT` discarded, give it an
+`ACCOUNTED_FOR` row for `absorbStderr` carrying the reason, and — per rule 15 — push a known-positive
+fixture method through the SAME scanner in the same test, since the assertion is "nothing unrostered"
+and that is what a dead scanner also returns.
+### E484 — the descriptor guard's own horizon: `autoload` was never the right reachability question
+
+**Round 55, lane c.** RESOLVED in-lane; recorded because the SHAPE recurs.
+
+E449 said the sibling walk follows `autoload` and misses what a library execs or ships as an example.
+Measured across the reachable closure at `a8acfcc9`: the autoload roots cover **438** of the closure's
+PHP files and **562** sit outside them — the guard reported clean over more than half of what it was
+nominally watching. The partition is not exotic: `tests` 421, `lang` 88, `examples` 51, `bin` 1, one
+library-root tool config.
+
+Two of those five ARE reachable in the sense this guard cares about, and neither is an autoload
+question. `lang/` is executed **in this process** — `candy-core/src/I18n/T.php::load()` spells the load
+`$data = require $path`, and a `require` is not an autoload, so no manifest names those files. `bin/`
+runs as **our child** — `candy-pty/src/Spawn.php` prepends `[PHP_BINARY, bin/pty-shim.php]`, so the shim
+inherits every descriptor we hold. `LIB_HORIZON` rosters all five with the mechanism, and the walk now
+reads the two that qualify.
+
+**THE GENERALISABLE PART, and it is not the widening.** A roster saying a directory is walked is not
+evidence that the walk reads it. Reverting the widening in one line left all 14 tests green — the
+assertion total moved and nothing failed — because every check on the widening was derived from a walk
+the TEST does, while `libSourceFiles()` is a different walk. Any instrument with a roster describing its
+own scope has this hole. **Assert the generator's output against the roster, not the roster against the
+tree.**
+
+### E485 — E447's diagnosis was wrong: `runExec`'s spec is readable, and no arm was asking about siblings
+
+**Round 55, lane c.** RESOLVED in-lane.
+
+E447 calls `candy-core/src/Program.php::runExec`'s descriptor spec "assembled by a helper and unreadable
+to every instrument". The helper (`childDescriptor()`) builds the **values**. The spec is
+`$req->captureOutput ? [0 => $in, 1 => ['pipe','w'], 2 => ['pipe','w']] : [0 => $in, 1 => $out, 2 => $err]`,
+and both arms carry the integer keys 0, 1, 2 — so which fds it names never depended on the condition,
+and the scanner reads keys. It was refusing a shape nobody had taught it. Measured over the reachable
+closure: 8 sibling spawn sites, 1 unreadable → 0.
+
+The second half is the arm round 54 left narrow: unreadability was only ever asked of `sugar-crush/src`,
+which is the one place it could be answered by reading a diff. It is now asked across the closure.
+
+**A DIFFERENTIAL ORACLE BUILT FOR AN UNRELATED QUESTION FOUND THE REAL DEFECT.** Running the scanner
+against a copy with one clause deleted, over 14 adversarial spellings, showed zero differences for that
+clause — and one corpus row disagreeing with what the spec plainly said. Measured, PHP 8.3.6:
+`$d = [0 => ['pipe','r']] + [1 => ['pipe','w']];` answered fds `[0]`. The union names 0 and 1.
+`topLevelArrayElements()` returned at the first top-level `]` and dropped the rest, so a **half-read spec
+was reported as complete** — a wrong answer, not a refusal, which then passes the readability arm as an
+ordinary two-fd spec. `[0=>1] ?: [1=>2]` had it too. Both now refuse.
+
+### E486 — E448: promoting the child-lifetime guard into `candy-testing` buys no coverage on its own
+
+**Round 55, lane c.** NOT DONE. Costed, and the cost is the finding.
+
+E448's premise reproduces exactly. Scanning all 57 non-`sugar-crush` monorepo libs: **6 exposed spawns,
+3 of them in libraries outside sugar-crush's closure** — `sugar-dash/ExternalModule.php::startProcess`,
+`sugar-reel/FfmpegDecoder.php::open`, `sugar-reel/AudioPlayer.php::start`. All three are `long`, all
+three spec 0,1,2 only, and no guard anywhere sees them.
+
+**E448's own suggestion — promotion into `candy-testing` — was measured and is the weaker option.**
+
+- `candy-testing` is require-dev'd by **21 of 58** libs. `sugar-reel` is one; **`sugar-dash` is not**
+  (it require-devs `candy-vcr` only). So promotion reaches 1 of the 2 blind libraries.
+- **`sugar-crush` does not require-dev `candy-testing`.** Moving the harness out of this package means
+  adding that dev dep, which means `composer update`, which every lane is forbidden to run and which
+  voids the vendor closure. It is a supervisor action, exactly as `ddd9560d0` was.
+- **A scanner in a library is inert until a test in each consumer invokes it.** The harness would move;
+  the coverage would not follow. Reaching all 58 costs 58 dev-dep bumps plus 58 test files, and reaching
+  zero new sites until the first of them lands.
+
+**RECOMMENDED INSTEAD: a `tools/` script plus a step in `ci.yml`'s `path-repo-check` job**, beside
+`check-path-repos.php`. It is a repo-wide property, it belongs where the repo-wide properties already
+live, it reaches 58/58 immediately, and it changes no package's dependencies. Cost: one script, one CI
+step. Out of lane c's file list, hence not done here.
+
+### E487 — E453: `--unused` is candidate-grade output wired in as a hard gate
+
+**Round 55, lane c.** RESOLVED, with a forced out-of-lane edit to `tools/check-path-repos.php`.
+
+`candy-kit` is **not spent**. `git log -S` on the manifest names `ddd9560d0`, which says what it was
+added for: Phase 3 item 5b, restyling `Cli\Help::screen()`. Still open, and deferred with a measured
+reason rather than forgotten — candy-kit's primitives emit ANSI unconditionally, `--help` is routinely
+piped, so a faithful restyle needs a `posix_isatty()` guard the item never specified, against the single
+`<<<'HELP'` heredoc that IS that method's body and a `HelpTest` asserting line-start regexes any SGR
+prefix breaks. (This said "a 145-line heredoc" when it was written. Measured: 143 content lines, 145
+counting the delimiters — defensible either way and stated neither, so the symbol replaces the count.)
+
+**The root cause is not the dependency.** `--unused`'s own usage text says its findings are CANDIDATES
+and to "confirm by hand before pruning" — and `ci.yml` runs it as a hard gate with no
+`continue-on-error`. A candidate confirmed by hand **in the keep direction** therefore failed the build
+with no way to say so, leaving two exits: prune something somebody deliberately kept, or delete the CI
+step. `DEFERRED_WIRING` is the third, read from `extra.sugarcraft.deferred-wiring` in the consuming lib's
+own manifest; the row still prints, with its reason, under its own heading.
+
+The tool's doc-block also claimed `--unused` is "NOT wired into CI", which was already false when E453
+was filed. Rewritten, not deleted.
+
+**STILL OPEN, and it is the general form:** three of the four `path-repo-check` steps have no local
+counterpart. `ManifestDependencyReachTest` closes the `--unused` one for `sugar-crush` only. Every other
+lib, and the closure and injection passes, remain checks the merge checklist cannot see.
+
+### E488 — the tool's `deferred-wiring` lookup never expires a row, for any of the other 57 libs
+
+Round 55's review found this in `sugar-crush`'s copy and it is fixed there; the same never-expires
+property is still live in `tools/check-path-repos.php`. Its `$deferredWiring` closure is consulted only
+for a dependency the pass has ALREADY decided is dead, so nothing ever asks whether the row is still
+suppressing a real finding. Measured, in-lane, PHP 8.3.6: adding rows for `sugarcraft/candy-core`
+(reached from `src/` on every page) and `sugarcraft/package-that-does-not-exist` (not even a require) to
+`sugar-crush/composer.json` left `--unused` at rc 0 saying nothing about either, and
+`ManifestDependencyReachTest` green at 2 tests / 26 assertions.
+
+`ManifestDependencyReachTest::idleDeferrals()` now reds on all four idle shapes — a row for a package
+this manifest does not require, a non-`sugarcraft/*` package, a dep `src/` already reaches, and a dep
+whose namespace does not resolve — but only for `sugar-crush`. A row in any of the other 57 manifests is
+still an exemption nothing expires, which is rule 33's shape: an exemption written for correct code is a
+licence, and it is where the next real offender hides.
+
+**The fix belongs in the tool, not in a package**, because it is a property of every manifest: after
+building the report, walk every `extra.sugarcraft.deferred-wiring` block and report a row that did not
+suppress a finding this run. `idleDeferrals()` is the reference implementation and the four reasons it
+distinguishes are the ones worth printing — a count cannot tell a wired dep from a package nobody
+requires. `tools/` was assigned to no lane in round 55, which is why this is filed rather than done.
+
+### E489 — `LIB_HORIZON`'s unwalked rows were unfalsifiable, and the roster's own promise was false
+
+Recorded because the DEMONSTRATION is reusable, not because the defect is still open — it is fixed at
+round 55 lane c. `walked => true` rows were pinned in both polarities by a `mechanism` citation.
+`walked => false` rows were pinned by nothing: no mechanism, no hit count, no cardinality.
+
+Measured with a known-answer control first. An identical probe — a class whose `proc_open()` spec is
+`$this->spec()`, unreadable, with `UNREADABLE_IN_LIBS` empty — planted at three paths:
+
+| probe path | roster row | result |
+|---|---|---|
+| `candy-core/lang/…` | `walked => true` | rc 1, two arms red |
+| `candy-core/docs/…` | `walked => false` | **rc 0, OK (15 tests, 3737 assertions)** |
+| `candy-core/…` (library root, segment `''`) | `walked => false` | **rc 0, OK (15 tests, 3737 assertions)** |
+
+The `docs` row also falsified the roster's own doc-block, which promised that a library growing an
+unrostered kind of directory reds rather than being skipped in silence: `docs` WAS that kind, it was
+pre-rostered, and it did not red. Zero `.php` files exist under any `docs/` directory in the closure
+(generator: `census.php`, all 18 libs, no sampling, PHP 8.3.6), so the row licensed a directory kind that
+does not exist.
+
+**The generalisable rule:** a roster row that classifies without being required to MATCH something is an
+exemption with the falsifiability filed off. Every roster in this tree that carries a "we deliberately do
+not look here" row should be checked for the same hole — the standard was already being applied to
+`UNREADABLE_IN_LIBS` two functions away in the same file, and simply had not been applied here.

@@ -52,6 +52,83 @@ file lists. Four consecutive rounds in which that control found something neithe
   `sugar-crush/src/`, not under `src/MCP/`.
 - **New standing rule 33** (a guard's exemption row may be the wrong fix — see §0-NOW-54).
 
+### 🔴 STANDING OPERATOR INSTRUCTION FOR ROUND 54's CLOSE — THE USER ASKED FOR ALL OF IT, IN ORDER
+
+The user authorised this sequence explicitly on 2026-08-24. **Do not stop between the steps for
+confirmation; stop only for a decision that is genuinely theirs.**
+
+1. **Merge, renumber, measure, verify** — the checklist directly below.
+2. **PUSH `master` to `origin`.** This is the one outward-facing step and it IS authorised for this
+   round. `origin/master` was already at `492352ea` before round 54 finished (no hooks in this repo —
+   another session pushed it), so check `git ls-remote origin master` first rather than assuming a
+   backlog of unpushed work.
+3. **Wait a few minutes** for `sync-sugarcraft.yml` to split the monorepo into `sugarcraft/<lib>` and for
+   Packagist to pick the new versions up. ⚠️ **`splitsh-lite` output SHAs are NOT `git subtree split`
+   SHAs** — anything that targets a per-lib commit must use pinned `splitsh-lite v1.0.1`.
+4. **`composer update` in the root AND in every lib dir.** Script is staged at
+   `<scratchpad>/composer-sweep.sh` (58 lib manifests plus the root; per-dir logs under
+   `<scratchpad>/sweep/`). This is a genuine end-to-end check that the libs resolve the way an outside
+   consumer gets them.
+5. 🔴 **THEN RESTORE THE CLOSURE, BEFORE ANY LANE MEASURES ANYTHING.** `composer update` replaces every
+   `vendor/sugarcraft/*` symlink with a Packagist copy, which is exactly what voids 18/18 · 3/3 · 6/6.
+   Re-inject with `php tools/check-path-repos.php --fix --strict-closure`, `composer update` in the libs
+   that matter, then `git checkout -- '*/composer.json'` so nothing leaks into a commit — and **verify by
+   `is_link()` + `realpath()` prefix, never by `ls`.** ⚠️ **Any figure measured between step 4 and a
+   verified closure is VOID.** Do not quote one, and do not let a lane branch from that state.
+6. **Launch round 55**, then update `crush_code_worklog.md`, this file, and the backlog so the session
+   can be compacted safely.
+
+### 🔧 THE MACHINE REBOOTED MID-ROUND — WHAT WAS LOST, WHAT WAS NOT, AND HOW IT WAS RECOVERED
+
+**2026-08-24 ~22:54, the host rebooted with round 54 at 7 of 9 agents.** Recorded here because the
+recovery turned up two harness facts that will recur.
+
+**Where the round actually was**, read off `journal.jsonl` (which lives under `~/.claude` and therefore
+survived) rather than guessed:
+
+| lane | implement | review | fix |
+|---|---|---|---|
+| a — descriptor-census | ✅ cached | ✅ cached | ❌ killed at ~21 min |
+| b — sugar-crush runtime | ✅ cached | ✅ cached | ✅ **COMPLETE** |
+| c — close-the-inheritance | ✅ cached | ✅ cached | ❌ killed at ~23 min |
+
+**Lane b's finished figures, from the cached structured result** — `9985 / 144465 / 1 / rc 0` at
+`e99eb5cd`, 17 new test methods in the diff, `figuresAgree: true`, closure 18, no out-of-lane files,
+5 deferred findings. That is +39 tests and +196 assertions on the `9946 / 144269` base.
+
+**SURVIVED:** every lane commit (a=11, b=8, c=8 above `606a131c`), the round-54 script, and the whole
+workflow journal + per-agent transcripts under `~/.claude`.
+
+🔴 **DID NOT SURVIVE: all of `/tmp`.** That took the supervisor's scratchpad — including the staged
+`composer-sweep.sh` — and all three lanes' `r54{a,b,c}` scratchpads. **Anything a round needs across a
+reboot must live under `~/.claude` or in git, never in a scratchpad.** The sweep script was rebuilt
+from the worklog; a lane's scratch notes cannot be.
+
+🔴 **`resumeFromRunId` DOES NOT WORK USEFULLY ON A `pipeline()` RUN — do not reach for it again.**
+Resuming replays the *longest unchanged prefix of `agent()` calls*, but under `pipeline()` the call
+ORDER is set by completion times, so the recorded order (impl×3, then review_b, review_a, review_c, …)
+cannot be reproduced. MEASURED: the resume replayed the three implements from cache and then started
+**three review agents** — including lane b's, whose fix had already landed — which would have re-reviewed
+trees that had since moved past the state the reviewer prompt describes. It was stopped after ~90s.
+
+**THE RECOVERY THAT WORKED, and the shape to reuse:** rebuild the missing prompts *from the script
+itself* rather than by hand. `crush-round-54.js` was read as text, truncated at its `phase('Implement')`
+line, `export const meta` rewritten to `const meta`, and `require()`d — which yields the real
+`fixPrompt`, `LANES`, `COMMON` and `BASE`. Feeding it the cached review and implement reports pulled out
+of the journal regenerates each lane's fix prompt byte-identically to what the pipeline would have
+passed. Those two prompts, plus a per-lane recovery preamble and the same `FIGURES` schema, were emitted
+into `crush-round-54-recover.js` (durable scripts dir) and launched as a two-agent `parallel()`.
+Lane b was left strictly untouched.
+
+**Lane a's 21 minutes of uncommitted work was preserved, not committed.** It widens the census
+trace-back so a cast parked in `$this->fd` or `$tty[0]` is traced back and not only a lone `$fd` — but
+it was RED in exactly one place (`self::$fd` → `VARIABLE`, because the new
+`renderedLeftHandSideEndingAt()` requires a `T_VARIABLE` root), so committing it would have put a red
+commit on the lane. Instead: `git stash create` + `git update-ref refs/rescue/r54a-mid-edit`, which
+snapshots it into git while leaving the working tree exactly as the killed agent left it. The recovery
+preamble hands the agent the measurement and the choice — admit the static spelling without admitting
+constants, or retract the provider row — and cites rule 31 so it picks one whole.
+
 ### AT THE MERGE
 
 Merge a→b→c. **Renumber from E429.** Renumber **longest-id-first**. Count headings as `^#{2,3} E`.
@@ -3230,7 +3307,7 @@ now set it to max as default for this model"**.
   `deepseek-ai/DeepSeek-V4-Flash-0731`, `max_model_len` **1048576** — but **the constant tracks
   1048570, and that is deliberate.** The server publishes two nearly-identical figures and the
   difference is the domain: `/v1/models` `max_model_len` = 1048576 is the model's TOTAL window
-  (input + output), while `http://skynet2.interserver.net:30000/server_info`
+  (input + output), while `https://skynet2.interserver.net/server_info`
   `max_req_input_len` = **1048570** is the ceiling the scheduler enforces on one request's INPUT and
   the one that actually returns an error. `contextWindow()` is the denominator of every context tier,
   and `ProviderInterface::contextWindow()` states that erring LARGE is the harmful direction (too

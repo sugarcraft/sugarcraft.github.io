@@ -14113,3 +14113,554 @@ ps -eo comm,args --no-headers | awk '$1=="php" && /-S /' | wc -l
 
 **STEP:** use the `ps` form in the invariant block, and treat "1 orphan, no lane running" as the
 suspicious reading it always was rather than the expected one.
+
+---
+
+## Round 54 — lane a (candy-core descriptor census). E429-E435.
+
+### E429 — E396 refuted: closing E368 sites 2 and 4 is NOT a constructor change
+
+**Recorded 2026-08-24 by round-54 lane a.** Severity: prescription refuted (and the fix shipped).
+**Measured, PHP 8.3.6.**
+
+E396 stated that `PosixBackend::size()`'s first arm and `PosixBackend::enableRawMode()` could only be
+closed one of two ways: (a) carry the descriptor alongside the stream through `__construct()`, or
+(b) resolve `STDIN`/`STDOUT`/`STDERR` to 0/1/2 **and refuse an injected stream** — and that either
+"changes `PosixBackend::__construct()`, which `SugarCraft\Core\Util\Tty` and every `new Tty(null, …)` call
+site reach".
+
+**There is a third answer and it changes no signature.** The process's own descriptor table is readable:
+`/proc/self/fd` on Linux, `/dev/fd` on Darwin and FreeBSD. Matching `fstat($stream)`'s `st_dev` + `st_ino`
+against those entries recovers a genuine descriptor for an ARBITRARY stream, so option (b)'s "refuse an
+injected stream" is unnecessary — and `PosixBackendTest` really does inject one
+(`new PosixBackend($ptySlaveHandle)`).
+
+Shipped as `PosixBackend::descriptorForStream($stream, ?string $fdDirectory = null)`, two arms:
+identity against the three standard constants, then the table walk.
+
+**Who closes it: nobody.** Unlike round 53's `openDeviceDescriptor()`, this OPENS NOTHING — every
+descriptor it returns is one the process already holds. That is a strictly better property than the fix it
+sits beside, and it is why E396's "the descriptor must outlive the call" difficulty dissolved rather than
+being solved.
+
+**Both arms are load-bearing, and that was measured, not assumed.** MEASURED, PHP 8.3.6, in a CLI process
+whose stdout and stderr were redirected onto one pipe: descriptors 1 and 2 had IDENTICAL `st_dev`+`st_ino`,
+so the walk alone answers 1 for `STDERR`. Arm 1 is also what survives a container with `/proc` unmounted.
+It is pinned by pointing arm 2 at an empty directory — the same `@internal` seam idiom, and for the same
+reason, as `openDeviceDescriptor()`'s `$device`.
+
+**End-to-end pins, both deterministic.** `size()` on an injected pty slave whose window size was set to
+137x43 by `stty`, with `COLUMNS`/`LINES` pinned to 11x7 — 11x7 is exactly where the old body landed,
+because `SizeIoctl::query()` opens with `posix_isatty($fd)` and throws for a resource id, so arm 1 threw
+and the env arm answered. And `enableRawMode()` on the same handle, read back with `stty -F <slave> -a`.
+
+**Predicted and observed:** the census red E396 promised ("if someone fixes the assignment above the sink,
+the classification changes to `VARIABLE` and the census fails until the judgement is rewritten") fired
+exactly as written. That row-as-guard worked.
+
+**KNOWN LIMITATION, measured, not a defect for these two sinks.** Arm 2 identifies a descriptor naming the
+SAME DEVICE as the stream, not necessarily the stream's own — MEASURED, two `fopen()`s of one path gave
+descriptors 4 and 5 with identical dev+ino, and one pty slave path opened by both `fopen()` and libc gave
+5 and 6. `tcgetattr`/`tcsetattr`/`TIOCGWINSZ` all act on the TERMINAL, so every descriptor on one terminal
+answers identically. It would matter only if the sibling descriptor were closed while the stream stayed
+open. The lowest match is preferred and that preference is pinned (mutation m5 survived until it was).
+
+---
+
+### E430 — E404's population is 28, not 20, and the eight-site gap is its own alphabet again
+
+**Recorded 2026-08-24 by round-54 lane a.** Severity: measurement + instrument. **The generator is
+committed: `DescriptorSinkScanner::methodSinks()` / `sinksFromCdef()`.**
+
+E404 put the method-shaped population at 20, from a grep whose symbol alternation was
+`open|close|ioctl|fcntl|read|write|dup|dup2`. Re-derived by parsing candy-pty's own
+`Libc::cdef()` for every declaration whose FIRST parameter is `int fd`:
+
+  - `read`, `write` and `dup2` **are not declared in that cdef at all** — three imaginary symbols;
+  - `grantpt`, `unlockpt`, `ptsname_r`, `tcgetattr` and `tcsetattr` **are** fd-first and were absent from
+    the alternation — five missing symbols, and 8 further call sites.
+
+20 + 8 = 28, which is exactly the gap. **The entry whose entire subject is that hand-written lists of this
+family are incomplete carried a hand-written list that was incomplete in both directions.** So the roster
+is now DERIVED and `testTheMethodSinkRosterIsDerivedFromTheCdef()` pushes a synthetic cdef carrying the
+near-misses (path-first `open`, `pid`-first `waitpid`, pointer-first `openpty`, nullary `setsid`,
+`void *`-first `cfmakeraw`, and an fd-first-looking declaration inside a block comment) through the same
+parser.
+
+**And the receiver is not matched on at all.** E404's step said "matched as
+`T_OBJECT_OPERATOR`/`T_DOUBLE_COLON` + name", which is right, and the arm goes further: ANY receiver.
+E404's own corrected grep needed four alternatives (`Libc::lib()`, `$libc`, `self::libc()`, `libc()`) and
+had already lost four sites to a missing one. A scanner that has no opinion about the receiver cannot lose
+a fifth. Mutation m16 plants a sink behind a receiver spelling nothing in the tree uses
+(`$registry->handles()->dup($someFd)`) and the census reds.
+
+**A smaller correction to E404.** It recorded `candy-pty/src/ControllingTerminal.php`'s mention of the
+symbol as "a doc-comment reference, not a call", and discounted it. That file has BOTH: the doc-comment,
+and a live `$libc->ioctl($fd, $tioCSctty, null)` one screen below it, which the entry did not count. Token
+scanning does not have that problem — `T_DOC_COMMENT` is never tokenised into a call.
+
+**All 28 are correct**, verified by reading each first argument back to its origin: constructor `int $fd`
+parameters, `posix_openpt()` return values, `$libc->open()` return values, and one `openpty()` `int[1]`
+out-parameter. There is no 29th defect behind the blind spot; the value of the rows is that a new method
+sink now has to be judged instead of being invisible.
+
+**And one of them is in `candy-wish`** — `Transport/InProcessTransport.php`'s `$libc->ioctl(0, …)`, correct,
+in a library no scoping of this census had ever looked at. That is `presentLibraries()` globbing `*/src`
+earning its keep for the second round running.
+
+---
+
+### E431 — the descriptor walk needs `clearstatcache()`, and an in-process test of that is fragile
+
+**Recorded 2026-08-24 by round-54 lane a.** Severity: correctness (fixed) + harness. **Measured,
+PHP 8.3.6.**
+
+`stat()` results are cached by PATH, and `/proc/self/fd/4` is a path whose TARGET changes when descriptor
+4 is closed and reopened. MEASURED: with descriptor 4 on one temp file and its stat warmed, the file
+closed and a second temp file opened onto the same descriptor, the uncleared `stat()` still reported the
+FIRST file's inode. `size()` runs on every SIGWINCH in a process that opens and closes files, so this is
+live, not theoretical.
+
+**The first attempt to pin it destroyed its own window.** The test's own discriminators called
+`clearstatcache(); stat(...)` to establish that the descriptor had been reused, which refreshed the cache
+the assertion depended on being stale — mutation m7 SURVIVED. Rewritten with `readlink()`, which MEASURED
+is not served from the stat cache, it killed under `--filter` and then **failed at whole-suite scope**,
+because PHP's stat cache is also evicted by an intervening stat of ANY other path (MEASURED: an
+`is_file()` on an unrelated path evicts it; `tempnam()`, `fopen()` and `touch()` do not), and PHPUnit's own
+machinery stats paths.
+
+The shipped pin uses the `$fdDirectory` seam: a one-entry fixture table symlinked at the real one, so the
+entry's target changes on descriptor reuse **with no filesystem operation at all** — which matters because
+MEASURED, `unlink()` and `rename()` both flush the cache outright, so repointing a symlink the ordinary
+way destroys the state under test. Both readings are taken before any assertion, because an assertion is a
+method call and the window is only as wide as it looks.
+
+**The generalisable part**: a test whose subject is a CACHE cannot use cache-perturbing calls to establish
+its own preconditions, and "it kills under `--filter`" is not the same claim as "it kills".
+
+---
+
+### E432 — `PosixBackendTest`'s stty-fallback test is skipped, by a gate built on the very defect
+
+**Recorded 2026-08-24 by round-54 lane a.** Severity: dead guard. **DEFERRED — not fixed, see below.**
+
+`PosixBackendTest::testRawModeWithSttyFallbackOnRealPty()` is the only test in the tree that exercised
+`enableRawMode()` through candy-pty's `stty` termios backend on a real pty. MEASURED on this box,
+PHP 8.3.6: it is SKIPPED. Its skip gate reads
+
+```php
+$testFd = fopen('php://memory', 'r+');
+$fd = (int) $testFd;                 // the RESOURCE ID
+fclose($testFd);
+if (!is_readable('/dev/fd/' . $fd) && !is_link('/dev/fd/' . $fd)) { skip; }
+```
+
+— i.e. it asks whether `/dev/fd/<resource id>` exists, and a resource id (18 in the observed run) names no
+descriptor, so the answer is always no and the test always skips. **The gate is itself an instance of the
+defect family the test sits inside.**
+
+**AMENDED 2026-08-25 by the round-54 lane-a recovery run — the gate is worse than recorded above, and
+the STEP as first written would NOT have fixed it.** WHAT THIS ENTRY SAID: the gate fails because
+`(int) $testFd` yields a resource id rather than a descriptor. WHAT IS ALSO TRUE: the handle is
+`fclose()`d on the line BEFORE the path is tested. MEASURED at `5bef36cb`, PHP 8.3.6, reading
+`PosixBackendTest::testRawModeWithSttyFallbackOnRealPty()` in source order — `$fd = (int) $testFd;`,
+then `fclose($testFd);`, then `is_readable('/dev/fd/' . $fd)`. So even with the cast corrected to a
+genuine descriptor, `/dev/fd/<n>` would name a descriptor the test had just closed and the gate would
+skip anyway. WHY THIS MATTERS TO WHOEVER PICKS THIS UP: a round that implements the STEP below
+literally — swap the cast for `descriptorForStream()` — will watch the test go on skipping and may
+conclude the environment is at fault rather than the gate. **Both defects must be fixed together: probe
+a real descriptor AND keep the handle open until after the probe.**
+
+**STEP**: the gate should probe a real descriptor — `descriptorForStream()` now returns one — and must
+hold the handle open across the probe (see the amendment above) — after which
+the test would actually run and would exercise E368 site 4 through the `stty` backend, which the
+FFI-backed pin shipped this round does not cover. **NOT DONE THIS ROUND** because that test reads from a
+pty master against a 2-second deadline while a `/bin/cat` child echoes, and turning a
+never-executed timing-dependent test on in a round that is already three items deep is how a lane hands
+the next merge a flake. It needs a round that can watch it run twenty times.
+
+---
+
+### E433 — the standing cross-lane census hazard is now wider than E400 recorded
+
+**Recorded 2026-08-24 by round-54 lane a.** Severity: merge hazard. **Stated, not fixable.**
+
+E400 recorded that `DescriptorSinkArgumentCensusTest` reads every library's `src/`, so a sibling lane
+adding a descriptor sink anywhere reds **candy-core**, a package it never touched. Two things widen that
+this round:
+
+  1. the METHOD spelling is now matched, so a one-argument `->close($x)`, `->ioctl($x)`, `->dup($x)`,
+     `->fcntl($x)`, `->tcgetattr($x)`, `->tcsetattr($x)`, `->grantpt($x)`, `->unlockpt($x)` or
+     `->ptsname_r($x)` **on any receiver at all** now reds it. A nullary `->close()` does not — 56 of those
+     exist and every symbol in the roster is declared with at least one parameter, so a nullary call of
+     that name is provably a different method;
+  2. the symbol roster is derived from `SugarCraft\Pty\Libc::cdef()`, so **an fd-first declaration added in
+     candy-pty reds candy-core** with no candy-core change on either side.
+
+The failure text now says all of this and names the resolution, because the person who hits it will be
+resolving a merge and looking at a red package they never opened.
+
+---
+
+### E434 — candy-pty's assertion count is not stable across takes
+
+**Recorded 2026-08-24 by round-54 lane a.** Severity: measurement hygiene.
+
+The round-54 brief gave candy-pty's floor as `606 / 1476 / 16 skipped / 1 warning / rc 0`. MEASURED on this
+box at `606a131c`, PHP 8.3.6, four takes: **1477, 1476, 1476, 1476** — tests, skips, warnings and rc
+identical every time. 1476 is right as the usual value and the brief is not wrong, but the assertion count
+is not a constant, and a lane that measures once and sees 1477 should not conclude it broke something.
+The `+1` was not chased down; whichever test it is, it has an environment-dependent assertion in it.
+
+---
+
+### E435 — candy-pty's assertion wobble is ONE named test, and E434 understates it in two ways
+
+**Recorded 2026-08-25 by the round-54 lane-a recovery run.** Severity: measurement hygiene / merge-floor
+correctness. candy-pty is **not** edited by this lane; it is read by candy-core's descriptor census, and
+its figures are quoted as a round floor, which is why this is worth a number.
+
+**E434 is refuted in both of its quantitative halves.** It says 1476 is "the usual value" and that the
+count "moves by ±1", from four takes. MEASURED at `5bef36cb`, PHP 8.3.6, this box, **20 consecutive
+takes**, `cd candy-pty && vendor/bin/phpunit`, tests/skips/warnings/rc identical throughout
+(`606 / 16 skipped / 1 warning / rc 0`):
+
+| assertions | takes |
+|---|---|
+| 1475 | 2 |
+| 1476 | 7 |
+| **1477** | **10** |
+| 1478 | 1 |
+
+So the mode is **1477, not 1476**, and the spread is four distinct values (1475–1478), not two. A lane
+comparing a single take against a floor of 1476 can be off by ±2 in either direction while nothing at all
+is wrong.
+
+**The varying test is now identified, which E434 left open.** Generator: six further takes run with
+`--log-junit`, then the per-`<testcase assertions="…">` attribute compared across all six runs
+(`simplexml_load_file` + `//testcase`, comparing 606 keys). Of **606 tests, exactly one** has a
+non-constant count:
+
+```
+SugarCraft\Pty\Tests\Integration\ResizeRaceTest::testResizeRaceProducesUntornWidths
+   assertions across the six runs: 94, 96, 94, 94, 96, 93
+```
+
+**Mechanism, read from the source and not inferred from the number**: the test spawns
+`bash -c 'while true; do tput cols; sleep 0.01; done'` on a pty slave, resizes the master 50 times at
+20 ms intervals over ~1 s while draining, then asserts **once per captured line**. The number of lines the
+child emits inside that window is a function of host scheduling, so the assertion count is timing-derived
+by construction. It is a legitimate integration test; the count is simply not a suite constant.
+
+**STEP (the actionable part):** stop quoting candy-pty's assertion count as a floor. A floor for this
+package should be `tests / skipped / warnings / rc` only, with the assertion count recorded as a RANGE and
+attributed to this test. If a hard number is genuinely wanted, the fix is inside the test — accumulate the
+per-line checks and assert once on the aggregate, so one assertion covers N lines — but that is a
+candy-pty change and no lane owns it this round.
+
+**Unresolved, and deliberately left open: the round-54 reviewer observed `Failures: 1` on one of eleven
+takes at `9c93f095` and could not reproduce it in eight further takes; the failing test's name was not
+captured.** It did **not** reproduce here either: 20 takes at `5bef36cb`, all `rc=0`, plus the six
+JUnit-logged takes, all `rc=0` — **26 consecutive green takes**. Across the reviewer's 11 and this run's 26
+that is **one red in 37 takes**, still uncharacterised. Whoever picks this up should capture per-take
+output AND `--log-junit` (the JUnit file names the failing test even when the console output is lost) and
+should suspect `ResizeRaceTest` first: it is the one test in the package already known to depend on host
+timing, and its `WALLCLOCK_BUDGET_SEC` assertion is exactly the shape that fails under load. **Note that
+three lanes share this box**, so a sibling lane's suite running concurrently is a plausible trigger and
+would not reproduce in a quiet tree — which is consistent with both failures to reproduce.
+## Round 54 — lane b (runtime bugs). E436-E444.
+
+### E436 — `McpClient::startServer()` catches `\RuntimeException`, so any other throw defeats its own stated purpose
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: real. **Measured.** Out of lane b's file list
+(`sugar-crush/src/MCP/McpClient.php`).
+
+`startServer()` wraps `$server->start()` in `catch (\RuntimeException) { return; }` under a comment that
+says "A single unreachable/misbehaving server must not abort loading the rest." Only `RuntimeException`
+is caught. E412's `TypeError` — raised inside `McpMessage::parse()`, reached from `start()` — is not a
+`RuntimeException`, so ONE server answering `initialize` with a non-object `result` aborted the whole MCP
+server list for the session rather than being skipped. That specific route is closed by E412's fix, but
+the narrow catch is the general defect and any future throw from a third party's output walks straight
+through it. `McpToolBridge::execute()` already catches `\Throwable` for exactly this reason, and its
+doc-block says so.
+
+**STEP:** widen to `catch (\Throwable)` at that one site, and pin it with a server fixture that throws
+something that is not a `RuntimeException` during the handshake.
+
+### E437 — `McpMessage` has no `resultSet` sentinel, so a legal `"result": null` reply is unparseable
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: minor, graceful. **Measured.**
+
+`{"jsonrpc":"2.0","id":"1","result":null}` is a conforming JSON-RPC success response. `parse()` returns
+`null` for it, because with `method`, `error` and `result` all null there is no discriminator left in the
+decoded array. `StdioMcpServer::callTool()` then answers `['error' => 'Tool call failed']` — a wrong
+answer, but inside the tool result rather than an escaped throw, which is why it was split off from E412
+rather than bundled into it. `toJson()` has the mirror problem: `if ($this->result !== null)` drops a
+null result from the wire.
+
+Closing it properly needs the paired `bool $resultSet` sentinel this repo already uses for nullable
+state, threaded through `parse()`, `toJson()` and `StdioMcpServer`'s two `result === null` tests. It was
+deliberately NOT bolted on inside E412's fix — a half-threaded sentinel is worse than a documented
+rejection — and the rejection is now pinned with both polarities in
+`tests/MCP/McpMessageResultTypeTest::testANullResultIsRejectedWhileTheAdjacentFalseIsNot()`.
+
+### E438 — the "exactly 1 skipped" invariant is a LINUX figure, is asserted nowhere, and rests on far more than one file
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: plan-instrument defect. **Measured. This entry
+falsifies E413.**
+
+E413 said `BackgroundSupervisorReapTest` "moves the suite's skip count off 1 on any non-Linux runner" and
+asked for its `markTestSkipped()` calls to be replaced with doubles. Three measurements against the tree:
+
+1. **`sugar-crush` is in neither `WINDOWS_LIBS` nor `MACOS_LIBS`** in `scripts/affected-libs.php` — the
+   hand-maintained opt-in pools that populate `ci.yml`'s `windows_matrix`/`macos_matrix`. The suite runs
+   on `ubuntu-latest` and nowhere else, so no gate in that file can reach a runner without `/proc`.
+2. **The file holds 4 of the suite's skip sites, not all of them.** Generator, PHP 8.3.6, run BOTH in the
+   lane-b worktree and against the base commit (`git grep … 606a131c -- sugar-crush/tests/`), identical
+   answers: `grep -rnE '\$this->markTestSkipped\(' sugar-crush/tests/ | wc -l` → **149** call sites
+   across **51** files.
+   ⚠️ THE OBVIOUS GENERATOR IS WRONG HERE, AND IT CAUGHT ME. Grepping the bare word `markTestSkipped`
+   answers **164** at this HEAD and **162** at `606a131c` — the difference is prose. Doc-blocks that
+   DISCUSS skipping (including the two paragraphs written this round) are counted as skips by it. The
+   call-site form above is the honest one, and it is the same at both commits because this round added
+   no skips. This is rule 26 in miniature: a census must exclude the text that describes the pattern.
+   ⚠️ Per rule 18 these are cardinalities over `tests/` and WILL drift; they are here with their
+   generator to size the problem, and are deliberately not asserted anywhere.
+3. **The gates are not replaceable by doubles.** `commOf()` reads `/proc/<pid>/comm` and
+   `directChildPids()` reads `/proc/self/task/<tid>/children`. Every test that skips there observes the
+   real process tree, which is why it is not already a test against a double. There is no double for
+   "this kernel has no procfs", and removing the gates would red the suite on macOS for a runner that
+   does not exist.
+
+**What was shipped instead:**
+`BackgroundSupervisorReapTest::testThisSuiteIsNotOptedIntoAnyNonLinuxCiRunner()` — a tripwire that reds
+the day `sugar-crush` is added to either pool, i.e. the day E413's premise becomes true, in the same
+change that would otherwise have moved the count silently. It carries a known-positive control
+(`candy-core` IS in both pools) and reds on a pool it cannot parse rather than passing.
+
+**STEP (unresolved):** nothing asserts "exactly 1 skipped" anywhere in the suite; the figure lives only
+in doc-block prose in `tests/bootstrap.php`, `tests/SuiteChildStdinIsolationTest.php` and
+`tests/SuiteChildStdinPrependResidualTest.php`. If it is load-bearing for the plan it should be derived
+(a PHPUnit extension counting skips, or a CI step asserting on the summary line), not restated.
+
+### E439 — `StdioMcpServer::writeLine()` is not covered by `start()`'s handshake deadline
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: latent, pre-existing.
+
+`start()`'s 60s budget is threaded through `request()` → `readResponse()` → `readLine()`. It is NOT
+threaded through `writeLine()`. A server that spawns, holds its pipes open, never reads stdin and never
+writes stderr will hold `start()` inside `writeLine()` indefinitely once the message exceeds the stdin
+pipe buffer. The liveness is unchanged from the blocking `fwrite()` this round replaced — that blocked
+forever too — but the loop is now the obvious place to accept the deadline the caller already has.
+
+**STEP:** give `writeLine()` an optional `?float $deadline` and pass `start()`'s through; leave
+`callTool()`'s path deadline-less, matching `readLine()`.
+
+### E440 — stderr is only drained while the parent is inside an exchange
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: minor, no longer a deadlock.
+
+The drain added this round runs inside `readLine()` and `writeLine()`. Between exchanges — the model
+thinking, another server's tool call in flight — nothing reads fd 2, so a chatty server can still fill
+its stderr pipe and park in `write()`. It now self-heals on the next exchange (both loops drain until the
+child unblocks), so it is a stall rather than a deadlock, but a server that logs progress continuously is
+stopped for the whole gap.
+
+**STEP:** the honest fix puts fd 2 on the ReactPHP loop alongside the rest of the runtime's descriptors.
+Recorded rather than done, because it is a shape change to a class that is currently synchronous by
+design.
+
+### E441 — `StdioMcpServer::stop()` does not `fclose()` the pipes before `proc_close()`
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: minor.
+
+`stop()` sets `$this->pipes = null` and relies on the resource destructor. `proc_close()` waits for the
+child, so the documented ordering is to close the pipes first. The SIGTERM→signal-9 escalation above it
+means the child is gone by then in practice, which is why this has never bitten — but the ordering is the
+one `ProcessReaper` and `ClaudeCodeProvider::completeStream()`'s `finally` both use explicitly.
+
+### E442 — the stderr-drain loop now exists in two places
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: hygiene.
+
+`ClaudeCodeProvider::completeStream()` and `StdioMcpServer` now each carry a select-plus-drain loop with
+their own `MAX_STDERR_BYTES = 65536` and their own tail-clipping. They are NOT the same shape — see
+`StdioMcpServer::absorbStderr()`'s doc-block for the three differences (one-shot vs long-lived, EOF as
+loop-terminator vs tracked flag, bounded vs unbounded caller) — so this is explicitly not a
+"deduplicate them" step. It is a note that a third site must read those differences before copying
+either one, the way this round had to.
+
+### E443 — the undrained blocking stdin write exists in two more classes, OUT OF LANE b
+
+**Recorded 2026-08-24 by round 54 lane b (found by its reviewer).** Severity: `LspConnection` major,
+`ClaudeCodeMcpClient` minor. Neither file is in lane b's ownership list, so both are reported and not
+touched.
+
+`StdioMcpServer` was the third member of a family, and the fix this round is narrower than the family.
+Verified in the tree at the time of writing rather than inherited from prose:
+
+- **`src/LSP/LspConnection.php`.** The other long-lived stdio-framed session class. It already has the
+  READ-side drain (`drainStderr()`, called before stdout on every poll pass), but `connect()` calls
+  `stream_set_blocking(..., false)` on `pipes[1]` and `pipes[2]` and NOT on `pipes[0]`, and
+  `writeMessage()` is a bare `@fwrite($this->pipes[0], $message)` with no drain and no partial-write
+  loop. That is verbatim the stdin half this round measured (`N=100000 D=1 M=200000 -> WEDGED`) and
+  rewrote `writeLine()` to close. An LSP `textDocument/didOpen` or `didChange` carries a file's contents
+  and routinely exceeds 64 KiB, and `LspConnection`'s own doc-block already argues that a
+  `rust-analyzer`/`gopls`/`jdtls` log storm is ordinary traffic — so both sides of the deadlock are
+  reachable there for the same reasons they were reachable here.
+- **`src/ClaudeCodeMcpClient.php::sendMessage()`.** Third member, different symptom. `pipes[0]` IS
+  non-blocking there (`connect()` sets fds 0, 1 and 2), so there is no hang; instead the method throws
+  when `$written !== strlen($json)`. By then a PARTIAL message is already in the child's pipe, which
+  desynchronises the newline-framed JSON-RPC stream for the remainder of the session — every subsequent
+  reply is parsed against a leading fragment.
+
+**STEP:** port `StdioMcpServer::writeLine()`'s select-driven, stderr-draining, partial-write loop to both
+sites, in the owning lane. Read `absorbStderr()`'s doc-block first: the three differences recorded in
+E442 apply, and `LspConnection`'s framing is `Content-Length`, not newline, so its resync story on a
+short write differs from both.
+
+### E444 — `writeLine()`'s EINTR branch has no liveness check
+
+**Recorded 2026-08-24 by round 54 lane b.** Severity: minor, not reachable via any current caller.
+
+When `@stream_select()` returns `false`, `writeLine()` does `usleep(1000); continue;` with no check of
+any kind. `readLine()`'s equivalent branch checks `feof($this->pipes[1])` before retrying. A
+persistently failing `select()` therefore spins at 1 ms in `writeLine()` with no exit, on a path that is
+already unbounded (see E439). The dead-child case is caught by `$written === false` further down —
+measured this round, `feof()` on a write pipe does NOT report the reader's exit — so a `feof()` copy of
+`readLine()`'s check would be the WRONG fix here.
+
+**STEP:** bound the consecutive-`false` retries and return `false` past the bound, or thread the
+deadline from E439 through and let it terminate the loop. Pin with a fixture that makes `select()`
+fail repeatedly; note that a coverage-only test here is very hard to write without a signal harness, so
+this may be a documented seam rather than a guarded one.
+
+## Round 54 — lane c (close the fd inheritance). E445-E449.
+
+### E445 — `ForkedChildExitConventionTest`'s licence is spent by the FILE, not the site it argues for
+
+**Recorded 2026-08-24 by round 54 lane c.** Severity: instrument granularity. **Measured, and it is NOT
+E423's shape.**
+
+E426 asked whether `ForkedChildExitScanner`'s roster shares E423's key-collision shape — an exemption
+keyed by function that licensed the whole function rather than the one spawn. **It does not**, and the
+difference is the `count`. Both `ForkedChildExitConventionTest::ACCEPTED_BARE_EXIT` and
+`ForkedChildReaperAdoptionTest::UNTRACKED_FORKS_ALLOWED` are keyed by FILE and carry one, and the second
+roster's own doc-block already says why: "A bare file-keyed exemption is a blank cheque — it would
+license every future fork added to the file as well as the one that was argued for." E423 was
+*unbounded* absorption; a count caps absorption at the licensed number whatever the key granularity is.
+
+Measured, three mutations, `--filter ForkedChildExitConventionTest` (scope: these guards, not the suite):
+
+| # | mutation | verdict |
+|---|---|---|
+| M11 | `WorkflowResumptionTest.php` count 2 → 3 | **KILLED** — the count is read |
+| M12 | a second bare exit injected into the already-exempted `ForkedChildTest.php`, new function | **KILLED** — the licence does not absorb it |
+| M13 | the ONE licensed bare exit converted to `exitNow()`, and a fresh bare exit added in a **different function of the same file** — net count unchanged at 1 | **SURVIVED** |
+
+M13 is the residue. The licence is bounded in NUMBER and unbounded in LOCATION, so a licensed site can be
+removed and an unrelated one appear elsewhere in the same file with the roster still green — while the
+reason text, which argues specifically about
+`testPlainExitInAForkedChildNoLongerClobbersRawMode()`, has quietly become false about the site it now
+covers. Compare `DescriptorInheritanceGuardTest::ACCOUNTED_FOR`, which keys `File.php::function` AND
+counts.
+
+**STEP:** re-key both rosters to `File.php::function` and keep the counts. Both files are outside lane
+c's ownership, which is why this is a step and not a commit.
+
+### E446 — the only spec-level fix for descriptor inheritance is a runtime enumeration, and it is worse than the disease
+
+**Recorded 2026-08-24 by round 54 lane c.** Severity: finding, deliberately not implemented.
+
+E417 is refuted (see the round report): naming individual high fds in a `proc_open()` spec replaces those
+fds and does nothing about the rest. The only spec that *would* work names every descriptor the process
+holds at the instant of the spawn, which is a runtime property — measured, PHP 8.3.6 / Linux
+6.8.0-138-generic: a spec naming 3..40 does take a marker away, one naming only fd 3 does not.
+
+Written out, the runtime form would be roughly `foreach (glob('/proc/self/fd/*') …) $spec[$n] = ['null'];`
+before each of the long-lived spawns. Against it, all measured or read off the code rather than assumed:
+
+- **procfs-only.** No portable PHP API reports the process's open descriptors, and PHP exposes no
+  `fcntl`, so `FD_CLOEXEC` cannot be set from userland either.
+- **It adds descriptors rather than removing them.** Every named fd is an open `/dev/null` in the child.
+  Measured: a child under a 3..8 spec carried one MORE fd than under a bare spec.
+- **It is racy** — anything opened between the `glob()` and the `fork` is inherited anyway.
+- **It would have to exclude the fds `proc_open` is about to dup into place.**
+- **Most of what it would close is already safe.** Measured from `/proc/self/fdinfo`: `proc_open()`'s own
+  pipe parent-ends carry `O_CLOEXEC` (`02000000`) and cannot reach a later child at all. What is
+  inheritable is `fopen()` handles, `stream_socket_pair()` and the CLI's own script fd.
+
+**STEP:** if this is ever worth doing, it belongs at the HOLDER — do not keep a plain `fopen()` handle or
+a socket pair open across a long-lived spawn — not at the seven spawn sites. Recorded so the next reader
+does not re-derive it.
+
+### E447 — `candy-core/src/Program.php::runExec`'s descriptor spec is unreadable to every instrument
+
+**Recorded 2026-08-24 by round 54 lane c.** Severity: blind spot, out of lane.
+
+`DescriptorInheritanceGuardTest::testNoDescriptorSpecInSrcIsUnreadable()` refuses a spawn whose spec the
+scanner cannot read, on the argument that an unreadable spec is not a clean bill of health but an
+instrument with no opinion — and it explicitly forbids an exemption row for that case. When the guard's
+exposure arm widened to `vendor/sugarcraft` (E418) the unreadability arm was deliberately NOT widened,
+because exactly one site outside this package would red it: `candy-core/src/Program.php::runExec`, whose
+`$descriptors` is assembled by a helper before the call. The site is short-lived, so the exposure window
+is one function body — but nothing is checking which fds it names.
+
+Widening the arm and adding an exemption would contradict the arm's own doctrine, and the fix is a
+candy-core edit. Hence: not done, recorded.
+
+**STEP:** spell the spec where the call can see it, in candy-core, then widen
+`testNoDescriptorSpecInSrcIsUnreadable()` to `LIB_SCOPE` alongside the exposure arm.
+
+### E448 — three exposed spawns sit in libraries `sugar-crush` cannot reach
+
+**Recorded 2026-08-24 by round 54 lane c.** Severity: finding. **Measured.**
+
+The E418 widening reaches only what `vendor/sugarcraft` contains. Scanning every `*/src` in the monorepo
+with the same instrument found **35 sites, 13 exposed**; seven are sugar-crush's own and three are now
+rostered in `ACCOUNTED_FOR_IN_LIBS`. The remaining three are in packages sugar-crush does not require, so
+no guard anywhere sees them:
+
+- `sugar-dash/src/Plugin/ExternalModule.php::startProcess` — long, spec 0,1,2
+- `sugar-reel/src/Decode/FfmpegDecoder.php::open` — long, spec 0,1,2
+- `sugar-reel/src/AudioPlayer.php::start` — long, spec 0,1,2
+
+Generator: `ChildLifetimeScanner::scan()` over every `<lib>/src/**/*.php`, PHP 8.3.6.
+
+**STEP:** `ChildLifetimeScanner` is a `tests/Support/` class in sugar-crush and cannot be required by a
+lib that does not depend on it. Either promote it into `candy-testing`, where every lib can reach it, or
+copy the guard into `sugar-dash` and `sugar-reel`. The first is the one that does not drift.
+
+### E449 — the sibling walk follows `autoload`, so code a library EXECS or ships as an example is invisible to it
+
+**Recorded 2026-08-25 by round 54 lane c.** Severity: finding. **Measured.**
+
+`DescriptorInheritanceGuardTest::libSourceFiles()` derives each sibling's files from that library's own
+`composer.json` `autoload` section rather than assuming `src`, and deliberately does not read
+`autoload-dev` — Composer registers `autoload-dev` for the ROOT package only, so a sibling's `tests/`
+genuinely cannot be loaded from this process. That derivation is right, and it is stated at the roster.
+What it leaves out is not `tests/`, and is worth a step of its own.
+
+Measured over the 18 libraries in `sugar-crush/vendor/sugarcraft`, PHP 8.3.6 on Linux 6.8.0-138-generic:
+every one declares `autoload.psr-4 => src` and nothing else, so the walk sees **438** `.php` files. Two
+kinds of real code sit outside that set:
+
+- **Code a library executes as a child rather than loading.** `candy-pty/bin/pty-shim.php` is run by
+  `candy-pty/src/Spawn.php::wrapInShim()`, and it inherits this process's descriptors when it runs. It is
+  in no autoload section, so no instrument reads it. It happens to be clean today — `proc_open` appears
+  in it exactly twice and both are comments — so the gap is currently silent, which is why it needs
+  writing down rather than leaving for the first person whose shim spawns something.
+- **Code shipped as an example.** `candy-focus/examples/focus-ring.php` holds **two** `proc_open()` calls
+  that the scanner classifies as exposed. Unreachable by autoload, so out of the guard's scope by the same
+  derived reason as `tests/` — but unlike `tests/`, an example is code a user is invited to run.
+
+Generator: `autoloadRoots()`'s own logic re-implemented standalone over
+`sugar-crush/vendor/sugarcraft/*/composer.json`, plus `ChildLifetimeScanner::scan()` over the non-autoload
+paths. Both re-run at `c54172f09`.
+
+**STEP:** decide, once, whether "reachable" for this guard means *loadable* (today's answer, derived and
+defensible) or *executable* (which would pull in `bin/` and every `examples/`). If the first, the two
+findings above are real and belong to the libraries that own them. If the second, the walk needs a second
+root list and `E448`'s promotion of the scanner into `candy-testing` is the cheaper way to get there.
+This is a scope decision, not a defect, and it should not be settled inside a guard's doc-block by
+whoever next touches it.

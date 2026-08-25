@@ -19170,3 +19170,613 @@ than a promise. It is where a future widening starts.
 not committed and not a policy breach. Recorded only because a per-lib lock makes CI's path-repo
 injection a no-op if anyone ever runs `composer install` in that directory: `composer install` would
 resolve from the lock and silently ignore the injected closure.
+
+### E631 — a mis-namespaced file under `src/` is a HARD FATAL, not "reported rather than thrown on"
+
+`tests/Tools/BuiltInToolCorpus.php`'s class doc-block and `classNames()`'s own comment both say a
+PSR-4 exemption elsewhere in the tree is *reported* by `nonClassSources()` rather than aborting suite
+construction, and `BuiltInToolCorpusTest::testAnExemptFileElsewhereIsReportedRatherThanThrownOn()`
+demonstrates exactly that — **on the synthetic probe tree, whose autoloader the test file itself
+declares with `require_once`, in a comment explaining that a plain `require` would fatal.**
+
+**MEASURED on the real tree, PHP 8.3.6, at `c3ddc7483`.** Drop one file into `sugar-crush/src/` whose
+namespace does not match its path (`src/TeethSkewed.php` declaring
+`SugarCraft\Crush\Elsewhere\TeethSkewed`) and run `--filter testEverySourceFileDeclaresItsPsr4Symbol`
+— a test that predates round 60 and was not touched by it. The whole PHPUnit process dies rc **255**
+before any assertion runs:
+
+```
+PHP Fatal error:  Cannot declare class SugarCraft\Crush\Elsewhere\TeethSkewed,
+because the name is already in use in .../src/TeethSkewed.php on line 7
+```
+
+**Mechanism, verified rather than argued.** Both `classNames()` and `nonClassSources()` gate on
+`!class_exists($class) && !interface_exists($class) && !trait_exists($class)` — present in identical
+form at `88374be64`, so this is not a round-60 regression. When the primary symbol is absent, all
+three calls miss and all three trigger the autoloader for the same name. Composer's `includeFile()`
+is a plain `include`, not `include_once`, so the second attempt re-executes the file and PHP fatals
+on the redeclaration. The probe autoloader in `BuiltInToolCorpusTest::setUp()` uses `require_once`
+precisely because its author hit this — the synthetic tree is immunised against the defect the real
+tree still has, which is why fifty-nine rounds of green said nothing.
+
+**Why it matters beyond tidiness.** The reachability story sold by the doc-block is "a PSR-4 exemption
+arriving does not stop the suite enumerating; it turns up as one named failure". The truth is that it
+takes the runner down with a fatal that names a class rather than a policy, so the reader is told
+about a redeclaration and not about the exemption. Rule 8: a mechanism claim written into a comment
+without being measured, inverted in fact.
+
+**Step.** Not fixed here — `tests/Tools/BuiltInToolCorpus.php` was outside round 60 lane a's file list
+and the fix is a behaviour change to a scanner three suites depend on. Two candidate resolutions,
+both needing the fatal reproduced as an acceptance test first: (a) resolve the kind through
+`token_get_all()` (already available as `declaredTypes()`) instead of three `*_exists()` probes, which
+removes the repeat autoload entirely; or (b) keep the probes but guard them behind one
+`class_exists($class, false)`-style pre-check plus an explicit `include_once`. Whichever is taken, the
+doc-block's "reported rather than thrown on" must be rewritten under rule 7 rather than left standing,
+and `testAnExemptFileElsewhereIsReportedRatherThanThrownOn()` needs a sibling that drives the REAL
+autoloader, because the probe autoloader cannot express this case.
+
+### E632 — `BuiltInToolCorpus.php`'s own doc-block is the fifth restatement of the `src/` census
+
+Round 60 lane a retired every cardinality over `src/` from `BuiltInToolCorpusTest` and both restated
+figures from `src/Context/RepoMapBlock.php`. It did not touch the scanner's own doc-block, which is
+outside the lane's file list and still carries:
+
+> MEASURED with `token_get_all()` rather than `class_exists()`: 278 `.php` files under `src/` declare
+> 297 top-level types, 19 of them secondary, in 8 files.
+
+plus a symbol-kind vector (`220 concrete classes, 25 enums, 16 interfaces, 6 traits`) a few lines
+above.
+
+**CORRECTED after review — this entry understated its own case.** Only the class doc-block's copy is
+framed as historical ("the tree AS IT WAS WHEN THIS PARAGRAPH WAS MEASURED"). MEASURED at
+`204c9cf58`, the file carries `278` FOUR times, and at least two of them read as a LIVE present-tense
+measurement rather than a quotation — `nonClassSources()`'s doc-block says "MEASURED on this tree:
+0 of 278" and then, in the next paragraph, "The 'of 278' half is now load-bearing rather than
+decorative", while `classNames()`'s says "this tree, 278 `.php` files under `src/` hold TWELVE
+concrete `Tool`". The tree has 297 files, so those are stale by nineteen and nothing says so. Rule 7
+protects a stale JUSTIFICATION; it does not license a stale measurement written in the present tense,
+and "load-bearing" is the file's own word for the half that is wrong.
+
+**The specific hazard, which is new.** `297` in that sentence is the DECLARATION count as of some past
+round. At `88374be64` the tree's FILE count is also 297 and its declaration count is 316. A reader
+grepping for the census now finds the same digits attached to the wrong noun, and a future automated
+sweep for "restated census figures" cannot distinguish the historical from the live —
+`BuiltInToolCorpusTest::testRepoMapBlockNoLongerRestatesTheSourceCensus()` deliberately scopes itself
+to `RepoMapBlock.php` for that reason.
+
+**Step.** Elide the digits from all four sites the way `RepoMapBlock`'s rule-7 paragraph now does,
+keeping the narrative and the argument — the argument is about the ZERO abstract classes and about
+interfaces/traits already being present, and neither needs a number; where the sentence is written in
+the present tense, rewrite the tense too, because eliding a digit out of a live claim leaves a live
+claim with no figure rather than a quotation. Then widen the no-restatement scanner to cover
+`tests/Tools/BuiltInToolCorpus.php`.
+
+⚠️ **Widening the scanner reds on the test file BEFORE it reds on the scanner.** Round 60's review
+found `BuiltInToolCorpusTest` re-spelling `297` and `316` inside the doc-block of the very test that
+replaced those two literals; that was elided in `fbe48bf5d`, but the same sweep must be run over the
+whole of `tests/Tools/` before the scanner's domain is widened, or the widening lands red on prose
+that has nothing to do with `RepoMapBlock`. And see E635: widening this scanner's ALPHABET is a
+different and much worse idea than widening its FILE domain.
+
+### E633 — a figure was asserted; the claim the figure supported was not, and it was false
+
+`RepoMapBlock`'s WHAT WAS DELIBERATELY NOT BUILT list argued that a per-class listing was rejected
+because at one line each it would be "several times this whole block's budget". The DIGIT in that
+sentence was pinned — `BuiltInToolCorpusTest` asserted the prose spelled today's declaration count —
+and the digit was correct. **The claim was not.** MEASURED at `88374be64` on PHP 8.3.6: summing
+`strlen($fqn) + 1` over every top-level type `declaredTypes()` finds under `src/` gives 12,278 B
+against `MAX_SECTION_BYTES` of 8,192 — 1.5x, over the cap but not "several times" it — and at bare
+short-name width it is 4,516 B, roughly half the cap, which would comfortably FIT. The WIDTH the claim
+depends on was never stated in the sentence.
+
+Fixed this round: the prose names the width, and the assertion is the argument derived from the tree
+instead of a string match on a count.
+
+⚠️ **AND THE FIX'S OWN PROSE CARRIED THE SAME DEFECT, which is the part worth keeping.** The commit
+that removed the stale digit wrote THREE fresh qualitative claims into `RepoMapBlock` and pinned none
+of them: two ratios (`about one and a half times MAX_SECTION_BYTES`, `roughly half the cap`) and a
+growth claim (`survives the tree septupling`). MEASURED at `4cc1227d7`: inverting the short-name
+sentence to "NINE TIMES the cap … would not begin to fit" left the FULL SUITE green, and the
+septupling claim was simply FALSE when written — the assertion behind it holds only while the tree is
+under a tenth of `MAX_SOURCE_FILES`, and seven times the tree's size is past that. So the sentence
+written to replace a stale multiple stated a multiple that was already wrong, in the same direction
+the same paragraph accuses its predecessor of. Closed in `fbe48bf5d`/`c6d05530d`/`204c9cf58`: no ratio
+is written in `src/` at all, both widths and the slack are bounds, and each corrective SENTENCE is
+pinned as prose as well, because an unpinned correction rots back into the claim it corrected.
+
+**Step.** Sweep for its siblings: a doc-block that quotes a measured figure AND draws a qualitative
+conclusion from it ("several times", "orders of magnitude", "a quarter of the cap", "about SEVENTY
+times under"), where a test pins the figure and nothing pins the conclusion. `RepoMapBlock`'s
+`MAX_SECTION_BYTES` doc-block alone carries three more of that shape (`1,314 B of headroom, about
+eleven more packages at this repository's mean line`; `33 source-directory lines in 1,915 B, a quarter
+of the cap`). Each is either derivable — in which case derive it and delete the digit — or it is a
+one-off observation about two named repositories, in which case it should say so and stop being
+read as a live property.
+
+**Do that sweep with the fix's own prose in scope.** Two of the four instances found so far were
+written BY a fix for this pattern, not found by looking for it, and both were caught by mutating a
+sentence rather than by reading one. The sweep's acceptance test is a mutation of each conclusion,
+not of the figure underneath it.
+
+### E634 — the suite's TEST COUNT is still a function of `src/`'s size, via one data provider (and its ASSERTION figure, as first filed, did not reproduce)
+
+Round 60 lane a removed every ASSERTION that counts `src/`, and the acceptance test is green in both
+polarities. That does not make the suite's totals independent of the tree, and a supervisor predicting
+a merged figure needs to know why.
+
+**MEASURED at `c3ddc7483` with `--list-tests`,** which enumerates without running: adding one
+`.php` file under `sugar-crush/src/` takes the collected total from 10,289 to 10,290, and `diff` names
+the single arrival —
+`Integration\BinSugarcrushWiringTest::testNoRootResolvingSiteFallsBackToBareGetcwd` with the new
+filename as its data-set key.
+
+This is a per-file CHECK driven by a provider over the tree, not a census of it — it is exactly the
+shape a census should have been, and it is correct as it stands.
+
+⚠️ **THE ASSERTION HALF OF THIS ENTRY DID NOT REPRODUCE, AND THE ENTRY IS THE REASON IT MATTERS.**
+It was filed to correct a stale figure in E383 ("+48 assertions") and it stated **+58** as the
+replacement, with the instruction "cite this entry, not E383, for the per-file delta". Two later
+measurements, by two different readers on two different trees, both give **+53**:
+
+| measurement | tree | before | after one added `src/` file | delta |
+|---|---|---|---|---|
+| this entry, as filed | `c3ddc7483` | 10,286 / 159,393 | 10,287 / 159,451 | +1 / **+58** |
+| round-60 review | `4cc1227d7` | 10,286 / 159,393 | 10,287 / 159,446 | +1 / **+53** |
+| round-60 fix agent | `204c9cf58` | 10,287 / 159,406 | 10,288 / 159,459 | +1 / **+53** |
+
+And the MECHANISM named here accounts for a small part of either figure: `BinSugarcrushWiringTest`
+run alone moves by +1 test and **+6** assertions (its per-file body applies six regexes, one of them
+skipped for the exempt file). The remaining ~47 come from other per-file loops elsewhere in the
+suite, which were bounded to `tests/Support`, `Integration`, `Config` and `Cli` plus a handful outside
+that subset, and never isolated. The review refuted the obvious explanation for the gap — the delta
+is NOT file-NAME dependent; a two-character and a thirty-four-character probe give byte-identical
+subset totals — which leaves probe SHAPE as the unfalsified hypothesis: a file whose content matches
+more per-file guard patterns adds more assertions than a bare `final class`, and the three rows above
+did not use the same probe.
+
+**So the correction was the same defect as the thing it corrected**: a load-bearing figure with no
+generator, replacing a load-bearing figure with no generator, and stale — or wrong — the same way.
+
+**Step.** No code fix; **retract the instruction**. Do NOT cite a constant for the per-file delta,
+from this entry or from E383. It depends on the SHAPE of the file added and on every per-file loop in
+the suite, so it is a measurement, not a property. Measure it at your own merge base:
+
+```sh
+cd sugar-crush && vendor/bin/phpunit                      # baseline
+printf '<?php\n\ndeclare(strict_types=1);\n\nnamespace SugarCraft\\Crush;\n\nfinal class Probe\n{\n}\n' > src/Probe.php
+vendor/bin/phpunit ; rm src/Probe.php                     # delta, for THIS probe shape
+```
+
+The generalisable fact, which is all that should be cited: **one added `src/` file adds exactly one
+TEST**, and it adds a number of ASSERTIONS that is a function of the file's content and of how many
+per-file loops the suite currently has. If the assertion delta is genuinely load-bearing for a merge
+reconciliation, derive it from a run rather than from any entry in this file (rule 18).
+
+**AND EDITING A `src/` FILE MOVES THE TOTAL TOO, WITHOUT ADDING A FILE AT ALL.** The round-60 review
+noticed this as an oddity — three added comment lines moving the suite's assertion count by one — and
+recorded it without a mechanism. MEASURED at `fd54e6e55` by diffing per-test `--log-junit` totals
+between two complete runs, which is the only instrument that localises a figure this small:
+
+| class | assertions | cause |
+|---|---|---|
+| `Tools\BuiltInToolCorpusTest` | 98 → 109 | nine new assert statements, two of them inside a two-iteration loop |
+| `Config\GlobFigureDriftTest` | 20,746 → 20,748 | **prose** |
+
+`GlobFigureDriftTest::testNothingInScopeStillCarriesTheStaleFigureAndTheSettingsPageAgrees()` runs its
+stale-figure census once per PARAGRAPH of every `.php` under `src/`, so a doc-block that gains two
+paragraphs adds two assertions to the suite and NOTHING about the code changed. That is the whole of
+the review's unexplained `+1`. Two consequences for anyone reconciling a merge: an assertion delta is
+not evidence that behaviour moved, and a lane that only rewrote comments still has a non-zero delta to
+account for. (Measured negative control, from the same pair of runs: `docs/plans/` is NOT in that
+census's scope — a commit adding ninety lines to THIS file left the suite's totals byte-identical.)
+### E635 — the no-restatement guard covers TWO of the census's components, and widening its alphabet is measurably worse than leaving it narrow
+
+`BuiltInToolCorpusTest::testRepoMapBlockNoLongerRestatesTheSourceCensus()` reports a derived figure
+appearing as a standalone integer in `RepoMapBlock.php`. Its alphabet is the FILE count and the
+TOP-LEVEL DECLARATION count. The census it replaced had more components than that, and a restatement
+phrased in any of the others is unguarded: MEASURED at `4cc1227d7`, inserting a genuine restatement
+into `RepoMapBlock`'s production prose using the secondary-declaration total left the whole suite
+green.
+
+**The obvious step — widen the alphabet — was measured and REJECTED, and that is the finding.** The
+unguarded components are SMALL, and this scanner matches a bare integer anywhere in a file that is
+full of small integers. MEASURED at `204c9cf58` on PHP 8.3.6, taking every integer literal in
+`RepoMapBlock.php` (digit-group separators normalised away) and asking how far each candidate figure
+sits below the nearest literal ABOVE it:
+
+| component | value | nearest literal above | headroom |
+|---|---:|---:|---:|
+| file count | 297 | 947 | 650 |
+| top-level declarations | 316 | 947 | 631 |
+| concrete symbols | 245 | 256 (`MAX_PACKAGES`) | **11** |
+| enums | 27 | 32 | 5 |
+| interfaces / secondary total | 19 | 32 | 13 |
+| files carrying a secondary | 8 | 8 | **0 — already colliding** |
+
+So widening buys one false negative back at the price of a guard that reds on the next commit to
+touch an unrelated constant, and one row would red immediately. The two figures in the alphabet are
+the two distinctive enough for this shape to carry.
+
+**Step.** A component small enough to collide needs a DIFFERENT INSTRUMENT, not a longer list. Do not
+key it on prose (rule 40 — an exemption or a match bought with a sentence is bought by the fix's own
+comment); key it on structure. One candidate worth measuring: match a digit only where the same
+sentence also contains a structural marker of the census (`src/` as a path token, or a `{@see}` to one
+of the corpus scanner's symbols), which is a token-stream fact rather than a phrasing. Until then the
+narrow alphabet is documented in the guard's own doc-block, with this measurement, rather than
+implied.
+
+### E636 — the reflection census is declared ABOVE the token-stream balance, so on a real defect the only instrument that can report never runs
+
+E631 establishes that a mis-namespaced file under `src/` takes the runner down rc 255 through
+`classNames()`/`nonClassSources()`'s triple `*_exists()` probe. This entry is the consequence for
+`BuiltInToolCorpusTest`'s own ordering, and it is why a doc-block in that file claimed a redundancy
+the tree does not have.
+
+Three tests state the same PSR-4 policy. Two of them —
+`testEverySourceFileDeclaresItsPsr4Symbol()` through `nonClassSources()`, and
+`testEverySourceFileResolvesToASymbolAndNoneOfThemIsAbstract()` through the classifier — gate on the
+IDENTICAL `class_exists() / interface_exists() / trait_exists()` triple, so they are not independent
+instruments; they answer together and they fatal together. The third,
+`testTheDeclarationBalanceHoldsAcrossTheWholeSourceTree()`, reads the file with `token_get_all()` and
+never asks PHP to load it — it is the only one that could still REPORT the case. It is declared after
+the reflection census, so in a default run it never executes. The doc-block claiming "three
+independent instruments … the arrangement that survives one of them going quiet" was corrected in
+`fbe48bf5d`; the ORDERING was not.
+
+**Step.** Once E631 is fixed the fatal goes away and the ordering stops mattering, so this is
+subordinate to it — but if E631 is deferred again, move the balance and its fixture above the
+reflection census in the file, and pin the ordering with a comment stating why (a `@depends` would be
+wrong: they are not dependent, they are differently survivable). Cheap, and it is the difference
+between a named failure and a redeclaration fatal.
+
+### E637 — `declaredTypes()` cannot see a conditionally-declared type, and that is newly load-bearing
+
+MEASURED on PHP 8.3.6 at `204c9cf58`: `BuiltInToolCorpus::declaredTypes()` walks the token stream at
+brace depth zero, so a `class Hidden {}` nested inside an `if` block is invisible to it — the file
+reports only its primary symbol. Pre-existing and unchanged by round 60.
+
+**Why it is newly load-bearing.** Round 60 retired the declaration-count literals and elevated
+`declarations - files === secondary total` to "the token-stream statement of the same policy" the two
+reflection instruments make, and it made the per-file secondary map the thing that names an offending
+file. A conditionally-declared secondary symbol is seen by NONE of the three: the token walk misses
+it by depth, and the two `*_exists()` instruments only ever ask about a file's PRIMARY name. So
+`testNoSecondaryDeclarationIsADispatchableTool()` — the invariant the whole census exists to protect —
+has a hole shaped exactly like a `Tool` implementor declared inside an `if`.
+
+**Step.** Decide whether depth-zero is the policy or the limitation. If it is the policy, say so in
+`declaredTypes()`'s doc-block and pin it with a fixture in BOTH polarities (a top-level secondary is
+reported; a conditionally-declared one is deliberately not) so the next reader cannot mistake the
+limitation for coverage — rule 14 says a guard must be able to state what it cannot see. If it is a
+limitation, the walk needs to record a conditional declaration as something other than absence.
+
+
+### E638 — `BuiltInToolCorpusTest` now carries THREE bounds with a finite horizon in tree size, and one of them is the binding constraint on adding source files
+
+Round 60 removed the census literals; what replaced them are bounds, and three of those bounds are
+claims about today's tree that a large enough tree will legitimately falsify. This entry states where,
+so nobody rediscovers it as a mystery red.
+
+MEASURED at `204c9cf58` on PHP 8.3.6, by adding well-formed `final class` files to `sugar-crush/src/`
+and running `--filter BuiltInToolCorpusTest` (probe class names 30-33 B fully qualified, 14-17 B
+short — the bounds are BYTE bounds, so the file counts below move with the names you choose):
+
+| bound | what it asserts | first red | provenance |
+|---|---|---:|---|
+| `$shortNameListing < MAX_SECTION_BYTES` | a per-class listing at short-name width still FITS, which is what makes the design note true | **+223 files** | OBSERVED (8,199 B vs 8,192; green at +222) |
+| `$fullyQualifiedListing < MAX_SECTION_BYTES * 3` | the note's correction, "over the cap but not several times over it" | +365 files | OBSERVED (24,580 B vs 24,576; green at +364) |
+| `MAX_SOURCE_FILES > files * 10 * 3` | the order-of-magnitude backstop claim, with a factor of slack | ≈+370 files | **DERIVED, not observed** — `20000/30 = 666` files; the two bounds above fire earlier in the same test and abort it, so this one cannot be reached from the tree side |
+| `testTheRestatementGuardHasRoomBeforeItsNextFalsePositive()` | the census guard's own false-positive distance | +531 files | OBSERVED (headroom 100 vs `> 100`; green at +530) |
+
+Green OBSERVED at +1, +6, +220 and +222; red OBSERVED at +223. **Compare +5 green / +6 red before the
+round-60 fix** — that is the coupling this round removed, and the remaining horizon is nearly two
+orders of magnitude further out. The census guard itself, the thing the constraint was about, has
+650 files of room; what binds now is a design note about listing widths, not a count.
+
+None of these is a false positive: at +223 the sentence "at bare short-name width the same listing
+fits inside the cap" has genuinely stopped being true, and each failure message says so and names the
+prose to rewrite rather than a number to re-derive. But they ARE claims with an expiry, which is a
+different thing from an invariant, and the difference is worth one entry rather than four surprises.
+
+⚠️ A FOURTH BOUND WAS WRITTEN AND WITHDRAWN IN THE SAME SESSION, and it is the useful part. The
+short-name bound was first spelled `< MAX_SECTION_BYTES * 2 / 3` — an invented margin standing in for
+the word "comfortably" in the prose. MEASURED: that reddened at about **+60** added source files,
+which would have re-imposed most of the coupling the round exists to remove, in the fix for it. The
+word came out of the prose and the ratio came out of the assertion. **A margin nobody derived is a
+coupling nobody counted**; if a bound needs slack, the slack has to be argued for on its own terms
+(as `MAX_SOURCE_FILES`'s factor of three is) rather than smuggled in as an adverb.
+
+**Step.** No fix. Re-measure the table if `MAX_SECTION_BYTES` or `MAX_SOURCE_FILES` moves, and treat
+any red in it as an instruction to rewrite `RepoMapBlock`'s design note, never to loosen the bound
+back toward a ratio.
+### E639 — the sub-agent tool grant is wired through `AgentManager` but no production caller supplies a registry
+
+**DEFERRED, out of lane (`src/Cli/Bootstrap.php`).** Round 60 lane b made
+`AgentManager::executeSubAgent()` resolve `Agent::$tools` into the `CompleteRequest`'s `tools` field
+(§C7). The resolution is driven by a new optional `toolRegistry` constructor parameter, and
+`Bootstrap::agentManager()` does not pass one — so a LAUNCHED sub-agent still reaches its provider
+with `tools: null`, exactly as before. It was not made because `Bootstrap.php` belongs to no lane
+this round. `null` was chosen as the parameter's default precisely so this state is the pre-existing
+behaviour rather than a refusal a launcher cannot act on, and
+`AgentManagerTest::testWithNoRegistryTheRequestKeepsItsPreExistingNullTools` pins it.
+
+🔴 **THIS ENTRY ORIGINALLY CALLED THE FIX "a one-liner (`toolRegistry: self::tools($root, ...)`)".
+THAT SENTENCE IS WITHDRAWN — the one-liner is a BREAKING CHANGE for any operator who has narrowed
+their tool set, and it is the single most likely thing a future agent would act on.**
+
+`resolveGrantedTools()` REFUSES a declaration that matches no tool in the registry, rather than
+intersecting. That is correct only while the registry it is handed is the UNFILTERED ceiling.
+`Bootstrap::tools()` is not that: it returns `self::filterToolSet($tools)`, already narrowed by the
+operator's own `allowedTools`/`disabledTools`. `filterToolSet()`'s own doc-block states the opposite
+policy in as many words — *"NO FLOOR, and there deliberately still is not one … `disabledTools:
+["*"]` … refusing it would break a configuration this class documents as intentional."*
+
+**MEASURED on PHP 8.3.6 at round 60, by reflection against `Bootstrap::tools()`'s eleven-tool
+ceiling** (`Bash, Read, Edit, Glob, Grep, Write, WebFetch, WebSearch, doctor, Skill, Lsp`):
+
+| session config | presets that THROW |
+|---|---|
+| `disabledTools: ["Bash"]` | **5 of 6** — `coder`, `reviewer`, `debugger`, `tester`, `devops`; only `architect` survives |
+| `disabledTools: ["*"]` | **6 of 6** (the registry is empty) |
+
+So a user who disables `Bash` and launches a `coder` sub-agent gets a hard `RuntimeException`, not a
+narrowed agent. Today this is latent only because nothing supplies a registry.
+
+**WHOEVER WIRES THIS MUST FIRST DECIDE WHICH OF THESE IT IS**, and record the decision in
+`resolveGrantedTools()`'s doc-block:
+
+1. **Intersect when the shortfall is the SESSION's own narrowing, refuse when the tool never
+   existed.** The honest fix, and the expensive one: telling those two apart needs the UNFILTERED
+   tool set, which `filterToolSet()` currently discards. It would mean `Bootstrap` passing both sets,
+   or passing the ceiling and letting `AgentManager` apply the narrowing itself.
+2. **Keep the refusal and pass the UNFILTERED ceiling**, letting the per-call denylist and the
+   permission gate carry the narrowing instead. Cheaper, but it means a sub-agent's roster ignores
+   `disabledTools`, which is a widening — the exact shape round 60 was fixing — and would need its
+   own argument.
+3. **Keep the refusal and pass the filtered set**, accepting the crash as the intended signal. Only
+   defensible with a message that names `disabledTools` as the likely cause; the current message says
+   "match no tool this session offers", which sends the reader hunting for a typo.
+
+Pinned by `AgentManagerTest::testAPolicyNarrowedRegistryIsIndistinguishableFromATypo`, which asserts
+that a policy-narrowed absence and a typo produce the byte-identical refusal. That test is the trap's
+tripwire: it names this entry's decision in its failure message.
+
+### E640 — `GRANT_PROBES` proves a grant CAN fire, never that it does not OVER-fire
+
+**RECORDED, not fixed — the guard's alphabet limit (rule 11).**
+`AgentDefinitionTest::declarationDefect()` calls a preset's argument-scoped declaration clean once
+ONE probe call matches it. That is a lower bound on the grant and says nothing about its upper bound:
+`Bash(git*)` — no space — satisfies the `git status` probe and ALSO admits `gitfoo bar`, because
+`fnmatch('git*', 'gitfoo bar')` is true. The doc-block is honest about this ("proving the grant
+admits something real"), so this is a coverage note rather than a false claim.
+
+Closing it means a second probe table of calls each declaration must REFUSE, which is a different
+kind of fixture: the "can fire" table is derivable from the declaration, the "must not fire" table is
+a judgement about what the preset meant. Worth doing when a preset ships a grant whose upper bound
+actually matters — today the only argument-scoped declaration in the built-in set is `Bash(git *)`,
+whose trailing space makes the over-fire case not arise.
+
+### E641 — `WorkflowEngine` puts DECLARATION STRINGS into `CompleteRequest::$tools`, which providers call `->name()` on
+
+**DEFERRED, out of lane (`src/Workflows/WorkflowEngine.php`, `src/Workflows/WorkflowTask.php`).**
+Found while checking round 60's review MAJOR 4. `WorkflowEngine` builds its stage request as
+
+    $defaultRequest = new CompleteRequest(
+        model: $firstAgent->model,
+        messages: [...],
+        tools: $firstTask->tools,
+        systemPrompt: $firstAgent->systemPrompt(),
+    );
+
+`WorkflowTask::$tools` is an untyped `array $tools = []` carrying whatever the workflow file
+declared — tool-name STRINGS. `CompleteRequest::$tools` is documented `?array<mixed>` but every
+provider that reads it treats the entries as `Tool` OBJECTS: `ClaudeCodeProvider` does
+`array_map(fn($t) => $t->name(), $request->tools)`, and `OpenAIProvider`/`CustomProvider`/
+`SglangProvider` hand them to `formatTools()`. So a workflow stage whose task declares any tool
+should fatal on `->name()` on a string.
+
+This is exactly the type mismatch `AgentManager::resolveGrantedTools()`'s doc-block warns about
+("Passing the strings through would fatal on `->name()` or serialise garbage") — the same defect, on
+a path lane b did not touch. **UNVERIFIED end-to-end: not executed against a live provider**, because
+every workflow test in the tree appears to use tasks with no `tools` (the default `[]` is falsy for
+`!== null` gating only in Vertex, so the other providers would receive `[]` and iterate nothing).
+The reachability question — can a workflow file actually set `WorkflowTask::$tools` non-empty — is
+the first thing to settle before treating this as live.
+
+Note this also makes the `[]`-vs-`null` distinction load-bearing on that path: `$firstTask->tools`
+defaults to `[]`, NOT to `null`, so four of the six providers put a present-but-empty `tools` key on
+the wire for every workflow stage.
+
+### E642 — `declarationDefect()`'s bare-name half is now guarded, but only over the SIX BUILT-IN presets
+
+**PARTIALLY CLOSED in round 60's fix stage.** `AgentDefinitionTest::declarationDefect()` returns
+`null` for any declaration with no argument half, on the grounds that the name half is matched
+against the live registry by `AgentManager` — which, per E639, no production caller makes it do. A
+typo'd bare `defaultTools: ['Reed']` was therefore caught by nothing.
+`testEveryBarePresetToolNameResolvesAgainstTheShippedToolSet` now closes that for the six built-in
+presets, resolving each bare name against `Bootstrap::tools()` under a sandboxed HOME (the sandbox's
+emptiness is asserted, so the guard cannot silently measure a narrowed set — see E639).
+
+**STILL OPEN:** the same typo in a USER or FOREIGN preset (`.sugar-crush/agents`, `.claude/agents`,
+`.opencode/agents`) is caught by nothing, since those are not in the fixture table and are not
+validated at load time. Closing it properly means validating at `AgentPresetRegistry` /
+`ForeignAgentPresetRegistry` load time against the session's tool set — which needs E639's decision
+first, since a user preset naming a tool the operator disabled must warn rather than refuse. Related
+to E645, which is the argument-scoped half of the same gap.
+
+### E643 — the sub-agent SKILL grant has the identical fail-open shape and was NOT fixed
+
+**DEFERRED. The FINDING, not the fix (rule 10).** `executeSubAgent()` applies skills with
+
+    $skill = $this->skillRegistry->get($skillName);
+    if ($skill !== null) { $systemPrompt .= $skill->systemPromptContribution(); }
+
+— a missing skill is SILENTLY SKIPPED. Meanwhile `AgentDefinitionTest::testEveryPresetNamesEverySkillItIsGranted`
+asserts that every preset prompt NAMES each skill it is granted, so `reviewer`'s prompt says "consult
+the php-best-practices and security-audit skills you have been granted". MEASURED on PHP 8.3.6 at
+this commit: a bare `new SkillRegistry()` resolves NONE of `php-best-practices`, `security-audit` or
+`phpunit-master` (they come from disk discovery). So on any launch where those files are absent, the
+prompt tells the model to consult skills whose bodies were never appended — the same "the prompt
+lies and nothing reds" defect §C7 was filed for, one field over.
+
+Not fixed here because refusing loudly would fail every `reviewer`/`tester` sub-agent launched
+without those skill files present, and that trade needs the launch path to be live first. The
+candidate fixes, in preference order: (a) refuse a preset whose granted skill does not resolve, at
+REGISTRATION rather than at execution; (b) strip the skill's name from the prompt when it does not
+resolve; (c) warn on stderr at construction. (b) is wrong on its own — it edits the model-facing
+prompt at runtime, which nothing else here does.
+
+### E644 — `AgentManager::executeAll()` — the LIVE parallel path — bypasses the grant entirely
+
+**DEFERRED, and the more consequential half of §C7.** `executeSubAgent()` has no production caller;
+`executeAll()` has TWO — `Chat::executeAgents()` and `WorkflowEngine`'s parallel stages. MEASURED at
+this commit: `executeAll()` registers the caller's `SubAgent[]` and forwards ONE caller-supplied
+`CompleteRequest` to `AgentWorkerPool::executeAll()`, calling neither `resolveGrantedTools()` nor
+`refuseCallOutsideGrant()`; the pool then forwards `$request->tools` verbatim
+(`AgentWorkerPool.php`, in `executeAll()`'s per-agent request build). So a sub-agent run in PARALLEL
+gets whatever tools the caller put in the shared request, with no per-agent resolution and no
+per-call grant or denylist enforcement — and `WorkflowEngine` builds that shared request from the
+FIRST task of the stage, so agents 2..n of a mixed stage are governed by agent 1's declaration.
+
+Not fixed in round 60 because the correct shape is a PER-AGENT request built inside the pool, and
+`src/Agents/AgentWorkerPool.php` was lane c's file that round. The seam to use is the one the pool
+already has: it builds a per-agent `CompleteRequest` from each agent's own `task`, so `tools` can be
+resolved there from `$agent->agent->tools` by the same method.
+
+### E645 — a foreign preset's `Bash(git:*)` is imported verbatim and is silently unmatchable
+
+**DEFERRED.** Round 60 lane b found `AgentDefinition::reviewer()` shipping `Bash(git:*)` — Claude
+Code's prefix dialect — where this project globs an argument half with `fnmatch()`. MEASURED on PHP
+8.3.6: `(new PermissionRule('Bash(git:*)', Allow))->matches(new ToolCall('Bash', ['command' => 'git
+status']))` is FALSE, and so is every other real git command. The built-in preset was corrected and
+`AgentDefinitionTest` now refuses any argument-scoped preset declaration that its own probe cannot
+satisfy.
+
+**That guard covers the six built-in presets and nothing else.** `ForeignAgentPresetRegistry` imports
+`.claude/agents` frontmatter through `toolList()`, which MEASURED is a pure trim-and-split with no
+dialect translation anywhere in `src/Agents/` or `src/Permissions/`. So a user's own Claude Code
+preset carrying `tools: Bash(git:*)` produces a declaration that is well-formed, passes every check,
+and matches nothing — which after §C7 means the sub-agent is granted the `Bash` tool by the NAME half
+and then has every `Bash` call refused by the argument half. The durable fixes are a translation at
+import (`(x:*)` → `(x *)`) or a stderr warning naming the dialect; neither was taken.
+### E646 — the live worker cannot heartbeat through a non-streaming provider call
+
+**DEFERRED FINDING, not a hole today.** `ProcessExecutor::createLiveWorkerScript()` emits one
+heartbeat before the provider call and then one every 5s *between relayed chunks*. On the
+`supportsStreaming() === false` arm there are no chunks: the child is blocked inside
+`$provider->complete($request)` and cannot emit anything. The parent's
+`HEARTBEAT_TIMEOUT_SECS` is 15, so a non-streaming provider taking longer than that is
+SIGTERM/SIGKILLed and reported as "Worker heartbeat timeout — process unresponsive" while it was
+working correctly.
+
+Not reachable today: nothing in `src/` configures a `workerProvider` at all, and the only spec the
+worker accepts offline (`['type' => 'echo']`) streams. It becomes live the moment a real
+non-streaming provider is wired. The fix is not a longer timeout — it is a heartbeat the child can
+emit while blocked, e.g. an alarm signal, a `pcntl_fork()`ed heartbeat emitter, or preferring
+`completeStream()` unconditionally and adapting the non-streaming providers.
+
+Standing user rule: LLM calls may legitimately run for tens of minutes, so this must not be
+"solved" by capping the request.
+
+### E647 — a sub-agent worker runs with NO TOOLS, and nothing says so at runtime
+
+**DEFERRED FINDING.** `ProcessExecutor::encodeTools()` sends the request's tool NAMES across the
+startup line and `createLiveWorkerScript()` builds its `CompleteRequest` with `tools: null`. The
+reason is mechanical rather than an omission: a `Message` is data and round-trips through
+`toArray()`, but a `Tool` is data plus an `execute()` implementation, and rehydrating one in the
+child needs the registry that built it, which needs the session it belongs to.
+
+Consequence: a fork-context skill or a workflow agent dispatched through `ProcessExecutor` can
+reason but cannot act. Nothing surfaces the gap to a user, and the model is simply told about no
+tools.
+
+⚠️ CORRECTION to this entry as first filed, which said the names are sent "so a transcript shows
+what the parent BELIEVED it was granting". MEASURED at the tree that sentence was written in: there
+is no transcript. `request.tools` is read by neither worker script and the startup line is logged
+nowhere, and mutating `encodeTools()` to `return null` unconditionally survived the whole 10293-test
+suite. The names still go out — the FRAME is the record, and a request granting twelve tools must
+not be byte-identical on the wire to one granting none — and that is now pinned by a test that
+decodes the startup line (`ProcessExecutorTest::testTheStartupFrameCarriesTheRequestTheParentBuilt`).
+The justification changed; the behaviour did not.
+
+This intersects lane b's round-60 work on `AgentManager::executeSubAgent()`'s tool grant: whatever
+grant that path computes cannot reach a `ProcessExecutor` worker until this is answered. The
+options are a name-plus-schema wire format the child rehydrates against a registry it rebuilds, or
+an RPC back to the parent for `execute()`.
+
+### E648 — `ProcessExecutor`'s live worker `require`s an autoloader path taken off the wire
+
+**DEFERRED FINDING, currently contained.** The child `require`s `$msg['autoload']`, which arrives in
+the startup JSON line. Classified `PROCESS_DERIVED` in `ReadPathCensusTest::READ_PATHS` because the
+value is computed in the parent (`ProcessExecutor::autoloadPath()`) and reaches the child only down
+the stdin pipe `proc_open()` just created, so no party outside this process can name it; the child
+additionally refuses a value that is not `is_file()`.
+
+⚠️ CORRECTION: this entry said the parent's value is "two climbs from `__DIR__`". It was, and that
+arithmetic was WRONG — measured on PHP 8.3.6 against a synthetic install, two climbs from
+`src/Agents` yields `<pkg>/vendor/autoload.php`, which does not exist in an installed layout, so
+every sub-agent in any Composer consumer of this package hit the child's "autoloader is not
+readable" refusal. Fixed in round 60 by delegating to `Sessions\BackgroundSupervisor::autoloadPath()`,
+which asks the live Composer `ClassLoader` first. The containment argument above is unaffected: it
+is about who can NAME the path, not about how the parent computes it.
+
+Recorded because the containment is a property of the TRANSPORT, not of the check. If the worker
+protocol ever gains a second writer — a supervisor multiplexing several children, a resumed worker
+reading a spooled startup line off disk — the `require` becomes attacker-influenced and the
+`is_file()` test does not bound it. `Sessions/BackgroundSupervisor.php|require` carries the same
+shape and the same exposure.
+
+### E649 — nothing in `src/` can give a sub-agent worker a provider, and `/workflow run` is the reachable case
+
+**DEFERRED FINDING, and it is the reason the production sub-agent path is unexercised.**
+`Chat::executeAgents()` builds its executor from `AgentPoolConfig`, which carries `maxConcurrent`,
+`defaultTimeoutSeconds` and `stopOnFirstFailure` — and no provider identity. `Chat` HAS a provider;
+`AgentPoolConfig` has nowhere to put one, and `Agent::$provider` is a NAME, not a configuration.
+
+With the worker now real, that gap is visible instead of hidden: a config-built pool dispatches a
+sub-agent, the worker refuses for want of a provider, and the agent comes back Failed. Before, the
+same call returned a fabricated success. Closing it needs a provider CONFIG (the
+`ProviderFactory`-shaped array `ProcessExecutor::$workerProvider` takes) to reach the pool —
+`AgentWorkerPool::__construct()`'s `workerProvider` parameter and `AgentWorkerPool::workerProvider()`
+are the seam; what is missing is a source for it on `AgentPoolConfig` or on `Chat`.
+
+⚠️ SCOPE CORRECTION — this entry was filed against `Chat::executeAgents()` alone, and that is the
+one site of the three that **no production code reaches**. MEASURED: `Chat::executeAgents()` has no
+caller in `src/` or `bin/`. The other two do.
+
+  * `AgentManager` (`$pool ??= $this->workerPool ?? new AgentWorkerPool();`)
+  * `WorkflowEngine::__construct()`'s default `AgentWorkerPool $pool = new AgentWorkerPool()`, which
+    is what `Cli\Bootstrap` uses — it passes `registry`, `model:`, `provider:` and `permissionGate:`
+    and DEFAULTS the pool.
+
+The second is reachable from the shipped `/workflow run`, so the user-visible consequence of making
+the worker real is concrete and belongs on the record: **a workflow with an agent task now returns a
+FAILED agent where it previously returned Completed carrying fabricated text.** That is the honest
+outcome and not an argument against the change — the fabricated text was indistinguishable from an
+answer — but it is a behaviour change on a live command and it was not written down anywhere.
+
+Note also that `WorkflowEngine::$provider` is a provider NAME, not a config, so it is not a ready
+supplier for the seam either; the gap has the same shape at that site as at `AgentPoolConfig`.
+
+### E650 — the parent writes `execute` into a pipe whose child may already be gone
+
+**DEFERRED FINDING, cosmetic today.** `spawnWorker()` writes its `execute` line with a bare
+`fwrite($pipes[0], ...)` after a bounded wait for `ready`. A child that exited during startup —
+a bad binary, an OOM, a fatal before the handshake — makes that a write to a closed pipe, and PHP
+raises `fwrite(): Write of N bytes failed with errno=32 Broken pipe` from inside `ProcessExecutor`.
+Observed in round 60 while building `testRefusingAnUnserialisableMessageSpawnsNoChild`, whose first
+stand-in binary exited immediately.
+
+It is only a notice, and the live worker's ready-first ordering is deliberately designed so that a
+refusing child is still listening at that moment. But the notice reaches the operator as a PHP
+warning attributed to the executor rather than as a named failure, and `phpunit.xml` sets
+`failOnWarning="true"`, so a suite that provokes it goes red for the wrong reason. The fix is to
+detect the dead child (or guard the write) and turn it into the AgentResult the caller already
+expects.
+
+### E651 — `src/Tui/Renderer.php` cites `ProcessExecutor.php:81`/`:235`
+
+**DEFERRED, trivial.** A doc-block in `Renderer.php` reasons about the executor by LINE NUMBER. Both
+numbers were already approximate and this round moved everything below the constructor, so they now
+name unrelated statements. Rule 4: cite symbols, not line numbers. Not fixed here because
+`src/Tui/Renderer.php` is outside this lane's file list and the citation is explanatory rather than
+load-bearing.

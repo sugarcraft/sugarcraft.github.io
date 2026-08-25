@@ -16591,3 +16591,870 @@ for the classifier rather than weakening it.
 tokens** — not reported at `DRIFT_BOUND` 1, nor at 2, 3, 4, 5, 8 or 12. Both now use
 `TestFileWalkTrait`. Filed because the lesson outlives the fix: a census that walks the tree is exactly
 the kind of helper that gets copied, and this guard's bound is tuned for one-token drift.
+
+---
+
+### E524 — E493's heartbeat cannot be raised by a signal, and the measurement says what can
+
+**MEASURED, NOT BUILT.** Round 56 recorded a doubt beside E493's design — a heartbeat the child raises on
+a timer rather than on a chunk — that it "may not be reachable at all from inside `runCompleteInChild()`'s
+synchronous provider call". The doubt is correct. On PHP 8.3.6 (this host; CI also runs 8.4 and none of
+this was observed there):
+
+- `pcntl_setitimer` **does not exist on this host at all**, so any gate naming it would skip silently.
+  `pcntl_alarm`, `pcntl_signal`, `pcntl_async_signals`, `pcntl_fork` and `posix_kill` all do exist.
+- `pcntl_alarm(1)` with `pcntl_async_signals(true)` and a handler that re-arms itself, across a **3-second
+  blocking `curl_exec()`** — curl being Guzzle's default handler and the transport every real provider in
+  this package uses for a batch request — fired the handler **exactly once, at t=3.001s: the moment
+  `curl_exec()` returned.** Zero heartbeats inside the blocking window. Three trials, identical to the
+  millisecond.
+- The same shape against a blocking `fread()` on a silent unix socket: handler at t=3.002s, when `fread()`
+  returned. Three trials.
+- Mechanism, and it is the reason rather than a restatement: PHP dispatches async signals at VM tick
+  points. A blocking C call does not return to the VM, and PHP retries the interrupted syscall itself —
+  `fread()` returned the byte, not `false`.
+
+**What WOULD work, measured on the same rig:** `CURLOPT_PROGRESSFUNCTION`, which Guzzle exposes as the
+`progress` request option, runs **during** the blocking transfer — on the same 3-second request it fired
+18 times including ticks at t=1.001 and t=2.002. That is a genuine in-PHP callback inside the window, on
+roughly the one-per-second cadence a heartbeat wants, and it needs no second process and no signal.
+
+**Two caveats that belong with it.** (1) Guzzle routes a request carrying `stream => true` to
+`StreamHandler` instead whenever `allow_url_fopen` is on — it is `1` here — and `StreamHandler`'s own
+`add_progress` is driven by body reads, so it would NOT tick during a silent wait. That does not affect
+E493, whose whole subject is the NON-streaming provider (`stream => true` is never set on that path), but
+anyone reusing the seam for the streaming path would be reusing a callback that cannot fire when nothing
+is arriving. This is the same two-transports trap `Providers\Concerns\HttpClientDefaults` already
+documents at length for `connect_timeout`. (2) `CurlFactory` in the vendored Guzzle asserts a conflict if
+`CURLOPT_PROGRESSFUNCTION` is also set through `curl` options directly.
+
+**Why it is filed rather than fixed:** the seam is in `src/Providers/` — `CompleteRequest`,
+`Concerns\HttpClientDefaults`, and each provider's `complete()` — which was not this lane's. The one file
+on the path that IS (`src/Runtime.php`) calls `$provider->complete($request)` and has nowhere to thread a
+per-second callback without changing the request DTO.
+
+**The alternative, recorded as the inferior option so nobody re-derives it as the good one:** a heartbeat
+process forked *inside* the completion child could write frames on `$childSocket` on a timer, and that is
+reachable. But two writers would share one `SOCK_STREAM`, which guarantees nothing about write atomicity,
+while `EngineBackend::writeFrame()` is a length-prefixed multi-`fwrite` loop — an interleave corrupts the
+framing, and `drainFrames()`'s documented response to an impossible declared length is to discard the
+whole buffer, i.e. lose the turn. Trading a rare timeout for a rare silent turn-loss is not a trade.
+
+`COMPLETE_TIMEOUT_SECONDS` was **not** raised and the idle timer was **not** removed, per the standing
+constraint on both.
+
+---
+
+### E525 — the retired idle-ceiling source scan survived a real mutation, and so did every other test
+
+**Context for E496, filed because the general lesson outlives the fix.**
+`EngineBackendTest::testTheCompletionTimeoutIsReArmedOnEveryFrame()` asserted two things about
+`completeAsync()`'s SOURCE TEXT: that `addTimer(self::COMPLETE_TIMEOUT_SECONDS` appears exactly once, and
+that the literal `$resetTimeout()` appears somewhere after `addReadStream(`.
+
+Move the `$resetTimeout()` call from the top of the frame-drain loop down into the `reasoning` branch and
+**both assertions still pass** — one arming site, and the string is still lexically inside the read
+handler — while a turn whose progress arrives as assistant TEXT rather than as thinking now dies at the
+ceiling. Measured, not argued: the retired scan's own predicate was evaluated against the mutated source
+and reported `STILL PASSES` on both halves.
+
+`ReasoningProgressTest`'s sixteen tests — the file whose entire subject is this ceiling — **also survive
+that mutation**, because every double in it announces itself through the reasoning channel. The
+replacement test kills it.
+
+The general shape: *a scan for the presence of a string cannot see where the string is*, and a test file
+whose fixtures all take one branch cannot notice a guard that moved into that branch.
+
+---
+
+### E526 — two more implicitly-nullable parameters live outside the Backend family
+
+E495 fixed the eight in `src/Backend.php` and `src/Backend/`, and
+`tests/Backend/BackendSignatureNullabilityTest.php` pins that family. A token-level census of the whole of
+`sugar-crush/src` (295 files at the time) found **two more**, both in `src/Workflows/Workflow.php`
+(`WorkflowStatus $workflowStatus = null` and `bool $stopOnFirstFailure = null`), which was not this lane's
+file. They are the same PHP 8.4 deprecation and the same one-character fix.
+
+**CORRECTED at the round-57 review, and the correction is the more interesting half.** As filed, this
+entry said widening the guard to all of `src/` was a one-line change to `contractFamily()` once those two
+were spelled `?WorkflowStatus` / `?bool`. That was measured false. Re-run over `src/`, the census returned
+**three** rows, not two: the third was `src/ToolRegistry.php`, reported as `<unparsed> #[\SensitiveParameter`
+— and that parameter is **correct**. The widened guard would have gone red on correct code and printed
+"Spell the type nullable (a leading question mark)", which is the wrong instruction for it.
+
+Rule 33's exact shape: the classifier was the defect. `#[` reaches `token_get_all()` as `T_ATTRIBUTE`, an
+ARRAY token, so `splitParams()`'s `$token === '['` comparison never saw it open a group while the group's
+closing `]` — a bare string — did close one. Depth fell to 0 at the first attributed parameter and the walk
+broke out of the whole parameter list. Wrong in **both** polarities from one missing case: a correctly
+spelled `#[Foo] ?callable $a = null` read as an offender, and a real offender sitting after an attributed
+parameter was never seen at all.
+
+Fixed in the review round, with the attribute cases pinned in both polarities and an unterminated-group
+fixture added for rule 14. With the scanner repaired, `src/` really does come back with exactly the two
+`Workflow.php` rows and no `<unparsed>` — so the widening **is** now the one-line change this entry
+originally claimed, but only because the instrument was repaired first. Re-derive it with the scanner
+rather than trusting this paragraph.
+
+**The generator**, so this is a measurement and not a sentence: `implicitlyNullableParams()` invoked by
+reflection out of `tests/Backend/BackendSignatureNullabilityTest.php` over every `*.php` under
+`sugar-crush/src` via `RecursiveDirectoryIterator`, PHP 8.3.6, deterministic (no seed, no sampling).
+
+---
+
+### E527 — `Backend` cannot grow a parameter, and the reason should be written down once
+
+Filed as a fact about this package that will otherwise be re-derived by whoever next wants to thread
+something new through a completion.
+
+PHP treats an implementation declaring **fewer** parameters than its interface as a **load-time fatal**,
+even when the interface's extra parameter is optional (`Declaration of X::m(...) must be compatible with
+I::m(...)`) — measured on 8.3.6. A token-stream census of `completeAsync()` declarations found **19 with
+four parameters, across eight test files** in this package alone (`tests/ChatTest.php`,
+`tests/Cli/NonInteractiveTest.php`, `tests/Cli/NonInteractiveProviderFailureTest.php`,
+`tests/Cli/NonInteractiveRefusalDocumentTest.php`, `tests/Chat/CompactModelSummaryTest.php`,
+`tests/Context/ContextWindowTest.php`, `tests/Integration/StreamingWiringTest.php`,
+`tests/Sessions/BackgroundSessionRunnerTest.php`), plus every third-party backend — `Backend`'s own
+docblock advertises it as an extension point.
+
+So the answer is an opt-in capability interface, which is what `Backend\ReportsContextWindow` already is
+and what `Backend\ObservesReasoning` now is too. **Not a bare marker interface**: PHP drops a surplus
+positional argument to a userland method in silence, so a marker would let a backend claim the capability
+while declaring a signature that cannot receive it, and nothing would say so.
+
+---
+
+### E528 — `runOnScaledClock` now exists twice
+
+`tests/Backend/EngineBackendTest.php` and `tests/Backend/ReasoningProgressTest.php` each carry a private
+helper of that name. They differ (one collects a reasoning channel the other has no use for) and merging
+them would mean restructuring a file whose sixteen passing tests are about a different claim, so the
+duplication was taken deliberately and is noted in both. If a third caller appears, promote it to
+`tests/Backend/Support/` rather than growing a third copy — the duplicated-test-helper drift guard is
+exactly the instrument that will otherwise find this later and at more cost.
+
+---
+
+### E529 — `src/Context/RepoMapBlock.php` carries two `src/` cardinalities that NOTHING verifies
+
+**Not this lane's file — it needs an owner.** Round 57's lane a made a forced out-of-lane edit
+(`3d9496b46`) to keep `tests/Tools/BuiltInToolCorpusTest.php` green after two new source files, and bumped
+`RepoMapBlock.php`'s prose in the same commit on the stated grounds that the two are coupled by the file's
+own documented design.
+
+**Measured at the review: there is no coupling.** `RepoMapBlock.php` states `316 top-level` declarations in
+its own doc-block and `src/` here is 297 files in a second one. No test reads either. `tests/` matches
+`295|297|314|316` only in `BuiltInToolCorpusTest.php`, `BuiltInToolCorpus.php`, `StatusLineSegmentTest.php`,
+`GlobFigureDriftTest.php` and `WorkflowUserTierContainmentTest.php`, and `tests/Context/RepoMapBlockTest.php`
+matches neither number (`grep -c` returns 0). So they are two hand-maintained figures with no guard at all:
+after the next merge they are silently wrong and nothing goes red.
+
+Sharper, and the reason this is filed rather than shrugged at: the same commit REMOVED the pair from
+`BuiltInToolCorpusTest`'s prose arguing that "prose that restates them is a second place to be wrong (rule
+18) … the pair is now gone from the prose entirely rather than corrected a third time" — and then corrected
+the pair a third time into a place with no test behind it.
+
+**Resolution for whoever owns `src/Context/`:** replace both numbers with the RELATION they support, exactly
+as the corpus test's own paragraph now does. The 20 000 backstop is orders of magnitude clear of an
+order-hundreds file count; saying so does not rot, and saying `297` does.
+
+---
+
+### E530 — the empty-delta drop exists twice and NO assertion can see either one go
+
+`Chat::enqueueReasoning()` and the `$onReasoning` static closure in `Chat::scheduleBackendCompletion()` both
+return early on `''`. Round 57 added an agreement test for the two paths and mutated both drops away
+**independently**: `tests/Backend/ReasoningPaintTest.php` stayed entirely green each time (18 tests, 65
+assertions, rc 0, PHP 8.3.6).
+
+The reason is not a bad window — it is that the difference has no observable form. A reasoning fragment is
+appended to a string accumulator, and `$s . ''` is the identity, so an empty delta that survives the drop
+changes no accumulation. `Renderer::renderView()` then gates on `$liveThought !== ''`, so it produces no
+bare marker either. The drops are a cost guard on inbox churn, not a correctness guard.
+
+**Why this is worth a backlog entry rather than a shrug:** the same-shaped duplication in the two paths
+looks like something a test covers, and the round-57 test's FIRST doc-block said so before it was mutated
+and corrected. Anyone strengthening this later needs a surface that counts inbox entries, not one that reads
+painted text — `Chat::$liveToolEvents` is private and there is no accessor, so the honest options are an
+accessor used only by the guard, or accepting the drops as unpinnable and saying so where they live.
+
+**Generator:** `mut.sh` (refuse-dirty → backup → apply → numstat → run → restore → refuse-if-dirty),
+mutations `M10_live_keeps_empty` and `M13_seam_keeps_empty`, filtered scope
+`tests/Backend/ReasoningPaintTest.php`. Both SURVIVED; the channel and generation arms of the same
+assertions (`M12`, `M14`, `M15`) all KILLED, so the instrument was alive.
+
+---
+
+### E531 — the nullability scanner's parameter alphabet is still not enumerated
+
+E526's fix taught `splitParams()`/`classifyParam()` about `T_ATTRIBUTE`, with both polarities and an
+unterminated-group fixture. That closed the case that actually appears in `src/` today, and the census now
+returns exactly the two `Workflow.php` offenders with zero `<unparsed>` rows.
+
+What was NOT enumerated: heredoc/nowdoc defaults, first-class-callable syntax (`m(...)`), and DNF types
+(`(A&B)|null`) inside a parameter list. Rule 11 — a census's alphabet is usually written to match the cases
+already known, and this one's alphabet is now "the shapes round 57 happened to think of". The honest bound
+is a token-stream walk of every `*.php` under `src/` reporting whatever comes back `<unparsed>` after the
+attribute fix, re-run whenever the scan is widened past the Backend family. Today that set is empty, which
+is a fact about this tree and not about the scanner.
+
+
+## Round 57 — lane b (MCP/LSP transport). E532 … E545.
+
+### E532 — E499 had a THIRD route, and it was the one the code called correct
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: real, user-facing. **Measured. Fixed this round.**
+
+E499 named two routes into "one bad `.mcp.json` entry disables every other server". There is a third,
+and unlike the other two it was not an oversight — `McpClient::startServer()` carried a comment
+presenting it as correct: *"An unknown type is a config error and is thrown above, before we get here."*
+The `default => throw` arm of the `match` sat OUTSIDE the try. Generator: `McpClient::startServers()`
+over a two-server config, MockHandler-backed Guzzle, offender first. PHP 8.3.6 / Linux 6.8:
+
+    'type' => 'sse'          ->  ESCAPED: RuntimeException: Unknown MCP server type: sse
+                                 tools visible: 0
+    {"tools":[{"name":5}]}   ->  ESCAPED: TypeError ... $name must be of type string, int given
+                                 tools visible: 0
+
+`sse` is not a typo invented for the probe — it is a transport the MCP specification defines and this
+port has not implemented, so it is what a real `.mcp.json` carries.
+
+⚠️ **THE ORDER-DEPENDENCE IS WHY THIS READS AS INTERMITTENT.** `startServers()` walks the config map in
+order, so entries BEFORE the offender were up and stayed up. The same broken file lost everything,
+something or nothing depending purely on key order. `Bootstrap::mcpClient()`'s own comment had already
+written this down — *"a defect in the client rather than here"* — and it had been true for at least a
+round.
+
+Fixed by consolidating the type filter onto `McpTool::tryFromArray()` (moved, not copied — the old
+doc-block calls the table a hand mirror of `McpTool`, and a second copy would have been a second
+hazard), and by moving the `match` inside `startServer()`'s guard.
+
+### E533 — 🔴 the first cut of E532's fix DELETED A WORKING DIAGNOSTIC, and the suite said so in four places
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: process finding. **Measured. Corrected before it
+was committed as final.**
+
+The obvious reading of "one bad entry must not abort the rest" is `catch (\Throwable) { return; }`. That
+was green across every MCP suite and RED across four rows: three of `Integration\McpToolWiringTest`,
+which pin that a partly-started config reaches the operator's `error_log()` **and** the transcript, and
+`McpClientTest::testStartServersThrowsOnUnknownType`.
+
+The original code had TWO catches and the split was principled — a CONFIG error (the `match`) is
+reported because only a human can fix it; a RUNTIME failure (`start()`) is skipped silently because a
+missing binary is routine. Flattening them traded one defect for another. **Reporting was never the
+defect; the defect was that reporting ABORTED THE LOOP.** Both catches keep their old meanings and the
+config-error report is deferred to `startServers()` until every entry has been attempted.
+
+This is rule 33 one level out: the "exemption" on offer was not a roster row but a plausible-looking
+simplification, and taking it would have removed a guard that was doing real work.
+
+### E534 — E504 said three pairs; there are five, and the guard's first draft would not have caught any
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: hygiene + instrument. **Measured. Fixed.**
+
+`LspClient` carried FIVE `x()`/`xFor()` pairs, not three: `symbols`/`symbolsFor` and
+`codeActions`/`codeActionsFor` have the same shape as the definitions/references/hover family named in
+E504.
+
+⚠️ **AND THE PAIRS WERE NEVER "CHARACTER-IDENTICAL", WHICH IS WHAT MADE THE OBVIOUS GUARD USELESS.** A
+census comparing whole normalised method bodies reports **ZERO on the pre-fix file**: `x()` opened on a
+bare `$this->connections[$this->language]` and `xFor()` on a null guard. Only the TAILS coincided. An
+assertion of absence that was already true before the fix is not evidence of the fix — rule 25 in a new
+place, and it was caught only by running the scanner against `1dea13c4f`'s file rather than reading it.
+
+Rebuilt on the length of the shared trailing token run. Generator: every method pair in `LspClient`,
+normalised token streams, PHP 8.3.6:
+
+    pre-fix   the five real pairs       74, 75, 84, 89, 89 tokens
+              highest non-pair          14   (definitionsFor / referencesFor)
+    post-fix  highest pair of any kind  14   (the same two)
+
+Threshold 40, in the middle of a 60-token gap. The 14 is not noise to tune away: those two are honestly
+parallel general implementations differing in the LSP method name and the fallback tag.
+
+### E535 — E506's caps, and a negative `Content-Length` that split the stream silently
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: resource (E506) plus one real correctness defect
+found beside it. **Measured. Fixed.**
+
+All three framing classes now hold `MAX_FRAME_BYTES = 64 * 1024 * 1024`, inherited from
+`Backend\EngineBackend::MAX_FRAME_BYTES` rather than invented, and exceeding it is a NAMED throw with the
+buffer dropped — never a truncation, because half a frame parses as malformed and the diagnostic would
+then blame the peer for this side's refusal.
+
+The defect found on the way is in `LspConnection::readMessage()`'s body phase, and it needs no oversized
+anything. MEASURED, PHP 8.3.6, buffer `"HELLOWORLD"`:
+
+    Content-Length: -5    ->  body 'HELLO', remainder 'WORLD'
+    Content-Length: abc   ->  (int) 0, consumes nothing, loops
+    Content-Length: 0     ->  as above
+
+`strlen($buffer) < -5` is false so nothing ever waits, and `substr($buffer, 0, -5)` means "all but the
+last five bytes". The peer named a length and this side consumed a different one, silently. Because
+`Content-Length` framing has no resynchronisation point, that desynchronises **every message after it**,
+not just the one. The declared length now has a floor as well as a ceiling.
+
+### E536 — 🔴 E508's premise is false: payload size has nothing to do with it
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: finding-instrument correction. **Measured, three
+takes. Documented, deliberately NOT changed.**
+
+E508 records that `WRITE_IDLE_SECONDS = 15.0` means *"a large `tools/call` from the TUI ... can now park
+the calling thread for fifteen seconds"*, attributing the cost to payload size. Generator:
+`ClaudeCodeMcpClient::sendMessage()` against two fixture children, PHP 8.3.6 / Linux 6.8, three
+consecutive takes:
+
+    a child that READS  10485853 bytes  ->  0.028s / 0.026s / 0.401s
+                         1048669 bytes  ->  0.036s / 0.035s / 0.037s
+    a child that DOES NOT  65629 bytes  ->  15.006s / 15.006s / 15.009s
+
+Ten mebibytes to a live reader never approaches the bound. **Sixty-five kilobytes to a deaf one pays it
+in full** — barely one pipe buffer over, i.e. the smallest message that can cost the whole fifteen
+seconds. It is a wedged-server bound, not a big-message bound, so E508's proposed step ("measure the
+worst realistic payload and decide whether to thread the bound") is measuring the wrong variable.
+
+**THE REAL ASYMMETRY, which nothing had written down:** `callTool()` may block **fifteen times** as long
+writing as the loop under it will wait reading (100 attempts × 10 ms ≈ 1.0s). Against the only shape
+that pays the write bound at all, it freezes the caller for 15s and then spends 1s waiting for an answer
+the same wedge makes impossible.
+
+**STEP, and it is a policy decision rather than a defect fix:** shortening the bound trades "the TUI is
+frozen for 15s" for "a slow-but-recovering server loses its message", and nothing in this tree measures
+how often the second happens. Not taken unilaterally. The half that makes it answerable is now pinned —
+`McpWriteBudgetShapeTest` shows an arbitrarily large payload to a healthy child costs nothing, so
+shortening the bound cannot break large tool calls.
+
+### E537 — 🔴 E503's prescribed fix is wrong for this tree, not merely expensive
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: closes an open question. **Verified in the tree.**
+
+E475/E440/E503 all end on the same sentence: *"The honest fix is fd 2 on the ReactPHP loop, a shape
+change to a class that is synchronous by design."* Nobody had checked that against the way tool calls
+actually execute here.
+
+`Chat`'s parallel dispatch **forks one child per tool call**, and the parent collects them from
+`Loop::get()->addPeriodicTimer(0.05, …)` — read out of `Chat.php`, not inherited from a comment. So the
+parent's loop is servicing callbacks every 50 ms while a forked child sits inside `callTool()` /
+`readMessage()` on fds it inherited from the parent. Registering fd 2 with that loop would put **two
+processes on one pipe at the same moment**, and `read(2)` is destructive: the bytes go to whichever wins.
+The stderr tail a failing exchange reports would be missing exactly the lines the parent consumed, and
+each process's own EOF bookkeeping (`$stderrOpen`) would diverge from the other's. That is a worse
+defect than the stall, and it is silent.
+
+The residual stall is bounded and already measured: 3.02s against a 3.0s idle, i.e. **~20 ms** on the
+first exchange after the gap.
+
+**STEP:** the question belongs to the DISPATCH layer, not to these two classes. A safe drain has to
+happen while no forked call is in flight — e.g. in the parent between turns — which is a change to
+`Chat`/`Runtime` and should be filed against them. Do not reopen this against `StdioMcpServer` or
+`LspConnection`.
+
+### E538 — 🔴 RETRACTED AND RE-MEASURED: E510 has 28 asserting sites, not 2, and 6 of them are in `tests/MCP/`
+
+**Recorded 2026-08-25 by round 57 lane b. RETRACTED AND CORRECTED the same round, at the fix stage,
+after the reviewer refuted it and an independent census reproduced the refutation exactly.** Severity:
+census correction, and a worked example of rule 11 biting the person who wrote rule 11 down.
+
+⚠️ **WHAT THIS ENTRY SAID:** "2 offenders in the whole tree, `tests/MCP/` has zero, and the two remaining
+`tests/MCP/` catches are correctly shaped."
+⚠️ **WHAT IS TRUE:** **28** wide catches whose try body asserts, of **52** wide catches in 453 files —
+`tests/Agents/` 9, `tests/MCP/` **6**, `tests/` root 4, `tests/Providers/` 4, `tests/Cli/` 2,
+`tests/Integration/` 2, `tests/Workflows/` 1.
+⚠️ **WHY IT WAS WRONG — the alphabet, again.** The census below widened from
+`{Throwable, Exception, Error}` to add `AssertionFailedError`, `ExpectationFailedException` and
+`PHPUnit\Framework\Exception`, and stopped there. It never added **`RuntimeException`**, which is the
+rung BETWEEN `PHPUnit\Framework\Exception` and `Exception`:
+
+    ExpectationFailedException < AssertionFailedError < PHPUnit\Framework\Exception
+                              < RuntimeException < Exception
+
+`RuntimeException` is the most-caught class in this tree's tests, so omitting it did not shave the
+census — it removed almost all of it. The original entry then reported a confident **zero** for the very
+directory that holds six sites, two of which **this lane created this round**, in the exact
+`fail()`-inside-`try` shape the entry names as the offender.
+
+⚠️ **AND IT WAS DEMONSTRATED, not merely argued.** A mutation of `StdioMcpServer::refuseAnOversizedFrame()`
+run at the review stage killed through the swallow: `$this->fail('a frame past the cap was accepted')`
+was caught by this file's own `catch (\RuntimeException $e)` and the assertions ran against the FAIL
+message. It still went red — but on *"'a frame past the cap was accepted' does not contain 67108864"*,
+naming the wrong cause, and only because that prose happens not to contain the number.
+
+**FIXED THIS ROUND, in `tests/MCP/McpFrameCapTest.php` only:** both catches narrowed by moving `fail()`
+out of the `try` into an `assertNotNull($caught, …)` after it, so the try body no longer asserts at all.
+The remaining four `tests/MCP/` sites are pre-existing, outside this lane's diff, and listed under
+E544 for whoever owns them.
+
+**The `tests/Cli/`, `tests/Providers/` and `VhsTapeContractTest` sites remain deliberate** — a test whose
+subject IS an assertion failing has to catch one. That half of the original entry survives.
+
+Corrected generator, carrying one known-positive and TWO known-negative fixtures through the same
+`scan()` (rule 15/25):
+`/tmp/claude-1000/-home-sites-sugarcraft/d6095ec4-f4f0-4d7e-b493-d41e7b7bbefc/scratchpad/r57b-fix/census_swallow.php`.
+One of its negatives caught a defect in the scanner before the scan ran: `str_ends_with($t, 'exception')`
+matched `InvalidArgumentException`.
+
+---
+
+**THE ORIGINAL ENTRY FOLLOWS, UNEDITED, because the reasoning is what went wrong and deleting it would
+delete the lesson.**
+
+Round 57's brief splits E510 as "10 sites in 8 files", assigning `tests/Cli/` ×3, `tests/Providers/`,
+`tests/Config/`, `tests/VhsTapeContractTest.php` ×2 and `tests/Agents/` to lane c and the `tests/MCP/`
+sites to lane b. A token-stream census over all of `tests/` — every `try`/`catch`, any catch type list
+including multi-catch, matched against whether the TRY BODY contains an assertion — reports:
+
+    catches wide enough to swallow ExpectationFailedException   23
+    ... of which the TRY BODY asserts                            2
+
+Both are in `tests/Integration/`, cited by symbol because a line number rots inside a round:
+`ForeignAgentPresetWiringTest::testAWorldWritableHomeYieldsNoForeignUserAgentsAndRefusesTheLaunchOutLoud()`
+and `ForeignSkillWiringTest::testAWorldWritableHomeYieldsNoForeignUserSkillsAndRefusesTheLaunchOutLoud()`.
+**Neither is in lane b's or lane c's stated list, and
+`tests/MCP/` has zero.** Round 56's one site was fixed at that round and the two remaining `tests/MCP/`
+catches are correctly shaped — one wraps only the call under test, the other is an `assertThrows()`
+helper whose catch asserts on `$e`.
+
+The shape at those two is the `fail()`-inside-try variant: `try { doThing(); $this->fail('…'); } catch
+(\Throwable $e) { assertions on $e }`. `fail()` throws `AssertionFailedError`, which the catch swallows,
+and the assertions then run against the FAIL message. Today they still go red — `$exposed` is a path and
+the fail message is fixed prose — but they go red naming the wrong cause.
+
+⚠️ **ALPHABET, stated because it is the whole finding (rule 11).** My first pass used
+`{Throwable, Exception, Error}` and found 15 wide catches, none in the brief's directories. Widening to
+include `AssertionFailedError` / `ExpectationFailedException` / `PHPUnit\Framework\Exception` found 23 —
+and THAT is where the brief's `tests/Cli/`, `tests/Config/`, `tests/Providers/`, `tests/Agents/` and
+`VhsTapeContractTest` sites live. **They are deliberate**: a test whose subject IS an assertion failing
+has to catch it. So the wider alphabet explains the brief's list and disqualifies it at the same time.
+What my census still CANNOT express: an assertion reached INDIRECTLY from the try body (a helper called
+inside it), and swallowing by `set_error_handler` rather than by `catch`.
+
+Generator kept at
+`/tmp/claude-1000/-home-sites-sugarcraft/d6095ec4-f4f0-4d7e-b493-d41e7b7bbefc/scratchpad/r57b/census_e510_wide2.php`;
+it carries a known-positive and a known-negative fixture pushed through the same `scan()`.
+
+### E539 — E505 has zero offenders in lane b, and its two named examples are correct by design
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: census correction. **Measured.**
+
+E505's mechanism is "a fixture whose lifetime is what the TEST WAITS FOR, at or above
+`defaultTimeLimit`, aborts instead of asserting". Four candidates at or above 60 exist in `tests/MCP/`
+and `tests/LSP/`, and every one is a CHILD process lifetime deliberately sized ABOVE the row's own
+bound — the correct direction, and the opposite of the defect:
+
+- `StdioMcpServerWriteBoundsTest`'s `sleep(60)` is inside a nowdoc a GRANDCHILD runs, not a fixture
+  lifetime in the row's process.
+- `DEAF_SERVER_LIFETIME_SECONDS = 90` — "twice `STORM_BOUND_SECONDS`, so the fixture cannot be the thing
+  that ends a storm row".
+- `StdioMcpServerHandshakeTest`'s `SILENT_SERVER` `sleep(3600)` — bounded by `startTimeoutSeconds`.
+- `LspConnectionStdinWedgeTest`'s deaf storm server is **`sleep(120)`, not the `sleep(30)` the brief
+  names.** It was RAISED from 30 in an earlier round precisely because 30 was MEASURED to be the thing
+  that ended a row: with the backstop clause deleted the loop ran until the child expired at ELAPSED
+  29.843 and every assertion but one passed.
+
+MEASURED per-row durations across all 791 rows in `tests/MCP/`, `tests/LSP/` and the
+`ClaudeCodeMcpClient` files, via `--log-junit`: **the slowest row is 7.37s**, against a 60s limit — an 8x
+margin. Nothing here is near the alarm.
+
+⚠️ **ALPHABET.** The census matches `sleep(N)`, `const …_SECONDS = N` and `while (… < N.0)` loops at or
+above 60. It CANNOT express a lifetime built by arithmetic (`sleep(self::X * 2)`), one expressed in
+`usleep` microseconds, or one a fixture reads from an environment variable.
+
+**Lane b left lane c its half of both censuses untouched:** for E510, the two real offenders in
+`tests/Integration/` (which are in NEITHER lane's list) plus the deliberate `AssertionFailedError`
+catches listed above; for E505, `tests/Integration/McpToolWiringTest.php` and
+`tests/Support/ReapsForkedChildrenTraitTest.php`.
+
+### E540 — 🔴 a `.mcp.json` value of the wrong JSON TYPE reaches a constructor, and a constructor answers with `TypeError`
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: real, and the likeliest of all three E499 routes to
+be hit by an actual user. **Measured. Fixed and pinned this round.** Found by mutating the NEIGHBOUR of a
+survivor (rule 41), having nearly excused that neighbour as an equivalent mutant.
+
+Narrowing `McpClient::startServer()`'s CONFIG catch from `\Throwable` to `\RuntimeException` survives the
+obvious reading — the `match`'s `default` arm throws exactly `RuntimeException`, so it looks equivalent.
+It is not. `buildServer()` also CONSTRUCTS, and `StdioMcpServer`, `HttpMcpServer`, `GitMcpServer` and
+`GitCommandHandlers` all declare typed parameters that a hand-written `.mcp.json` can violate. Generator:
+`startServers()` over a two-entry config, offender first, a well-formed `git` server second. PHP 8.3.6:
+
+    {"args": "not-an-array"}        reported, good server's 29 tools reachable
+    {"env": "nope"}                 reported, 29 tools reachable
+    {"command": 7}                  reported, 29 tools reachable
+    {"headers": "nope"}   (http)    reported, 29 tools reachable
+    {"path": 7}           (git)     reported, 29 tools reachable
+
+Under the narrowed catch every one aborts the loop and the good server is lost.
+
+**AND THIS IS THE ORDINARY CASE, not an exotic one.**
+`"args": "-y @modelcontextprotocol/server-git"` written as a string instead of a list is the likeliest
+mistake a human makes editing that file, and before this round it disabled every OTHER server in the
+config — silently, and depending on key order.
+
+⚠️ **THE PROCESS POINT IS THE FINDING.** Two mutations survived in this lane and neither was equivalent.
+The first (`\Throwable` → `\RuntimeException` on the RUNTIME catch) was green across 100 rows and 290
+assertions, so route 3 had been "closed" by nothing at all. The second was one line away from it, looked
+equivalent for a defensible reason, and was the more serious of the two.
+
+### E541 — `DenialPrefixRosterTest`'s vocabulary reads an HTTP header block as a permission denial
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: classifier false positive. **Measured.** Out of
+lane — `tests/DenialPrefixRosterTest.php` is at `tests/` root, which is lane c's this round. Reported,
+not reached for.
+
+A new `LspProtocolException` message ending `… Header block: %s` reddened
+`testTheOnlyDenialShapedLiteralsInSrcAreTheLeafsAndOneEarnedException`. `DENIAL_SHAPE` matches any
+capital-initial word-run ending in a colon, and the vocabulary gate passes because **`block` is a denial
+vocabulary word** — so an HTTP/LSP *header block* is classified as a permission denial.
+
+⚠️ **NEITHER RESOLUTION THE FAILURE TEXT OFFERS FITS**, which is rule 33's shape exactly. A roster row
+would be a licence for a string that is not a tool-result prefix at all. And `OFF_ROSTER_THROWABLE_SHAPES`
+is keyed `path => class-string<\Throwable>` and earned by the FILE BEING a Throwable class —
+`src/LSP/LspConnection.php` is not one, so the mechanical exclusion cannot express "this file THROWS a
+Throwable carrying the string".
+
+Reworded in lane b's own file instead (`The header began %s`), with the reasoning left in the source so
+the next person does not re-derive it.
+
+**STEP for whoever owns that guard:** the exclusion wants a second, mechanically checkable form — a
+literal that is an argument to a `new <Throwable>(…)` in a `throw`, verifiable from the token stream
+without naming the file. As it stands the guard's own advice will push the next person into writing an
+exemption row for correct code, which is where the next real offender hides.
+
+### E542 — `T_DOLLAR_OPEN_CURLY_BRACES` truncated a brand-new token scanner, and a guard caught it
+
+**Recorded 2026-08-25 by round 57 lane b.** Severity: instrument defect, in this round's own work.
+**Measured. Fixed.**
+
+`tests/Support/InterpolationOpenerTokenTest` reddened on `LspClientBodyDuplicationTest`, this round's new
+duplicate-body census. PHP opens a brace with THREE tokens and closes it with one: bare `{`,
+`T_CURLY_OPEN` (text `{`, so a text comparison happens to work) and `T_DOLLAR_OPEN_CURLY_BRACES` (text
+`${`, which it does not). MEASURED on PHP 8.3.6 against the first draft:
+
+    public function a(): string { $x = 1; $s = "${x}"; return $s . 'TAIL_MARKER'; }
+    ->  body '$x = 1; $s = "${x'          TRUNCATED
+
+The interpolation's closing brace decremented a depth its opener never incremented, so the body ended at
+the first interpolated string. Two methods differing only AFTER such a string would compare EQUAL, and a
+real duplicate pair could be missed — in the very census written to find duplicate pairs.
+
+Fixed by counting on token identity, pinned with a four-arm fixture (bare / `T_CURLY_OPEN` / dollar-open
+/ a nested call inside the interpolation), each arm required to contain its own tail marker so
+"truncated" is distinguishable from "empty". The opener strings are assembled by concatenation and never
+spelled in the file's prose, so a future sweep over the pattern cannot eat the row documenting it.
+
+**Worth recording beyond the fix:** that guard's doc-block says it was widened after finding "three such
+walkers in `tests/`, one of them failing OPEN, all three invisible to this guard for as long as its
+alphabet was the set of files that already agreed with it". This round's scanner was the fourth. A
+brace-walking token scanner is apparently a shape this tree grows regularly and gets wrong by default.
+
+### E543 — 🔴 `LspConnection`'s frame cap was pinned by NOTHING, and the class calls itself the sharpest of the three
+
+**Recorded 2026-08-25 by round 57 lane b, at the fix stage.** Severity: real gap in this round's own
+work. **Measured full-suite. Fixed this round.**
+
+`LspConnection::refuseAnOversizedFrame()` was added this round to close E506. Neutering it — replacing
+its guard with `if (true) { return; }` — was measured against the **entire** suite and **SURVIVED**:
+10154 tests, 149343 assertions, 1 skipped, rc 0, identical assertion-for-assertion to the unmutated run.
+
+The reason is a conflation worth writing down. `LspConnectionFrameCapTest` had four rows that all look
+like frame-cap rows, and **every one of them fails at a different guard**: the header-number check
+`$contentLength < 1 || $contentLength > MAX_FRAME_BYTES`, which reads a number the peer NAMED.
+`refuseAnOversizedFrame()` reads no number at all — it bounds the bytes actually accumulated in
+`$readBuffer` when the peer names nothing, i.e. the header-with-no-CRLFCRLF case. The only other test
+reference to the class touched the CONSTANT (`getConstant('MAX_FRAME_BYTES')`), never the method.
+
+Not symmetrical with the stdio twin: the same mutation of `StdioMcpServer::refuseAnOversizedFrame()`
+KILLED, because `McpFrameCapTest` invokes it directly by reflection. **The class with no coverage was the
+one whose own doc-block calls it "the sharpest of the three framing classes", and unlike the stdio
+survivor nothing anywhere declared it.**
+
+Fixed with three rows mirroring the stdio shape — refusal at `cap + 1` (names the cap, names the phase,
+buffer dropped, `$pendingContentLength` reset), silence at exactly `cap`, and a third pinning the
+body-phase call site's DORMANCY, below.
+
+### E544 — the body-phase cap call is dormant by construction, and four pre-existing `tests/MCP/` swallowers
+
+**Recorded 2026-08-25 by round 57 lane b, at the fix stage.** Severity: two handoffs. **Measured.**
+
+**(a) Dormancy, recorded rather than removed** (standing "never remove dormant code" rule).
+`readMessage()`'s BODY phase calls `refuseAnOversizedFrame()` too, and that call can never fire: the
+header guard admits only `1..MAX_FRAME_BYTES`, so `$pendingContentLength <= MAX_FRAME_BYTES`, and the body
+loop runs only while `strlen($readBuffer) < $pendingContentLength` — so the buffer is strictly below the
+cap whenever the call is reached and the `<=` test returns early. It is kept because the loop, not the
+header, is where the memory is actually spent. The dormancy is now pinned by
+`LspConnectionFrameCapTest::testTheBodyPhaseCallIsDormantBecauseTheHeaderGuardBoundsTheDeclaredLength()`,
+so it cannot go quietly reachable.
+
+**(b) Four pre-existing `tests/MCP/` swallowers, NOT fixed** — outside this lane's diff, cited by symbol:
+
+  - `McpMessageResultTypeTest` — the `silent.php` row, `try { $mute->start(); $this->fail(…); } catch (\RuntimeException)`
+  - `StdioMcpServerHandshakeTest::timeStartOf()` — same shape, in a helper, so every caller inherits it
+  - `StdioMcpServerStderrDrainTest` — the `dying.php` row, same shape
+  - `StdioMcpServerTest::testFullLifecycleWithCatCommand()` — no `fail()`, but `assertIsArray($tools)`
+    sits inside the `try` and the `catch (\RuntimeException)` swallows its failure
+
+All four still go red today, but on the fail/expectation message rather than on the cause. The fix is
+mechanical: move the `fail()` out of the `try` into an `assertNotNull($caught, …)` after it.
+
+### E545 — a compensating control was cited that did not exist
+
+**Recorded 2026-08-25 by round 57 lane b, at the fix stage.** Severity: process finding. **Measured.
+Fixed this round.**
+
+`McpFrameCapTest` documents a knowingly-surviving mutation — deleting `refuseAnOversizedFrame()`'s call
+site in `StdioMcpServer::readLine()` — and justified leaving it uncovered with: *"The call site is
+instead held by the `readLine()` doc-block and by this sentence."*
+
+`readLine()`'s doc-block mentioned no cap, no `MAX_FRAME_BYTES`, no oversized frame and no refusal. The
+call `$this->refuseAnOversizedFrame();` had been added with **no comment at all**. So the sole stated
+control for a deliberate survivor was written without checking whether it was there — rule 8, inside a
+paragraph whose entire job was to be the control.
+
+Fixed by writing the paragraph into `readLine()`'s doc-block, which is where the claim said it was. Worth
+keeping as an entry because the failure mode is invisible by construction: a survivor justified by prose
+elsewhere is only as good as someone having read that elsewhere.
+
+
+### E546 — twenty-two swallowing `catch` clauses whose body asserts, and therefore cannot go silently green
+
+**DEFERRED (round 57, lane c).** `ExpectationFailedException` extends `AssertionFailedError` extends
+`PHPUnit\Framework\Exception` extends `\RuntimeException` (MEASURED, PHPUnit 10.5.64, and now asserted by
+`tests/Support/AssertionSwallowingCatchTest.php`). So `catch (\RuntimeException)` — the type someone
+reaches for when they want to be NARROW — swallows a failed assertion exactly as completely as
+`catch (\Throwable)` does.
+
+**FIGURES RE-MEASURED at the lane's final commit**, after the round-57 fix stage widened the scanner
+twice (the caught type is now RESOLVED and asked whether it is a supertype of a failed assertion, rather
+than string-matched; and the walk now descends into a nested `try` instead of stepping over it). The
+numbers below replace an earlier draft of this entry that said "twenty" in its heading and "~18" in its
+body, both measured against the narrower scanner.
+
+The population is **23** sites in `tests/` with an assertion inside a `try` whose `catch` can swallow it.
+One had an EMPTY catch body and is fixed; two more caught `\Throwable` and are fixed. One —
+`tests/Providers/ToolSchemaEncodingTest.php` — is CORRECT and is classified as such: it records the
+failure into a flag and asserts on the flag after the `try`, which is exactly the fix prescribed below.
+The remaining **22** have a `fail('…')` inside the `try` and a catch body that asserts on
+`$e->getMessage()`. They cannot pass while asserting nothing — the catch's assertions were written for
+the exception the code under test throws and will not hold for an `AssertionFailedError` — but the
+DIAGNOSTIC is wrong: the reader is shown a substring failure against this test's own fail() message
+rather than "the call did not throw".
+
+The fix is mechanical and identical everywhere: record whether it threw, assert AFTER the `try`. It is
+deferred because it touches, MEASURED at this commit, the test root (×4), `tests/Agents/` (×8),
+`tests/Cli/` (×2), `tests/MCP/` (×4), `tests/Providers/` (×3) and `tests/Workflows/` (×1) concurrently
+with three audit lanes. The generator is `AssertionSwallowingCatchTest::swallowingCatches()` — it already
+reports these rows with `catchAsserts => true`; widening the guard is deleting one `continue`. Do not
+copy the counts above into a later round: re-derive them from that method.
+
+---
+
+### E547 — eight bare `{@see someMethod()}` citations in `tests/` name no method that exists
+
+**DEFERRED (round 57, lane c).** `SymbolCitationDriftTest` now resolves a bare `{@see …()}` in a `tests/`
+file against the classes that file declares, but ONLY for a member spelled as a test method — the
+test-symbol subset the census claims.
+
+RE-MEASURED at the lane's final commit, because the first draft of this entry cited a generator in a
+per-session scratchpad directory (which nobody else can run, and which E427 forbids reading across
+rounds) and listed TEN method names under a heading that said eight. The generator is below and the
+list is now the eight the run actually reports.
+
+**1,111 bare self-citations across 150 files; 11 resolve to nothing.** Three of the eleven are this
+census's own metasyntactic examples inside `SymbolCitationDriftTest.php` and are not citations at all.
+The other **eight** name a PRODUCTION method and are almost certainly meant to point at the class under
+test rather than at the test class:
+
+| file | citation |
+| --- | --- |
+| `tests/Backend/StreamingCommandBackendTest.php` | `{@see pump()}` |
+| `tests/Cli/LaunchFlagsTest.php` | `{@see selectedProviderLabel()}` |
+| `tests/Cli/StderrEmitterCensusTest.php` | `{@see warnPermissionConfigOnce()}` |
+| `tests/Commands/CommandLoaderRefusalReportingTest.php` | `{@see skippedFiles()}` |
+| `tests/Diagnostics/RuntimeNoticeSinkDeliveryTest.php` | `{@see drain()}` |
+| `tests/LSP/LspConnectionShutdownTest.php` | `{@see __destruct()}` |
+| `tests/LSP/LspConnectionShutdownTest.php` | `{@see readResponse()}` |
+| `tests/Tools/BuiltIn/SkillPathScopingTest.php` | `{@see forPaths()}` |
+
+GENERATOR, reproducible from a clean checkout and not from anyone's scratchpad — walk `sugar-crush/tests`
+for `*.php`; flatten doc-comment continuations with `preg_replace('/\R\s*\*\s*/', ' ', $source)`; match
+`/\{@see\s+(\w+)\(\)\s*\}/`; collect every class-like symbol the file declares with
+`/^(?:final\s+|abstract\s+|readonly\s+)*(?:class|trait|interface|enum)\s+(\w+)/m` qualified by the
+file's `namespace`; report a citation for which no declared class answers `method_exists()`. PHP 8.3.6.
+
+That is the near edge of the larger unbuilt instrument: a census of citations of PRODUCTION symbols.
+`{@see self::foo()}`, `{@see $this->bar}` and plain class references are far more numerous and have more
+shapes than the six the test-symbol census handles.
+
+---
+
+### E548 — `CONTRIBUTING.md` still documents two of the `path-repo-check` commands
+
+**DEFERRED (round 57, lane c) — out of lane, one file.** `tools/check-path-repos.php --help` now prints
+the exact commands the CI job runs, in order, with the `git checkout -- .` that must follow the
+injection — and, since the fix stage, that block is COMPARED to the workflow as a set in both directions
+by `CheckPathReposTest::testTheHelpTextNamesExactlyWhatTheWorkflowRuns()`, so it cannot drift silently.
+(No count of them is written here: it was "five" while the block held five STEPS and seven shell
+commands, which is the sort of number a reader checks against the wrong thing.)
+`CONTRIBUTING.md` documents `--no-lib-path-repos` and `--fix --strict-closure` only, and does
+not mention `--unused` (a hard gate) or `tools/tests/` (now a gate) at all. One paragraph; the content is
+already written in `--help` and can be lifted.
+
+---
+
+### E549 — `tools/gen-docs.php` has no guard, and it writes files nobody may hand-edit
+
+**DEFERRED (round 57, lane c).** `tools/tests/` exists and is wired into CI now, but it holds exactly one
+test file and it is for `check-path-repos.php`. `tools/gen-docs.php` generates every page under
+`docs/lib/`, which `AGENTS.md` forbids editing by hand, and nothing checks that a regeneration is a no-op
+against the committed pages — the classic drift shape: the generator and its output can disagree and the
+only signal is a reviewer noticing. A `--check` mode plus a CI step is the same wiring
+`path-repo-check` just got.
+
+
+---
+
+### E550 — E490 did not reproduce in 53 takes, and 53 takes cannot tell a fix from luck
+
+**MEASURED, round 57, lane c. A definite outcome, and it is not "closed".** Configuration, so the number
+means something (rule 3): PHP 8.3.6, this box, `candy-pty` at `1dea13c4f` (unchanged this round — the
+lane touched no `candy-*` file, verified with `git diff --name-only`), every take
+`cd candy-pty && vendor/bin/phpunit --testdox` with a 7/7 in-lane symlink closure.
+
+- **Arm A, candy-pty alone, 49 takes.** All `rc=0`, all `630 / 1494 / 16 skipped / 1 warning`, 48s each.
+- **Arm C — THE EXPERIMENT THAT HAD NEVER BEEN RUN: the full `sugar-crush` suite and then `candy-pty`,
+  back to back in one script, 4 cycles.** That is the only context the single observed hang occurred in.
+  All four clean, and byte-identical: `10137 / 154739 / 1` then `630 / 1494 / 16 / 1w` every time.
+- Arm A ran CONCURRENTLY with the lane's own `sugar-crush` runs for most of its 49 takes, so a
+  contended box is covered too.
+
+**53 takes, 0 events.** One-sided 95% upper bound on the per-take rate: `1 - 0.05^(1/53)` ≈ **5.5%**. The
+prior estimate is 1 in ~76 ≈ 1.3%, which sits comfortably inside that bound — so **this round does NOT
+distinguish "the leaked-timer fix closed it" from "it did not happen to fire".** Bounding at the prior
+rate needs roughly **230** consecutive clean takes (≈3.1 hours at 48s each); halving it needs ~460.
+
+**The instrument was checked before the quiet run was believed** (rule 15): with
+`CANDY_PTY_HANG_BUDGET=0.6` the watchdog fired, SIGKILLed the runner at `rc=137`, and printed the named
+test (`Integration\EOFGraceTest::testVeofDrainsTailBytesBeforeChildExit`), its in-flight time, its
+`ps`/wchan line, its open-fd count and its children. A watchdog that never fires and a dead one produce
+identical green suites; this one is alive.
+
+**Arm B — takes at `a8acfcc9` / `d38b644f4`, to ask whether round 55 caused it — was NOT run.** It needs
+a second checkout with its own resolving `vendor/sugarcraft` closure, and it needs the SAME N again to
+say anything: two arms of 53 with zero events in each distinguish nothing. It is only worth doing after
+one arm has reached ~230.
+
+
+---
+
+### E551 — `tools/` is outside every doc-drift roster in the tree, and the split-repo boundary is why
+
+**DEFERRED (round 57, lane c) — with the measurement that decides it.** Round 57 shipped a stacked
+doc-comment pair into `tools/tests/CheckPathReposTest.php` in the same round whose subject was the
+stacked-doc-comment guard, and nothing saw it: `RuntimeNoticeSinkDeliveryTest::phpSourceRoster()` walks
+`sugar-crush/{src,tests}` plus `bin/sugarcrush`, and `SymbolCitationDriftTest` walks `sugar-crush/{src,
+tests,docs}`. `tools/` sits at the MONOREPO root, one level above both.
+
+**Why the one-line fix is wrong.** Adding `../../tools` to either roster makes a `sugar-crush` test
+reach outside its own package. Every lib is published standalone as `sugarcraft/<lib>`, and in that split
+clone `tools/` does not exist — so the guard would red (or need a silent `is_dir()` skip, which is a
+guard that scores zero in the environment CI publishes to). The same argument that forbids a
+`repositories[]` entry in a lib manifest forbids this.
+
+**The shape that would work** is a guard living in `tools/tests/`, which round 57 wired into the
+`path-repo-check` job and which is therefore now a real home. It needs the token-stream scanner, and
+copying it there is exactly the shape `DuplicatedTestHelperDriftTest` exists to catch — so the scanner
+has to be lifted somewhere both can reach, or the `tools/` guard has to be written against a deliberately
+different mechanism. That is a round's scope decision, not a fix agent's. MEASURED at this commit:
+`tools/` censuses **zero** stacked pairs, so nothing is outstanding — only unwatched.
+
+---
+
+### E552 — `setup-php`'s `tools: phpunit` is unpinned, so `path-repo-check` follows PHPUnit's latest major
+
+**DEFERRED (round 57, lane c) — one line.** The `path-repo-check` job installs a PHPUnit PHAR with
+`tools: phpunit`, which resolves to the newest major that supports the requested PHP. The job does no
+`composer install` (it reads manifests rather than resolving them), so there is no per-lib
+`vendor/bin/phpunit` to borrow — that part is deliberate. But `tools/tests/CheckPathReposTest.php` is a
+PHPUnit 10 test file, and its own doc-block says "any PHPUnit 10". The day the PHAR moves to a major that
+drops something the file uses, a job with nothing to do with the change goes red.
+
+`tools: phpunit:10` pins it. NOT TESTABLE ON THIS BOX: there is no `phpunit` on `PATH` here, so the PHAR
+invocation the doc-block documents has never been exercised locally — only the
+`candy-core/vendor/bin/phpunit --no-configuration [--bootstrap …] tools/tests/` form, which round 57
+verified in both its with- and without-`--bootstrap` shapes.
+
+---
+
+### E553 — the `%d`-parametrised child budgets are REPORTED but never EVALUATED
+
+**DEFERRED (round 57, lane c) — deliberately, and the reason is the finding.**
+`ChildWallClockBudgetTest` reads every literal `timeout -s KILL <n>` in `tests/` and asserts each is under
+`phpunit.xml`'s `defaultTimeLimit` with headroom. A budget passed through `sprintf()` as `%d` is listed
+by the guard and NOT evaluated: resolving it means following an argument list, and a scan that guesses is
+worse than one that says what it cannot see (rule 14).
+
+MEASURED at this commit: **five such sites in four files**, all passing `20` by inspection —
+`tests/Cli/BootstrapSkillSkipsTest.php` (×2), `tests/SuiteChildStdinIsolationTest.php`,
+`tests/SuiteChildStdinPrependResidualTest.php`, `tests/Support/RequirementDirectiveProvenanceTest.php`.
+**That verification is by hand and will rot**; nothing re-checks it. Closing this means either resolving
+a `const`/literal argument through the token stream at the call site, or moving those four files to a
+literal. Re-derive the roster from `ChildWallClockBudgetTest::childBudgets()['parametrised']` rather than
+from the list above.
+
+---
+
+## Round 57 — the merge. E554 … E555, filed by the supervisor.
+
+### E554 — 🔴 a thirty-line doc-block documented nothing, and only the MERGE could see it
+
+**MEASURED at the round-57 merge. Fixed in the merge-fix commit.** Lane b's new
+`tests/MCP/StdioMcpServerToolListRobustnessTest.php` put a 31-line doc-block — "THE FILTER IS A HAND
+MIRROR OF A CLASS IT DOES NOT OWN" — under a `// Fixtures` banner, immediately above a SECOND doc-block
+for a different test. **PHP attaches only the last of a run**, so the first documented nothing and
+`testTheTypeFilterStillMirrorsEveryKeyMcpToolReads()`, 120 lines below, which is what it actually
+describes, had no doc-block at all.
+
+**Neither lane could have caught this alone.** Lane b wrote the file; lane c widened the stacked-doc-comment
+guard into `tests/` (E507) in a different lane copy, and the two only met at the merge. **Zero textual
+conflict, semantic red** — rule 32's exact case.
+
+Fixed by MOVING the block onto the method it names, not by merging the two blocks: they document different
+tests. **Attachment verified with `ReflectionMethod::getDocComment()`, not by eye** — the same check lane a
+used for E521's census block, and the only one that distinguishes "looks attached" from "is attached".
+
+### E555 — 🔴 the citation guard called a NAMESPACE a dangling class, and the classifier was the defect
+
+**MEASURED at the round-57 merge. Fixed and pinned in three directions.** Lane c's backtick widening
+(E498/E509) scraped `` `SugarCraft\Crush\Tests\Backend` `` out of the four test doubles lane a created —
+where the sentence explains which shared namespace they were lifted OUT of — and `resolve()` answered null,
+because no CLASS of that name exists. Four rows, all reported as "no such test class".
+
+🔴 **THE CODE WAS CORRECT IN BOTH FILES, SO THE CLASSIFIER WAS THE DEFECT — RULE 33, and this is its third
+occurrence in four rounds.** The guard's blessed remedy is "rename the citation in the same commit as the
+method"; taking it would have damaged correct prose to satisfy a broken scanner.
+
+**The guard's own author had anticipated the case and covered half of it.** Its negative fixture already
+pinned that a namespace PREFIX spelled with its trailing separator (`Foo\Bar\`) is not scraped. The same
+namespace spelled WITHOUT one reached the dangling list.
+
+Fixed with `namespaceDirectoryFor()`: a token whose parsed shape carries no member, and which maps to a
+real directory holding at least one `.php` file, is recorded as a namespace citation rather than reported
+dangling. **Keyed on structure, never on text (rule 40)** — a made-up `A\B\C` still reds.
+
+**Three mutations, all killed** (the third only after the pin below was written):
+
+| # | mutation | verdict |
+|---|---|---|
+| M1 | drop the namespace arm entirely | **KILLED** — 2 tests: the fixture and the real-tree census |
+| M2 | return the path without checking `is_dir()` | **KILLED** — the made-up namespace stops being reported |
+| M3 | drop the empty-directory clause | **SURVIVED at first** — see below |
+
+🔴 **M3 SURVIVING WAS A FACT ABOUT THE TREE, NOT ABOUT THE GUARD** — no empty directory exists under
+`tests/` or `src/` for it to trip over. Rule 41 says a survivor's excuse does not transfer, and the honest
+answer to an unpinnable clause is to make it pinnable rather than to write a paragraph excusing it. So
+`testAnEmptyNamespaceDirectoryIsNotANamespace()` now creates a real empty directory, asserts the citation
+IS dangling, drops one `.php` file into it, and asserts through the same call that it is not. M3 now dies.
+
+**And the fix for E555 tripped E554's guard.** Inserting the new test stacked its doc-block under the
+existing one, so the method below it lost its documentation — caught immediately by the very guard whose
+sibling finding this entry sits beside, in the same run. **That is the guard pair working exactly as
+intended, on the supervisor, one commit after it caught the lanes.**
+

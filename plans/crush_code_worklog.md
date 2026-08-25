@@ -11597,7 +11597,393 @@ the how-to-renumber prose from the renumber.
 flight. In `Chat.php` two of the three were the expensive kind — a method silently undocumented while its
 prose sat above an unrelated declaration.
 
-## ROUND 52 — IN FLIGHT (base `b9abd2fb`, THREE lanes, run `wf_5f1a8d38-5b8`)
+## ROUND 56 — a client restart killed all three implementers, the transcripts were the recovery channel, and the first prediction miss in thirteen rounds
+
+**CLOSED at `8e8af356a`, from base `d38b644f4`.** Three lanes, nine agents in the recovery run, zero
+errors. Backlog **492 → 523**.
+
+| package | floor at close |
+|---|---|
+| **sugar-crush** | **10126 / 149182 / 1 skipped / rc 0** |
+| **candy-pty** | **630 / 1494 / 16 skipped / 1 warning / rc 0** |
+| candy-core | 842 / 7587 / 24 / rc 0 (untouched) |
+| candy-flip | 83 / 227 / 2 / rc 0 (untouched) |
+| candy-mosaic | 459 / 7753 / 6 / rc 0 (untouched) |
+
+> **Worklog gap, stated rather than papered over:** rounds 53, 54 and 55 were never written up here; they
+> live in `crush_code_RESUME.md`'s `0-NOW-*` blocks only. This entry does not reconstruct them.
+
+### THE PREDICTION MISSED, AND IT MISSED BECAUSE OF THE RESTART
+
+Predicted before the first merge: **10167 tests EXACT**, assertions **≥ 152,200**. Measured:
+**10126 / 149182**. That is **−41 tests** and roughly **−3,000 assertions** — the first miss on tests in
+**thirteen** rounds and the first on assertions in four.
+
+**The miss is the point, and it was designed to be.** A client restart killed all three implementers
+mid-flight at ~05:17 with the journal holding three `started` records and zero completions. When the
+recovery was built, the prediction was deliberately left UNCHANGED and an amendment said so in writing:
+*"same base, same three lanes, same thirteen items — if the restart costs the round tests, this is where
+it shows, and the prediction is what makes that visible instead of excusable."* It showed. Roughly two
+implementer-hours of re-derivation had to be paid twice, and 41 tests is what that cost.
+
+**The assertion total came out EXACTLY additive** — 148589 + 204 + 320 + 69 = 149182 — which is worth
+noting because round 44's headline finding was that assertion counts are *not* additive across a merge.
+They were this time: no lane's census read prose a sibling lane rewrote, because the three source sets
+were genuinely disjoint. Tests were exactly additive too (10059 + 22 + 38 + 7).
+
+### THE RESTART, AND WHAT ACTUALLY SURVIVED IT
+
+`resumeFromRunId` was useless twice over: it is same-session-only and the session was gone, and with zero
+completions journalled it caches nothing anyway. The precedent recovery script
+(`crush-round-54-recover.js`) fed committed diffs straight into review → fix — but that was built for
+lanes killed in the FIX stage, where implement was complete. Here implement was **five commits into
+thirteen items**: lane b had four of six items never started, lane c four of five. **A recovery shaped
+like the last one is a recovery shaped for the wrong failure.**
+
+So the recovery ran `Finish → Review → Fix`, handing each lane its own commit table with a
+`reviewed: nobody` column and a new mandatory first report heading, **`INHERITED WORK`**.
+
+**Two lanes died mid-edit and the supervisor committed their dirty trees verbatim as labelled WIP** —
+because a dirty lane root breaks a mutation harness's pre-flight (rule 19) and round 44 already destroyed
+~250 lines of a lane's own work with a `git checkout --` over uncommitted edits.
+
+🔴 **THE TRANSCRIPTS OUTLIVED THE AGENTS, AND THAT IS THE NEW RECOVERY CHANNEL.** The three killed
+agents' JSONL transcripts survived in the dead session's directory. Mining them **corrected three things
+the supervisor had asserted from the lane trees alone**:
+
+- that no lane had observed a baseline — **all three had**, each reproducing `10059 / 148589 / 1 / rc 0`
+  exactly and independently;
+- that lane c's hang watchdog had never been run — it was **green at `--filter`** (6 tests / 26
+  assertions) and already had a genuine known-positive, having fired on the lane's own first-draft
+  fixture and named the test;
+- that lane a's brief item 3 was outstanding — it was **done**, folded into the E456 edit.
+
+**The tree tells you what exists. It does not tell you what was measured.** Also recovered, and otherwise
+lost outright: two full mutation tables (six mutations killed in lane a, four in lane b, both controls
+correctly REFUSING a no-op), an undeclared brief deviation, a deferred batch-provider defect, and a
+committed figure-provenance defect in lane b — a docblock claiming numbers were "MEASURED this round"
+when the probe had never been run and the strings came from the round-55 backlog entry the agent had read
+an hour earlier.
+
+### E492 — THE ROUND SHIPPED ROUND 53's OWNERSHIP MAP AND NOT ONE LANE NOTICED
+
+The launched script's `OWNERSHIP` block described round 53's lanes — "candy-core descriptor census",
+"sugar-crush runtime bugs", "close the inheritance" — and listed files no round-56 lane touches. Lane b's
+two committed items live in `src/LSP/`, a directory the map does not grant it at all.
+
+**This is E416 recurring inside the very block whose own text warns about E416**, and which instructs
+lanes: *"if this map and your brief disagree, say so in your report."* All three transcripts were
+searched: `E416` and "ownership map" occur on **line 1 of each — the brief itself — and nowhere else.**
+
+**The measurement worth keeping is not the stale map. It is the rate.** A standing rule that names its own
+failure mode, cites the round it came from, and gives the exact reporting action fired **zero times out of
+three**. Any future rule that depends on a lane NOTICING a contradiction in its own brief should be
+assumed to fire at about that rate.
+
+**Two siblings, same cause:** the driver's `log()` line described round 54's items, and rule 24's
+scratchpad path pointed into a session that no longer existed. Re-checking a prepped script's FLOORS at
+launch is a check that exists and worked — it caught two defects. **It only covers the numbers. The prose
+rots the same way.**
+
+### WHAT THE LANES FOUND
+
+**Lane a — the two bugs the user hit.** E455 (the input box never wrapped) shipped with a six-row mutation
+table, all killed, control refusing a no-op. E456's `$onProgress` channel is keyed on `content === ''`
+rather than "has reasoning", deliberately, because the defect is a family: reasoning-only, tool-call-only,
+and VertexProvider's usage-only `message_start` chunks all had it.
+
+🔴 **The review's second MAJOR was NOT IMPLEMENTABLE, and the lane proved it rather than complying.** The
+prescribed fork-level test described a turn that cannot exist — `EngineBackend::complete()`'s own one-shot
+converts the case into a token frame before the child writes a result frame. Measured, not argued:
+deleting the parent's whole fallback is green across the **entire** suite. **That is the tenth wrong
+reviewer prescription across four rounds, and the second whose failure mode is "describes a state the code
+cannot reach".**
+
+The lane also found a mutation the review had missed one line from one it had flagged: the flagged
+survivor really is an equivalent mutant, but latching `$emitted` on the neighbouring `elseif` is **not**,
+and silently removes a documented retry guarantee for the one caller shape that has a progress sink and no
+token sink.
+
+**Lane b — the MCP/LSP remainder.** E474 turned out worse than its brief said, with evidence: `LspClient`
+is the only `src/` consumer of `isConnected()` and all ten call sites **cache** whichever answer comes
+back, so one desynchronised write becomes a permanently empty result. The long-standing "polite shutdown"
+objection to fixing it was aimed at the wrong method — `disconnect()` gates on `$this->initialized` and
+never went through the predicate at all. The review stage then found nine more against the lane's own
+work, including a `catch (\Throwable)` around a test body that was eating its own assertions.
+
+**Lane c — harness integrity, and the E490 lead that dissolved into something better.** The inherited
+"4.4 seconds unaccounted under `--filter PtyPoolReactLoop`" was **falsified**: re-derived via `--log-junit`
+the per-test times are 0.002 / 0.216 / 4.797 and sum to 5.016s against a reported 5.028s. Nothing was
+unaccounted for.
+
+What the 4.797s actually was mattered more. `testRapidCycleInsideLoopDoesNotLeakSignals` arms
+`Loop::addTimer(5.0, Loop::stop)` as a safety cap and never cancels it; it finishes in ~0.2s and leaves the
+cap armed on the **shared** loop, so the NEXT test's `Loop::run()` returns because the PREVIOUS test's cap
+fired — a pass for the wrong reason. **The periodic is the worse half:** it cancels itself only on reaching
+its iteration count, so a run that ended on the cap leaves a periodic armed forever, and `Loop::run()`
+never returns while one is armed. That is a hang, not a failure.
+
+🔴 **E490 IS STILL OPEN AND THE LANE SAID SO.** Its candidate — that this is the only file driving the
+shared `Loop::` facade with timers, and that what remains after a leaked one-shot is consumed is a shared
+loop waiting in `stream_select()` with no timeout at all, matching the one observed hang's `wchan
+do_select` with two `/dev/ptmx` fds open — is offered **as a candidate and not a conclusion**, because the
+hang has not reproduced. Side-prediction (a) holds.
+
+### HOW THE PREDICTION SCORED
+
+| claim | outcome |
+|---|---|
+| sugar-crush tests 10167 EXACT | ❌ **10126, −41** |
+| sugar-crush assertions ≥ 152,200 | ❌ **149182** |
+| skipped exactly 1 · rc 0 | ✅ |
+| candy-pty ≥ 614 tests | ✅ **630** |
+| candy-core / candy-flip / candy-mosaic unchanged | ✅ |
+| backlog 491 → 512–528 | ✅ **523** |
+| backlog conflicts 3×, one per lane merge | ✅ exactly |
+| a SECOND conflict in `sugar-crush/src/Runtime.php` | ⚠️ **did not happen** — correctly hedged as a risk, and lane b never touched the file |
+| (a) E490 not root-caused | ✅ candidate only, no reproducer |
+| (b) E455 fixable inside the renderer alone | ✅ `Renderer.php` only |
+| (c) at least one lane reports its brief wrong | ✅ all three did |
+| (d) the inherited work is the round's weakest surface | ✅ lane a's review found the `$emitted` latch unpinned in inherited code |
+| (g) the `PtyPoolReactLoop` gap explained without closing E490 | ✅ exactly |
+
+### NEW STANDING RULES
+
+- **38** — **a reviewer's prescription can describe a state the code cannot reach.** Tenth wrong
+  prescription in four rounds, second of this shape. Refute it with a measurement, not an argument.
+- **39** — **`catch (\Throwable)` around a test body swallows PHPUnit's own `ExpectationFailedException`**,
+  so the test passes while asserting nothing. Ten sites in eight files. Catch the specific class.
+- **40** — **an exemption keyed on PROSE can be bought with a sentence, and the fix's own comment will buy
+  it.** Key exemptions on structure — a trait use, a declared type, a token-stream fact — never on text.
+- **41** — **a surviving mutation may be an equivalent mutant, and that verdict does not transfer to its
+  neighbour.** When you excuse a survivor, mutate its neighbours before you move on.
+- **42** — **a prepped script's PROSE rots exactly like its numbers.** Re-read the ownership map, the log
+  line and every path in the rules block at launch, not just the floors.
+
+### ONE CORRECTION TO A STANDING FACT
+
+E457's headline was **wrong** and E516 corrects it. `grep -qv X` in an agent shell does not "always answer
+no" — it behaves as `! grep -q X`. The divergence that actually bites is that the shim passes
+`--ignore-files`, so **a recursive `grep -r` honours `.gitignore`** and silently cannot see `vendor/` or
+any ignored file. An absence census whose answer is load-bearing must call `/usr/bin/grep`. Audited: zero
+offenders in the tree.
+
+---
+
+## ROUND 55 — the prediction was exact on both numbers, and the round's biggest find is in a published library
+
+> **Reconstructed 2026-08-25, not written live.** Rounds 52–55 were closed in
+> `crush_code_RESUME.md`'s `0-NOW-*` blocks and never transcribed here; this entry and the two below it
+> are backfilled from those blocks plus `git log`, with every sha re-resolved against the tree. They are
+> thinner than a live entry because a `0-NOW` block is a handoff, not a record — what a lane measured and
+> did not put in the handoff is gone.
+
+**CLOSED at `b489405ba`, then `d38b644f4` after the E491 fix; from base `a8acfcc9`.** Three lanes, nine
+agents, zero errors.
+
+| package | floor at `d38b644f4` |
+|---|---|
+| **sugar-crush** | **10059 / 148589 / 1 / rc 0** |
+| **candy-core** | **842 / 7587 / 24 / rc 0** |
+| **candy-flip** | **83 / 227 / 2 / rc 0** |
+| **candy-mosaic** | **459 / 7753 / 6 / rc 0** |
+| **candy-pty** | **610 / 1408 / 16 / 1 warning / rc 0** |
+
+**The prediction was EXACT on both numbers** — 10059 tests and 148589 assertions, written before a single
+merge. Tests exact for the **thirteenth** consecutive round, assertions for the fourth. candy-core's skip
+drop 25 → 24 was predicted too. Merge conflicts: the backlog only, three times, exactly as predicted;
+every source set was disjoint.
+
+**Backlog 457 → 491.** Lane ids E458–E489, renumbered longest-id-first from provisional `Ea55-*`.
+Supervisor: E490, E491. Mid-round the user reported E455, E456 and E457 — the three that went on to shape
+round 56's lane a.
+
+### 🔴 E491 — A RETRY THAT HAD NEVER EXECUTED ONCE, IN A PUBLISHED LIBRARY
+
+`candy-pty`'s `PosixMasterPty::retryOnEintr()` carried **two** defects. Its EINTR detection could never be
+true — `Libc::errno()` reads 0 after an interrupted `stream_select()`, because PHP resets errno while
+raising its own warning first — so the retry had **never run**. And when it did run it restarted the
+caller's timeout instead of recomputing the remainder, so an interrupted wait could overrun its deadline.
+
+**It was found by writing the first test that ever CALLED the function.** Its only prior coverage asserted
+`method_exists()`. That is rule 36 stated as a measurement: a dead instrument and a working one produce
+identical green suites, and a test that only asks whether a method exists is indistinguishable from no
+test at all.
+
+**Second published-library find:** E462, a real fd leak — `PosixMasterPty::close()` called `dup()` and
+discarded the result, leaking one `/dev/ptmx` descriptor per pty that had been used. Measured linear over
+five cycles, with a control.
+
+### E453 CLOSED, AND THE LANE THEN FILED AGAINST ITS OWN FIX
+
+The `--unused` CI step exits 1 at `a8acfcc9` and 0 on the merged tree — verified independently, at both
+ends. It was fixed by **RECORDING** the `candy-kit` deferral in `extra.sugarcraft.deferred-wiring`, not by
+pruning the dependency (never remove dormant code — wire it or pin the dormancy). Lane c then filed
+E487/E488 against that fix, which is the behaviour the round wanted: the lane that ships a mechanism is
+the lane best placed to say what is still wrong with it.
+
+## ROUND 54 — a reboot and a session limit both in the fix stage, an exact prediction that argued against itself, and a third of the round reviewed by nobody
+
+**CLOSED at `49ae499e`, from base `606a131c`.** Three lanes. The round survived a host reboot **and** a
+session limit, both landing in the fix stage.
+
+| package | floor at `49ae499e` |
+|---|---|
+| **sugar-crush** | **9994 / 144819 / 1 skipped / rc 0** |
+| **candy-core** | **842 / 7573 / 25 / rc 0** |
+| **candy-flip** | **83 / 227 / 2 / rc 0** |
+| candy-mosaic | 459 / 7753 / 6 / rc 0 (untouched since round 52) |
+| candy-pty | 606 tests / 16 skipped / 1 warning / rc 0 — **assertions are NOT a constant here (E430); do not quote one as a floor** |
+
+Backlog **428 → 452**: lane ids E429–E449, supervisor findings E450–E452. Invariants at the merge: skipped
+exactly 1 · closure 18/18 · 3/3 · 6/6 by `is_link()` + `realpath()` prefix · `check-path-repos
+--no-lib-path-repos` rc 0 · config md5 `05480c743aff302fd6c06c5a4a4c2210` · zero tracked per-lib locks ·
+zero orphaned `php -S` **on a quiet tree** (E451 — the reading is meaningless while a suite runs).
+
+### 🔴 THE PREDICTION WAS EXACT, AND THAT IS PRECISELY WHY THE INSTRUMENT GOT CHECKED
+
+Predicted `9994 / 144819` before the first merge command; measured `9994 / 144819`. Tests exact for the
+**twelfth** consecutive round, assertions for the third.
+
+**But exactly-the-sum was the outcome the prediction argued AGAINST.** Lane b added 312 lines to
+`sugar-crush/src/MCP/StdioMcpServer.php`, a file lane c's widened `DescriptorInheritanceGuard` walks, and
+neither lane's suite had seen the other's half — the loaded rule-32 case. The prediction named three
+outcomes and expected the total to EXCEED the sum, or go red. It did neither.
+
+**A number landing where you predicted is not evidence when you predicted it would not land there.** So
+the guard was checked rather than trusted: it **does** roster `MCP/StdioMcpServer.php::start`, so it is
+alive on the rewritten file. The count did not move because lane b's addition is a stderr **drain**, not a
+new rostered spawn site. Genuine outcome, live instrument. **Do this every time a semantic-conflict
+prediction resolves quietly** — a silent census and a dead census produce identical numbers.
+
+### 🔴 E450 — A REVIEW IS A SNAPSHOT OF A TREE THAT NO LONGER EXISTS
+
+When a fix agent is killed and relaunched it receives the same review it would have got originally — of
+the tree as the *implementer* left it — plus a brief saying "do not redo committed work". Measured at this
+merge: **six of lane c's thirteen commits and nine of lane a's seventeen had been reviewed by nobody.**
+The brief pointed at the findings list, which is the surface that *has* been reviewed. Lane c found this
+itself and said so.
+
+**If you relaunch a killed fix agent, state the review's tree position in its brief** — `written at <sha>,
+N commits over base; HEAD is now M commits over` — **and make reviewing the M−N unreviewed commits its
+first task**, or re-run the review against current HEAD. A stale review is worse than none, because it
+looks authoritative. (Round 56 inherited this directly: its recovery briefs carried a `reviewed: nobody`
+column for exactly this reason.)
+
+### 🔴 E452 — `resumeFromRunId` CANNOT RECOVER A `pipeline()` ROUND
+
+Resume replays the longest unchanged **prefix** of `agent()` calls, and under `pipeline()` the call order
+is set by completion times, so the prefix cannot be reproduced. Measured this round: it replayed the three
+implements from cache and then started three **review** agents, including one for a lane whose fix had
+already landed.
+
+**The recovery that works:** read the round script as text, truncate at its `phase('Implement')` line,
+rewrite `export const meta` → `const meta`, `require()` it, and call the real `fixPrompt` with the cached
+stage results pulled out of `journal.jsonl`. That regenerates each prompt byte-identically (verified at
+53,445 and 51,840 chars). Emit only the missing agents into a fresh script; leave completed lanes alone.
+Preserve uncommitted work with `git stash create` + `git update-ref refs/rescue/<tag>` — into git, without
+committing red and without disturbing the working tree.
+
+**The recipe was dry-run against round 55's own script while that round was healthy and nothing needed
+recovering** — a known-positive control (rules 15/25), because a recovery tool is exactly the instrument
+you cannot test at the moment you need it. Two gotchas: the lane objects key on **`key`**, not `id`, and
+`node --check` on a workflow script fails with "await is only valid in async functions" (expected — the
+body runs in an async context), so wrap it in `async function __w(){ … }` first.
+
+🔴 **`/tmp` DOES NOT SURVIVE A REBOOT.** Everything under `~/.claude` did — lane commits, the round script,
+the journal, per-agent transcripts. `/tmp` took the staged sweep script and every lane scratchpad.
+Anything a round needs across a reboot belongs in git or under `~/.claude`. And a relaunched agent can find
+a **predecessor's** files in its scratchpad namespace (E427 spanning a kill), so a bare `out.txt` read or
+an `until grep -q` wait there can be satisfied by work that is not yours.
+
+## ROUND 53 — the merge went red exactly where the prediction said it would, and the guard that caught it was the thing that was wrong
+
+**CLOSED at `606a131c`, from base `cb0a7c69`.** Merges `3fa60ce7` a, `52e51e62` b, `5a1381bf` c; renumber
+`3074d2ec`; merge-collision fix `b8808d5a`.
+
+| package | floor at `b8808d5a` |
+|---|---|
+| **sugar-crush** | **9946 / 144269 / 1 / rc 0** |
+| **candy-core** | **819 / 7390 / 25 / rc 0** |
+| **candy-flip** | **83 / 227 / 2 / rc 0** |
+| candy-mosaic | 459 / 7753 / 6 (untouched) |
+
+Backlog **394 → 428**: lane ids **E395–E426**, supervisor E427/E428. Skips must stay exactly 1 —
+`MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails` — and **E413 warns that
+`BackgroundSupervisorReapTest` moves that count off 1 on any non-Linux runner.** Orphaned `php -S` servers
+counted the honest way per **E428**: the old `pgrep` spelling answers 1 on a clean host by matching itself.
+
+**Tests predicted EXACTLY for the ELEVENTH consecutive round — 9943 at the merge — and the assertion lower
+bound landed EXACTLY on the bound for the second round running (144262).** The final floor is
+`9946 / 144269` because the merge went red and the fix added three fixtures. **The 9943/144262 figure is
+the prediction's verdict; 9946/144269 is the floor.** Those are two different numbers answering two
+different questions, and collapsing them would have retroactively scored a correct prediction as a miss.
+
+### 🔴 THE RED MERGE WAS PREDICTED, ON THE EXACT PAIR
+
+Written before the first merge: *"c's scanner files merge CLEANLY as text and the merged sugar-crush suite
+may still go RED … RULE 32 IS LIVE HERE."* It did — lane c's `DescriptorInheritanceGuardTest` against lane
+b's `Providers/ClaudeCodeProvider.php`, with **zero textual conflict**.
+
+**And the finding was a FALSE POSITIVE: the scanner was what was wrong.**
+`ChildLifetimeScanner::classifyLocal()` judged conditionality by brace depth alone, so it said of a reaper
+sitting in a generator `finally`: *"runs only inside a nested block, so it does not cover every path out of
+this function."* That is flatly false about `finally` — the one nested block that runs on **every** path
+out, including the case lane b's own comment documents, a consumer that `break`s out of the `foreach` and
+destroys the generator mid-body.
+
+🔴 **This is where RULE 33 comes from: when a guard offers you an exemption row, ask first whether the CODE
+is correct — if it is, the CLASSIFIER is the defect.** The guard's failure text offered two blessed
+resolutions (name the fds, or add an `ACCOUNTED_FOR` row). Both were wrong here. **An exemption row written
+for correct code is where the next real offender hides.** The classifier learned the rule instead, pinned
+in both polarities: closer in `finally` → short; closer in `if` inside `finally` → unclassified; closer in
+`finally` inside a `foreach` → unclassified. Dropping the new arm reds 2 tests.
+
+**And the fixtures were wrong before the scanner was.** The first two both wrote `return $this->pump($h)`,
+which makes the handle an escape and reads `long`. A fixture whose expected value the instrument cannot
+produce is not evidence about the instrument (rules 15/25).
+
+### 🔴 WHAT ROUND 53 PROVED ABOUT THE DELIBERATE b/c OVERLAP
+
+Lane c caught, on its own, a merge instruction **it had written itself** that would have deleted
+`BackgroundSupervisor::spawnSession` from the guard roster, on the grounds that lane b now reaps it
+unconditionally. Re-measured against lane b's actual head: the happy path calls `reapIfExited($proc)` and
+`terminateAndClose` appears only in the throw branch — **the arithmetic was right and the mechanism
+inverted.** Left alone it would have silently deleted E366's own HIGH from the guard built to catch it.
+**Fourth consecutive round in which the deliberate b/c overlap found something neither lane could see
+alone.**
+
+
+## ROUND 52 — CLOSED (`cb0a7c69`, floor `9860 / 143784 / 1 skipped / rc 0`, THREE lanes)
+
+> **The close-out below was backfilled 2026-08-25** from `crush_code_RESUME.md`'s `0-NOW-53` block. The
+> section after it is the LAUNCH brief, left exactly as it was written before the round ran — it is the
+> only surviving record of what the lanes were asked to do, and it is not a record of what they found.
+
+### THE CLOSE
+
+| package | floor at `cb0a7c69` |
+|---|---|
+| **sugar-crush** | **9860 / 143784 / 1 / rc 0** |
+| **candy-core** | **807 / 7288 / 25 / rc 0** |
+| **candy-mosaic** | **459 / 7753 / 6 / rc 0** |
+
+Merges `3e67a995` a, `ddc343f6` b, `dba03fa4` c; renumber `cb0a7c69`. Skips must stay exactly 1 —
+`MCP\McpClientTest::testLoadConfigReturnsEmptyArrayWhenFileGetContentsFails`. 18/18 closure by
+`is_link()` + `realpath()` prefix; `check-path-repos --no-lib-path-repos` rc 0; config md5
+`05480c743aff302fd6c06c5a4a4c2210`; zero tracked per-lib locks; zero orphaned `php -S` servers.
+
+Backlog **364 → 394**: E365–E367 landed on master mid-round, lane ids are **E368–E392**, and E393/E394 are
+the round's process findings.
+
+🔴 **Tests predicted EXACTLY for the TENTH consecutive round — and the assertion LOWER BOUND landed
+EXACTLY on the bound for the first time: 143784 predicted, 143784 measured, looseness ZERO.** Every prior
+round the bound had been loose, because additions that fall inside a census PREDICATE inflate it; E354,
+filed this round, is the mechanism, and quantifying it is what later converted bounded assertion
+predictions into exact ones.
+
+### THE LAUNCH BRIEF (written 2026-08-24, before the round ran)
+
 
 **Launched 2026-08-24.** Base floor `9730 / 143168 / 1 skipped / rc 0` observed at `b9abd2fb`, clean, no
 60s aborts. Lane dirs verified across all three packages this round touches — sugar-crush 18/18,

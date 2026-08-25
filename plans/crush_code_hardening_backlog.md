@@ -15704,3 +15704,102 @@ does not exist.
 exemption with the falsifiability filed off. Every roster in this tree that carries a "we deliberately do
 not look here" row should be checked for the same hole — the standard was already being applied to
 `UNREADABLE_IN_LIBS` two functions away in the same file, and simply had not been applied here.
+
+## Round 55 — supervisor. E490.
+
+### E490 — 🔴 candy-pty hung INDEFINITELY on the merged tree, once in two takes, and a hang is invisible to CI as anything but a timeout
+
+**Observed 2026-08-25 by the round-55 supervisor** while measuring the merged floor at `b489405ba`.
+Severity: intermittent, unreproduced, and deliberately filed anyway — see rule 14.
+
+**Take 1 (hung).** `vendor/bin/phpunit` in `candy-pty` stalled at roughly **363 of 608** and never
+advanced. Evidence collected from `/proc` while it was still wedged, rather than inferred afterwards:
+
+- `State: S (sleeping)`, `wchan: do_select` — blocked in a select, not spinning.
+- **Two `/dev/ptmx` descriptors open** (fds 5 and 6).
+- A `sleep` child reaped every few seconds, an unbroken run of `<defunct>` entries — so a poll loop was
+  running and its exit condition never became true.
+- 0.1% CPU across nine minutes. Killed by PID at 08:52 elapsed. The last thing on stdout was a fixture
+  printing `hello`, which points at an echo round-trip integration test.
+- stdin was a **socket, not a tty**.
+
+**Take 2 (green, 37 seconds).** Same commit, same tree, same non-tty stdin, `--testdox`:
+`608 / 1401 / 16 skipped / 1 warning / rc 0` — **exactly** lane a's reported figures. So the merged floor
+stands and the round is not blocked. But the hang was real, and it happened first.
+
+🔴 **Why this is worth an id rather than a shrug.** A test that FAILS is reported. A test that HANGS is
+reported as nothing at all: locally it looks like a slow suite, and in CI it looks like a job timeout with
+no failing test named. This suite is also exactly the one round 55 rewrote — `ResizeRaceTest` (E459,
+timing-derived assertions removed) and `PosixMasterPty::close()` (E462, the `/dev/ptmx` leak). Two
+`/dev/ptmx` fds held open by a wedged process is the same resource E462 is about, which is suggestive and
+is NOT evidence. One occurrence in two takes is not a diagnosis.
+
+**STEP:**
+
+1. Re-run `candy-pty` alone in a loop — 20+ takes, non-tty stdin, capturing `--testdox` so the LAST NAMED
+   test is recorded on every take. Get the failing test's name before theorising about the cause.
+2. **Compare against `a8acfcc9`**, the pre-round base, under the same loop. If the base hangs too, this is
+   pre-existing and E459/E462 are exonerated; if only the merged tree hangs, it is one of those two.
+3. Whatever the outcome, this suite needs a **bounded wait**: an integration test that polls a pty with
+   `sleep` and no deadline can only ever hang, never fail. That is the defect class, independent of which
+   test is holding the descriptors.
+4. Note for whoever runs step 1: `timeout` does not reliably kill a wedged PTY/FFI child. Spawn a
+   watchdog that kills the ONE recorded pid and nothing else — a global `pkill` is prohibited here.
+
+### E491 — 🔴 `retryOnEintr()`'s EINTR detection could never be true, so candy-pty has NEVER retried an interrupted select
+
+**Measured 2026-08-25 by the round-55 supervisor** while writing the first behavioural test the helper
+has ever had (see [[E490]]). Severity: a signal turns an ordinary wait into a thrown exception, in a
+library whose entire job is talking to processes that send signals. **Fixed, mutation-checked.**
+
+`PosixMasterPty::retryOnEintr()` exists to retry `stream_select()` when it is interrupted; its docblock
+explains the design at length. It decided EINTR with `Libc::errno() !== Libc::EINTR`. **Measured, PHP
+8.3.6, reading errno on the line immediately after the call:**
+
+```
+stream_select returned: false after 1.00s      <- interrupted by SIGALRM
+Libc::errno() right after: 0   (EINTR = 4)     <- NOT EINTR
+error_get_last(): "stream_select(): Unable to select [4]: Interrupted system call (max_fd=4)"
+```
+
+PHP raises its own warning before returning, and that path resets the C-level errno before any userland
+code — an FFI shim included — can read it. So the guard was always true, the function returned `false` on
+every interruption, and **the retry loop had never executed a single time.** `read()` turns that `false`
+into `throw new PtyException('read.select_failed')`, so a plain SIGCHLD from a reaped child could surface
+as a fatal read error.
+
+**Why 55 rounds did not see it.** The helper's only test asserted `method_exists()` and inspected a
+`ReflectionMethod`, under a comment conceding *"We can't actually call retryOnEintr with invalid args due
+to by-ref signature."* Nothing ever CALLED it. A dead instrument reporting green — the same shape as
+[[E451]] and rule 35, now found in `src/` rather than in the harness.
+
+**FIXED** by reading the errno PHP still reports, in the warning text, and matching it NUMERICALLY:
+`/Unable to select \[(\d+)\]/` compared against `Libc::EINTR`. The strerror string is locale-dependent and
+"Interrupted system call" is not a stable token; the bracketed number is. `error_clear_last()` runs before
+each `stream_select()` so the message inspected is that call's. The errno read is KEPT and tried first —
+it is correct wherever it works and this is a fallback, not a replacement (rule 6).
+
+**A SECOND defect in the same function, fixed in the same commit.** The retry re-passed the caller's
+ORIGINAL `$sec`/`$usec`, so every interruption restarted the full wait. All three production callers pass
+a finite timeout (`MultiPump`, `PosixPump`, `read()`'s select arm), so all three could be stretched past
+their own deadline without bound by signals arriving faster than the timeout — which is exactly what a
+suite reaping children generates. A finite timeout is now a deadline computed once, with the remainder
+recomputed per retry; expiry returns `0` (nothing ready), never `false`, because callers turn `false` into
+a thrown exception and an expired deadline is not an error. A null timeout still means "block until
+ready" and is retried unchanged.
+
+**Acceptance is a mutation of THE FIX (rule 16), both halves independently:** reverting EINTR detection to
+errno-only KILLED it; disabling the deadline recompute KILLED it (3 s deadline → ~6 s wait). Restored:
+green. The timing test is the proof the retry runs at all — it now completes in **3.03 s for a 3 s
+deadline across three interruptions**, which the pre-fix code could not do in either direction.
+
+**The new test is gated, and the gates were chosen by measurement, not by copying.** This host has
+`pcntl_alarm` but NOT `pcntl_setitimer` (nor `ITIMER_REAL`), so the first draft — written against
+`setitimer` — SKIPPED SILENTLY and was worth nothing. Whole-second alarm granularity is why the deadline
+under test is 3 s rather than 1 s. The null-timeout arm is deliberately ungated so something still runs
+where the EINTR arm must skip.
+
+candy-pty after the fix: **610 / 1408 / 16 skipped / 1 warning / rc 0** (was 608 / 1401 / 16).
+
+**STILL OPEN:** this does NOT explain [[E490]]'s hang. A missing retry throws, it does not block. E490
+stays open on its own evidence.

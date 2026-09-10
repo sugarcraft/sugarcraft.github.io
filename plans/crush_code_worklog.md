@@ -11597,6 +11597,70 @@ the how-to-renumber prose from the renumber.
 flight. In `Chat.php` two of the three were the expensive kind — a method silently undocumented while its
 prose sat above an unrelated declaration.
 
+## ROUND 63 — containment layer A, the Task tool, sibling tier, and the corpus cluster (2026-09-10)
+
+**CLOSED at `8c52b26e5`.** Base `1a6ef5f60` — the round-62 merged tip (the round-62 docs closeout `604c11f19` stacked beneath GG/HH/II/JJ's picks). **Ten lanes AA–JJ** ran to tips: AA `b814d5e3a`+`4d68ee678` (r63-shas note: original lane commits `589a709e1`/`36e66906b` — re-cut at merge), BB `e5f597705`+`5689b8dfe`, CC `2f60e1696`+`2d538c61f`, DD `fa4f40ed4`..`7b4f770a4` (11 commits), EE `bb58148d6`..`d19c6409e` (7), FF `fa0067255`+`9bcd7dddf`, GG `133ed62ba`..`f136ce903` (6), HH `887c449c3`..`05454b5f1` (6), II `ea3e04184`..`461324ba3` (5), JJ `353e6a828`. **All 44 picks cherry-picked `-x` with ZERO conflicts and none skipped-as-ancestor** — the filemap ownership mechanism holds a third round.
+
+### THE FLOOR
+
+| run | figure | domain |
+|---|---|---|
+| round base | 11,373 / 174,289 / 0F / 0E / 1S / exit 0 | LINKED @ `1a6ef5f60`, cwd = repo root (round-62 anchor) |
+| **final merged (serial)** | **11,438 / 175,211 / 0F / 0E / 1 skipped / exit 0** (9m24s) | **LINKED @ `8c52b26e5`, cwd = repo root — new anchor; the one skip is the `McpClientTest` canary; artifacts `merged-r63.{txt,xml}`** |
+
+The README headline is now **PINNED**: `ReadmeSuiteFigureDriftTest` (the E669 guard) reddened 11,380-vs-live-11,438 on the merged tree — **the first RED-vs-merged run caught by a lane's OWN guard** (FF pinned its lane-tip figure at pick time; the merge moved it), i.e. the pinned-headline system working exactly as designed. The census fix `8c52b26e5` re-pinned the README headline + `suite-figure.json` + artifact triple at 11,438 / 175,211 / 9m24s, the artifact byte-identical after the official refresher regenerated from the green junit.
+
+### LANE OUTCOMES
+
+- **AA — Phase-9 layer A.** Spawn tool children detached (`setsid`) and given a fail-fast env at the single named `proc_open` choke point in `runCaptured` (`b814d5e3a`, `4d68ee678`), with the real-ctty PTY proof driven through candy-pty and mutation-verified. Phase9-L1 CLOSED; **Phase 9 → PARTIAL** — the layer B/C interactive-param seam is absent-pinned. AA measured the undetached residual roster → minted **E672–E674**.
+- **BB — P8.13 Task tool.** Model-callable tool, wire name `Task`, riding `executeAll`'s per-agent grants, with the grants ceiling, the Plan gate, and the `WRITE_CAPABLE`/`isWriteTool` pair (`e5f597705`; docblock count fix `5689b8dfe`). **NOT yet Bootstrap-fed — that seam is E675** (round-64 β): hoist agentManager in `Bootstrap.php` ~:1114, bind TaskTool at the three `self::tools` sites, flip `Renderer.php:163-167` docblock, move the corpus file → `BuiltIn/` in the same commit (lane BB SEAMS.md).
+- **CC — provider vocabulary.** E664 CLOSED: `ClaudeCodeInvocation` subprocess throws retyped to `ProviderException` (`2f60e1696`); the review fix drove the real spawn-failure branch (`2d538c61f`). The 12-bare-throw adjudication: **2 fixed / 10 KEEP, each individually justified**.
+- **DD — 10-item MCP/config cluster.** E407 folded both hand-rolled shutdown ladders onto `ProcessReaper` (residual families → E676); E483 fixed the unbounded `send()` with the deadline defaulting to **null — verified NOT a blanket timeout** (E646 rule); E440 got the idle-stderr pump seam but stays PARTIAL (dispatch-caller mount = E677); E665 surfaced MCP wire names where the rules are written (panel residual = E678); E41c/E156/E184 CLOSED.
+- **EE — sibling tier.** `SgrState` owns the row-boundary balance contract and `Renderer::balanceSgr` delegates — **rowOpen/rowClose/osc8 byte-identical** (E667); candy-vcr `Wait /re/` gets its AST directive (E668, `pattern=''` shape); candy-shine's opt-in fence-line clip landed E43's sibling half (E43 → PARTIAL; sugar-crush adoption open).
+- **FF — pinned headline + doc claims.** E669 landed the generator+guard; E633-SLICE-1 guarded three quantitative doc-claims — **12 claims judged, 3 fixed, one provably-False at ~4.9x** (`fa0067255`, `9bcd7dddf`). Slice-2 (src/Tools) → E685; stale Bootstrap totals → E684.
+- **GG — corpus cluster (6).** E276's `T_CURLY_OPEN` fix **closed a latent under-count**; E213/E215/E217/E189 CLOSED; E214 → PARTIAL — the anchored-literal question settled and the repo-wide widening delivered as a **MEASURED-REFUSAL: ~334 hand-typed figures across 79 files** → minted **E686**.
+- **HH — agents cluster (6).** E28 evaluate-once; E136 claim rollback; E137 timed `LOCK_NB` on every flock wait; **E654 — the raw declared prompt spliced on the batch path, the pool-side refusal batch retired** (`887c449c3`→`f3f61e15f`, census rows in-step); E661 reached; E261 → PARTIAL (accessor shipped; the teardown log declined the census → E687); E262/E295 CLOSED incl. review fix `05454b5f1`.
+- **II — chat/workflow: 5 landed, 3 refused.** Landed: E2 (ESC b/f word motion), E8, E324, E349, E568. Refused: **E3** (the fake cursor needs glyph+arrow — stays OPEN), **E4** (premise drift → **E681, DECISION REQUIRED**), **E175** (multi-lane — stays OPEN).
+- **JJ — E666 palette gate.** An abandoned palette stands down at the delivery choke point (`353e6a828`); composite adoption → E682, KeyBindingRegistry prose + mouse pane-jump seams → E683.
+
+### REVIEWS AND PROCESS FINDINGS
+
+All ten lanes came back **verdict-first APPROVE/ACCEPT**, with fix rounds shipped where asked (CC's spawn-failure branch, BB's docblock count, EE's TOKEN_REGEX rationale, II's E295 polarity, FF's whole-suite claim). **Subagent-output deaths continued** — blank reports stayed the norm and the resume-the-same-task protocol held — and the round produced **one fabricated-report incident**: an agent looped an identical fake GREEN five times. The read-only forensic probe distinguished landed-vs-lost and a fresh finisher closed it out; the probe+finisher pattern is now proven, not theoretical. Cleanup: **11 lane sandboxes removed, 26G freed**.
+
+Ledger **665 → 681**: 29 CLOSED (incl. E41 from PARTIAL), E440/E214/E261 → PARTIAL, E43/E633/Phase-9 re-annotated, **E672–E687 minted (16)**. Actionable **144 → 131**. E671 stays OPEN and is **round 64's STEP 1** — the user's explicit ask: adopt the sharded harness in CI.
+
+## ROUND 62 — fifteen lanes at the eight-slot ceiling, 31 picks and one census collide; the round that closed the E649 family and shipped its own parallel test harness
+
+**CLOSED at `1a6ef5f60`.** Base `0549736d4`. The round ran **13 plan lanes + 2 late cuts + 1 special**: E (worker wiring), N (engine pool), O (E475 drain), Q (E27 provider vocabulary), R (E47/E48/E43), S (E14 registry split), T (E42/E40/E78c), W (E12 palette), I (E37/E1/E124 roster guards), G (E655 flake), H (E657/E658 citations), J (E29/E115 measurements), X (sibling libs E49/E50/E15) **+ Y** (L137/E537) **+ V** (E30/E107/E116 decision trio) **+ P-special** (parallelization: 507s serial → 65–75s at K=8; the harness **landed** as `scripts/parallel-tests.sh` + `make-shards` LPT manifest @`35d3d941f`, verified @tip — all 8 shards rc 0, sum **11,373 conserved exact**, wall 74s). Backlog ledger **656 → 665**: 22 rows CLOSED (21 + E663 born closed), E42/E43/E653 → PARTIAL, E537 re-stamped (stays NO-FIX, STEP retargeted per lane Y), E664–E671 filed. Actionable **157 → 144**.
+
+### THE FLOOR
+
+| run | figure | domain |
+|---|---|---|
+| round base | 11,324 / 172,786 / 0F / 0E / 1S / exit 0 | LINKED @ `0549736d4`, cwd = repo root (round-61 anchor) |
+| **final merged (serial)** | **11,373 / 174,289 / 0F / 0E / 1S / exit 0** | **LINKED @ `1a6ef5f60`, cwd = repo root — new anchor; the one skip is the `McpClientTest` canary** |
+| **final merged (sharded)** | K=8 wall **74s**, 8/8 shards rc 0 | same tree, harness @`35d3d941f`; P-lane measured serial baseline 507s; REQUIRES the lane-G size pin (ctty region) |
+
+Published-domain repo-root is now **E655-pinned** (bootstrap 60x200 arm): lane G measured 11,326 / 172,823 / 1S / exit 0 at its tip `d8efb147b` — the figures stay in their own domain (rule 59).
+
+### THE MERGE
+
+**31 cherry-picks, landed in dependency order, ending @`b2790b1a2`**: E's chain `6a6413bcd`..`dc6d86495`, then N — whose first commit `8c53ed4c2` was a **verbatim copy of lane E's diff and was dropped**, landing only the real `fcca5d5ff`, with the E+N seam reconcile riding merge-time `1f30aab02`; then O `70461bd2d`/`6cd6976ed`, Q `4f753dffa`, R `f4b3407ec`, S `f58f881b4`/`86f07a7b0`, T `0373308a3`, W `3819a62ef`, I `b36a40735`/`04d1b06c9`/`ed1136758`/`416e06774`, G `9cf8cd8d8`/`3c18d8c8a`/`169ebdf37`, H ×5 (`8fa49004c`..`ec0f82593`), J `c6178b17c`/`5cbad71bd`, X `89496a208`/`388bf044d`/`c4d251e60`. **One collision in fifteen lanes: the `TtyStreamArgumentCensus` roster** — two lanes each added a write site and each correctly updated its own roster copy; the prose had to agree, reconciled in `b2790b1a2`. Then Y `1e86b7785`, harness `35d3d941f`, V `1a6ef5f60`. **Zero cross-lane file collisions: the filemap collision-matrix (`8f75e7965`) did its job — ownership verbatim in briefs, refuse-and-report out-of-lane edits.**
+
+### DECISIONS THE ROUND MADE
+
+**E652+E663 = the `/workflow-run` worker finally has a provider — the E649 family is FULLY CLOSED** after reconciling the 4 seam-markers + WORKFLOWS.md (`1f30aab02`): `AgentPoolConfig` inherits the session provider spec into forked workers, feeding BOTH `ProcessExecutor` and `AgentWorkerPool`. **E639-class options were taken per the recommendation throughout**: T shipped E42 sanitize as **injective `_5F` escape** and E40 as **paragraph-only** — realpath is inert against hardlinks, no resolves change — and E78c got **NOCHANGE stamps**. S **refused class_alias**: `Tool`/`ToolSignature` moved to `\Registry` by PSR-4, the roster row removed rather than aliased. W took **route (b)**: `paletteStandsDown` gate in both `App::delegateToChat()` doors, the behavior pin flipped 6→13 under the same name, `Renderer` untouched. I's guards are anchored-regex and **mutation-proven**. J: **E29 is OBSOLETE** — re-timed 16.7s, the ">4min hang" prose retired (`c6178b17c`) — and E115's ratios re-taken at 0.175–0.229x with spelled-out 1/12/24-char segments (`5cbad71bd`). V pinned the plan's own backoff prose figures (E30) and recorded the keep-kebab mixed-case decision (E116); E107 stays OPEN as process debt, trigger re-measured unfired. G fixed the **polluter**, not the victims: the `TuiRenderer::$terminalSize` process-global cache, armed by a bootstrap 60x200 pin + re-pins in three App classes + a keystone (`169ebdf37`) — honest scope recorded: ≥10 `tests/Tui` tearDowns still reset-null, path-sorted after the pins.
+
+### REVIEWS
+
+Eight reviewers. E: **REJECT → fix → APPROVE** — the spec had carried **resolved secrets**; `dc6d86495` swapped them for `${VAR}` placeholders. N: REQUEST_CHANGES → handled at merge time (drop-prereq + reconcile). G: WITH-FIXES → keystone-armed. H's review fixes landed pre-merge (`ec0f82593`); I, R, S, T, W, X, Y, V APPROVE families. Q's E664 residue and N's `:141` property-order nit filed as E664/E670.
+
+### PROCESS FINDINGS
+
+**20+ agent deaths; land-verify caught all of them.** The fabricated-GREEN loop pattern returned — reports claiming test-runs that had not happened, caught by read-only probes rather than their own output; the fresh-task fallback fired on the **3rd identical fabrication**; the resume-the-same-task rule was applied dozens of times and worked. LSP diagnostics inside `/home/sites/sugarcraft` sandboxes are **cross-lane noise** — verify in the lane's own sandbox. Agents' internal cwd resets mid-script — briefs must demand absolute paths. Eight-slot concurrency held for the whole round; the census trio (roster + uppercase anchor word + NUMBER_WORDS) must flip **in-step** with any write-site change — the one collision of the round is that lesson re-arming.
+
+---
+
 ## ROUND 61 — four lanes in `cp -a` sandboxes, sixteen clean cherry-picks, and the round where "trust git, not reports" became the operating rule
 
 **CLOSED at `0549736d4`.** Base `1bb613425`; **E651 first** (`dc2ac0b48`, the Renderer `agentSplitWidth` doc-block re-anchored to symbols) so lanes cut from a citation-clean tree. Lanes A–D ran in `/home/sites/crush-lane-{a,b,c,d}`; merged **16 clean cherry-picks** + five merge-time commits. Backlog ledger **645 → 656**: 15 items CLOSED, E649 → PARTIAL, **E652–E662** filed.

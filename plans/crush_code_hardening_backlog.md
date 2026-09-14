@@ -859,7 +859,7 @@ records them as **survivors**.
 
 ## E. Deferred UX / correctness follow-ups (not security)
 
-### E1 [OPEN] — issue #88: the README's whole-suite figure
+### E1 [CLOSED] — issue #88: the README's whole-suite figure
 
 - **What** `README.md` advertises a test/assertion count that is many commits
   stale.
@@ -1056,9 +1056,9 @@ records them as **survivors**.
   time on the line number. See *Unresolved references*.
 - **Blocked on** Reconstructing the finding.
 
-### E10 [PARTIAL] — tracker #78: `Doctor::name()` is lowercase where nine sibling tools are TitleCase
+### E10 [CLOSED] — tracker #78: `Doctor::name()` is lowercase where nine sibling tools are TitleCase
 
-**PARTIAL ROUND-69 (fc, same SHAs):** record branch shipped — lowercase `doctor` pinned intentional at Doctor.php:45 + BuiltInToolTest.php:194 (assertion byte-unchanged). Rename half stays blocked on the tool-schema owner; seeded to round-70 gc. Evidence: triage E10, fc REPORT.
+**Closed ROUND-70 (lane gc `9de0e3fd6` → pick `d7be5733f`) — DECIDED keep-lowercase, ZERO code:** the row's own evidence (model trained on "doctor"; tracker #78 "belongs to whoever owns the tool schema") favors the status quo. fc shipped both rationale pins (Doctor.php:45 + BuiltInToolTest) and gc — holding the round's providers/tool-file ownership — confirmed NO reversal, exactly matching the row recommendation. The inconsistency stays recorded, deliberately. Evidence: gc REPORT, triage E10, worklog ROUND 70. **Prior PARTIAL (fc round-69, same SHAs):** record branch shipped — lowercase `doctor` pinned intentional; rename half seeded to round-70 gc.
 
 - **What** The tool-schema name is `'doctor'` while the other built-in tools are
   TitleCase.
@@ -1140,7 +1140,7 @@ records them as **survivors**.
   already uses.
 - **Blocked on** Nothing.
 
-### E14 [OPEN] — `src/ToolRegistry.php` declares its own `SugarCraft\Crush\Tool`
+### E14 [CLOSED] — `src/ToolRegistry.php` declares its own `SugarCraft\Crush\Tool`
 
 - **What** A second class literally named `Tool` in the root namespace, one `use`
   statement away from colliding with the tool **interface** every built-in tool
@@ -1160,7 +1160,7 @@ records them as **survivors**.
   decision to the human review it is already queued for.
 - **Blocked on** Nothing for the rename; the consolidation decision is separate.
 
-### E15 [OPEN] — tracker #81: port the vhs lexical grammar into `candy-vcr`
+### E15 [CLOSED] — tracker #81: port the vhs lexical grammar into `candy-vcr`
 
 - **What** `candy-vcr/src/Tape/Lexer.php` has no JSON token and no regex token,
   so it does not implement upstream vhs's real grammar.
@@ -1604,7 +1604,11 @@ fixture. What is left after the correction is a narrower but real dead end.
 
 ---
 
-### E25 [PARTIAL] — project-scope memory entries are user-authored text folded into the system prompt
+### E25 [CLOSED] — project-scope memory entries are user-authored text folded into the system prompt
+
+**ROUND-75 renote (ops half landed):** jb (lane `c79d69cfd` → pick `90b7d1ae7`) shipped the per-id memory ops — `Chat::memoryLocate()` resolves an id repo-store-FIRST and hands back the OWNING store, so `/memory delete` and `/memory edit` mutate the entry the prompt actually showed (fixes the r74 self-contradiction: capture folds repo-first; absent repo store degrades byte-identically home-only; response wording byte-unchanged; +5T, r75-rv-jb APPROVE 0C/0M). The DISCOVERY + BULK remainder is **E694** (minted at r75 closeout WITH the orchestrator bulk-clear ruling: no project-scope bulk clear — per-id only). The agent-facing memory tool stays GATED (E694 step 3 on E25 re-severity review + built-in-tool corpus census).
+
+**CLOSED ROUND-74 (lane if `da38ed361` → pick `72079870d`, companion `96c01bbab`; reviewed BEFORE merge, r74-rv-if APPROVE 0C/0M/3MINOR):** piece-2 shipped — `src/Context/ProjectMemoryWriter.php` writes repo-local PROJECT-scope notes at `<root>/.sugar-crush/memory/` (`forRoot` READ resolver never creates, '' root refused; `createForRoot` mkdir 0700 + POST-mkdir `ContainedPath::below` gate — load-bearing because mkdir writes THROUGH a pre-planted symlink; empty/8192-byte write guards — an oversized note REFUSES at the project store where home accepts, the loud asymmetry disclosed in `docs/MEMORY.md`); `MemoryBlock::capture(?projectStore = null)` folds repo-local first, wins id collisions; `Chat::memoryAdd()` routes project-first. This entry's severity premise ("rises only if a future writer can reach PROJECT scope") is now reality BY DESIGN — operator-authored, repo-local, the same sentinel corner imports use. Seams left for the r75 jb design decision (no blind mint): list/search/delete/clear/edit stay home-only (**E694** candidate); null home store ⇒ no fold even with repo notes (memory off = off); no agent-facing memory tool. Prior state:
 
 - **What** Since crush_code.md Phase 5 item 9, `Context/MemoryBlock` renders every
   PROJECT-scope `MemoryStore` entry into a `<project-memory>` fence inside the
@@ -1683,7 +1687,7 @@ fixture. What is left after the correction is a narrower but real dead end.
 
 ---
 
-### E27 [OPEN] — two provider failure shapes are deliberately left unclassified by the transient-failure retry
+### E27 [CLOSED] — two provider failure shapes are deliberately left unclassified by the transient-failure retry
 
 - **What** crush_code.md Phase 5 item 8's retry classifies on an ALLOW-LIST
   (`Providers/TransientFailure`), so anything unrecognised is treated as
@@ -1766,7 +1770,7 @@ fixture. What is left after the correction is a narrower but real dead end.
 
 ---
 
-### E29 [OPEN] — `vendor/bin/phpunit tests/Cli` hangs, while the full configured run passes
+### E29 [CLOSED] — `vendor/bin/phpunit tests/Cli` hangs, while the full configured run passes
 
 - **What** A directory-scoped run of `tests/Cli` does not finish. Measured over 4
   minutes and killed at 250s, while the full configured suite passes in ~2m26s and
@@ -1799,7 +1803,7 @@ fixture. What is left after the correction is a narrower but real dead end.
 
 ---
 
-### E30 [OPEN] — three backoff figures are literals with no test reading them back
+### E30 [CLOSED] — three backoff figures are literals with no test reading them back
 
 - **What** `TransientFailure::BASE_BACKOFF_MICROSECONDS`, `MAX_ATTEMPTS` and the
   derived total are described in prose in three places, and no test asserts any of
@@ -2025,7 +2029,7 @@ fixture. What is left after the correction is a narrower but real dead end.
 
 ---
 
-### E37 [OPEN] — `--help` documents 6 of the 20 `SUGARCRUSH_*` variables the code reads
+### E37 [CLOSED] — `--help` documents 6 of the 20 `SUGARCRUSH_*` variables the code reads
 
 - **What** `src/Cli/Help.php` names six environment variables; `src/` and `bin/` read
   twenty. (Five before bundle C1, which added the streaming variable — the heading said
@@ -2213,7 +2217,7 @@ anyone who *does* wire one knows what gate to add at the same time.
 
 ---
 
-### E40 [OPEN] — `.mcp.json` TOCTOU, and a hard link escapes containment
+### E40 [CLOSED] — `.mcp.json` TOCTOU, and a hard link escapes containment
 
 - **What** Two limits on the `.mcp.json` containment check, both low-severity but
   both attached to the one `ContainedPath` caller whose granted file causes
@@ -2549,7 +2553,7 @@ re-measure and retry, which is what `Renderer::wrapToPane()` now does locally.
 each wrapped piece and truncate any that still overflows). Fixing upstream lets that local fallback be
 simplified, not removed — the fallback is also what protects against the NEXT such disagreement.
 
-### E47 [OPEN] — the overlay composite path has no width discipline
+### E47 [CLOSED] — the overlay composite path has no width discipline
 
 **What.** W1's `fitToPane()` choke point covers `$body` only. The Veil composite that draws the palette,
 the session picker and the permission prompt emits rows wider than the terminal: measured
@@ -2568,7 +2572,7 @@ than a corrupted frame; on the standalone `Chat::view()` path there is no such n
 `PaneWidthInvariantTest`'s sweep to overlay states — W1 added an honest out-of-scope note there rather
 than a silent gap.
 
-### E48 [OPEN] — the frame is 2 rows tall at `rows=1`
+### E48 [CLOSED] — the frame is 2 rows tall at `rows=1`
 
 **What.** `$available = max(1, $rows - 1)` plus the always-present status bar means a 1-row terminal gets
 a 2-line frame. Pre-existing.
@@ -2584,7 +2588,7 @@ that prose rather than leaving a claim its own sweep (8/20/40) would have refute
 **Step.** Either reserve the bar out of `$available` so the frame can be 1 row, or decide 2 is the floor
 and say so in `renderStatusBar()`'s docblock.
 
-### E49 [OPEN] — candy-shine's `withTableWrap(true)` cannot bound a table's width, and reads as if it can
+### E49 [CLOSED] — candy-shine's `withTableWrap(true)` cannot bound a table's width, and reads as if it can
 
 **What.** `withTableWrap(true)` wraps each **cell** at the full `wrapWidth`, so a three-column table
 still renders roughly three times the pane wide. Measured at `wrapWidth: 60`: cells wrap to 67/49/56/23
@@ -2609,7 +2613,7 @@ reflow.
 
 **Blocked on.** It is a **candy-shine** change; W1 was scoped to sugar-crush.
 
-### E50 [OPEN] — `SgrState` does not track SGR 58 (underline colour) or OSC 8 hyperlinks
+### E50 [CLOSED] — `SgrState` does not track SGR 58 (underline colour) or OSC 8 hyperlinks
 
 **What.** `SgrState` handles only `Token::CSI` with `final === 'm'`, and `Ansi::reset()` (CSI 0 m) does
 not close an OSC 8 hyperlink. Any row-wise re-emission of style state therefore loses underline colour
@@ -5864,7 +5868,7 @@ oracle for "every entry point into this method". Stated in the test's own doc-bl
 **Step.** One-line fix, and it now has a pinning pattern to copy:
 `testTheReadmeCounterfactualCreditsTheSlashCommandAndNotThePaletteAlone`.
 
-### E107 [OPEN] — eight of round 43's lane-c review mutations were never verified by anyone
+### E107 [CLOSED] — eight of round 43's lane-c review mutations were never verified by anyone
 
 **Recorded 2026-08-22 by the round-43 lane-c fix agent.** Severity: low, process.
 
@@ -5998,7 +6002,7 @@ exactly this; this is the first observation of it firing.
 it noticed), and fix E96 so a concurrent sibling suite cannot red a lane's run. The E96 fix is the
 load-bearing one: a lane that cannot trust `rc 0` cannot trust anything downstream of it.
 
-### E115 [OPEN] — `pathMatches()`'s own perf note has the generator gap that was just fixed one doc-block above it
+### E115 [CLOSED] — `pathMatches()`'s own perf note has the generator gap that was just fixed one doc-block above it
 
 **Recorded 2026-08-22 by the round-44 lane-b fix agent.** Severity: low, measurement-hygiene.
 **Not fixed here — deliberately scoped out**, recorded so it is not mistaken for having been checked.
@@ -6020,7 +6024,7 @@ class, so re-taking it is possible rather than archaeological.
 **Step.** Re-take with the segment content written down (measure at 1, 12 and 24 characters, three runs
 each, PHP version stated), and quote the band across those rather than a point. Related: E85, E99.
 
-### E116 [OPEN] — `not-found` and `mcp-config` are the only hyphenated `error.type` names in the contract
+### E116 [CLOSED] — `not-found` and `mcp-config` are the only hyphenated `error.type` names in the contract
 
 **Recorded 2026-08-22 by the round-44 lane-b fix agent.** Severity: low, API-consistency. **A contract
 decision, not a defect — recorded because the guard now makes either answer cheap and someone should
@@ -6241,7 +6245,7 @@ PROMISE from a prose MENTION, because `docs/ENVIRONMENT.md` deliberately discuss
 `SUGARCRUSH_TOOL_CALL_PARSER` and `SUGARCRUSH_REASONING_EFFORT` in prose **precisely because nothing
 reads them** — a naive widening would red on the two sentences that exist to record that fact.
 
-### E124 [OPEN] — `docs/_data/sugar-crush.json` is a fourth documentation surface outside every oracle
+### E124 [CLOSED] — `docs/_data/sugar-crush.json` is a fourth documentation surface outside every oracle
 
 **Recorded 2026-08-22 by the supervisor from the round-44 lane-a report.** Severity: low.
 **Monorepo-root scope — needs a supervisor decision before any lane can own it.**
@@ -6389,10 +6393,23 @@ resolves and **caches on first use** and does NOT honour a runtime `putenv('TMPD
 directly by lane c. A test therefore cannot isolate itself into a private temp directory after the fact,
 which is why attribution moved instead of the directory being narrowed.
 
-### E134 [PARTIAL] — a mutation harness must refuse a dirty tree, not merely revert
+### E134 [CLOSED] — a mutation harness must refuse a dirty tree, not merely revert
 
 **Recorded 2026-08-22 by the supervisor.** Severity: low, process. **Round 44 produced two independent
 instances, in opposite directions.**
+
+**CLOSED-BY-PRACTICE (supervisor disposition 2026-09-13, post round-70 close).** The harness contract now HAS a tree
+artifact: `docs/plans/crush_code_RESUME.md` APPENDIX V carries the law in three places — section (t) keeps E168's
+three parts (the backup is written **BEFORE** the mutation; the restore is **VERIFIED** by `git status --porcelain`
+returning empty; the supervisor checks every lane tree for a dirty worktree BEFORE merging), section (u) keeps the
+revert technique (`git show <sha>:<path> > <path>`, **never** `git checkout <sha> -- <path>`), and the
+"never git-mutate in a non-commit step" digest item carries the dirty-tree prohibition (never
+`git checkout --`/`git restore`/`git stash` a lane to "clean up"). The trim (`f0d0d2ea1`) had truncated that last
+item mid-sentence and dropped the prohibition; it is restored **VERBATIM** from the trim anchor
+`/home/sites/crush-r61-artifacts/resume-trim/BEFORE.md` (line 3820) with this disposition, and the r64 lane-ab
+mutation-revert incident (`git checkout <file>` destroying uncommitted lane edits — revert with `cp` from a
+pre-mutation backup, never `git checkout` a dirty file) is recorded there as the law's third instance. Model harness
+(refuses a dirty tree, `git clean -fdq`, scratchpad copy, exits 94 on a no-op): worklog:11116–11121.
 
 **What.** Lane b ran a mutation (`R4b`) that created a **directory**; `git checkout -- .` does not remove
 one, and the harness's pre-flight **refused** the next three mutations rather than attributing their
@@ -6988,7 +7005,7 @@ promoted (E118).
 **Step.** Walk the other ten and ask, per format, whether an external reader exists. 🔴 **The promotion
 rule is external readership, not tidiness.**
 
-### E165 [OPEN] — the "84 assertions" historical figure's original tree is unidentified
+### E165 [CLOSED] — the "84 assertions" historical figure's original tree is unidentified
 
 **Recorded 2026-08-22 by round-45 lane a, filed by the supervisor.** Severity: low, provenance.
 
@@ -7123,9 +7140,9 @@ because nothing on their paths opens the alternate screen.
 **Step.** A `Chat`-side notice inbox reachable from a `Cmd`, or a process-wide sink `Chat` polls in
 `subscriptions()`. Design it once; the five classes above queue behind it.
 
-### E172 [PARTIAL] — three CommandLoader `error_log()` sites duplicate a message already on the seam
+### E172 [CLOSED] — three CommandLoader `error_log()` sites duplicate a message already on the seam
 
-**PARTIAL renote (fc verified; fc delta +0T):** feeder re-verified — CommandLoader DEBUG_REFUSALS_ENV :95 / skippedFiles :293 (triage cite :283 drifted), dormancy statements accurate, refusal test pins dormancy. Remaining half = Bootstrap-side launch summary row (mirror SKILL_SKIP_NOTICE_FORMAT, summary-row budget) with the BootstrapLaunchFormatConstantsTest sprintf roster owed IN-STEP; seeded round-70 gc. Evidence: fc REPORT §E172.
+**Closed ROUND-70 (lane gc `9de0e3fd6` → pick `d7be5733f`):** the drain half shipped. `Bootstrap::chat()` feeds `CommandLoader::skippedFiles()` into the `$commandSkips` dedup set and `reportCommandSkips()` emits ONE aggregate transcript row via `COMMAND_SKIP_NOTICE_FORMAT` (count-only; paths stay behind `SUGARCRUSH_DEBUG_COMMANDS=1`, shared with the loader feeder). The dormancy pin flipped to a drain-pin (roster `['src/Cli/Bootstrap.php']`); keystone `RoutingTest` asserts the transcript+stderr pair, count 1, no paths. Census trio flipped IN-STEP (seam census 21→22, StderrEmitterCensus Bootstrap 28→29, BootstrapLaunchFormatConstants 15→16). +1T. Evidence: gc REPORT, triage E172, worklog ROUND 70. **Prior PARTIAL (fc round-69):** feeder verified — CommandLoader DEBUG_REFUSALS_ENV :95 / skippedFiles :293, dormancy statements accurate.
 
 **Recorded 2026-08-22 by round-46 lane a.** Severity: low. **Verified, not fixed.**
 
@@ -7704,9 +7721,11 @@ sibling lane that added a `src/` file in the same round has bumped or must bump 
 **Step.** Supervisor re-derives at merge and takes neither side's number. Longer term this is E188's
 problem and wants the figures derived by the test rather than written into the constant.
 
-### E199 [PARTIAL] — the seam has no session-wide cap on the transport backend
+### E199 [CLOSED] — the seam has no session-wide cap on the transport backend
 
-**PARTIAL — RULING PER-TURN (decision requested by fc `183474831`, shipped by fn `5d050411d` → pick `f2c2c2327`):** `TURN_NOTICE_LIMIT = 20` (verified :240); armed ONLY by `beginTurn()` (opt-in — every pre-existing drain test stays green); `drain()` truncates the over-budget batch into ONE `OVERFLOW_FORMAT` row (excess + transport remainder + backend refusals), discards-until-empty so `hasPending()` stops repainting; `reset()` disarms; class/NOTICE_LIMIT/OVERFLOW_FORMAT doc-blocks truth-flipped (session-cap judged wrong for a live TUI). The wiring seam is DELIBERATELY left open: `RuntimeNoticeSink::beginTurn()` at the head of `Chat::scheduleBackendCompletion()` (src/Chat.php:8266) — seeded round-70 ga; zero behaviour change until wired, by design. Evidence: triage E199, fn REPORT.
+**Closed ROUND-70 (lane ga `77b4883b3` → pick `109293485`):** the wiring seam landed. `Chat::scheduleBackendCompletion()` (src/Chat.php:8266) calls `RuntimeNoticeSink::beginTurn()` at the top, GATED on `$this->drainsRuntimeNotices` — the class contract names the DRAIN OWNER as the only armer, and an unappointed/host Chat arming would re-open the owner's budget mid-turn. 2 new pins in RuntimeNoticeSinkDeliveryTest: budget re-arm pre-spent via reflection (vacuity-proof) + unappointed negative arm; transport burst 25→pump→pump = saturated 20-head + ONE overflow row, `hasPending()` false. Pump/delivery machinery verified already-live. +2T. Evidence: ga REPORT, triage E199, worklog ROUND 70.
+
+**PARTIAL — RULING PER-TURN (decision requested by fc `183474831`, shipped by fn `5d050411d` → pick `f2c2c2327`):** `TURN_NOTICE_LIMIT = 20` (verified :240); armed ONLY by `beginTurn()` (opt-in — every pre-existing drain test stays green); `drain()` truncates the over-budget batch into ONE `OVERFLOW_FORMAT` row (excess + transport remainder + backend refusals), discards-until-empty so `hasPending()` stops repainting; `reset()` disarms; class/NOTICE_LIMIT/OVERFLOW_FORMAT doc-blocks truth-flipped (session-cap judged wrong for a live TUI). The wiring seam was DELIBERATELY left open at r69: `RuntimeNoticeSink::beginTurn()` at the head of `Chat::scheduleBackendCompletion()` (src/Chat.php:8266) — seeded round-70 ga, CLOSED there. Evidence: triage E199, fn REPORT.
 
 `RuntimeNoticeSink::record()` returns before it reaches `NOTICE_LIMIT` whenever the cross-fork transport
 exists — i.e. on every interactive launch. So `NOTICE_LIMIT` bounds the array backend's queue and
@@ -7803,12 +7822,20 @@ in `classifySpec()`, require fd 2's entry to be a literal array before answering
 out this round because it was not measured against the whole tree and rule 16 says a prescription is a
 hypothesis until it is.
 
-### E204 [PARTIAL] — three lanes share ONE scratchpad directory, and two of them collided in round 47
+### E204 [CLOSED] — three lanes share ONE scratchpad directory, and two of them collided in round 47
 
 **Recorded 2026-08-22 by round-47 lane b.** Severity: process. **Observed, cost one four-minute run.**
 **PARTIAL (round-70 launch ruling 2026-09-12):** the per-lane `scratchpad/lane-<x>/` brief mandate has been
 in force since round 48; the remaining enforcement half is a supervisor-owned harness/docs item — judged at
 round-70 close, NOT lane work.
+
+**CLOSED-BY-PRACTICE (supervisor disposition 2026-09-13, post round-70 close).** The enforcement half now HAS a tree
+artifact. `docs/plans/crush_code_RESUME.md` rule 10 (APPENDIX I, carried VERBATIM through the trim `f0d0d2ea1`):
+"Evidence to `/home/sites/crush-r61-artifacts/<lane>/` — the artifacts root KEEPS its round-61 name across rounds",
+restated in §0-NOW-72; rule 9 adds "briefs demand absolute paths". Every lane since round 61 has written to its own
+evidence dir (live at stamp time: `gf/`, `gd/`, `resume-trim/` under the artifacts root), so the shared-scratchpad
+collision class is structurally extinct; the older `scratchpad/lane-<x>/` naming is superseded by the evidence-dir
+rule. The dupe E218 was already SUPERSEDED against this row.
 
 **What.** All three round-47 implementers were given the same
 `/tmp/claude-1000/-home-sites-sugarcraft/<session>/scratchpad` path. Lane a and lane b both wrote a
@@ -10662,9 +10689,9 @@ wanting its own step and its own golden-file pass — and functionality comes be
 
 ---
 
-### E309 [OPEN] — the denial scan's vocabulary is still a hand-written list, and that is the residual limit
+### E309 [CLOSED] — the denial scan's vocabulary is still a hand-written list, and that is the residual limit
 
-**Round-69 re-verification (fb, still OPEN):** DENIAL_TERMS hand-list confirmed live at `tests/DenialPrefixRosterTest.php:228` (row's :226 drifted); the prescribed tree-wide producer factory (`ToolResult` + every refusal producer) lies outside ALL r69 lane files — refused with evidence, seeded to round-70 ge. Evidence: fb REPORT, worklog ROUND 69.
+**CLOSED-VERDICT ROUND-70 (ge — measure-and-verdict, ZERO code; disposition OPEN-BY-DESIGN with a named TRIGGER):** verdict (b) taken. The literal factory prescription stays un-shipped and expensive (~95 construction sites, 18+ files; measured at `55de6e269`: engine-class split 72 sites / 15 files after the [r70 audit-fix] re-attribution of Chat.php's 3 bare `new ToolResult(` to the ROOT class) — and its PROTECTIVE OUTCOME is already largely enforced by the whole-`src/` exact-map guard fb's lineage completed; the residual is zero-runtime-benefit typing ceremony today. TRIGGER: fold refusal-factory typing into the crush_feat §1D two-class `ToolResult` unification, or mint when a 4th `DenialKind` case is adopted via the E375 product-decision route. The round-69 premise read was FALSE-TO-TREE in two ways: the tree has TWO `ToolResult` classes (engine `src/Tools/ToolResult.php`, ctor-only; chat-side `src/ToolResult.php` with `ok()`/`error()`/`okWithImage()`/`fromEngineResult()`), and the refusal producers are ALREADY enum-routed — a duplicate frame-spelling is machine-impossible since E246/E541/fb. Not NO-FIX: the refactor becomes cheap and right when §1D forces the class merge anyway. The guard's alphabet (DENIAL_TERMS) remains hand-written exactly as the entry says. Evidence: ge REPORT (full construction census, 3 audit-fix errata), fb REPORT, triage E309, worklog ROUND 70. **Prior re-verification (fb round-69, still OPEN):** DENIAL_TERMS hand-list confirmed live at `tests/DenialPrefixRosterTest.php:228`; prescribed factory refused with evidence, seeded to ge.
 
 Round 49 widened it twice (round-49 implement pass: the `^` anchor and the `[a-z]+` verb; round-49 fix
 pass: `declined`, `prohibited`, `vetoed`, `barred`, plus a case-variant rule and per-frame judging). Both
@@ -11008,7 +11035,7 @@ closed resource directly rather than through a thrown probe. Worth a candy-mosai
 
 ---
 
-### E319 [PARTIAL] — the O_NONBLOCK vocabulary is INVERTED across the suite, and the code is right in every case
+### E319 [CLOSED] — the O_NONBLOCK vocabulary is INVERTED across the suite, and the code is right in every case
 
 **ROUND-67 wave-2 (lane dj — lane `b43fb131c` → master `00c8bc14b`): the inversion is DEAD, the entry stays
 PARTIAL for residue.** All eight inverted failure messages rewritten (the "×2 per file" figure below was
@@ -11185,8 +11212,9 @@ and the row must be deleted when they are fixed.
 
 ---
 
-### E325 [PARTIAL] — E286's fix landed in one reader; the shape recurs, and its OBSERVED half is guarded in one
+### E325 [CLOSED] — E286's fix landed in one reader; the shape recurs, and its OBSERVED half is guarded in one
 
+**CLOSED — step (b) completion shipped ROUND-71 (lane gi `a27671180` → pick `571dcf85d`):** the remaining 12 seam-4 inline slice readers + HelpTest folded onto the canonical `tests/Support/SlicesDeclaredMethodsTrait.php` (+0T/+63A; the census hop rosters stayed `[]` IN-STEP — a zero-move consolidation, tree bytes unmoved outside the fold sites). Reviewer F-1 INFO: the fold is convention, not instrument — the census hop resolves by unique name, so an inline reader is uncatchable by the guard. Residue MINTED **E693**: `SuiteSkipRosterTest` rostered-skip body indexes `$reflection->getMethod($method)` twice — the slice-reader census docblock named sole remaining un-folded reader. Evidence: gi REPORT, r71-rv-gi REVIEW, triage E325, worklog ROUND 71.
 **PARTIAL ROUND-69 (fd, same SHAs):** (a) HelpTest asserts the declaring FILE per row — census `DECLARING_FILE_UNCHECKED` row deleted → const `[]` (verified :97); (b) `VhsTapeContractTest::declaredSlice` folded into new `tests/Support/SlicesDeclaredMethodsTrait.php` (verified); census hop widened same-commit (same-file-first, cross-file iff unique, ambiguous fail-closed) + 4 known-answer fixtures. Carry: 12 inline-slice readers keep private array_slices (list in fd REPORT seam 4). Evidence: triage E325, fd REPORT.
 
 **Recorded 2026-08-24 by round-49 lane c.** Severity: correctness of an instrument. **Measured**, PHP 8.3.6.
@@ -11993,11 +12021,10 @@ gives the same entropy with no period.
 
 ---
 
-### E353 [OPEN] — `sugar-crush/docs/HOOKS.md` documents runtime defaults and no test reads it
+### E353 [CLOSED] — `sugar-crush/docs/HOOKS.md` documents runtime defaults and no test reads it
 
 **Recorded 2026-08-24 by round-49 lane b's fix agent.** Severity: documentation drift. Partly mitigated.
-**FOLDED INTO round-70 gd per supervisor (2026-09-12):** the guard/no-guard decision rides gd's E686-tranche-7
-brief (with docs/HOOKS.md in its touch-list); row stays OPEN until gd lands, then gets stamped there.
+**Closed ROUND-70 (lane gd `8b639e092` → pick `80806b39f`) — CLOSED-BY-FOLD:** the guard/no-guard decision resolved as FOLD: HOOKS.md's built-in-hook and Events tables, entry/exit key/delimiter/exit-row sections, and drain/sweep/marker claims are now read LIVE by `DocFigureProseDriftTest` arms AC–AH (dynamic derivation, zero rosters; no golden file, no new test file). All adjudicated claims were TRUE — docs/HOOKS.md stayed byte-untouched. The E686 tranche-7 fold carried this row to closure in-step. Evidence: gd REPORT + gd/measures.md (22 claim rows), triage E353, worklog ROUND 70.
 
 E328 changed a user-facing default and `HOOKS.md`'s built-in table went on documenting the old path for
 a full round. Grepped `tests/` for the filename: the only hits are `ScriptHook`/`Bootstrap` guards, none
@@ -12831,7 +12858,7 @@ was right and is confirmed by mutation: moving the token BEFORE the marker is ki
 
 ### E375 [CLOSED] — the arm question E347 leaves open is a vocabulary decision, and nothing in the tree records who owns it
 
-**Closed ROUND-69 — RULING B-QUALIFIER (recorded by fb `5ea48fe21`→`ff2a96306` + fc `183474831`→`71cc12f38`; shipped by fn `5d050411d`→`f2c2c2327`):** `DenialKind` keeps exactly three cases, backing values byte-identical (verified :91/:102/:109; fb's diff to the file is a +19-line decision-home doc-block paragraph, enum body untouched). `NonInteractive::$askWasUnattended` carrier — cleared at run(), sole writer at the prompt's no-tty arm, read-and-clear in `refusalFrom()` gated on Refused; refusal rows gain the OPTIONAL `unattended: true` key ONLY on that arm; human/hook/unanswered rows stay 3-key byte-identical; `ToolRefusal.php` zero edits. Pins: unattended+consume-proof vs human-no-qualifier pair; README conditional-key paragraph in-step. Evidence: triage E375, fb/fc/fn REPORTs, worklog ROUND 69.
+**Closed ROUND-69 — RULING B-QUALIFIER (recorded by fb `5ea48fe21`→`ff2a96306` + fc `183474831`→`71cc12f38`; shipped by fn `5d050411d`→`f2c2c2327`):** `DenialKind` keeps exactly three cases, backing values byte-identical (verified :91/:102/:109; fb's diff to the file is a +19-line decision-home doc-block paragraph, enum body untouched). `NonInteractive::$askWasUnattended` carrier — cleared at run(), sole writer at the prompt's no-tty arm, read-and-clear in `refusalFrom()` gated on Refused; refusal rows gain the OPTIONAL `unattended: true` key ONLY on that arm; human/hook/unanswered rows stay 3-key byte-identical; `ToolRefusal.php` zero edits. Pins: unattended+consume-proof vs human-no-qualifier pair; README conditional-key paragraph in-step. Evidence: triage E375, fb/fc/fn REPORTs, worklog ROUND 69. **ROUND-70 confirmation (lane gb `fdeddc1f3` → pick `a852eb2ba`):** the DECIDED stamp landed in the `DenialKind` class doc-block (src/Permissions/DenialKind.php — the decision's home): three cases FROZEN, qualifier = optional 4th envelope key `unattended`, NonInteractive carrier lifecycle named, fn SHAs cited; the doc-block no longer reads undecided. No census move (row already CLOSED r69).
 
 **Recorded 2026-08-24 by round-49 lane b.** Severity: open design question. Verified, not implemented.
 
@@ -13286,9 +13313,10 @@ decoration and the table only proves the function returned the right TYPE.
 
 ---
 
-### E390 [DEFERRED] — the lane bounding child processes added an unbounded child process, in the same round
+### E390 [CLOSED] — the lane bounding child processes added an unbounded child process, in the same round
 
-**DEFERRED (dual-guard evidence) ROUND-69 (fk, same SHAs):** consolidation blocked by (1) ChildWallClockBudgetTest::resolveArgument same-file-literal-only reduction and (2) DuplicatedTestHelperDriftTest's ACCEPTED_CONST_DUPLICATION licensé for this exact name (round-67 di) — neither file fk-owned; post-merge both are UNOWNED → round-70 gb one-motion candidate. Values today 20/20 + census 40, DRIFT_BOUND=1 tolerates. Evidence: fk REPORT §E390, worklog ROUND 69.
+**CLOSED — consolidation shipped ROUND-71 (lane gf `2bc88da96` → pick `0c6820f39`):** the byte-identical pair folded into NEW `tests/Support/RunsWallClockBoundedChildTrait.php`, which owns BOTH const pairs (`CHILD_WALL_CLOCK_BUDGET_SECONDS = 20` ×2 plus the measured-live `KILLED_BY_THE_BUDGET = 137` ×2 — the documented deviation from the predicted licensé count 22: the second pair was also licenséd, so 23→**21**; the roster census carries no count/anchor/NUMBER_WORDS trio, only bidirectional arms) and the SOLE `timeout -s KILL %d` wrapper (the wrapper must share the file with the constant — the gb same-file tripwire arm stays byte-true, no resolver widening). Both `ACCEPTED_CONST_DUPLICATION` licensés dropped IN-STEP; `ACCEPTED_CONST_DRIFT` row KEPT (trait 20 vs ReadmeSuiteFigureDriftTest 40 still live). Per-suite SIGKILL refusals stay per-file (their claims differ). +0T/+5A; M1 (restore licensé) / M2 (revert consolidation) both RED as predicted, cp+md5 clean; BSK-alone 30T/61A base==tip (§8 Risky never fired in pipe). Reviewer r71-rv-gf **APPROVE**; the HOLD-FIX `52121fcac` (ACCEPTED_INHERITED_STDERR roster row, rule 33 — reviewer RATIFIED: redirect unavoidably caller-side, census cannot follow params, the row states the fail-fast upgrade path) welds the wrapper pass-through. Evidence: gf REPORT, r71-rv-gf REVIEW, triage E390, worklog ROUND 71.
+**PARTIAL — law-pin SHIPPED ROUND-70 (lane gb `fdeddc1f3` → pick `a852eb2ba`):** the same-file-literal-only law is now PINNED with a TRIPWIRE: `ChildWallClockBudgetTest::testTheResolverRefusesCrossFileLiteralShapesToKeepTheSameFileLaw` (positive same-file control + cross-file `Other::B` refusal reason `cannot reduce` + same-file alias `const B = Other::B` refusal reason `not an integer literal` — refusals localize the boundary, arm non-vacuous by construction) reddens any future resolver widening unless the `DuplicatedTestHelperDrift` licensé drop rides the SAME commit. The full one-motion unblock is BLOCKED on a non-owned byte-identical pair — `tests/Cli/BootstrapSkillSkipsTest.php` vs `tests/Support/RequirementDirectiveProvenanceTest.php` both declare `private const CHILD_WALL_CLOCK_BUDGET_SECONDS = 20` (:95/:103); the drop-probe went RED naming exactly that pair (gb evidence `gb-probe-drop.log`, DuplicatedTestHelperDriftTest:2751). Per "both halves or neither" the fallback shipped. CARRY r71 (lane gf): dedupe that pair, then drop licensé + flip the roster trio IN-STEP. +1T. Evidence: gb REPORT/REVIEW + gb-probe-drop.log, triage E390, worklog ROUND 70. **Prior DEFERRED (round-69 fk, same SHAs):** consolidation blocked by (1) ChildWallClockBudgetTest::resolveArgument same-file-literal-only reduction and (2) DuplicatedTestHelperDriftTest's ACCEPTED_CONST_DUPLICATION licensé — post-merge both unowned → gb.
 
 **Recorded 2026-08-24 by round-52 lane c's reviewer, FIXED the same day.** Severity: hygiene, live.
 
@@ -15737,7 +15765,7 @@ session that can never send again.
 **STEP:** decide whether `isConnected()` should mean "the process is up" or "this session can still be
 used", and say which in its doc-block either way. If the latter, the latch belongs in it.
 
-### E475 [OPEN] — E440's sibling: `LspConnection` also only drains stderr inside an exchange
+### E475 [CLOSED] — E440's sibling: `LspConnection` also only drains stderr inside an exchange
 
 **Recorded 2026-08-25 by round 55 lane b.** Severity: minor, no longer a deadlock.
 
@@ -16201,9 +16229,10 @@ written. Re-read them at launch, not just the figures.
 
 *Provisional lane-prefixed ids (rule 20); the supervisor renumbers at merge.*
 
-### E493 [PARTIAL] — 🔴 E456 does NOT make a BATCH provider's turn idle-timeout-proof, and cannot
+### E493 [CLOSED] — 🔴 E456 does NOT make a BATCH provider's turn idle-timeout-proof, and cannot
 
-**PARTIAL ROUND-69 (fa `8db951a0b` → pick `a9e7a333c`):** record re-verified and extended, zero code — COMPLETE_TIMEOUT_SECONDS paragraph carries the E524 measurements (verified :87); the FIX is open in the providers domain (HTTP progress-callback heartbeat seam, src/Providers/) → round-70 gc. Evidence: triage E493, fa REPORT, worklog ROUND 69.
+**CLOSED — consumer-threading shipped ROUND-71 (lane gh `4cb065af3` → pick `9d05c5e9f`)**, atop gc providers half (origin `d7be5733f`): `$onHeartbeat` threaded `EngineBackend::complete()` tail → `Runtime::run` 6th arg → `CompleteRequest`; the forked child beat-writer emits EMPTY-TEXT reasoning frames and the parent runs `$resetTimeout` FIRST per frame (`EngineBackend.php:1236-1238`) before drop-empty discards them ahead of `$onReasoning` (`:1281-1286`) — reviewer-verified literally, no phantom paint; NEW `EngineBackendHeartbeatThreadingTest` 4T/13A (fork via `forkTracked`, kinds-exact pins both polarities). `AwaitPromise` `matching()` 4th copy folded onto `TokenFunctionRanges::matching()`. The `src/Backend.php` `$onEvent` docblock rewrite is honest; its event-class roster stays UNPINNED — a live-arm pin rides round-72 ha — moved from hb at the closeout filemap regen so hb stays disjoint from the DocFigure file (gh reviewer MINOR). Zero wall-clock kills anywhere (E646 standing ban honored). +4T. Reviewer r71-rv-gh APPROVE 0C/0M/2 MINOR. Evidence: gh REPORT, r71-rv-gh REVIEW, triage E493, worklog ROUND 71.
+**PARTIAL — providers-half SHIPPED ROUND-70 (lane gc `9de0e3fd6` → pick `d7be5733f`):** `CompleteRequest::$onHeartbeat` (tail `?\Closure`, default null — older readers untouched) + `HttpClientDefaults::heartbeatOptions()`: Guzzle `progress` option (E524: the ONLY carrier that fires inside the blocking curl call), 1/s throttle with immediate first beat, fail-soft Throwable swallow, the wrapper always returns false (libcurl keep-transferring). Wired on the Sglang + Custom batch `complete()` paths; +8T in the new `tests/Providers/ProviderHeartbeatProgressTest.php` (first-tick / throttle / fail-soft arms; M2/M3 mutation-discriminated). SEAM carried r71 (lane gh): EngineBackend/Runtime must thread the closure from the child frame-writer; OpenAI/Bedrock/Vertex SDKs own their transports — the gaps are documented in the DTO doc-block, and the `src/Backend.php` `$onEvent` doc-block drift rides the same seam. Evidence: gc REPORT, triage E493, worklog ROUND 70. **Prior PARTIAL (fa round-69, `8db951a0b` → pick `a9e7a333c`):** record re-verified and extended, zero code — COMPLETE_TIMEOUT_SECONDS paragraph carries the E524 measurements; the FIX was seeded to gc.
 
 **Recorded 2026-08-25 by lane a.** Severity: medium. This is the defect E456's implementer chose to
 record rather than half-fix, and it needed an id.
@@ -17602,7 +17631,7 @@ copy the counts above into a later round: re-derive them from that method.
 
 ---
 
-### E547 [PARTIAL] — eight bare `{@see someMethod()}` citations in `tests/` name no method that exists
+### E547 [CLOSED] — eight bare `{@see someMethod()}` citations in `tests/` name no method that exists
 
 **DEFERRED (round 57, lane c).** `SymbolCitationDriftTest` now resolves a bare `{@see …()}` in a `tests/`
 file against the classes that file declares, but ONLY for a member spelled as a test method — the
@@ -18169,7 +18198,7 @@ being `Providers\ToolSchemaEncodingTest`'s `catch (\PHPUnit\Framework\AssertionF
 correct code and one of the four deliberate survivors. Every other bucket matched exactly. Harmless here
 because the missed row needed no fix, but a distribution used to decide "am I done" was wrong by one.
 
-### E575 [OPEN] — `AgentPresetRegistry`'s "Invalid YAML frontmatter in:" branch may be unreachable-in-practice
+### E575 [CLOSED] — `AgentPresetRegistry`'s "Invalid YAML frontmatter in:" branch may be unreachable-in-practice
 
 `parsePresetFile()` throws `"Invalid YAML frontmatter in: {$filePath}"` when `Frontmatter::parse()` returns
 a non-array. MEASURED on PHP 8.3.6: malformed YAML never reaches it — `Frontmatter::parse()` raises
@@ -19013,9 +19042,11 @@ safe), and written implicitly-public it is **silently dropped** — the same uns
 by-reference case in E605. One line in the skip list plus a fixture. Left out deliberately to keep
 that diff to the population that exists rather than to the population that could.
 
-### E611 [OPEN] — two of lane b's five brief items commission edits to files lane b does not own
+### E611 [CLOSED] — two of lane b's five brief items commission edits to files lane b does not own
 
-**Design-carry renote (round-69):** the fix is a supervisor-HARNESS tool + machine-readable ownership schema (briefs are prose .md; check-path-repos verifies existence only) — architectural, OUT OF CODE-PLAN SCOPE; mitigation since round-62 = explicit OWNERSHIP blocks in every brief. Stays OPEN as a process item, not a code finding. Evidence: fh REPORT §E611.
+**Design-carry renote (round-69):** the fix is a supervisor-HARNESS tool + machine-readable ownership schema (briefs are prose .md; check-path-repos verifies existence only) — architectural, OUT OF CODE-PLAN SCOPE; mitigation since round-62 = explicit OWNERSHIP blocks in every brief. Stays OPEN as a process item, not a code finding. Evidence: fh REPORT §E611. **ROUND-74:** r74 verdict-lane audit did not touch E611; r75 jb decides pick-or-drop (headline on record: "two of lane b's five brief items commission edits to files lane b does not own"). **ROUND-75 closeout:** verdict slips a third time — no r75 lane carried E611 (ja = docs campaign, jb = memory ops). kb (r76) is the read-only pick-or-drop VERDICT lane: re-derive the row's premises at tip, rule with evidence, zero commits unless the premise is dead — then a docs-only backlog flip on the branch.
+
+**CLOSED-BY-PRACTICE / SUPERSEDED (round-76, lane kb — verdict DROP; evidence `/home/sites/crush-r61-artifacts/kb/verdicts.md`):** re-derived at tip `f8eba0f34`. (Q1) No machine check was ever added: an `ownership` grep over `tools/`, `scripts/`, `prompt_kit/tools/`, `.github/workflows/` hits only a durations-file NAME, and `tools/check-path-repos.php` carries zero brief/lane/scope logic — E334 existence-only confirmed. (Q2) The OWNERSHIP-block practice demonstrably catches out-of-ownership commissions since round-62: worklog :3069 (fix agent filed the `SkillLoader` half out-of-lane — REPORTED, not implemented: the exact E611 failure shape caught by practice), :5437 (left alone, outside the round's ownership), :11010 (reviewer-prompt bound minted after the docs-only leak), triage ROUND-69 close (fj's Chat.php breach caught, named, dispositioned ACCEPTED with erratum). (Q3) The residual harness-tool + machine-readable ownership schema needs a STABLE lane registry that does not exist in-repo — lanes are per-round ephemera named only in merge-owned RESUME prose — so minting the schema IS the out-of-code-plan harness design the round-69 ruling excluded; no in-repo mechanically checkable gap the plan owns remains. In-scope half is standing practice, out-of-scope half exits this ledger (belongs, if ever wanted, in supervisor tooling notes). Tripwire: reopen if a round ever ships out-of-ownership CODE edits un-reported — the practice is the mitigation, and it is holding.
 
 🔴 **The round's first finding, and it was visible before any work started.** Round 59's brief gives lane b
 five items. Items 1 and 2 (E572, E577, E578) are entirely about two files:
@@ -19150,9 +19181,9 @@ sentence at `resolve()` saying the fallback answers for a name PHP would not hav
 describes the GLOBAL class and not the clause's real behaviour. Latent either way — zero bare-unimported
 catch types exist in `sugar-crush/tests`.
 
-### E616 [PARTIAL] — `DENIAL_SHAPE`'s lookbehind lets the tail of a hyphenated compound open a frame, for EVERY term
+### E616 [CLOSED] — `DENIAL_SHAPE`'s lookbehind lets the tail of a hyphenated compound open a frame, for EVERY term
 
-**PARTIAL ROUND-69 (fb `5ea48fe21` → pick `ff2a96306`):** the three tail-frame fixtures (Cache-Control disallowed / Transfer-Encoding rejected / Auto-Approve denied) pinned REPORTED with the named trade (verified :753-756); DENIAL_SHAPE lookbehind DELIBERATELY unchanged — measured: a '-' lookbehind reports all three NOWHERE while roster prefixes frame identically; pattern choice stays OPEN → round-70 gb. Evidence: triage E616, fb REPORT, worklog ROUND 69.
+**Closed ROUND-70 (lane gb `fdeddc1f3` → pick `a852eb2ba`) — DECIDED: DENIAL_SHAPE bytes UNCHANGED, hyphen-tail visibility ACCEPTED:** fb's measurement is the ruling's basis — adding `'-'` to the lookbehind reports all three tail fixtures NOWHERE while the roster prefixes frame identically; the compound-tail trade is the cheaper law. The choice is now pinned BOTH ways: the three tail frames (`Cache-Control disallowed:` / `Transfer-Encoding rejected:` / `Auto-Approve denied:`) stay pinned REPORTED, and a dated DECIDED block sits in `DenialPrefixRosterTest` (~:748, comment-only hunk — DENIAL_SHAPE byte-untouched, diff-verified). Evidence: gb REPORT/REVIEW, fb `5ea48fe21` measurement, triage E616, worklog ROUND 70. **Prior PARTIAL (fb round-69):** the three tail-frame fixtures pinned REPORTED with the named trade (verified :753-756); DENIAL_SHAPE lookbehind DELIBERATELY unchanged — measured: a '-' lookbehind reports all three NOWHERE while roster prefixes frame identically; pattern choice was left OPEN → round-70 gb.
 
 Found while fixing E570 and deliberately not fixed with it, because it is not a `required` problem. The
 shape is `/(?<![A-Za-z])[A-Z][A-Za-z]*(?: [A-Za-z]+){0,3}:/`. A hyphen is not `[A-Za-z]`, so in
@@ -19566,7 +19597,7 @@ not committed and not a policy breach. Recorded only because a per-lib lock make
 injection a no-op if anyone ever runs `composer install` in that directory: `composer install` would
 resolve from the lock and silently ignore the injected closure.
 
-### E631 [OPEN] — a mis-namespaced file under `src/` is a HARD FATAL, not "reported rather than thrown on"
+### E631 [CLOSED] — a mis-namespaced file under `src/` is a HARD FATAL, not "reported rather than thrown on"
 
 `tests/Tools/BuiltInToolCorpus.php`'s class doc-block and `classNames()`'s own comment both say a
 PSR-4 exemption elsewhere in the tree is *reported* by `nonClassSources()` rather than aborting suite
@@ -19610,7 +19641,7 @@ doc-block's "reported rather than thrown on" must be rewritten under rule 7 rath
 and `testAnExemptFileElsewhereIsReportedRatherThanThrownOn()` needs a sibling that drives the REAL
 autoloader, because the probe autoloader cannot express this case.
 
-### E632 [OPEN] — `BuiltInToolCorpus.php`'s own doc-block is the fifth restatement of the `src/` census
+### E632 [CLOSED] — `BuiltInToolCorpus.php`'s own doc-block is the fifth restatement of the `src/` census
 
 Round 60 lane a retired every cardinality over `src/` from `BuiltInToolCorpusTest` and both restated
 figures from `src/Context/RepoMapBlock.php`. It did not touch the scanner's own doc-block, which is
@@ -19802,7 +19833,7 @@ of the corpus scanner's symbols), which is a token-stream fact rather than a phr
 narrow alphabet is documented in the guard's own doc-block, with this measurement, rather than
 implied.
 
-### E636 [OPEN] — the reflection census is declared ABOVE the token-stream balance, so on a real defect the only instrument that can report never runs
+### E636 [CLOSED] — the reflection census is declared ABOVE the token-stream balance, so on a real defect the only instrument that can report never runs
 
 E631 establishes that a mis-namespaced file under `src/` takes the runner down rc 255 through
 `classNames()`/`nonClassSources()`'s triple `*_exists()` probe. This entry is the consequence for
@@ -19826,7 +19857,7 @@ reflection census in the file, and pin the ordering with a comment stating why (
 wrong: they are not dependent, they are differently survivable). Cheap, and it is the difference
 between a named failure and a redeclaration fatal.
 
-### E637 [OPEN] — `declaredTypes()` cannot see a conditionally-declared type, and that is newly load-bearing
+### E637 [CLOSED] — `declaredTypes()` cannot see a conditionally-declared type, and that is newly load-bearing
 
 MEASURED on PHP 8.3.6 at `204c9cf58`: `BuiltInToolCorpus::declaredTypes()` walks the token stream at
 brace depth zero, so a `class Hidden {}` nested inside an `if` block is invisible to it — the file
@@ -19885,7 +19916,7 @@ coupling nobody counted**; if a bound needs slack, the slack has to be argued fo
 **Step.** No fix. Re-measure the table if `MAX_SECTION_BYTES` or `MAX_SOURCE_FILES` moves, and treat
 any red in it as an instruction to rewrite `RepoMapBlock`'s design note, never to loosen the bound
 back toward a ratio.
-### E639 [OPEN] — the sub-agent tool grant is wired through `AgentManager` but no production caller supplies a registry
+### E639 [CLOSED] — the sub-agent tool grant is wired through `AgentManager` but no production caller supplies a registry
 
 **DEFERRED, out of lane (`src/Cli/Bootstrap.php`).** Round 60 lane b made
 `AgentManager::executeSubAgent()` resolve `Agent::$tools` into the `CompleteRequest`'s `tools` field
@@ -19952,7 +19983,7 @@ a judgement about what the preset meant. Worth doing when a preset ships a grant
 actually matters — today the only argument-scoped declaration in the built-in set is `Bash(git *)`,
 whose trailing space makes the over-fire case not arise.
 
-### E641 [OPEN] — `WorkflowEngine` puts DECLARATION STRINGS into `CompleteRequest::$tools`, which providers call `->name()` on
+### E641 [CLOSED] — `WorkflowEngine` puts DECLARATION STRINGS into `CompleteRequest::$tools`, which providers call `->name()` on
 
 **DEFERRED, out of lane (`src/Workflows/WorkflowEngine.php`, `src/Workflows/WorkflowTask.php`).**
 Found while checking round 60's review MAJOR 4. `WorkflowEngine` builds its stage request as
@@ -19983,7 +20014,7 @@ Note this also makes the `[]`-vs-`null` distinction load-bearing on that path: `
 defaults to `[]`, NOT to `null`, so four of the six providers put a present-but-empty `tools` key on
 the wire for every workflow stage.
 
-### E642 [PARTIAL] — `declarationDefect()`'s bare-name half is now guarded, but only over the SIX BUILT-IN presets
+### E642 [CLOSED] — `declarationDefect()`'s bare-name half is now guarded, but only over the SIX BUILT-IN presets
 
 **PARTIALLY CLOSED in round 60's fix stage.** `AgentDefinitionTest::declarationDefect()` returns
 `null` for any declaration with no argument half, on the grounds that the name half is matched
@@ -19993,16 +20024,18 @@ typo'd bare `defaultTools: ['Reed']` was therefore caught by nothing.
 presets, resolving each bare name against `Bootstrap::tools()` under a sandboxed HOME (the sandbox's
 emptiness is asserted, so the guard cannot silently measure a narrowed set — see E639).
 
-**STILL OPEN:** the same typo in a USER or FOREIGN preset (`.sugar-crush/agents`, `.claude/agents`,
-`.opencode/agents`) is caught by nothing, since those are not in the fixture table and are not
-validated at load time. Closing it properly means validating at `AgentPresetRegistry` /
-`ForeignAgentPresetRegistry` load time against the session's tool set — which needs E639's decision
-first, since a user preset naming a tool the operator disabled must warn rather than refuse. Related
-to E645, which is the argument-scoped half of the same gap.
+**CLOSED in round 61 - the half this paragraph called uncaught.** The shape
+it measured (a typo'd bare name in a USER or FOREIGN preset caught by nothing) is now caught: a
+preset naming a tool the session DISABLED warns at load and a never-existing name is refused at
+grant (master `80cd6054a`), collected registry-vs-ceiling by `narrowedGrantWarnings()` with a
+lenient parse (master `b5fff4660`). E639's decision - warn for a disabled tool rather than refuse -
+is exactly what made that lenient load-time check safe. The operator-facing DRAIN residual was
+withdrawn as a measured seam in round 62 (master `9a0128ecf`) and rode E653, since closed. The
+measurement above stands as the record of the gap and the load-time validation it prescribed.
 
-### E643 [OPEN] — the sub-agent SKILL grant has the identical fail-open shape and was NOT fixed
+### E643 [CLOSED] — the sub-agent SKILL grant has the identical fail-open shape and was NOT fixed
 
-**DEFERRED. The FINDING, not the fix (rule 10).** `executeSubAgent()` applies skills with
+**CLOSED in round 61. The FINDING, kept as filed (rule 10).** `executeSubAgent()` applies skills with
 
     $skill = $this->skillRegistry->get($skillName);
     if ($skill !== null) { $systemPrompt .= $skill->systemPromptContribution(); }
@@ -20015,14 +20048,16 @@ this commit: a bare `new SkillRegistry()` resolves NONE of `php-best-practices`,
 prompt tells the model to consult skills whose bodies were never appended — the same "the prompt
 lies and nothing reds" defect §C7 was filed for, one field over.
 
-Not fixed here because refusing loudly would fail every `reviewer`/`tester` sub-agent launched
-without those skill files present, and that trade needs the launch path to be live first. The
-candidate fixes, in preference order: (a) refuse a preset whose granted skill does not resolve, at
+Closed once the launch path went live: `executeSubAgent()`'s skill loop no longer skips in
+silence - a granted-but-unresolvable skill now throws a `RuntimeException`, the loud shape this row
+said the trade needed (master `b47391f1f`, 2 tests: refusal + positive polarity). The batch-path
+sibling - `executeAll()`'s direct path building no per-agent skills at all - rode E654, since
+closed. The candidate fixes as filed at the time, kept as history: (a) refuse a preset whose granted skill does not resolve, at
 REGISTRATION rather than at execution; (b) strip the skill's name from the prompt when it does not
 resolve; (c) warn on stderr at construction. (b) is wrong on its own — it edits the model-facing
 prompt at runtime, which nothing else here does.
 
-### E644 [OPEN] — `AgentManager::executeAll()` — the LIVE parallel path — bypasses the grant entirely
+### E644 [CLOSED] — `AgentManager::executeAll()` — the LIVE parallel path — bypasses the grant entirely
 
 **DEFERRED, and the more consequential half of §C7.** `executeSubAgent()` has no production caller;
 `executeAll()` has TWO — `Chat::executeAgents()` and `WorkflowEngine`'s parallel stages. MEASURED at
@@ -20034,12 +20069,15 @@ gets whatever tools the caller put in the shared request, with no per-agent reso
 per-call grant or denylist enforcement — and `WorkflowEngine` builds that shared request from the
 FIRST task of the stage, so agents 2..n of a mixed stage are governed by agent 1's declaration.
 
-Not fixed in round 60 because the correct shape is a PER-AGENT request built inside the pool, and
-`src/Agents/AgentWorkerPool.php` was lane c's file that round. The seam to use is the one the pool
-already has: it builds a per-agent `CompleteRequest` from each agent's own `task`, so `tools` can be
-resolved there from `$agent->agent->tools` by the same method.
+Closed in round 61 at exactly the seam this tail pointed at: the pool already built a
+per-agent `CompleteRequest`, so `AgentWorkerPool::executeAll()` now takes
+`?\Closure $toolGrantResolver = null` and resolves each agent's own grant there, while
+`AgentManager::executeAll()` resolves the batch and fails BEFORE dispatch, with an honest
+`settleAbandoned` reason - 4 manager + 2 pool tests (master `d7ed85bcc`). The file-ownership note
+above is why the fix landed a round later, not why it was skipped. The cross-fork enforcement half
+remained dormant parent-side (names-only wire) and rode E660, since closed.
 
-### E645 [OPEN] — a foreign preset's `Bash(git:*)` is imported verbatim and is silently unmatchable
+### E645 [CLOSED] — a foreign preset's `Bash(git:*)` is imported verbatim and is silently unmatchable
 
 **DEFERRED.** Round 60 lane b found `AgentDefinition::reviewer()` shipping `Bash(git:*)` — Claude
 Code's prefix dialect — where this project globs an argument half with `fnmatch()`. MEASURED on PHP
@@ -20048,14 +20086,15 @@ status']))` is FALSE, and so is every other real git command. The built-in prese
 `AgentDefinitionTest` now refuses any argument-scoped preset declaration that its own probe cannot
 satisfy.
 
-**That guard covers the six built-in presets and nothing else.** `ForeignAgentPresetRegistry` imports
-`.claude/agents` frontmatter through `toolList()`, which MEASURED is a pure trim-and-split with no
-dialect translation anywhere in `src/Agents/` or `src/Permissions/`. So a user's own Claude Code
-preset carrying `tools: Bash(git:*)` produces a declaration that is well-formed, passes every check,
-and matches nothing — which after §C7 means the sub-agent is granted the `Bash` tool by the NAME half
-and then has every `Bash` call refused by the argument half. The durable fixes are a translation at
-import (`(x:*)` → `(x *)`) or a stderr warning naming the dialect; neither was taken.
-### E646 [OPEN] — the live worker cannot heartbeat through a non-streaming provider call
+**CLOSED in round 61 by the first durable fix this paragraph named:**
+`fromClaudePrefixDialect()` translates `(x:*)` into `(x *)` inside `toolList()` at foreign-import
+time, so a user's own Claude Code preset carrying `tools: Bash(git:*)` arrives matchable instead of
+well-formed-but-silently-unmatchable - pinned by unit + matcher + end-to-end chain tests (master
+`e5bb9de76`). The import account above is measured history: `toolList()` was a pure trim-and-split
+with no dialect translation, and after section C7 the imported NAME half granted `Bash` while the
+argument half refused every call. That shape can no longer be produced by `.claude/agents` import;
+the stderr-warning alternative became unnecessary once the translation shipped.
+### E646 [CLOSED] — the live worker cannot heartbeat through a non-streaming provider call
 
 **DEFERRED FINDING, not a hole today.** `ProcessExecutor::createLiveWorkerScript()` emits one
 heartbeat before the provider call and then one every 5s *between relayed chunks*. On the
@@ -20074,7 +20113,7 @@ emit while blocked, e.g. an alarm signal, a `pcntl_fork()`ed heartbeat emitter, 
 Standing user rule: LLM calls may legitimately run for tens of minutes, so this must not be
 "solved" by capping the request.
 
-### E647 [OPEN] — a sub-agent worker runs with NO TOOLS, and nothing says so at runtime
+### E647 [CLOSED] — a sub-agent worker runs with NO TOOLS, and nothing says so at runtime
 
 **DEFERRED FINDING.** `ProcessExecutor::encodeTools()` sends the request's tool NAMES across the
 startup line and `createLiveWorkerScript()` builds its `CompleteRequest` with `tools: null`. The
@@ -20122,7 +20161,7 @@ reading a spooled startup line off disk — the `require` becomes attacker-influ
 `is_file()` test does not bound it. `Sessions/BackgroundSupervisor.php|require` carries the same
 shape and the same exposure.
 
-### E649 [OPEN] — nothing in `src/` can give a sub-agent worker a provider, and `/workflow run` is the reachable case
+### E649 [CLOSED] — nothing in `src/` can give a sub-agent worker a provider, and `/workflow run` is the reachable case
 
 **DEFERRED FINDING, and it is the reason the production sub-agent path is unexercised.**
 `Chat::executeAgents()` builds its executor from `AgentPoolConfig`, which carries `maxConcurrent`,
@@ -20154,7 +20193,7 @@ answer — but it is a behaviour change on a live command and it was not written
 Note also that `WorkflowEngine::$provider` is a provider NAME, not a config, so it is not a ready
 supplier for the seam either; the gap has the same shape at that site as at `AgentPoolConfig`.
 
-### E650 [OPEN] — the parent writes `execute` into a pipe whose child may already be gone
+### E650 [CLOSED] — the parent writes `execute` into a pipe whose child may already be gone
 
 **DEFERRED FINDING, cosmetic today.** `spawnWorker()` writes its `execute` line with a bare
 `fwrite($pipes[0], ...)` after a bounded wait for `ready`. A child that exited during startup —
@@ -20170,7 +20209,7 @@ warning attributed to the executor rather than as a named failure, and `phpunit.
 detect the dead child (or guard the write) and turn it into the AgentResult the caller already
 expects.
 
-### E651 [OPEN] — `src/Tui/Renderer.php` cites `ProcessExecutor.php:81`/`:235`
+### E651 [CLOSED] — `src/Tui/Renderer.php` cites `ProcessExecutor.php:81`/`:235`
 
 **DEFERRED, trivial.** A doc-block in `Renderer.php` reasons about the executor by LINE NUMBER. Both
 numbers were already approximate and this round moved everything below the constructor, so they now
@@ -20377,9 +20416,20 @@ assumes `LINES`/`COLUMNS` unset when stdout is piped) is carried in §0-NOW-69/e
 
 **What:** 2 fixed-by-reword, 1 true claim pinned via the real mutation-able `DocFigureProseDriftTest` generator, 9 held-with-domains; stale `WorkflowEngine.php` cites → symbol-based (lane ae). Repo-wide residual → E686. **Conf:** HIGH. Evidence: triage E685.
 
-### E686 [PARTIAL] — repo-wide documentation-figure prose campaign
+### E686 [CLOSED] — repo-wide documentation-figure prose campaign
 
-**PARTIAL — tranche-6 landed round-69 (lane fl → pick `d168ddfab`):** arms Z/AA/AB (DocFigure total 32, verified 32 methods): Z live-pane tick three-site equality + word-map product; AA SkillRegistry quotients/retractions/generator product/7x-10x band; AB nudge multiplier labels = bytes/cap quotients + fully-LIVE margin sentence. ZERO FALSE; 7 HELD; 2 carry rows verified CLOSED by prior arms. Tranche-7 = the ~50 figure-file remainder (seed gd). Evidence: fl REPORT + measures.md ledger, triage E686, worklog ROUND 69.
+**CLOSED ROUND-75 — CAMPAIGN CLOSED BY ORCHESTRATOR RULING (2026-09-13).** Tranche-11 (the FINAL execution tranche) shipped via ja (lane `51e5b9b39` → pick `99cc68e02`): arms AI–AO, DocFigure 63→71 (+8T; 71T/2451A) — bare-anchor absence guard over all 13 docs pages in three shapes with a bidirectional exemption roster (AI), Providers-table ↔ `availableTypes()` ordered both-directional (AJ), AA preset roster scandir/`TYPE_`/16-field reflection censuses (AK1/AK2), COMMANDS surface table vs `CommandRegistry::all()`/CONTROL_PLANE (AL), TEMPLATE_PATTERN char-walk branch census + word/ordinal pins (AM), slots == ARCHITECTURE cross-page (AN), tags ORDERED == `PromptFence::tags()` + `MAX_BREAKPOINTS=4` + register-six + five-git-subprocess word pin (AO). ARCHITECTURE five drifted anchors healed by DROPPING numerals (symbol cites kept); AGENTS_AUTHORING five patches (six→ALL SIXTEEN fields, permissionMode gating, phantom lines-136-159 cite, eleven→twelve built-ins + Task delegation). r75-rv-ja REQUEST-CHANGES 1 MAJOR: ja left ARCHITECTURE.md asserting eleven built-ins while AGENTS_AUTHORING now told twelve-truth — a builder-missed SIBLING-PAGE CONTRADICTION. Healed by fix-lane ja2 (lane `ddf761169` → pick `332e6fdd7`): :336 twelve-truth + Task delegation prose + the AK1 CROSS-PAGE AGREEMENT leg (both pages' word-numbers must equal the live registry count — a one-page lie can no longer survive the pair) + AI planted-mismatch leg + AGENTS_AUTHORING↔COMMANDS ordered-agreement leg; rv-ja erratum recorded: the digit row "12 built-ins + MCP bridges" EXISTS at ARCHITECTURE.md:31 (pinned by arm H) — the reviewer's "no digit-form row" claim was false; the defect was real anyway. Reviewer close condition (:336 heal + AK1) SATISFIED → orchestrator rules E686 CLOSED. Closeout companion `02c65e6eb` healed the src/Cli/Bootstrap.php tools() docblock ELEVEN→TWELVE-truth (census trio 117T/6408A green). r76 SEAM: live-false ELEVEN claims remain in the Bootstrap body (~:6371 wire-order, :6376 meta-note now contradicting its own healed docblock, :6546/:6552 disabledTools docblock) + sugar-crush/README.md:224/:233 + tests/Integration/ForeignAgentPresetWiringTest.php:273 "six" comment. Residuals HELD-with-reason: COMMANDS JIT dated, PROMPT_ENGINEERING `models` behavior, external §9.12 dated (6==6 today), AA three-layers narrative. prompt_expand.md IS tracked at the monorepo root (ie erratum — valid cite, still unguarded; candidate arm for any future re-opening). Campaign record: tranches 2–11, ≈334 figures judged, 71 live arms, docs seed list EMPTY at this coverage.
+
+**PARTIAL — tranche-11 RENUMBERED at the round-74 close (lane ie verdict, ZERO commits; CONFIRMED 8/9 by r74-rv-ie; execution ASSIGNED to round-75 lane ja):** ie's independent re-derivation at `f46c203d6` OVERTURNS hc's "docs seed list EMPTY" — the declaration rested on a false upstream judgment (gd/measures.md row 22 "figure-free / numeral-scan empty" is FALSE-to-tree: every flagged claim predates gd's base, blame-verified `8d15443c3`/`4b4ff3398`; the scan was empty-handed, not the pages). Findings: DocFigure's 63 arms parse exactly 10 pages — **AGENTS_AUTHORING.md, COMMANDS.md, PROMPT_ENGINEERING.md carry ZERO citations in any test** (SymbolCitationDrift resolves backticks only — proves nothing about numerals/anchors); **ARCHITECTURE.md** carries 5 confirmed-drifted bare line anchors (`Runtime.php:154`→:1171, `line 311`→:338, `lines 564-595`→:625, `line 601`→:662, `line 1292`→:2416) plus an unguarded figure-dense Providers section; 3 claim-sites CONFIRMED FALSE at tip. Work list: **T11-a** ARCHITECTURE (anchor heals per the ha law + Providers roster arm DERIVED from `availableTypes()` + NEW absence-guard failing bare `(line \d+)` AND `file.php:\d+` — BOTH shapes — exempting HOOKS.md:264-style self-narrative); **T11-b** AGENTS_AUTHORING + COMMANDS (2 prose heals — "no `Task` tool … eleven built-in tools" FALSE since E675 `b636591b6` (12 BuiltIn files; cross-page word-pin to ARCHITECTURE's live count), "not merely cosmetic" + "lines 136-159" anchor+quote FALSE; then roster arms — preset fields sixteen/six-read, tiers/layers/six built-in definitions, COMMANDS roster table vs `slashCommands()` bidirectional incl. the ce /notices row self-declared unguarded, TEMPLATE_PATTERN literal + branch counts, SHELL_BUDGET_SECONDS, websearch flag rosters); **T11-c** PROMPT_ENGINEERING (cross-page pair arms reusing arm AP's eleven-slot derivation + arm BE's tags roster — cross-page word-pins; MAX_BREAKPOINTS four; the no-production-caller absence claim per the hc vacuity law; `prompt_expand.md` §9.12 — **erratum E1: the file IS tracked at the monorepo root**, the cite is valid-but-unguarded — pin or HELD-external with stated reason). ~12–16 arms / ~6 prose fixes. Carries: AU/BD keep-duplication precedents (check for an existing pin BEFORE adding an arm), GlobDialect glued-literal law (131,765=365×361). **E686's CLOSE verdict rides ja's success.** Evidence: ie REPORT.md + verdicts.md (`/home/sites/crush-r61-artifacts/ie/`), r74-rv-ie, triage E686, worklog ROUND 74.
+
+**PARTIAL — tranche-10 landed round-73 (lane hc `994155c3f` → picks `41834f960` + review-fix `c616d5738`):** arms **BB–BH** on `docs/MEMORY.md` — the LAST un-armed docs page (deferred across nine tranches); +7T/+198A, DocFigure **56→63** methods. TWO FALSE healed in-step: containment "five call sites"→six with `loadAncestorRoots` NAMED (canonical `ContainedPathInventoryTest::ROUTED_CALL_SITES` = 6), threading list += `Grep` (exactly five `instructionLoader:` `$loader` sites in `unfilteredTools`). Review r73-rv-hc APPROVE 0C/0M/2MINOR — MINOR-1 BD 512-anchor leg KEPT per AU precedent; MINOR-2 dead `$memo[2]` capture healed in review-fix `79fba8c10` (literal sentence-shape pin; M8 once→twice reddens EXACTLY BC). 11/11 mutations each red-exactly-one-arm; docs md5-restored. Builder+finisher clean, no death events. **The campaign's docs seed list is now DECLARED EMPTY — but E686 stays PARTIAL: closure waits for the independent completeness verdict at round-74 (lane ie re-derives emptiness across ALL docs pages + the gd/gg/ha/hc measures ledgers + guard families — do not close blind).** Carry to ie: hc's 8 HELD rows (`hc/measures.md`). Evidence: hc REPORT + measures.md, r73-rv-hc REVIEW, triage E686, worklog ROUND 73.
+
+**PARTIAL — tranche-8 landed round-71 (lane gg `9cdc344b5` → pick `7924075c7`; review-fix lane gg2 `b123b1355` → pick `00bab5d21`):** arms AI–AR (AQ SKIPPED — its spacing claim is arm AH domain; judgment recorded in gg/measures.md), DocFigure roster 38→**47** methods (+9T/+141A); 2 FALSE ARCHITECTURE.md claims fixed (maxSteps anchors :331, ext-sqlite3 TaskList caller :375) with re-introduction mutations proven; gd 10 HELD carry rows ALL dispositioned. Reviewer caught MAJOR: arm AP hand-typed layer roster SURVIVED the M10 RuleLoader→RuleReader rename — the gg2 fix DERIVES the roster from the doc segment itself (class-shaped backtick cites → short→FQN map, cite↔roster bidirectional, `interface_exists || class_exists` — PromptGuidance is an INTERFACE; `(?:\(\))?` not `\(\)?` — the optional-close-paren regex gotcha), M10 pre-green/post-RED + M-DEL deletion arm RED proven; +0T/+33A. GlobDialect corpus figure 131,765=365×361 intact both picks. **TRANCHE-9 LANDED ROUND-72 (lane ha `4ff314590` → picks `868221189` + vacuity fix `d75ce3af7`):** arms **AS–BA** (+9T/+244A; DocFigure 47→**56** methods) — on the REAL remaining surfaces: the brief's PROVIDERS.md / ANTHROPICS.md / TOOLS.md were **PHANTOM** (files do not exist; docs/ = 13 pages, reviewer §0 re-verified), the tranche worked SKILLS.md + MCP.md + the `src/Backend.php` docblock instead. MCP.md M13 anchor FALSE (`Cli\ArgvParser` "line 175" drifted to :177) → line-number dropped, arm named, drift pinned in AZ. BA = the `$onEvent` roster LIVE-ARM: docblock cites ↔ `complete()` `@param` ↔ `encodeEvent` param ↔ `decodeEvent` return, four sets bidirectional, import-verified + `class_exists`. GlobDialect self-caught 368×364 (three glob-shaped literals) → chr(42)/concat fix, 131,765=365×361 restored. AV vacuity mutation-caught → fix pick binds digits to captured doc figures. AU MINOR dup with `PathsGlobDocumentationTest` — SUPERVISOR DISPOSITION KEEP as-is (unique `paths:` verbatim-quote leg). **Next tranche-10: the remaining docs pages per ha/measures.md carry** (hc; check for an existing pin before adding an arm). Evidence: ha REPORT + measures.md, r72-rv-ha REVIEW, triage E686, worklog ROUND 72.
+
+**Prior next-tranche note (superseded): ANTHROPICS/PROVIDERS/TOOLS/SKILLS/MCP per-arm tables** (carry: gd/gg measures.md HELD lists; the GlobDialect glued-literal law binds). Evidence: gg REPORT + measures.md, gg2 REPORT, r71-rv-gg REVIEW, triage E686, worklog ROUND 71.
+**PARTIAL — tranche-7 LANDED round-70 (lane gd `8b639e092` → pick `80806b39f`):** 22 claim rows judged (HOOKS.md / SKILLS.md / ENVIRONMENT.md + E353's fold surface) — ALL TRUE under live re-derivation, ZERO FALSE (docs byte-untouched); 6 arms AC–AH, DocFigure roster 32→**38** methods: AC built-in-hook tables (grid RECOMPUTED from live name|event pairs, registrar trio order), AD Events-vs-`HookEvent::cases()` eleven + Dispatched-from call-site scan skipping src/Hooks/ internals, AE entry/exit ENTRY_KEYS/DELIMITERS/parse/match/exit-rows, AF DRAIN_SELECT_RETRIES/sweep-prefixes/marker-absence, AG SKILLS.md paths-cell 8/300/2,636/eighth/1.375 divided through Grep/Glob/Read/Edit/Write, AH ENVIRONMENT.md six-tokens-300ms ±10ms spacing law. GlobDialect hazard caught+fixed: a glued glob literal drifted the corpus to 366×362; split restored 131,765=365×361 (M7 proves the split load-bearing). **Carry tranche-8: ~9.5 HELD figures per gd/measures.md carry-dispositions** (9 carry HELDs confirmed + 3 fresh HOOKS.md external/labeled holds; dispositions named per row). +6T. Evidence: gd REPORT + gd/measures.md, triage E686, worklog ROUND 70.
+
+**PARTIAL — tranche-6 landed round-69 (lane fl → pick `d168ddfab`):** arms Z/AA/AB (DocFigure total 32, verified 32 methods): Z live-pane tick three-site equality + word-map product; AA SkillRegistry quotients/retractions/generator product/7x-10x band; AB nudge multiplier labels = bytes/cap quotients + fully-LIVE margin sentence. ZERO FALSE; 7 HELD; 2 carry rows verified CLOSED by prior arms. Tranche-7 = the ~50 figure-file remainder (seeded gd — LANDED above). Evidence: fl REPORT + measures.md ledger, triage E686, worklog ROUND 69.
 
 **ROUND-67 wave-2 tranche-4 stamp (lane dl — re-cut lane `c73374dca` → master `66b92e3d6`), stays PARTIAL:**
 ten HOOKS.md/TROUBLESHOOTING.md `CRUSH_*` claims judged — 7 TRUE pinned in 5 new arms **O–S** with a LIVE
@@ -20421,3 +20471,101 @@ one). **Conf:** HIGH. Evidence: triage E687, worklog ROUND 66.
 ### E688 [CLOSED] — `getExitCode():?int` bounded by a 2.0s REAP-WAIT (not a request timeout)
 
 **What:** born AND closed in lane ac — the review caught exit-code attribution racing the reap; `WorkerExitCodeAttributionTest` keystone; honours E646's standing prohibition. **Conf:** MED. Evidence: triage E688.
+
+### E693 [CLOSED] — SuiteSkipRosterTest indexes `getMethod()` twice in the rostered-skip body
+
+**CLOSED ROUND-72 (lane hb `2dcc802f1` → pick `179f0b37e`, +0T/+4A)** — the double `$reflection->getMethod($method)` in the rostered-skip body folded onto the canonical `tests/Support/SlicesDeclaredMethodsTrait` (gi's); the gate slice KEEPS `$gate->getFileName()` (the gate is inherited — the classic fold bug ABSENT, new comment names why), rostered slice keeps `$reflection->getFileName()`; census docblock prose truth-flipped, rosters stayed `[]`. Builder DIED mid-commit, finisher salvaged (-72 re-proved); reviewer independently re-proved the pin (own M1 RED at `SuiteSkipRosterTest:533`). The brief's `MultiAgentRefactorTest` tokenless-ids half measured CLOSED-BY-PRACTICE at base (all four uniqid sites pid-tokenised; file is `tests/Integration/` not `tests/Agents/`).
+
+**What:** residue minted at the round-71 close from gi E325 step-(b) fold — the rostered-skip check in `tests/SuiteSkipRosterTest.php` (:513-514) calls `$reflection->getMethod($method)` twice where the canonical `tests/Support/SlicesDeclaredMethodsTrait.php` owns the pattern once; the slice-reader census docblock names it the SOLE remaining un-folded reader (the fold is convention, not instrument — reviewer F-1). Rides a future tests/ lane (round-72 hb smalls bundle). **Conf:** LOW. Evidence: triage E693, r71-rv-gi REVIEW, worklog ROUND 71.
+
+### E694 [CLOSED] — project-scope memory discovery ops (list/search) and bulk clear ignore the repo store
+
+Minted at r75 closeout from lane jb's design (`/home/sites/crush-r61-artifacts/jb/design.md` :105-124,
+text reproduced below with the orchestrator ruling folded in). jb landed the PER-ID half
+(`Chat::memoryLocate()` resolves an id repo-store-first, `/memory delete`/`/memory edit` mutate the
+entry the prompt shows — lane `c79d69cfd` → pick `90b7d1ae7`, pinned by `MemoryCommandTest`; master pick `90b7d1ae7`); the discovery + bulk halves
+still address the home store only: repo notes are invisible to `/memory list` / `/memory search` and
+immune to `/memory clear`.
+
+- **Step 1 (slice-A, lane ka r76):** `/memory list` + `/memory search` gain a grouped display across
+  both stores for project scope (name the store per row); response wording for the home section stays
+  byte-stable — MEMORY.md carries pinned prose, sequence doc edit + DocFigure arm in the same commit.
+- **Step 2 — BULK CLEAR, ORCHESTRATOR RULING RECORDED 2026-09-13:** bulk-clear is NOT supported for
+  project scope. Per-id operations only (delete/edit already repo-first). `/memory clear` remains a
+  home-store command; any future routing of it at the repo store must REFUSE LOUDLY — no silent
+  partial wipe of possibly-committed repo notes. jb's `--confirm --force` variant: DECLINED (no
+  confirm flag; the refusal is unconditional).
+- **Step 3 — agent memory tool:** GATED on an E25 re-severity review + built-in-tool corpus census;
+  jb's design declined to mint it standalone (design.md :69-103 — non-operator write path into a
+  shared tree).
+- **Doc debt owed at step-1 landing** (jb design.md :118-124): after MEMORY.md "the repo-local copy
+  claiming any shared id." append: "Since r75 /memory delete and /memory edit claim the same
+  precedence — an id resolves in the repo store first, so the entry the prompt shows is the entry the
+  command removes. Listing, search, and bulk clear remain home-store commands (E694)." — plus a
+  corresponding DocFigure arm. The r75 closeout deliberately shipped NEITHER (DocFigure 71T held).
+- rv-jb MINOR-1 carried: `memoryLocate` array-shape tuple — document the shape at the signature.
+
+**CLOSED (round-76, lane ka — step-1 landed, step-2 shipped-by-absence, step-3 declined-by-ruling;
+evidence `/home/sites/crush-r61-artifacts/{ka,r76-rv-ka}/`):** Step 1 landed via lane `6b113f67e` →
+pick `35489b1d1` (r76-rv-ka APPROVE 0C/0M/2MINOR): `/memory list` + `/memory search` consult
+`ProjectMemoryWriter::forRoot`'s store alongside home and group rows under a banner naming the owning
+store (repo-first, mirroring `capture()`'s fold law); the home-only output shape stays byte-stable;
+MEMORY.md carries the pinned sentence (first sentence VERBATIM, the falsified trailing clause replaced
+truthful — deviation disclosed) + DocFigure arm AQ in the SAME commit; `memoryLocate`'s tuple +
+no-owner sentinel documented (rv-jb MINOR-1). Step 2's loud refusal SHIPPED-BY-ABSENCE: `/memory clear`
+at project scope REFUSES while the repo store holds >=1 note — nothing is touched, `--force` is not
+parsed; rv-ka's item-2 ruling KEPT the entry-present polarity (the operation is `--confirm`-gated,
+TOTAL w.r.t. every visible project note, and an empty repo has no committed half to strand;
+store-present polarity rejected — this repo TRACKS `.sugar-crush/`, making the legacy byte-green test
+env-dependent). Step 3 (agent memory tool) stays DECLINED-BY-RULING, moved to the trigger-watch
+roster: revisit ONLY on an E25 re-severity review + built-in-tool corpus census.
+
+### E695 [CLOSED] — OAuth tokens are registered by /mcp add but never attached to any HTTP request
+
+**What:** phase-2 kickoff probe, measured at `9e4d4fee7`: `OAuthClientRegistration::getValidAuth()` (src/MCP/OAuthClientRegistration.php:237) has ZERO production callers; `HttpMcpServer` builds headers from static config only (src/MCP/HttpMcpServer.php:94-105); `Authorization` appears nowhere in HttpMcpServer/McpClient/Bootstrap. `McpAuthStore::hasCredentials` is hard-coded true (src/MCP/McpAuthStore.php:47,:80), making the `ServerAuthStatus` "no credentials" branch unreachable (self-noted src/Commands/McpAuthCommand.php:44-48). Net: `/mcp add` performs a full RFC7591 registration + token fetch and stores a token nothing consumes — an inert write-only store. **Acceptance:** the fetched/refreshed token attaches to the matching server's requests via `getValidAuth()` (refresh honored); `hasCredentials` becomes real; docs/MCP.md auth section truth-flipped IN-STEP with its DocFigure arms; `/mcp add` reporting states what the token now does. **Conf:** HIGH.
+
+**CLOSED ROUND-77** (lane la, masters `e2e427eca..f895f03c5`; picks `eb8318b91` + `4a76fdd40` + drift-fix `9ea12b968`): the single `HttpMcpServer::rpc()` egress now consults `OAuthClientRegistration::validAuthFor(url)` per request — stored tokens attach to the matching server (refresh honored; a static configured `Authorization` header wins case-insensitively and the store stays untouched); `AuthEntry` carries `tokenUrl`/`registrationUrl` through refresh + re-register (add-arm persistence pinned in `e7e25ca17` → pick `4a76fdd40`, r77-rv-la MINOR-1/2); `hasCredentials` made real; docs/MCP.md auth prose flipped IN-STEP. `McpClient` http arm lazily creates the store. Reviewer r77-rv-la APPROVE 0C/0M/2MINOR; hermetic (temp stores only, HOME `mcp-auth*` absence proven).
+### E696 [CLOSED] — per-preset MCP routing has the mechanism and fail-closed tests but no production caller
+
+**What:** `McpRouter::setAgentPreset`/`setDenyPatterns` have zero src/ callers outside McpClient's own internals (src/MCP/McpClient.php:58,:70); the main launch path builds the router `unrestricted: true` (src/Cli/Bootstrap.php:5760-5798); README.md:1072 claims the allowlists "are enforced by `McpClient` against `McpRouter`, not just decorative config" — enforcement is tested (tests/MCP/McpClientTest.php:740+) but never invoked end-to-end. Enforced-if-wired ≠ enforced-today. **Acceptance:** design-first — thread the active agent preset (and deny patterns) into the MCP client construction on the sub-agent/per-preset materialization path, or if the wiring is judged out-of-scope, correct the README sentence in-step and carry the wiring under this id. **Conf:** HIGH.
+
+**PARTIAL ROUND-77** (lane lb, `d46dd5bc3` → pick `630ef47ff`): the docs half is healed — README.md:1072 now states carried-but-unenforced honestly, MCP.md "scopes sub-agents"/"Deny patterns belong to the sub-agent path" carry the unwired (E696) stamp in-step. The wiring half is BLOCKED on an orchestrator seam ruling. Architecture finding (`/home/sites/crush-r61-artifacts/lb/design.md`): construction-time wiring is IMPOSSIBLE — the single src `new McpClient` (Bootstrap.php:5760) is memoized per (pid,configPath), a process singleton shared by the main chat and every sub-agent's PARENT-SIDE execution (`ProcessExecutor::rehydrateTools` is data-only; `Agents/` has zero `McpClient` refs), so no preset identity is knowable at construction. Candidate seams: **(α)** roster-narrowing at grant-resolution in AgentManager (`resolveGrantedTools`/`refuseCallOutsideGrant`) — RECOMMENDED, reviewer-verified no new persistence/IPC; **(β)** per-preset attach across the worker IPC with set/restore on the shared client — REJECTED (set/restore race on the singleton). A deny-pattern config producer does not exist. Semantics note: EMPTY `mcpServers` = ALLOW-ALL (McpRouter:104-108). Carried as round-78 lane ma.
+
+**CLOSED ROUND-78 (alpha half; lane ma `c4d08c169` → pick `f64399c82`, wave-1 weld `41ad0bc93` floor 11,756/169,439)**: the α seam shipped — per-preset MCP narrowing enforced at grant-resolution in AgentManager (allowlist enforced; empty allowlist = ALLOW-ALL semantics preserved, zero-blast for declaring-nothing presets), README:1072 + docs/MCP.md enforcement wording re-armed IN-STEP with its DocFigure arm. β stays REJECTED (race on the memoized singleton — lb ruling). **RESIDUAL-HALF (recorded under CLOSED-notation per house rule):** the DENY half stays minted-unwired — a `denyPatterns` config producer still does not exist (McpRouter::setDenyPatterns keeps zero settings-file callers); trigger-watch minted if a producer is ever added.
+### E697 [CLOSED] — palette action labeled "Toggle MCPs" only lists
+
+**What:** `PaletteAction::ToggleMcp` (src/Commands/CommandRegistry.php:149-156, paletteLabel "Toggle MCPs") dispatches to `handleMcpAuthCommand('mcp auth list')` (src/Chat.php:12839) — nothing toggles. The interactive trust WRITE was DECLINED at E689 (src/Tui/McpPanel.php:27-35: would invent a second persistence seam); the decline stands, the label does not. **Acceptance:** rename the label to the truthful behavior (e.g. "List MCP servers") and update EVERY derived pin in-step — grep `Toggle MCP` tree-wide first (docs/COMMANDS.md, README rosters, DocFigure/ReadmeRoster/KeyBinding guard families) and run those guards. **Conf:** HIGH.
+
+**CLOSED ROUND-77** (lane lc `3eb4d60e5` → pick `dc5528bba`): label-only rename to the truthful listing label; every derived pin updated in-step — DocFigure arms are the ONLY lexical pins for palette labels (CommandRegistry label flows to byLabel/MenuBar/registry tests all self-derived). The E689 interactive-trust DECLINE stands byte-intact. Case names remain narrated in closeout-owned root survey docs (crush_code.md/crush_feat.md).
+### E698 [CLOSED] — no MCP liveness surface: list and doctor reflect config, never running state
+
+**What:** `mcpServerInventory()` provably calls no proc_open (src/Cli/Bootstrap.php:5563-5602; docs/MCP.md:142-144) and `doctor` is read-only by contract ("a health check must not launch programs", src/Cli/Subcommands.php:347-351) — deliberate. But no surface reports "server X is running with N tools" during a live session. **Acceptance:** a non-launching liveness readout over the already-built clients, or a documented stance closing the question. Unassigned; scope in a later round. **Conf:** MED.
+
+
+**CLOSED ROUND-78 (lane mb `b5c0eaee9`+`01a275887`+fix `4d1672b75` → picks `4854c86a3`+`15d57cc84`+`4eca19378`)**: non-launching liveness readout SHIPPED — `McpClient::startedSnapshot()` (new McpClientStartedSnapshotTest) + Bootstrap memo-read panel suffixes; the panel reports running clients with their tool counts, NEVER launches, and is BYTE-STABLE when cold (cold-render negative pins `01a275887` make the byte-identity arm discriminating; rv-mb MINOR-1 orphan-suppression polarity pin in `4d1672b75`). docs/MCP.md liveness prose in-step (liveness-gated α-line honesty, rv MINOR-2).
+### E699 [OPEN] — ClaudeCodeMcpClient: dormant 983-line stdio spawner, disposition pending
+
+**What:** "constructed by nothing but its own test" (src/ClaudeCodeMcpClient.php:45-47); no ContainedPath/PermissionGate; its own docblock records it is "survivable ONLY while it stays unreachable" (:54-62), pinned by ClaudeCodeMcpClientTest::testNothingInSrcBinOrExamplesReachesThisDormantSeam. Deleting dormant code is a STOP-class action requiring the operator; wiring-with-gates grows surface. Recommendation ON RECORD: keep as-is. **Acceptance:** operator ruling. **Conf:** HIGH (state), decision pending.
+
+### E700 [CLOSED] — 36 backlog headings still stamped [OPEN]/[PARTIAL] while their triage rows are CLOSED
+
+**What:** measured 2026-09-13 — the one-word stamps lag the ledger for E1, E14, E15, E27, E29, E30, E37, E40, E47, E48, E49, E50, E107, E115, E116, E124, E165, E319, E475, E547, E575, E631, E632, E636, E637, E639, E641, E642, E643, E644, E645, E646, E647, E649, E650, E651 (all CLOSED in triage; E107/E165/E319/E547 CLOSED-in-place per the rows-stay-put doctrine). E642's body still asserts "STILL OPEN: ... caught by nothing" (backlog :20027) and E643's "was NOT fixed" (:20036) — contradicting their round-61 closure rows; residuals rode E653/E654/E660 (all since closed). **Acceptance:** flip all 36 headings; rewrite the four contradicting body paragraphs as closed-notation pointing at the successor ids. **Conf:** HIGH.
+
+**CLOSED ROUND-77** (lane lc `4fd247972` → pick `b7e6c2888`): all 36 heading stamps flipped; the E642-E645 contradictory bodies rewritten as closed-notation pointing at successor ids (E653/E654/E660). Disclosed mid-lane ledger wipe (unanchored re.subn ate 3,837 lines) was RESTORED from git with zero collateral — reviewer enumerated every deletion. Ledger-edit law recorded (scope per-section, assert exactly-1, verify numstat + canary grep).
+### E701 [CLOSED] — no interactive OAuth authorization-code/PKCE flow
+
+**What:** `/mcp add` implements well-known discovery + client-credentials fetch only (src/Commands/McpAuthCommand.php:188-262); MCP servers requiring a browser auth-code flow cannot authenticate. Size L; sequenced behind E695 (attachment must exist before a richer flow means anything). Unassigned. **Conf:** HIGH.
+
+**CLOSED ROUND-79** (lane na `a14f613ec`+`9d19bd2b5`+`44adf5fe0` → picks `8ed8ada1d`+`7b83a6454`+`1b8cc7ce8`): acceptance met in full — `sugarcrush mcp auth login <server>` performs RFC 8414 discovery, RFC 7591 registration when needed, an RFC 8252 loopback + RFC 7636 S256 authorization-code exchange against a callback listener bound to 127.0.0.1 only, and persists a complete `AuthEntry` (access/refresh/expiry/scope + endpoint carries) that E695's request-time attachment consumes and refreshes via `grant_type=refresh_token` — with a state-checked, deadline-bounded (default 300 s, override flag), Ctrl-C-cancellable human wait that stores NOTHING on every failure arm; the in-chat `/mcp auth login` prints truthful shell guidance with zero Chat.php edits; no new composer dependency; every MCP.md prose addition armed IN-STEP (DocFigure arms BI/BJ/BK). +53T exact across 7 new test files (design predicted ~25T/4 files — honest deviation, recorded). Review r79-rv-na APPROVE-WITH-FIX 0C/0M/3MINOR all healed at `44adf5fe0` (live clock seam, canonical RFC 7636 Appendix-B vector, hash_equals source pin). Carried trigger-watch: `updateRegistration()` redirect-churn seam (design nd §2.2) for servers rejecting redirect updates — NOT implemented, deliberately out of slice.
+
+### E702 [CLOSED] — SSE transport is spec-mentioned, unimplemented (throws), and nowhere listed as a supported-transport table
+
+**What:** `McpClient.php:172-181` throws for `sse` with an honest comment; docs/MCP.md never gives users a supported-transports table (stdio/http/git real, sse not). **Acceptance:** a docs transport-table naming what ships + honest sse line (DocFigure arm in-step). Small. Unassigned. **Conf:** MED.
+
+
+**CLOSED ROUND-78 (lane mb `9ce806a56` → pick `4ed2924a8`)**: docs/MCP.md now carries the supported-transports table — stdio/http/git real, sse named-unimplemented with the honest throw line — DocFigure arm in-step (tranche-11 roster family).
+### E703 [CLOSED] — no in-session MCP config reload/restart; the server list is frozen per launch
+
+**What:** docs/MCP.md:49-55 records the frozen read-once behavior as a decision; an `mcp restart`/reload is an open product question (size M-L, touches the shutdown seam `registerMcpShutdown`). Unassigned, decision pending. **Conf:** MED.
+
+**CLOSED ROUND-78 (lane mb `9246add03` → pick `1f9e6fec8`; α shipped, β REJECTED — decision recorded)**: the frozen-list decision gets an honesty surface instead of a reload seam — the panel carries a config-DIGEST line + a changed-since-launch line, so a mid-session config edit is LOUD at next glance instead of silently ignored. A relaunch/reload (β) is REJECTED on security grounds: relaunching under a still-valid root grant re-arms the prompt-injection→`proc_open` threat the launch-freeze exists to bound, and the second-seam prohibition (E689 precedent) bars a parallel trust path.

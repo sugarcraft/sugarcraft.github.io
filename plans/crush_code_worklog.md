@@ -11597,6 +11597,330 @@ the how-to-renumber prose from the renumber.
 flight. In `Chat.php` two of the three were the expensive kind — a method silently undocumented while its
 prose sat above an unrelated declaration.
 
+
+## ROUND 79 (2026-09-14) — PHASE 2 (MCP) wave-3: E701 interactive OAuth auth-code + PKCE shipped by a single lane; queue drops to the E699 decision gate; floor 11,837/170,424 @ ca9aac147
+
+- **na — E701** (lane `a14f613ec`+`9d19bd2b5`+`44adf5fe0` → picks `8ed8ada1d`+`7b83a6454`+`1b8cc7ce8`, linear, ALL CLEAN;
+  r79-rv-na **APPROVE-WITH-FIX 0C/0M/3MINOR**, all healed at `44adf5fe0`): `sugarcrush mcp auth login <server>` — RFC 8414
+  discovery, RFC 7591 registration when needed, RFC 8252 loopback + RFC 7636 S256 authorization-code exchange on a
+  127.0.0.1-bound listener, state-checked, deadline-bounded (default 300 s, override flag), Ctrl-C-cancellable, stores
+  NOTHING on every failure arm; persists a complete `AuthEntry` that E695 request-time attachment consumes/refreshes;
+  in-chat `/mcp auth login` prints shell guidance with ZERO Chat.php edits; MCP.md prose armed IN-STEP (DocFigure BI/BJ/BK).
+  +53T exact, 7 new test files (design predicted ~25T/4 — honest deviation). rv fixes: live `$clock` seam (no 0.3 s real
+  sleep), canonical RFC 7636 App-B vector pinned, `hash_equals(` source pin.
+- **Design provenance (nd):** the §4 buffer-window DEFECT — near-expiry arm must branch on `refreshToken !== ''` or the
+  exchange POSTs `refresh_token=''` — was FOUND BY THE DESIGN PASS and fixed in tranche-1: design-first earning its keep.
+  §2.2 `updateRegistration()` redirect-churn seam carried as trigger-watch (NOT implemented — out of slice).
+- **Builder death + salvage (-72 re-proven):** the na builder died mid-tranche-2; the finisher discovered tranche-2 had
+  been committed FROM the uncommitted working tree; SALVAGE-FIRST audit (ref vs porcelain vs disk) redid nothing.
+- **Floor:** 11,837 / 170,424 / 0F / 0E / 1 skipped (McpClientTest canary) / EXIT 0 linked @cwd=sugar-crush at weld `ca9aac147`;
+  serial green in ONE pass (r78 cadence: hand-bump json tests-only first); K=8 CONSERVATION +0/+0; durations 508→515
+  (+7 na files, set-diff exact); config.json md5 `05480c74…2210` stable. SwallowingCatch gate-law HELD CLEAN.
+- **Ledger:** E701 → CLOSED (backlog heading + §10-citing paragraph; triage row CLOSED-in-place). ACTIONABLE by row census:
+  2 → **1 = E699 OPERATOR DECISION GATE** (keep-as-is recommended ON RECORD; delete STOP-class — NOT a lane). Phase-2 queue
+  empty otherwise; round-80 options: E699 ruling · fresh audit sweep · bank.
+- **INFO carry (closeout-side):** `/tmp/crush-mcp-auth-*` tempnam leak — 1,878 files produced by CommandTableRenderingTest;
+  hygiene candidate for a future lane (watch, not a row).
+
+## ROUND 78 (2026-09-14) — PHASE 2 (MCP product) wave-2: E696-α narrowing shipped, MCP liveness surface built, transports documented, freeze made loud; the actionable queue drops to 2; floor 11,784/169,799 @ a594f073b
+
+**Design-first round.** mc re-verified every r77 stamp at `fcbf19d43` (all 7 clusters HOLD — the census-six
+starting point was proven, not assumed), and mz's design lane produced the E698 liveness proposal before any
+code was cut. Both r78 implementation lanes then closed review **0-CRITICAL/0-MAJOR**.
+
+- **ma — E696-α** (lane `c4d08c169` → pick `f64399c82`; r78-rv-ma **APPROVE 0C/0M/4MINOR-info**): per-preset
+  MCP narrowing enforced at grant-resolution in AgentManager — the α seam the lb architecture verdict
+  recommended (β stays rejected: set/restore race on the memoized process-singleton client). EMPTY allowlist
+  keeps ALLOW-ALL semantics (declaring-nothing presets are zero-blast); README:1072 + docs/MCP.md enforcement
+  wording re-armed IN-STEP with its DocFigure arm. **Residual recorded under CLOSED-notation:** the deny half
+  is still minted-unwired — no `denyPatterns` config producer exists; trigger-watch armed for the day one is.
+  WAVE-1 ALONE (it owns the armed docs), weld `41ad0bc93` floor 11,756/169,439, +7T prediction hit exact.
+- **mb — E698 + E702 + E703** (lane `b5c0eaee9`/`9246add03`/`9ce806a56`/`01a275887` + fix `4d1672b75` → picks
+  `4854c86a3`/`1f9e6fec8`/`4ed2924a8`/`15d57cc84`/`4eca19378`, ALL CLEAN — sole wave, zero conflicts;
+  r78-rv-mb **APPROVE-WITH-FIX 0C/0M/2MINOR**, both healed): **E698** the liveness surface —
+  `McpClient::startedSnapshot()` + Bootstrap memo-read panel suffixes: the panel now reports running clients
+  with tool counts, NEVER launches, and is BYTE-STABLE when cold; the cold-render negative pins (`01a275887`)
+  make the byte-identity arm m2-discriminating (the m5a vacuity catch rode the lineage: reviewer, not
+  builder, found the first-pass pin passed on absence). **E703** α shipped: config-DIGEST + changed-since-
+  launch lines make a mid-session config edit loud instead of silently frozen; β (reload/relaunch) REJECTED
+  and recorded — relaunching under a still-valid root grant re-arms the prompt-injection→`proc_open` threat
+  the launch-freeze bounds, second-seam prohibition (E689 precedent) bars a parallel trust path. **E702**
+  supported-transports table in docs/MCP.md — stdio/http/git real, sse named-unimplemented with its honest
+  throw line, DocFigure arm in-step. rv MINOR-1 (orphan-row suppression polarity) + MINOR-2 (α-line doc
+  honesty) fixed in `4d1672b75`. Two new test files (McpClientStartedSnapshotTest, BootstrapMcpLivenessTest).
+
+**Floor 11,784T/169,799A/0F/0E/1S (McpClientTest canary)/exit0** LINKED cwd=sugar-crush @ weld `a594f073b`;
++28T vs wave-1 exact; assertions -31 vs the builder serial = tree-scan census wobble (green-serial-is-weld-
+truth, r77 law); K=8 CONSERVATION PASS tests=+0 assertions=+0 (83s wall); five-guard 119T, DocFigure alone
+77T, Config window 856T/19122A/1S, citation+roster+swallow combined 216T, Glob pair green (corpus 131,765
+intact); durations **506→508** rows (both new files land a row); config md5 `05480c74…2210` stable start==end.
+
+**Process notes:** the r77 SwallowingCatch gate-law HELD CLEAN this wave — zero fail-in-catch violations across
+both weld serials. The m5a vacuity lesson paid off: the reviewer caught the first-pass byte-identity pin's
+pass-on-absence shape before merge; hardening landed as negative pins in-lane. Design-first lanes (mz→mb,
+mc→census) delivered 0-CRITICAL/0-MAJOR on both r78 lanes. Actionables after this close: **2** by row census
+(E699 operator disposition pending — keep-as-is ON RECORD; E701 PKCE). NEVER pushed.
+
+## ROUND 77 (2026-09-14) — PHASE 2 (MCP product) wave-1: E695 token-attachment flagship shipped, label honesty + stamp hygiene landed, E696 architecture verdict defers wiring to a seam ruling; floor 11,749/169,388 @ f895f03c5
+
+**Phase-2 kickoff.** The r76 closeout declared the hardening plan complete (0 actionables); the operator chose
+option 3 — MCP/E642-class product work. Minted `e2e427eca` opened the round with E695-E703 (phase-2 probes:
+MCP product-surface inventory, RuntimeNoticeSink wiring state, backlog heading hygiene).
+
+- **la — E695 flagship** (lane picks `eb8318b91` + `4a76fdd40`; r77-rv-la **APPROVE 0C/0M/2MINOR**): stored OAuth
+  tokens now attach per-request — the single `HttpMcpServer::rpc()` egress consults `validAuthFor(url)`; static
+  `Authorization` wins case-insensitively (store untouched); `AuthEntry` carries `tokenUrl`/`registrationUrl`
+  through refresh + re-register (MINOR-1/2 pinned `e7e25ca17`); `hasCredentials` made real; MCP.md auth prose
+  flipped IN-STEP; hermetic (temp stores only, HOME `mcp-auth*` absence proven across double targeted run).
+  **DRIFT-FIX `9ea12b968`**: the merge weld's serial caught a fail-inside-`catch(\RuntimeException)` in
+  `HttpMcpServerTest:764` via `SwallowingCatchCensusTest` — that guard is NOT in the five-guard family, so no
+  lane gate caught it pre-merge. **NEW GATE LAW:** src-touching lanes add `SwallowingCatchCensusTest` to their
+  brief gate lists.
+- **lc — E697 + E700** (picks `dc5528bba` + `b7e6c2888`): palette label renamed to the truthful listing label
+  (label-only; E689 trust-write DECLINE byte-intact, DocFigure arms are the only lexical pins); 36 stale backlog
+  heading stamps flipped + E642-E645 contradictory bodies rewritten as closed-notation. Disclosed mid-lane ledger
+  wipe (unanchored `re.subn` ate 3,837 lines) RESTORED from git with zero collateral — reviewer enumerated every
+  deletion; the durable law (scope per-section, assert exactly-1, verify numstat + canary grep) is recorded at
+  E700's closed-notation.
+- **lb — E696 verdict** (lane `d46dd5bc3` → pick `630ef47ff`, post-weld): docs-first. Construction-time wiring is
+  IMPOSSIBLE — the single src `McpClient` is a per-(pid,configPath) memoized process singleton shared by main
+  chat and every sub-agent's PARENT-SIDE execution (`ProcessExecutor::rehydrateTools` is data-only), so no preset
+  is knowable at construction. README:1072 + MCP.md corrected honestly; α (grant-resolution roster-narrowing,
+  recommended) vs β (shared-client set/restore, REJECTED — race) deferred to an orchestrator ruling; carried as
+  E696 [PARTIAL], round-78 lane ma. Design record `/home/sites/crush-r61-artifacts/lb/design.md`.
+
+**Floor 11,749T/169,388A/0F/0E/1S (McpClientTest canary)/exit0** LINKED cwd=sugar-crush @ weld `f895f03c5`; the
++15T wave-1 prediction (la13+fix1+lc1) HIT exact; K=8 CONSERVATION +0/+0; guards 190T/13732A; Config
+849T/18909A/1S; durations 506 rows HELD exact. Actionables after this close: **6** by row census (E696 PARTIAL,
+E698, E699, E701, E702, E703). NEVER pushed.
+
+## ROUND 76 (2026-09-13) — E694a store-aware discovery ops + E611 CLOSED-BY-PRACTICE + the README built-ins family healed with its quoted-pin test; the actionable queue empties; floor 11,734/169,328 @ ea61174b5
+
+**Two lanes, both reviewed BEFORE merge; zero pre-landed work at salvage audit (clean chain).**
+
+- **ka — E694 slice-A** (lane `6b113f67e` → pick `35489b1d1`; r76-rv-ka **APPROVE 0C/0M/2MINOR**):
+  `/memory list`/`/memory search` for project scope now consult `ProjectMemoryWriter::forRoot`'s store
+  alongside home and group rows under a banner naming the owning store, repo-first (mirrors
+  `capture()`'s fold law); home-path output is BYTE-STABLE whenever the repo contributes nothing.
+  `/memory clear` at project scope REFUSES LOUDLY while the repo store holds >=1 note — the
+  entry-present polarity was RULED IN by the review and kept by the orchestrator: `--confirm`-gated,
+  TOTAL with respect to every project note the operator can see, doc-pinned as a home-store command;
+  store-present polarity REJECTED because it would make the legacy byte-green test env-dependent on
+  any tree carrying `.sugar-crush/memory` — and this repo TRACKS it (the if-lane pollution incident).
+  `--force` NOT implemented = unconditional refusal per the r75 ruling. `memoryLocate`'s docblock now
+  spells the `[entry, store]` tuple + the `[null, home]` no-owner sentinel (rv-jb MINOR-1). MEMORY.md
+  sentence landed first-sentence-VERBATIM with the falsified trailing clause REPLACED truthful —
+  deviation disclosed (a verbatim pin beside a live-derived arm that contradicts its own commit is a
+  doc trap); DocFigure arm AQ derives every referent live (forRoot-before-home ordering, delete/edit
+  routing, exactly ONE `->clear(`, `--force` absence). +7T/+56A. rv-ka serial on a fully-linked rv
+  tree: 11,734T/169,360A with ONLY the README/figure staleness pair red (pair is merge-owned,
+  red-by-design at a lane tip); the builder's 5 pty-env reds vanished under full refresh-deps —
+  confirmed sandbox-env, see HARNESS NOTES. rv-ka also caught a live census coupling: transcript
+  literals must dodge DenialPrefixRosterTest AND GlobDialectDifferentialTest token shapes at once
+  ("**Refused:**" accused both ways; banners build paths via `ProjectMemoryWriter::RELATIVE_DIRECTORY`).
+- **kb — E611 verdict lane + ELEVEN-family heals** (lane `53bf60534` + `0b60af42e` + fix `a56d9014c`
+  → picks `c27178e0c` + `fefd95468`/`252dea07b`; r76-rv-kb **APPROVE-WITH-FIX 0C/1MAJOR**):
+  E611 ruled **DROP / CLOSED-BY-PRACTICE** — re-derived at tip `f8eba0f34`: (Q1) no machine check
+  exists (ownership grep hits only a durations-file NAME; check-path-repos is existence-only);
+  (Q2) the OWNERSHIP-block practice demonstrably catches out-of-ownership commissions (worklog :3069
+  SkillLoader half REPORTED-not-implemented, :5437, :11010, r69-close fj Chat.php breach);
+  (Q3) the residual harness-tool + schema needs a stable machine-readable lane registry that does not
+  exist in-repo — minting it IS the excluded supervisor-harness design. Tripwire: reopen if a round
+  ever ships out-of-ownership CODE edits un-reported. The MAJOR: `0b60af42e`'s rewrite of the
+  `tools()` docblock at :6546/:6552 was ITSELF false — Task is appended AFTER `filterToolSet()`,
+  manager-gated, so "every shape below matches it"/"exactly Bash out of the twelve" named a
+  non-existent glob mechanism; fix-lane `a56d9014c` (comment-only, gates 113T/6385A + five-guard
+  113T/6939A green) landed the post-filter/out-of-project-reach truth. rv-kb item-10 seam: these
+  Bootstrap tool-count docblocks are pinned by NO guard (E686 family, src-side).
+- **Merge companion** (a001bd9ce, brief STEP 3): README :224/:233 eleven-family prose scoped to the
+  eleven FILTERABLE positions with the Task truth (mirrors ARCHITECTURE.md r75 wording), and
+  `tests/Config/ReadmeSettingsTierClaimTest.php` moved IN-STEP — its census-domain docblock now states
+  null-manager `tools()` = the eleven filterable positions vs twelve wired since TaskTool (E675), the
+  quoted-needle assertion matches the healed sentence, and the TrustKey locator comment follows.
+  rv-kb MINOR-8's "apply-safe" pairing satisfied in ONE commit. First run of the needle caught the
+  blockquote-wrap hazard: `>` markers survive whitespace-flattening, so a pinned phrase must fit one
+  physical line.
+- **Picks/salvage:** STEP 0 audit clean (no partial prior work; all four commits '-' unmerged).
+  Cherry-pick conflicts: ONLY the triage E611 row (master carried the r75 "verdict SLIPS" sentence
+  the kb cut predated) — resolved keeping BOTH (kb's flip + master's r75 sentence). Backlog E611
+  auto-merged. E686 heading verified already normalized to [CLOSED] by r75 closeout — rv-kb's
+  MINOR-9 seam was true of f8eba0f34, obsolete at master; E694 ledger row existed (contrary to the
+  seam claim "no ledger row").
+- **Floor / re-pin:** sextet cadence on master — see §0-NOW-78 figures. Durations 506 rows HELD
+  (zero new *Test.php files). config.json md5 05480c74…2210 stable.
+- **HARNESS NOTES for future briefs:** (1) a fresh lane sandbox has NO root `vendor/` — gates run via
+  `sugar-crush/vendor/bin/phpunit -c sugar-crush/phpunit.xml`; (2) an incompletely linked sandbox
+  (candy-pty `--libs` gap) deterministically poisons 5 InteractivePromptContainmentTest env reds —
+  briefs must verify `refresh-deps --mode=linked` reaches 18/18 before building; (3) a lane-tip brief
+  cannot promise "0F/EXIT=0" while the staleness pair is merge-owned — expect PAIR-ONLY red at tips.
+- **Carries:** E309 watch, E611 reopen-tripwire, E694/E25 re-severity trigger (agent memory tool),
+  E655 VOID phantom, LspClientDispatchPumpTest ambient flake.
+
+---
+
+## ROUND 75 (2026-09-13) — E686 tranche-11 execution + review-fix lane + memory-ops first slice; the doc-figure campaign CLOSES; floor 11,727/169,276
+
+**Closed at this closeout (docs atop re-pin `f8eba0f34`).** Chain: docs tip `fff97295d` (atop code `ab7f3726a`) → picks `99cc68e02`(ja `51e5b9b39`) `332e6fdd7`(ja2 `ddf761169`) `90b7d1ae7`(jb `c79d69cfd`) → companion `02c65e6eb` → re-pin `f8eba0f34`. NEVER pushed. Rules 1–10 + addenda -66…-73 in force; K=8 sharded gate standard; five-guard filter in every brief. ja was reviewed BEFORE merge (r75-rv-ja REQUEST-CHANGES 1 MAJOR → fix-lane ja2; the reviewer's written close condition "fix-lane lands :336 heal + AK1 erratum" verified SATISFIED by the orchestrator — the conditional-close pattern worked end-to-end for the first time); jb reviewed BEFORE merge (r75-rv-jb APPROVE 0C/0M).
+
+### The lanes
+
+- **ja — E686 tranche-11 execution** lane `51e5b9b39` → pick `99cc68e02`, +8T (DocFigure 63→71 arms **AI–AO**, 71T/2451A at tip) — ARCHITECTURE (5 drifted anchors healed by DROPPING numerals, symbol cites kept; Providers-table↔`availableTypes()` ordered both-directional; NEW bare-anchor absence guard over all 13 docs pages covering both `File.php:NNN` and prose `line NNN` shapes, exemption roster `['HOOKS.md'=>['line 181']]` bidirectional) · AGENTS_AUTHORING (5 patches — "reads six"→ALL SIXTEEN fields, fromPreset reads 16 with `permissionMode` gated by `SkillSource::Native`; phantom lines-136-159 cite → real `WHY THIS IS NOT COSMETIC` heading; eleven→twelve built-ins + Task delegation) · COMMANDS + PROMPT_ENGINEERING measured TRUE at tip — prose untouched, arms only (rv-ie's "~9 prohibitions" REFUTED: both the PE list and the external `prompt_expand.md` §9.12 carry exactly 6). AA rosters via scandir census + `AgentPreset` public-readonly regex census = 16; AM `TEMPLATE_PATTERN` char-walk branch census; AO tag ORDER == `PromptFence::tags()` + `MAX_BREAKPOINTS=4`. **Builder-missed sibling-page contradiction**: the pick left ARCHITECTURE.md:336/342 "eleven slot/assembler" vs the healed AGENTS_AUTHORING twelve — caught as rv-ja's single MAJOR; fix-lane **ja2** `ddf761169` → pick `332e6fdd7` healed twelve-truth + `:533` Task-assembly lesson AND added the **AK1 cross-page agreement leg** (AGENTS word-number == ARCHITECTURE word-number == live scandir count) so the two pages can never diverge silently again, plus AI's planted-mismatch leg proving the absence guard discriminates. **ja2's erratum against rv-ja**: the ARCHITECTURE digit-form row `12 built-ins + MCP bridges` at :31 EXISTS and is pinned by arm H — the reviewer's "no digit-form row" premise was false; fix-lane recorded it honestly rather than silently. GlobDialect law re-proven: two comment-strip regex literals were corpus-admitting +2/+2 — group-wrapped alternations (`(` is a forbidden char → auto-exempt) restored the 131,765 figure in-step.
+- **jb — memory-ops design→ship (E694 mint-or-fold)** lane `c79d69cfd` → pick `90b7d1ae7`, +5T/+45A (memory filter 194T/1092A) — design-first per if's seams: `Chat::memoryLocate()` resolves an id **repo-store first** and hands back the OWNING store; `/memory delete` and `/memory edit` mutate the entry the prompt shows (the r74 store-vs-command asymmetry — add/edit route by scope but the read path was home-only — is closed); an absent repo store degrades byte-identically to home-only; all response strings byte-identical; 4 of 5 new tests pin the precedence swap's exact victim shapes. Review posture: **edit-reachability PASS-with-disclosure** (a collaborator-claimable repo id is removable by anyone who can steer the agent — same blast radius as write, disclosed rather than mitigated); **null-home-no-fold CLOSED-AS-INTENDED** (memory off = off); the agent-facing memory tool was DECLINED into **E694** step-3 rather than built.
+
+### Companion — Bootstrap twelve-truth (`02c65e6eb`)
+
+Merge-side (precedent `96c01bbab`): `src/Cli/Bootstrap.php` `unfilteredTools()` docblock still claimed "ELEVEN entries / exactly those eleven / eleven working tools" while the filter has shipped twelve incl. `TaskTool` since E675 — healed IN-STEP keeping sentence structure, lineage clause names the bump. Zero sprintf/const/emitter changes; the obliged census trio (`BootstrapLaunchFormatConstants|StderrEmitterCensus|DuplicatedDocBlockLine`) 117T/6408A GREEN. **Seam recorded for r76**: live-false ELEVEN claims survive in the same file's BODY (`:6371` "the eleven built-ins keep the wire order", `:6376` meta-note "The doc-block above deliberately says ELEVEN" — now contradicting the healed doc-block, `:6546`/`:6552` disabledTools docblock) and `README.md:224`/`:233`; historical narrative lines (`:3675`, `:5678`, lineage clauses) are fine. ka/kb fold whichever their files touch.
+
+### Floor / gates
+
+**11,727T / 169,276A / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — LINKED, cwd=sugar-crush, serial green; K=8 shardcheck CONSERVATION PASS; five-guard GREEN; Config window ALL green; Glob pair 14T/360A; DocFigure alone 71T/2451A; `durations.tsv` **506 rows HELD** (zero new `*Test.php` — ja/jb added methods to existing files); runtime `config.json` md5 `05480c74…2210` stable. Ledger actionable **2 → 2 BY ROW CENSUS** (OPEN-table E611 + E694 · E686 CLOSED-in-place · PARTIAL/STALE/UNCERTAIN 0) — never chained. Brief's expected live-enum 11,722 was an arithmetic slip: 11,714 + 8 (ja) + 5 (jb) = **11,727**, measured exact.
+
+### Process — the tty-harness serial reds and their plain-pipe cure
+
+serial1 launched from a tmux pty answered 6 extra reds that were FULLY EXPLAINED as harness artifacts, not regressions: `NonInteractiveStdinPinTest` (×2 arms) premises `!is_resource(STDIN)` but the bootstrap's `fclose(STDIN)` repair is guarded by `stream_isatty(STDIN)` — fd0=pty skips the repair; `TerminalSizeFallbackIsolationTest:180` keystone expects the 60×200 documented fallback but the tty probe answers the live 24×80 window. Cure (now the standing recipe): detach inside tmux with **`< /dev/null > log 2>&1` redirects INSIDE the detached command** — fd0 /dev/null lets the bootstrap close it, fd1 a file makes the keystone early-return — reproducing the CI plain-pipe shape exactly. serial2 green with only the expected staleness pair; hand-bump→green→refresh→weld cadence held.
+
+### Rulings / round-76 seeds
+
+- **E686 → CLOSED** by orchestrator ruling at this closeout: tranches 2–11 landed, DocFigure 63→71 arms, every docs page armed; rv-ja's conditional-close satisfied by ja2. Residuals on record (HELD-with-reason, not gaps): `prompt_expand.md` §9.12 is an EXTERNAL dated cite (6==6 today), COMMANDS JIT table dated, `prompt_expand.md` IS tracked at the monorepo root (ie E1 erratum carried).
+- **E694 minted** (jb's design.md): project-scope list/search grouped display (step 1, lands in ka) · bulk-clear **ORCHESTRATOR RULING: NOT supported for project scope** — per-id ops only, `/memory clear` stays home-store, any repo-store bulk routing must REFUSE LOUDLY; the `--confirm --force` variant DECLINED · step 3 agent memory tool GATED on E25 re-severity review + built-in-tool corpus census.
+- **E25** row renoted: ops half landed via jb; the remainder IS E694. **E611** verdict SLIPS to r76 (kb) — third honest slip over a blind stamp.
+- **Round-76 seeds:** **ka — E694 slice-A** design→ship (`/memory list`+`search` project-scope grouped display, per-id ops only, bulk-clear refusal per ruling; owns `src/Chat.php` memory arms + `Context` + tests; MEMORY.md sentence + DocFigure arm in the SAME commit; carries rv-jb MINOR-1 array-shape doc) · **kb — E611 verdict lane** (read-only re-derive premises at tip, pick-or-drop with evidence; zero commits unless premise dead → docs-only flip; foldable seams: README:224 eleven-family prose, `tests/Integration/ForeignAgentPresetWiringTest.php:273` "six" comment). Carries: E309 watch · E655 stays VOID · `LspClientDispatchPumpTest` ambient.
+
+
+## ROUND 74 (2026-09-13) — one code lane + one verdict lane, a post-merge inventory companion, a salvage-first finisher; floor 11,714/168,729
+
+**Closed at this closeout (docs atop re-pin `ab7f3726a`).** Chain: code base `f46c203d6` (r73 tip) → pick `72079870d` (if, lane `da38ed361`) → companion `96c01bbab` → re-pin `ab7f3726a` (serial3 green, K=8 shardcheck EXIT=0). NEVER pushed. Rules 1–10 + addenda -66…-73 in force; K=8 sharded gate standard; five-guard filter in every brief. if reviewed BEFORE merge (r74-rv-if APPROVE 0C/0M/3MINOR).
+
+### The lanes
+
+- **if — E25 piece-2** lane `da38ed361` → pick `72079870d` + companion `96c01bbab`, +11T/+118A at the re-pin (11,703→11,714; live enum +10 methods +1 derived file-scan row) — repo-local PROJECT-scope memory writer `src/Context/ProjectMemoryWriter.php` (notes under `<root>/.sugar-crush/memory/`, the same sentinel corner imports use; `forRoot` READ resolver NEVER creates and refuses '' root — the `realpath('')`=CWD trap; `createForRoot` mkdir 0700 + POST-mkdir `ContainedPath::below` gate — post-check load-bearing because mkdir writes THROUGH a pre-planted symlink; `write()` guards empty / 8192 bytes), `MemoryBlock::capture(?projectStore = null)` folds repo-local first winning id collisions (35 call sites byte-identical), `Chat::memoryAdd()` (Hot) routes project scope createForRoot→write ?? home add with byte-identical response wording. DTO-enumeration held; DuplicatedTestHelperDrift dodged via helper renames; DocFigure fold-policy arm widened substr-count→DISTINCT-scope census IN-STEP (same commit) + MEMORY.md prose names the writer; E646 clean (zero wall-clock). Review r74-rv-if APPROVE 0C/0M/3MINOR — dispositions: **MINOR-2** the >8 KiB size asymmetry (project store REFUSES an oversized note where home would accept) lived only in code → one `docs/MEMORY.md` body sentence lands at this docs commit (DocFigure re-run 63T/1892A GREEN, hc arms unperturbed); **the inventory miss** — the pick landed WITHOUT the two fail-closed containment inventories updated; companion `96c01bbab` classified `ProjectMemoryWriter` into `ContainedPathInventoryTest` (routed-site roster 38→39 in 16→17 files, `ContainedPath.php` docblock word-number THIRTY-EIGHT→THIRTY-NINE + number-word range) and `ProjectTierRefusalInventoryTest` (`.sugar-crush/memory` REPOSITORY row; dot-path occurrences 38→39, repository-chosen 18→19, distinct-path figures unchanged) — the honest sentence: **the new class added exactly ONE routed ContainedPath comparison and ONE repository-chosen dot-path literal, both inventories enumerate every such site fail-closed, so the pick was unclosable without the companion — a census the builder AND the reviewer both missed; process lesson: containment-inventory rosters belong in every brief that adds src filesystem code.**; **the hermeticity incident** — unpinned Chat tests CAN write the project-root `.sugar-crush`: one Chat test exercising project-scope add with default `projectRoot=getcwd()` polluted the worktree root, and the purging `rm -rf .sugar-crush` then deleted TRACKED files (the repo commits `.sugar-crush/{agents,config*.json}`) — recovered via `git checkout --`; the offender now pins `projectRoot: $tempDir`. Seams left open (jb's r75 design input): list/search/delete/clear/edit home-only (E694 mint-candidate, no blind mint); null home store ⇒ no fold even with repo notes (memory off = off); no agent-facing memory tool.
+- **ie — E686 completeness verdict** — ZERO commits, measure-and-verdict at tip `f46c203d6`; evidence `/home/sites/crush-r61-artifacts/ie/{REPORT,verdicts}.md`. VERDICT: **TRANCHE-11** — hc's "docs seed list EMPTY" rests on a FALSE upstream judgment: gd/measures.md row 22 ("figure-free … numeral-scan empty") is FALSE-to-tree — every flagged claim on those pages predates gd's base (blame-verified `8d15443c3`/`4b4ff3398`); the scan was empty-handed, not the pages. Independent re-derivation: DocFigure's 63 arms parse exactly 10 pages; **AGENTS_AUTHORING.md, COMMANDS.md, PROMPT_ENGINEERING.md** carry ZERO citations in any test (SymbolCitationDrift resolves backticks only — proves nothing about numerals/anchors); **ARCHITECTURE.md** carries 5 confirmed-drifted bare line anchors (`Runtime.php:154`→:1171, `line 311`→:338, `lines 564-595`→:625, `line 601`→:662, `line 1292`→:2416) plus an unguarded figure-dense Providers section; 3 claim-sites CONFIRMED FALSE at tip (incl. AGENTS_AUTHORING's "no `Task` tool … eleven built-in tools" — false since E675 `b636591b6` shipped 12 BuiltIn files — and the "not merely cosmetic" + "lines 136-159" anchor/quote). Work list **T11-a** ARCHITECTURE (anchor heals + Providers arm + both-shapes bare-anchor absence guard, HOOKS.md:264-style self-narrative exempt) / **T11-b** AGENTS_AUTHORING + COMMANDS (2 prose heals + roster arms) / **T11-c** PROMPT_ENGINEERING (cross-page pair arms reusing AP/BE derivations) — ~12–16 arms, ~6 prose fixes. PASS sub-verdict: every ARMED page's sweeps clean; all ~20 HELD rows' blocking reasons still live at tip. **CONFIRMED 8/9 by r74-rv-ie** — single miss is **erratum E1: `prompt_expand.md` IS tracked at the monorepo root**, so PROMPT_ENGINEERING's §9.12 cite is VALID-BUT-UNGUARDED (not broken); the closeout carries the erratum to ja.
+
+### Floor / gates
+
+**11,714T / 168,729A / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — LINKED, cwd=sugar-crush, serial3 green at `ab7f3726a`; K=8 shardcheck CONSERVATION PASS EXIT=0 (plain pipe); `durations.tsv` **506** rows (+`ProjectMemoryWriterTest` — rule -70 honored: serial is conservation truth until the row lands). Closeout gates re-run at tip (plain pipe, `-c phpunit.xml`): five-guard (`ReadmeSuiteFigureDrift|DocFigureProseDrift|GlobDialectDifferential|ChildWallClockBudget|DuplicatedTestHelperDrift|SwallowingCatchCensus|OneSidedHomeSandbox|DuplicatedDocBlockLine`) 116T/6492A GREEN; Config window 836T/18348A/1S GREEN — no staleness pair, re-pin consistent; Glob window 254T/1890A GREEN; runtime `config.json` md5 `05480c74…2210` stable. Ledger actionable **3 → 2 BY ROW CENSUS** (OPEN-table E611/E686 · PARTIAL-table 0 — E25 CLOSED-in-place · STALE 0 · UNCERTAIN 0) — awk survivor recount over the four triage tables executed pre- and post-stamp, never chained.
+
+### Process — merge-agent death after steps 1–4; the -72 salvage-first finisher re-proven
+
+The r74 merge agent DIED after completing steps 1–4 (pick `72079870d`, companion `96c01bbab`, re-pin `ab7f3726a`, green gates). The finisher opened with ADDENDUM -72's SALVAGE-FIRST audit — verify the tree against the ledger BEFORE redoing anything — found all four steps landed clean, redid NOTHING, and shipped the closeout docs-only. -73's MERGE-AFTER-THE-FACT also held: the companion was read and reviewed as part of the chain before any stamp landed.
+
+### Rulings / round-75 seeds
+
+- **E25 → CLOSED** (p1 verified r68/ec; p2 shipped if). Seams held for jb's judgment — **E694** mints only by decision, not by reflex.
+- **E611 pick-or-drop SLIPS to r75 close** — the standing carry named the r74 close, but ie's audit never touched E611; honest slip recorded at the row rather than a blind verdict.
+- **Round-75 seeds:** **ja — E686 tranche-11 execution** (owns `DocFigureProseDriftTest` + `ARCHITECTURE.md` + `AGENTS_AUTHORING.md` + `PROMPT_ENGINEERING.md` + `COMMANDS.md`; carry: two anchor shapes, HOOKS self-narrative exemption, AU/BD keep-dup precedents, GlobDialect glued-literal law, blame-verified gd row-22 erratum; **E686's CLOSE verdict rides ja's success**) · **jb — memory-ops design lane** (E694-mint-or-fold: project-scope list/search/delete/clear/edit + the agent memory-tool question; DESIGN-FIRST; hermeticity law from if's incident). Carries: E611 pick-or-drop AT r75 close · E309 trigger watch · E655 stays VOID · `LspClientDispatchPumpTest` load-flake ambient.
+
+## ROUND 73 (2026-09-13) — one code lane + one verdict lane; MEMORY.md was the LAST un-armed docs page; floor 11,703/168,611
+
+**Closed at this closeout (docs atop re-pin `f46c203d6`).** Chain: base docs tip `739c547a3` (atop code `4a2bc4732`/re-pin `3deab0b6f`) → picks `41834f960`(hc `994155c3f`) `c616d5738`(hc review-fix `79fba8c10`) → re-pin `f46c203d6`. NEVER pushed. Rules 1–10 + addenda -66…-73 in force; K=8 sharded gate standard; five-guard filter in every brief. hc was reviewed BEFORE merge (r73-rv-hc APPROVE).
+
+### The lanes
+
+- **hc — E686 tranche-10** lane `994155c3f` → picks `41834f960` + `c616d5738`, +7T/+198A — DocFigure arms **BB–BH** on `docs/MEMORY.md`, the LAST un-armed docs page (deferred across nine tranches); with it landed the campaign's declared docs seed list is EMPTY — yet E686 stays [PARTIAL]: the independent completeness verdict is r74's (lane ie), no blind closure. TWO FALSE healed in-step: containment "five call sites"→six with `loadAncestorRoots` NAMED (canonical `ContainedPathInventoryTest::ROUTED_CALL_SITES` = 6, the src docblock agrees), and the threading list += `Grep` (exactly five `instructionLoader:` `$loader` sites in `unfilteredTools` — Read/Edit/Glob/Grep/Write). Reviewer r73-rv-hc APPROVE 0C/0M/2MINOR: MINOR-1 the BD 512-anchor leg KEPT per the AU precedent (disclosed redundant legs are licenséd when the arm carries a unique leg); MINOR-2 a dead `$memo[2]` capture (memo never read after BC) healed in review-fix pick `79fba8c10` — the memo word became a literal sentence-shape pin, and mutation M8 (once→twice) reddens EXACTLY arm BC, proving the leg load-bearing. 11/11 mutations (M1–M7b incl. the memo-word/byte-cost legs, + M8) each red-exactly-one-arm; docs md5-restored clean. New reflection-census patterns recorded: private consts via `getReflectionConstant()->getValue()`, absence claims as comment-stripped `T_CONSTANT_ENCAPSED` census over src texts, union-type `__toString` class-before-scalar (compare sorted), method-reference regex needs the closing backtick, `ContainedPath::within` token census needs the `T_DOUBLE_COLON` two-step lookback, double-quoted assert messages interpolate `$var->prop` — escape `\$` or the leg self-scores on garbage, and a TRANSITIVE attribution leg (`buildSystemPrompt` is a wrapper — the fold lives in the Runtime sections generator; BC pins the hop chain `assemblePrompt(sections(…))` + span `memorySnapshot(`). DocFigure 56→63 arms; base re-count 56T/1693A measured via cp-swap. 8 HELD rows carried in hc/measures.md. Builder + finisher clean — no death events this lane.
+- **hd — ledger-reconcile verdict lane** — ZERO commits, ZERO worktree (reported, verified). All nine r70–r72 closure-stamp lines CONFIRMED at tip: E134/E204 CLOSED-BY-PRACTICE re-found verbatim · E281-item 4/4 pid-tokenised · E309 watch intact (`DenialKind` still three cases) · E325 16 trait consumers + rosters live-`[]` · E390 licensé count live=21, `ACCEPTED_CONST_DRIFT` row kept · E493 heartbeat threading complete (`:682`→`run`→`:753`, params `:1171`/`:1194`; the `durations.tsv` row exists — r71 seam CLOSED) · E693 `declaredSlice` both halves + the gate slice keeps `$gate->getFileName()` `:534` · E686 56 arms exact at base · freshness figures json==README. ZERO FALSE/STALE — no backlog row flips. Seams recorded: fossil branches `lane-a`…`lane-d` (round-44 era, no-slash naming) `git cherry` all-'-' → deleted at this close; stamps citing original lane SHAs must map their master picks through `-x` trailers (e.g. `b6c2c8283`→`41b19f5e5`); §0-NOW revision-pointer lines age historically — no edit warranted. **New environment fact: `scripts/refresh-deps.php --mode=linked --libs=<lib>` WORKS inside detached worktrees** (the r73 review-lane briefs were wrong that it is main-tree-only).
+
+### Floor / gates
+
+**11,703T / 168,611A / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — LINKED, cwd=sugar-crush; the FIRST serial ended EXIT=1 with EXACTLY the two known staleness arms (documented hand-bump→green→refresh→weld cadence; second serial green, identical totals). K=8 shardcheck CONSERVATION PASS +0/+0 (plain pipe); five-guard (`ReadmeSuiteFigureDrift|DocFigureProseDrift|GlobDialectDifferential|ChildWallClockBudget|DuplicatedTestHelperDrift`) 105T/6372A GREEN incl. the former staleness pair — DocFigure alone 63T/1891A = 56+7 exact; Config window 836T/18332A/1S GREEN; `durations.tsv` **505 rows HELD** (hc added no new `*Test.php`); runtime `config.json` md5 `05480c74…2210` stable. Ledger actionable **3 → 3 BY ROW CENSUS** (OPEN-table E611/E686 · PARTIAL-table E25 · STALE 0 · UNCERTAIN 0): E686 re-noted (tranche-10 landed, docs seed list DECLARED empty — completeness verdict at r74), nothing else moved.
+
+### Process notes / round-74 seeds
+
+- Single-lane round + zero-commit verdict lane: hd's value was confirmation — a clean 9/9 says the r70–r72 stamp discipline held; measure-and-verdict lanes cost half a gate cycle and retire drift anxiety.
+- **Round-74 seeds:** **ie — E686 completeness verdict** (read-only: independently re-derive the "docs seed list empty" declaration across ALL `sugar-crush/docs` pages + the gd/gg/ha/hc `measures.md` ledgers + existing guard families; rule E686 CLOSED or mint the tranche-11 work list — measure-and-verdict, owns docs only). **if — E25 piece-2** (project-scope memory-block writer: DESIGN-FIRST brief — read the E25 backlog row + `MemoryBlock.php` piece-1 state, enumerate censuses/ownership BEFORE touching code; owns `sugar-crush/src/Context/` + Runtime seams + tests; DTO-enumeration rule; no wall-clock timeouts, E646 ban). Carries: E611 pick-or-drop AT r74 CLOSE · E309 trigger watch · E655 phantom stays VOID · `LspClientDispatchPumpTest` load-flake ambient.
+
+## ROUND 72 (2026-09-13) — two lanes ha–hb, both reviewed BEFORE merge; the E686 tranche-9 phantom-page salvage; floor 11,696/168,413
+
+**Closed at this closeout (docs atop re-pin `3deab0b6f`).** Chain: base docs tip `0683b5f8a` (atop code `6f180e331`/re-pin `328b14d91`) → picks `868221189`(ha `4ff314590`) `d75ce3af7`(ha fix `f4aaf5eb2`) `179f0b37e`(hb `2dcc802f1`) → re-pin `3deab0b6f`. NEVER pushed. Rules 1–10 + addenda -66…-73 in force; K=8 sharded gate standard; five-guard filter in every brief. **Both lanes were reviewed BEFORE merge this round (r72-rv-ha, r72-rv-hb, both APPROVE 0C/0M-with-dispositions) — the review-after-merge posture of r71 was the takeover exception, not the rule.**
+
+### The lanes
+
+- **ha — E686 tranche-9** lane `4ff314590` → picks `868221189` + `d75ce3af7`, +9T/+244A — DocFigure arms **AS–BA** on `SKILLS.md` / `MCP.md` / the `src/Backend.php` docblock. **PHANTOM premise caught at measurement:** the brief's PROVIDERS.md / ANTHROPICS.md / TOOLS.md DO NOT EXIST (docs/ carries 13 pages; reviewer §0 re-verified) — the tranche worked the REAL remaining per-arm surfaces instead. `MCP.md` M13 anchor FALSE-TO-TREE (`Cli\ArgvParser` "line 175" — the arm moved :177): line-number dropped, arm NAMED, the drift now pinned in arm AZ. One-word prose fix at `src/Backend.php` (tool-lifecycle → turn-lifecycle, gh's rewrite residue). **GlobDialect self-caught:** first gate run reddened the PathGlob corpus 368×364 — three new glob-shaped string literals (`/bin/*`, `**throws**`, `**Reasoning:**`); `chr(42)`/concat re-shape restored 131,765=365×361 (glued-literal law, -67). **AV vacuity** mutation-caught (digit asserts could not see the doc change) → fix pick `d75ce3af7` binds depth/breadth digits to captured doc figures. **BA = the `$onEvent` roster LIVE-ARM** (gh reviewer MINOR absorbed here per filemap): four sets collapse — docblock `{@see}` cites (windowed), `complete()` `@param` union, `encodeEvent` PARAM union (`EngineBackend.php:1616`), `decodeEvent` RETURN (`:1658`) — admitted↔decoded↔documented↔cited bidirectional, import-verified + `class_exists` (r71 gg2 lesson: `PromptGuidance`-class interfaces must resolve or honest exclusion). **AU MINOR + disposition:** the built-ins tail (count 3 + names + "Three shipped") duplicates `PathsGlobDocumentationTest`'s bidirectional guard; builder disclosed it (AV-2 note), the unique leftover is the per-skill `paths:` VERBATIM-QUOTE leg — SUPERVISOR DISPOSITION: **KEEP as-is, disclosed** (redundant legs are licenséd when the arm carries a unique one; hc must check for an existing pin before adding arms).
+- **hb — E693 fold** lane `2dcc802f1` → pick `179f0b37e`, +0T/+4A — `SuiteSkipRosterTest`'s double `$reflection->getMethod()` folded onto the canonical `SlicesDeclaredMethodsTrait` (gi's); the gate slice KEEPS `$gate->getFileName()` because the gate is INHERITED — the classic fold bug (wrong-file slice) is ABSENT and a new comment names why; rostered slice keeps `$reflection->getFileName()`. +4A = trait `assertStringContainsString` × 2 sites × 2 roster entries. Census docblock prose truth-flipped (no longer "sole remaining un-folded reader"), rosters stay `[]`. `MultiAgentRefactorTest` tokenless-ids half measured **CLOSED-BY-PRACTICE at base** — all four `uniqid` sites already pid-tokenised (`:103/:180/:348/:430`, file lives at `tests/Integration/` NOT `tests/Agents/` as the brief said — ga `109293485` landed the shape, md5 proves the tree byte-matches the `328b14d91` copy). **Builder DIED mid-commit; the finisher salvaged** (re-proves ADDENDUM -72 — salvage-first step 0 audited porcelain before redoing). Log-name honesty: two mutation logs named m1a/m2 were overwritten; reviewer re-proved the pin independently — own M1 RED at `SuiteSkipRosterTest:533`. Gates: targeted 39T/745A; r71-family guard 45T/4544A. Reviewer r72-rv-hb APPROVE.
+
+### Floor / gates
+
+**11,696T / 168,413A / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — LINKED, cwd=sugar-crush; the FIRST serial ended EXIT=1 with EXACTLY the two known staleness arms (documented hand-bump→green→refresh→weld cadence; second serial green, identical totals). K=8 shardcheck CONSERVATION PASS +0/+0 (616.7s sum, plain pipe); five-guard (this round's family `ReadmeSuiteFigureDrift|DocFigureProseDrift|GlobDialectDifferential|ChildWallClockBudget|DuplicatedTestHelperDrift`) 98T/6174A — DocFigure alone 56T/1693A = 47+9 exact (the brief's "~54T" was mis-anchored on r71's DIFFERENT filter set); Config window 829T/18134A/1S GREEN incl. the former drift pair; `durations.tsv` **505 rows HELD** (no new `*Test.php` this round); runtime `config.json` md5 `05480c74…2210` stable. Ledger actionable **4 → 3 BY ROW CENSUS** (OPEN-table E611/E686 · PARTIAL-table E25 · STALE 0 · UNCERTAIN 0): E693 flipped CLOSED-in-place; E686 renoted (tranche-9 landed; next = tranche-10 remaining pages per ha/measures.md).
+
+### Process notes
+
+- The **rule-4 four-case triage** and **-72 salvage-first** re-proved themselves at three sites: the ha brief's page roster was phantom (measurement beat the citation), hb's MultiAgentRefactorTest half was already landed (verdict, not work), and the hb builder died mid-commit (finisher audited the tree first).
+- **DocFigure arm count is now 56**; the -73 lesson (every cited symbol must resolve AND appear in the doc segment) was applied to BA's bidirectional cites.
+- **Round-73 seeds:** **hc — E686 tranche-10** (remaining docs pages per ha/measures.md carry; check whether an existing guard already pins a claim BEFORE adding an arm — AU-duplication precedent; GlobDialect glued-literal law binds). **hd — ledger-reconcile verdict lane** (read-only: re-verify every CLOSED-BY-PRACTICE and closure stamp from rounds 70–72 against tip — E134/E204/E281-item/E309 trigger watch/E325/E390/E493/E693 — measure-and-verdict, ZERO code unless a stamp proves false, owns docs only, reports seams). Carries: E25 piece-2 + E611 design-carry (pick-or-drop at next close) · E309 trigger watch · E655 phantom stays VOID.
+
+## ROUND 71 (2026-09-13) — four lanes merged by a session that died mid-closeout; the review-after-merge salvage; floor 11,687/168,165
+
+**Closed at this closeout (docs atop re-pin `328b14d91`).** Chain: base `6d87cedda` (r70 filemap) → `913d6f5b5` (E134/E204 supervisor dispositions — CLOSED-BY-PRACTICE, ledger 8→6) → picks `0c6820f39`(gf) `571dcf85d`(gi) `7924075c7`(gg) `9d05c5e9f`(gh) → hold-fix `52121fcac` → review-fix pick `00bab5d21`(gg2, lane `b123b1355`) → re-pin `328b14d91`. NEVER pushed. **The five code commits landed via a PRIOR session that merged unreviewed and died mid-closeout; this successor ran the reviews after the merge (Process finding below) — all four lanes APPROVE.** Rules 1–10 + addenda -66…-72 in force; K=8 sharded gate standard; five-guard filter in every brief.
+
+### The lanes
+
+- **gf — E390 completion** lane `2bc88da96` → pick `0c6820f39`, +0T/+5A — the byte-identical 20/20 `CHILD_WALL_CLOCK_BUDGET_SECONDS` pair (`BootstrapSkillSkipsTest`/`RequirementDirectiveProvenanceTest`) folded into NEW `tests/Support/RunsWallClockBoundedChildTrait.php`, which owns BOTH const pairs (the 137/137 `KILLED_BY_THE_BUDGET` pair measured live, also licenséd — **licensés 23→21, a documented deviation from the brief-predicted 22**; the roster census carries no count/anchor/NUMBER_WORDS trio, only bidirectional arms) and the SOLE `timeout -s KILL %d` wrapper — the wrapper shares the file with the constants, so gb’s same-file tripwire arm stays byte-true with NO resolver widening. `ACCEPTED_CONST_DRIFT` row KEPT (trait 20 vs ReadmeSuiteFigureDriftTest 40 still live). Gates: targeted 73T/4214A, five-guard 45T/4537A, adjacent 33T/7149A, Config 811T/17716A/1S (no staleness), BSK-alone 30T/61A base==tip (§8 Risky never fired in pipe); M1 restore-licensé / M2 revert-consolidation both RED as predicted, cp+md5 clean. Reviewer r71-rv-gf APPROVE.
+- **gi — E325 step (b)** lane `a27671180` → pick `571dcf85d`, +0T/+63A — the remaining 12 seam-4 inline slice readers + HelpTest folded onto the canonical `tests/Support/SlicesDeclaredMethodsTrait.php`; census hop rosters stayed `[]` IN-STEP (zero-move consolidation). Reviewer F-1 INFO accepted: the fold is convention, not instrument (the census hop resolves by unique name; an inline reader is uncatchable). Residue MINTED **E693**: `SuiteSkipRosterTest` double `$reflection->getMethod()`. Gates: targeted 303T/29863A, guard-family 94T/9720A zero staleness, K=8 11674T/167955A/0F/0E/1S exit0. Reviewer r71-rv-gi APPROVE.
+- **gg — E686 tranche-8** lane `9cdc344b5` → pick `7924075c7`, +9T/+141A — DocFigure arms AI–AR (AQ SKIPPED — its spacing claim is arm AH’s domain; judgment recorded in gg/measures.md), roster 38→47 methods; 2 FALSE ARCHITECTURE.md claims fixed (maxSteps anchors :331, ext-sqlite3 TaskList caller :375) with re-introduction mutations proven; gd’s 10 HELD carry rows ALL dispositioned. GlobDialect corpus figure 131,765=365×361 intact. Reviewer r71-rv-gg APPROVE **1 MAJOR**: arm AP’s hand-typed layer roster SURVIVED the M10 RuleLoader→RuleReader rename.
+- **gg2 — MAJOR fix** lane `b123b1355` → pick `00bab5d21`, +0T/+33A — arm AP now DERIVES the item-10 layer roster from the ARCHITECTURE.md eleven-slot list itself: class-shaped backtick cites → short→FQN map, cite↔roster bidirectional, `interface_exists || class_exists` (PromptGuidance is an INTERFACE), `(?:\\(\\))?` not `\\(\\)?` (the optional-close-paren forced the regex to miss paren-less cites — first symptom was the roster leg naming an innocent symbol). M10 pre-green/post-RED + M-DEL deletion-arm RED proven; DocFigure 47T/1449A; ARCHITECTURE.md md5 anchor byte-stable across the fold.
+- **gh — E493 consumer-threading** lane `4cb065af3` → pick `9d05c5e9f`, +4T/+13A (new test file) — `$onHeartbeat` threaded `EngineBackend::complete()` tail → `Runtime::run` 6th arg → `CompleteRequest`; the forked child’s beat-writer emits EMPTY-TEXT reasoning frames and the parent runs `$resetTimeout` FIRST per frame (`EngineBackend.php:1236-1238`) before drop-empty discards them ahead of `$onReasoning` (`:1281-1286`) — reviewer verified literally, no phantom paint; NEW `EngineBackendHeartbeatThreadingTest` 4T/13A (fork via `forkTracked`, kinds-exact pins both polarities) — NOT yet in durations.tsv at pick time (rule -70: serial is conservation truth until the row lands — it lands at this re-pin); `AwaitPromise` `matching()` 4th copy folded onto `TokenFunctionRanges::matching()`; `src/Backend.php` `$onEvent` docblock rewritten honestly, event roster UNPINNED (→ live-arm seed, placed in r72 **ha** at the filemap regen); zero wall-clock kills (E646 ban honored). Reviewer r71-rv-gh APPROVE 0C/0M/2 MINOR (cosmetic blank line HeartbeatThreadingTest:65; the un-pinned roster).
+
+### Rulings (supervisor, recorded)
+
+- **HOLD-FIX `52121fcac` RATIFIED (rule 33).** The prior session’s merge-agent added the `ACCEPTED_INHERITED_STDERR` roster row for gf’s pass-through wrapper while its owner was unreachable. Reviewer ratified: the stderr redirect is unavoidably caller-side (the wrapper passes fds through; a census cannot follow a parameter), the roster is 1-row policed with the M3 delete-mutation naming `trait:107`, and the row TEXT states the fail-fast upgrade path. Correct wrapper, honest licensé.
+- **gf’s 23→21 deviation ACCEPTED** — the brief predicted 22; the second const pair (137/137) was also licenséd and also folded. Evidence over prediction, recorded inline.
+- **gg’s MAJOR fixed by pick, not re-lane** — the fix was arm-local (DocFigureProseDriftTest), reviewed and cherry-picked as `00bab5d21` within the closeout.
+
+### Process finding — the merge-after-the-fact takeover (ADDENDUM -73 minted)
+
+Round 71’s five code commits were picked onto master by a session that merged WITHOUT running the reviews and then died mid-closeout — no worklog, no re-pin, no stamps. The successor session treated the tree as authoritative: `git log` + per-pick diff reads, four reviews dispatched after the fact (`/home/sites/crush-r61-artifacts/r71-rv-{gf,gg,gh,gi}/REVIEW.md`) — all APPROVE (one MAJOR, healed as gg2) — and only then completed the closeout cadence (green serial, sextet, stamps). Law promoted to ADDENDUM -73: **when taking over a dead session, audit master for unreviewed picks BEFORE any new work; tree state, not session reports, is authority.** Review-after-merge is a valid salvage path.
+
+### Floor / gates
+
+**11,687T / 168,165A / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — LINKED, cwd=sugar-crush, serial 9m27s at the pick tip (figures re-pinned at `328b14d91`; the first serial ended EXIT=1 with EXACTLY the two known staleness arms — the documented hand-bump→green→refresh→weld cadence ran against the second serial, both reporting identical totals). K=8 CONSERVATION PASS +0/+0 (638.3s sum); five-guard 45T/4544A; Config 820T/17,890A/1S GREEN including the drift pair; `durations.tsv` 504→**505** rows (+`EngineBackendHeartbeatThreadingTest`, zero deletions); runtime `config.json` md5 `05480c74…2210` stable. Ledger actionable **6 → 4 BY ROW CENSUS** (OPEN-table 3 — E611/E686/E693 · PARTIAL-table 1 — E25 · STALE 0 · UNCERTAIN 0); three rows flipped CLOSED-in-place (E325, E493, E390), E686 renoted (tranche-8 + review-fix), E693 minted [LOW] OPEN.
+
+### Round-72 seeds (lanes ha–hb + carries)
+
+- **ha — E686 tranche-9:** ANTHROPICS.md / PROVIDERS.md / TOOLS.md / SKILLS.md / MCP.md per-arm tables; owner DocFigureProseDriftTest + docs + the `src/Backend.php` docblock; carry: gd/gg measures.md HELD lists; the GlobDialect glued-literal law binds (M7/AD pattern); judge PROMOTE-vs-HELD per figure, arm-AQ-skip style. ALSO absorbs the `$onEvent` roster LIVE-ARM (gh reviewer MINOR, DocFigure-style dynamic pin) — moved from hb at the filemap regen because the arm lives in DocFigureProseDriftTest and ha owns that file (lane-disjointness).
+- **hb — smalls bundle:** E693 SuiteSkipRosterTest `getMethod` fold + `MultiAgentRefactorTest:423` tokenless `throwing-` ids (fe seam).
+- Carries unchanged: E25 piece-2 (design) · E611 (design — pick-or-drop at a close) · E309 open-by-design with named trigger.
+- Environment: r71 sandboxes `crush-lane-{ge,gf,gg,gh,gi,gg2}` + review trees `crush-r71-rv-*` cleaned at this close; `sugarcraft-cc` is foreign, leave it.
+
+## ROUND 70 (2026-09-13) — five lanes, the gb phantom-replay salvage, the RESUME trim; floor 11,674/167,892
+
+**Closed at this closeout (docs atop code tip `4da36922a`).** Five lanes — wave-1 ga/gb/gd/ge, wave-2 gc — every builder APPROVE, reviewers 0C/0M (ge is a verdict lane, reviewed). Chain: base `55de6e269` → `379fc8554` (round-70 launch docs) → `f0d0d2ea1` (RESUME trim) → w1 picks `109293485`(ga) `a852eb2ba`(gb) `80806b39f`(gd) → w1 re-pin `a9e7b8f5f` (floor 11,665/167,829; prediction 11,656+2ga+1gb+6gd HIT EXACT) → w2 pick `d7be5733f`(gc) → w2 re-pin `4da36922a`. NEVER pushed. Rules 1–10 + addenda -66…-71 in force; K=8 sharded gate standard; five-guard filter in every brief.
+
+### The lanes
+
+- **ga** lane `77b4883b3` → pick `109293485`, +2T — seam sweep, ALL 5 items shipped: E199 CLOSED (`Chat::scheduleBackendCompletion()` arms `beginTurn()` gated `$drainsRuntimeNotices`; vacuity-guarded pre-spend pin + unappointed negative arm + 25-burst overflow-row pin); `StderrEmitterCensusTest:55` quote ELEVEN→TWELVE (anchor green at base — the guard file already said TWELVE); `MultiAgentRefactorTest` pid-token ids extended to ALL tokenless twins (:423/:175/:342/:103 — half-fix rejected); `ProcessUniqueTempNameTest` third `matching()` copy folded onto the public `TokenFunctionRanges::matching()` (no licensé existed — zero edits in gb's file); the reset() docblock claim was FALSE-TO-TREE (fd's E194 extension unnamed) — rewritten. Premise corrections: RuntimeNoticeSink lives in `src/Diagnostics/` not `src/Cli/`. Seam: `AwaitPromiseDiagnosticArmTest:525` still carries its own matching() copy (not ga-owned).
+- **gb** lane `fdeddc1f3` → pick `a852eb2ba`, +1T — arrived via the PHANTOM-REPLAY salvage path (Process finding below). A: E390 → PARTIAL — same-file-literal-only law PINNED via `testTheResolverRefusesCrossFileLiteralShapesToKeepTheSameFileLaw` (positive control + two distinct refusal reasons; non-vacuous by construction); licensé drop blocked on the byte-identical `BootstrapSkillSkipsTest:95`/`RequirementDirectiveProvenanceTest:103` pair (drop-probe RED names it — "both halves or neither" honored). B: E616 CLOSED-DECIDED — DENIAL_SHAPE bytes UNCHANGED, hyphen-tail visibility accepted per fb's measurement; dated DECIDED block, comment-only hunk. C: E375 DECIDED stamp landed in the DenialKind class docblock (fb's file).
+- **gc** lane `9de0e3fd6` → pick `d7be5733f`, +9T, 15 files +624/−74 — E172 CLOSED (aggregate `COMMAND_SKIP_NOTICE_FORMAT` transcript row; census trio flipped IN-STEP: seam census 21→22 + ten prose sentences, StderrEmitterCensus Bootstrap 28→29, BootstrapLaunchFormatConstants 15→16). E10 CLOSED-DECIDED keep-lowercase, zero code (row recommendation confirmed by the file owner). E493 → PARTIAL providers-half: `CompleteRequest::$onHeartbeat` + `heartbeatOptions()` (Guzzle `progress` per E524, 1/s throttle, immediate first beat, fail-soft, returns false), Sglang+Custom batch wired, NEW `ProviderHeartbeatProgressTest`; consumer-threading (EngineBackend/Runtime) declared seam → r71 gh. M1–M3 mutations discriminated correctly (seam census counts seam calls, not the wrapper).
+- **gd** lane `8b639e092` → pick `80806b39f`, +6T — E686 tranche-7 + E353 CLOSED-BY-FOLD: 22 claim rows judged ALL TRUE — ZERO FALSE, docs byte-untouched; DocFigure arms 32→38 (AC–AH: hook tables, Events-vs-enum eleven + dispatch scan skipping src/Hooks/ internals, entry/exit sets, drain/sweep/marker, SKILLS.md quotients, ENVIRONMENT.md 300ms ±10ms spacing law). GlobDialect hazard caught+fixed (glued literal → corpus 366×362; split restored 131,765=365×361, M7 proves the split load-bearing). 7 mutations md5-clean. `PhpToken::$pos`-not-`->offset` gotcha recorded (null spans → PHPUnit Warnings:1 family).
+- **ge** verdict lane, ZERO code, ZERO commits — E309 CLOSED-VERDICT: (b) OPEN-BY-DESIGN with a named trigger (fold into crush_feat §1D two-class ToolResult unification, or mint on a 4th DenialKind case). Full construction census at `55de6e269`: TWO ToolResult classes — engine 72 sites/15 files, chat-side ~20/3 files with factories already present; the r69 premise was FALSE-TO-TREE; duplicate frame-spelling machine-impossible since E246/E541/fb. Independent audit applied 3 MINOR corrections in-place (the Chat.php trio re-attribution to the ROOT class — namespace resolution, not imports — is the load-bearing one; ~95/75-site headline unchanged).
+
+### RESUME trim (`f0d0d2ea1`) — 518KB → 87KB, 83.2%
+
+Supervisor-driven boot-cost fix executed pre-lanes: `crush_code_RESUME.md` 6,680→1,258 lines; superseded per-round §0-NOW-56…70 blocks deleted (history recoverable via git ancestry of the file), surviving rules/promoted literals lifted VERBATIM into APPENDIX I (rules 1–10, stop-and-ask, rules 59–62, provenance quote), APPENDIX II (addenda -66…-71 full texts + §1b K=8 gate), APPENDIX III (vendor & suite machinery), APPENDIX IV (legacy §§3–8), APPENDIX V (craft-rules digest). Adjudication: 46/46 PROPOSALS items + 5 amendments; execution grep-anchor checklist 86/86; independent content-integrity AUDIT **7/7 gates APPROVE, zero operational content lost** (`/home/sites/crush-r61-artifacts/resume-trim/{PROPOSALS,EXECUTION,AUDIT}.md`). "Rules are durable; figures are not."
+
+### Process finding — the gb phantom-replay saga (ADDENDUM -72 minted)
+
+gb's original builder session answered EVERY resume with an identical report — rule 4's three-identical-reports fabrication signature. This round proved the carry-over half of the law: resuming a REPLAYING session is dead weight (rule 3's keep-resuming is for BLANK/truncated answers, not stable identical replays). The fresh re-cut was ordered to open with a SALVAGE-FIRST step 0 — and salvage found the phantom had in fact LANDED: `fdeddc1f3` existed at base `55de6e269` with exactly the three owned files. The re-cut verified the diff file-by-file against brief A/B/C, re-ran all three gate families green at the lane tip (43T/4231A, five-guard 45T/4525A, StderrEmitterCensus 95T/6194A — each matching the commit's claims), and ACCEPTED the salvage with zero new commits. Contrast the r67 di/dl phantoms, which landed NOTHING: a replaying report is a REPORTING failure, not necessarily a work failure — so the re-cut checks the tree before redoing anything. Reviewer independently land-verified (`REVIEW.md`), report-replay canary clear, 0C/0M. Law promoted to ADDENDUM -72 in the RESUME appendices.
+
+### Rulings (supervisor, recorded)
+
+- **E616 → DECIDED keep the bytes** (gb): hyphen-tail framing visibility accepted; fixtures pin the trade both ways. CLOSED.
+- **E375 confirmation:** the DECIDED stamp now sits where the question's home lives (`src/Permissions/DenialKind.php`); the ruling itself was r69's.
+- **E309 → CLOSED-VERDICT (open-by-design)**: the literal prescription is never built on its own; it rides §1D or a 4th-case trigger. A disposition, not a fix.
+- **E493 consumer-threading stays a declared seam** (gh, r71) rather than forcing gc across EngineBackend/Runtime ownership; providers-half banked.
+- **E134/E204** remain supervisor-owned-file rows (judged again at r70 close: still unassigned, no new fact — they stay in the ledger).
+
+### Floor / gates
+
+**11,674T / 167,892A / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — LINKED, cwd=sugar-crush, serial 9m27s at `4da36922a`. K=8 CONSERVATION PASS +0/+0 (82s); five-guard 45T/4532A; ReadmeSuiteFigureDrift 4T/26A; Config w1 811T/17,714A/1S; `durations.tsv` 503→**504** rows (+ProviderHeartbeatProgressTest — rule -70 honored: the serial run is conservation truth until the row lands, comm-proven exactly +1, zero deletions); runtime `config.json` md5 `05480c74…2210` stable. Wave-1 floor was 11,665/167,829 (serial==shard-sum exact). Ledger actionable **14 → 8 by ROW CENSUS** (OPEN-table 5 — E204/E325/E493/E611/E686 · PARTIAL-table 3 — E25/E134/E390 · STALE 0 · UNCERTAIN 0); six rows flipped CLOSED-in-place (E10, E172, E199, E309-VERDICT, E353, E616), three renoted (E390, E493, E686), E375 confirmation addendum (no move).
+
+### Round-71 seeds (lanes gf–gh + carries)
+
+- **gf — E390 completion:** dedupe the byte-identical `BootstrapSkillSkipsTest`/`RequirementDirectiveProvenanceTest` const pair, then drop the `DuplicatedTestHelperDrift` licensé + flip the roster trio IN-STEP (the gb tripwire arm reddens any other order). Owns those three test files.
+- **gg — E686 tranche-8:** the ~9.5 HELD carry per gd/measures.md carry-dispositions (each row already named). Owns DocFigureProseDriftTest + docs; ⚠ GlobDialect corpus law.
+- **gh — E493 consumer-threading seam:** EngineBackend/Runtime thread `CompleteRequest::$onHeartbeat` from the child frame-writer; owns the `src/Backend.php` `$onEvent` docblock drift too.
+- Unowned/open carry: **E325** (12 inline-slice readers; pick-or-drop at the close) · **E25** piece-2 + **E611** design carries · **E134/E204** supervisor rows · E208's named `AwaitPromiseDiagnosticArmTest:525` matching() copy (ga seam).
+- Environment: only `crush-lane-ge` worktree + `lane/ge` branch survive from r70 (verdict lane, zero-diff) — clean before or at the r71 cut; `sugarcraft-cc` is foreign, leave it.
+- LSP load-flake watch (`LspClientDispatchPumpTest` ~10s under shard contention) — ambient, no lane.
+
 ## ROUND 69 (2026-09-12) — 13 lanes both waves, the E375 B-qualifier ruling, a size-cache polluter caught by conservation; floor 11,656/167,184
 
 **Closed at this closeout (docs atop code tip `b600c9760`).** Thirteen lanes — wave-1 fa–fj, wave-2 fe/ff/fg/fh/fk/fl/fn — every builder AND reviewer APPROVE 0C/0M. Chain: base `17dfa36bf` → w1 picks `a9e7a333c`(fa) `ff2a96306`(fb) `71cc12f38`(fc) `3555a3940`(fd) `58d030980`(fi) `c3605f9e6`(fj) → drift-fix `c2b695867` → w1 re-pin `45b370c75` → w2 picks `41b19f5e5`(fe) `664c9cfa5`(ff) `bce05c166`(fg) `d7272bd0a`(fh) `c8b8f5437`(fk) `d168ddfab`(fl) `f2c2c2327`(fn) → re-pin `b600c9760`. NEVER pushed. Rules 1–10 + addenda -66…-70 in force; K=8 sharded gate standard; five-guard filter in every brief.

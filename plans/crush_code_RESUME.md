@@ -4,164 +4,55 @@
 first, then `docs/plans/crush_code_worklog.md` for the round-by-round record.
 Nothing here depends on a prior conversation's context.
 
-🔴 **START AT §0-NOW-82 BELOW. It carries the ROUND-80-CLOSED banner — PHASE 2 (MCP) COMPLETE: ob closed the /tmp/crush-mcp-auth-* tempnam leak family (`ce41d8c9f`→pick `896c18205`; rv APPROVE 0C/0M); oc shipped E699 per the operator ruling "wire it" — `claude-mcp` double opt-in + `src/MCP/ClaudeCodeMcpServer.php` adapter (`db93dbe16`..`8b7989af1` → picks `ad8dfda12`..`4b9ab1258`; rv APPROVE-WITH-FIX 0C/1MAJOR+4MINOR healed in fix-round); drift-fix `b11a34ca3` (stacking census caught the fix-round's buried docblock — third tree-scan co-shard catch); weld `710544154` floor **11,870 / 170,786 / 0F / 0E / 1 skipped (McpClientTest canary) / EXIT 0** LINKED @cwd=sugar-crush; durations 518; NEVER pushed. ACTIONABLE = 0 BY ROW CENSUS — PHASE-2 COMPLETE; MINT PENDING for three operator-reported UX findings under investigation this session (multiline/paste input, possible reasoning truncation, MCP config-shape compat for opencode users) — round-81 lanes p* minted from probe verdicts. The trigger-watch roster, the K=8 sharded gate, the SwallowingCatch gate law (held clean r78–r80), and the definition of "done" are all below.**
-**Every superseded-history `0-NOW-<n>` section and the frozen §1–§11 reference blocks were trimmed
-2026-09-12; the per-round history is recoverable via git ancestry of this file, and its surviving rules
-were lifted VERBATIM into the appendices below — STANDING ORDERS (rules 1–10, stop-and-ask, rules 59–62,
-the provenance quote), ADDENDA -66…-73 full texts, VENDOR & SUITE MACHINERY (§0-NOW-62 §3/§4/§4b/§8 +
-the vendor-restore block), ENVIRONMENT & PHILOSOPHY (legacy §§3–8), and the CRAFT-RULES DIGEST.
-Trimmed 2026-09-12 per resume-trim/PROPOSALS.md adjudication — full round history recoverable via git
-ancestry of this file. Rules are durable; figures are not.
+🔴 **START AT §0-NOW-90 BELOW. It carries the ROUND-87 CLOSED banner — the r87 cut (w1 candy-vt tail / w2 sugar-bits 2.4 / w3 sugar-charts P5) welded via six zero-conflict picks + E742 mint companion; every E736 tail row is now dispositioned (built / gated-no-build / deferred-with-trigger / ruled-skip). FLOOR UNCHANGED 12,027 / 170,392 / 0F / 0E / 1 skipped (McpClientTest canary) / EXIT 0 — the weld moved ZERO sugar-crush files, exact-carry 4th consecutive round, no re-pin. ACTIONABLE BY ROW CENSUS = **2**: E736 (umbrella tails — ALL ruling/feature-shaped, no defect work left inside it) + E742 (candy-vt cube palette — needs RULING). CAMPAIGN MECHANICALLY COMPLETE per the operator (m0225): round-88 ONLY on operator direction. HARNESS LAW IN FORCE: serials PLAIN BASH PIPE — NEVER tmux/setsid/PTY. failOnWarning UNIVERSAL (58/58) — ZERO Warnings at every gate. Durations.tsv sugar-crush-ONLY (532 rows HELD). Config-md5 at-rest truth `d96e124ee7967eb34ef479ef824231ad`. LINK CENSUS post-r86u: sugar-crush **19/19** + candy-pty **8/8**.**
 
-## 0-NOW-82. ROUND 80 CLOSED — PHASE-2 COMPLETE — ACTIONABLE = 0 — MINT PENDING FOR OPERATOR FINDINGS — CURRENT
+## 0-NOW-90. ROUND 87 CLOSED — VT TAIL / BITS 2.4 / CHARTS P5 ALL DISPOSITIONED, E742 MINTED — CAMPAIGN MECHANICALLY COMPLETE, NEXT ROUND ONLY ON OPERATOR DIRECTION — CURRENT
 
-**Written 2026-09-14 at the round-80 closeout, on top of code tip `710544154` (the re-pin weld; this
-closeout's docs commits add the records above it). §0-NOW-81 is DELETED — every live claim it carried is
-re-stated here; its machinery survives in the APPENDICES below: operating rules 1–10 VERBATIM (APPENDIX I),
-addenda -66…-73 full texts (APPENDIX II — UNCHANGED this close), vendor & suite machinery (APPENDIX III),
-the K=8 standard gate (APPENDIX II §1b). APPENDICES I/II/III/IV/V are UNCHANGED at this close.**
+**Written 2026-09-17 at the round-87 weld closeout (code tip = six picks `f48537daf`/`c37486747`/`848f1fbb0`/`232686276`/`66debe01c`/`971c0fa96` + companion `7988f2305` atop `cfb26f8f2`; master @ this closeout's docs commits). §0-NOW-89 is SUPERSEDED — every live claim it carried is re-stated here or retired with its closure; its machinery survives VERBATIM in the APPENDICES below: operating rules 1–10 (APPENDIX I), addenda -66…-73 (APPENDIX II — UNCHANGED this close), vendor & suite machinery (APPENDIX III), the K=8 standard gate (APPENDIX II §1b), environment/philosophy (APPENDIX IV), craft-rules digest (APPENDIX V).**
 
-**The headline: ROUND 80 (phase-2 MCP FINAL wave, two lanes) CLOSED — PHASE-2 COMPLETE. E699 [CLOSED]:
-operator ruled "wire it" and oc shipped the gated door — double opt-in (repo `type: claude-mcp` entry,
-which cannot name binary/args/env, PLUS operator-tier `claudeMcpBinary` absolute path), the new
-`ClaudeCodeMcpServer` adapter riding the same bridge/dispatch/naming/narrowing law as its siblings,
-group-reap lifecycle, the dormancy guard converted to a bidirectional allowlist pin (documented
-glued-split ceiling). +33T exact over 3 new test files. ob closed the r79 tempnam trigger-watch (the
-tempnam+suffix family, exactly 3 sites, ~2,600 stale stubs on the host). Lane `ce41d8c9f` → pick
-`896c18205` (rv APPROVE 0C/0M); oc `db93dbe16`+`a489db1da`+`54cc5afac`+`2f87b4f8b`+fix `8b7989af1` →
-picks `ad8dfda12`+`e438c9dca`+`f0ef430fc`+`b57ed8fec`+`4b9ab1258` ALL CLEAN (rv APPROVE-WITH-FIX
-0C/1MAJOR+4MINOR — MAJOR-1 was an UNDISCLOSED §7.5/§7.6 test-plan omission, review caught what
-self-reporting missed, healed in the fix-round). Provenance fact: the design researcher lane died empty
-TWICE; the design survived only because an agent wrote it to disk first (design-oa). Merge drift-fix
-`b11a34ca3`: serial1 reddened
-RuntimeNoticeSinkDeliveryTest's stacking census (the fix-round buried the FIXTURE_SERVER forward-doc
-block under its new method doc) — third tree-scan co-shard class catch; guard's own prescription
-applied. Floor **11,870 / 170,786 / 0F / 0E / 1 skipped (McpClientTest canary) / EXIT 0** LINKED
-@cwd=sugar-crush at weld `710544154` (+33T exact vs r79 floor; serial2 green in ONE pass; K=8
-CONSERVATION +0/+0; durations 515→518, exactly +3). SwallowingCatch gate-law HELD CLEAN (r78–r80).**
-
-**Lane naming (in force):** two-letter ids, FIRST letter = round-group (r80=o* closed; r81=p*). Branch
-`lane/<id>`, sandbox `crush-lane-<id>`, artifacts `/home/sites/crush-r61-artifacts/<id>/`.
-
-**PHASE-3 MINTED 2026-09-14** — this paragraph SUPERSEDES the §2(c) "MINT PENDING" candidate list below.
-The three operator UX findings are probed (read-only investigators at `ce501c86a`; reports archived at
-`/home/sites/crush-r61-artifacts/phase3/` as `input-probe.md` (only-yellow-mink), `reasoning-probe.md`
-(bad-gold-ferret), `mcp-compat-probe.md` (injured-aquamarine-squirrel)) and the phase-3 kickoff mints
-**E704–E710** (7 rows; file:line citations in the backlog entries): E704 bracketed paste never enabled +
-PasteMsg dropped (HIGH), E705 Kitty keyboard protocol never negotiated — modified Enter indistinguishable
-(MED), E706 reasoning display hard-truncates at 120 chars — operator rule on record: WRAP, never truncate
-(HIGH), E707 provider length-stops silent — `$truncated` consumed nowhere (MED), E708 opencode MCP config
-shapes silently dropped — `environment`/`enabled` read nowhere (HIGH), E709 `/mcp` discovery UX — auth is
-the only visible verb (MED), E710 no foreign MCP importer (LOW). **Round-81 lanes** (file-disjointness
-binds): **wave-1 pa** (E704 — Chat.php input region) ∥ **pb** (E708 — src/MCP normalization) ∥ **pc**
-(E706 — src/Renderer reasoning paint); **wave-2 pd** (E709 — docs/MCP.md + DocFigure/AX re-cut AFTER pb
-touches the same arms) ∥ **pe** (E705 — Chat.php AFTER pa); **wave-3 pf** (E707 — Chat.php + Providers
-AFTER pe) ∥ **pg** (E710 — Subcommands AFTER pd). E706 vs E707 are two INDEPENDENT halves of the same
-reported symptom (render cap vs provider length-stop) — they can co-occur; the probe's ground-truth
-procedure distinguishes them (reasoning-probe.md). **Operator answer TODAY** for the four opencode
-servers (works at tip, project-root `.mcp.json`, plus one `trustedProjectMcp` grant in
-`~/.sugar-crush/config.json`): `{"mcpServers":{"searxng":{"type":"stdio","command":"npx","args":["-y","mcp-searxng"],"env":{"SEARXNG_URL":"http://skynet2.interserver.net:8080/"}},"context7":{"type":"http","url":"https://mcp.context7.com/mcp"},"exa":{"type":"http","url":"https://mcp.exa.ai/mcp"},"gh_grep":{"type":"http","url":"https://mcp.grep.app"}}}` (mcp-compat-probe §A). The §2(b) trigger-watch roster carries UNCHANGED. Census re-run at this mint returns exactly 7 survivors, all `OPEN` (E704–E710).
+**The headline: ROUND 87 executed the r86-approved tail cut — three lanes, all reviewed APPROVE-class before merge (w2 carried one MAJOR through a full fix + re-review cycle), six picks ZERO conflicts (file-disjoint), ZERO sugar-crush files moved → floor exact-carry for the FOURTH consecutive round.** w1 built the candy-vt tail (4.1/12.3/4.3/4.4 API batch, 6.1/6.3 perf, 2.3 DRY) and RULED 6.2 gated-no-build by consumer sweep; 6.4 stays deferred-with-trigger (needs a new public Buffer row-shift API). w2 shipped sugar-bits 2.4 (`Tabs::view()` consumes stored scrollEnd) through the MAJOR-1→POLICY-G history: left-ellipsis over-claim caught in review, fixed with a single-parity `rendersLeftEllipsis()` seed, proven by a 15,506-row tuple-paired audit (improve=46, regress=0) and a WALK-FORM pin (the withActive-jump form demonstrably missed the seed-neuter mutation). w3 dispositioned sugar-charts Phase-5 4/4 (5.1 verified-landed; 5.2/5.3/5.4 ruled-skip — feature/new-dep/API-sprawl) and hardened the Sixel memo key (rv-v4 MINOR-1, tests-only). The rv-w1 seam minted §E742 (Theme cube palette mis-alignment — frozen-not-blessed by w1; needs a correct-to-xterm vs document-fallback RULING). Defect queue: ZERO defects — both survivors are decision-shaped.
 
 ### 1. THE FLOOR — THE ANCHOR, AND ITS DOMAIN
 
 | figure | value | domain |
 |---|---|---|
-| **ROUND-80 FINAL / NEW ANCHOR** | **11,870 / 170,786 / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** (serial green, plain-pipe shape) | **LINKED, cwd = sugar-crush, at `710544154`**; the green serial IS the weld truth (r77 law); ±50 tree-scan wobble expected run-to-run |
-| chain | `492314c17` (r79 filemap) → `896c18205` (ob pick) → `ad8dfda12`+`e438c9dca`+`f0ef430fc`+`b57ed8fec`+`4b9ab1258` (oc picks, linear, ALL CLEAN) → `b11a34ca3` (merge drift-fix) → `710544154` (re-pin weld) → this closeout's docs (worklog+stamps+§0-NOW-82+pointer, then filemap regen) | NEVER pushed |
-| companions | K=8 CONSERVATION +0/+0 at weld (fresh `--out`, plain pipe); five-guard 123T/7176A; DocFigure alone **81T** (2604A); Config window 860T/19271A/1S; citation+roster+swallow+census4 combined 179T/14152A ZERO census flips; Glob pair green (corpus 131,765=365×361); `tools/check-child-lifetimes.php` rc0; `durations.tsv` **518 rows** (+3 oc test files, set-diff exact); runtime config.json md5 `05480c743aff302fd6c06c5a4a4c2210` stable (start==end) | linked-domain figures — published-mode differ |
+| **ANCHOR (carried)** | **12,027 / 170,392 / 0F / 0E / 1 skipped (`McpClientTest` canary) / EXIT 0** — serial green x2 at r86u `988696aea`, PLAIN PIPE, linked, cwd = sugar-crush; r85 both waves, the r86 weld AND the r87 weld moved ZERO sugar-crush files → carried EXACT, no re-pin; K=8 conservation +0 | **UNCHANGED since r86u absorption — link-domain; ±32A cold/warm `ensureFixtureRepo()` wobble band still the assertions truth** |
+| lib figures at close | candy-vt **926 / 12,689** (+14T/+46A w1, render-dump md5-identical `dccc5c4857103432105e314a0fcc1209`) - sugar-bits **514 / 1,085** (+5T w2; TabsTest 60/108; sweep committed md5 `c6cf5817`) - sugar-charts **577 / 1,453** (+1T/+8A w3) - consumers UNMOVED: pty 663/1862/17S · vcr 948/4082/14S · forms 1891/3164 · prompt 158/310/2S · glow 122/313 · stickers 221/476 · query 1483/4203 · tick 144/349 · boxer 187/375 · sprinkles 751/2629 · shell 334/694 · layout 157/882 · crush window `Vt|Terminal|Buffer` **305 / 21,034** · five-guard **125 / 7,362** | lib-local; every touched lib gated FULL + both repo tools rc=0 at the weld |
+| chain | `b26b9989f` (r85 filemap) → r86 weld `cfb26f8f2` (floor exact-carry) → picks `f48537daf` `c37486747` `848f1fbb0` `232686276` `66debe01c` `971c0fa96` → companion `7988f2305` (E742 MINT + folds) → stamps + worklog + `§0-NOW-90` + pointer → filemap regen = ROUND-87-TIP | NEVER pushed |
+| durations | **532 rows HELD** — no new sugar-crush test files (sibling-lib files never belong in the tsv) | shared infra |
+| config | at-rest truth `d96e124ee7967eb34ef479ef824231ad`, start==end at the weld | linked-domain |
 
-### 1b. THE STANDARD LOCAL GATE — unchanged (K=8 sharded, FAIL-CLOSED conservation, fresh `--out`, plain pipe; durations manifest must carry a row for every new test file BEFORE sharded conservation means anything; serial is the re-pin truth — and per r80's THIRD demonstration: the serial is also the ONLY gate that sees whole-tree doc/comment censuses; lane filter lists cannot). Canonical command + regeneration recipe: APPENDIX II §1b. Pass `--against-json sugar-crush/tests/Config/Support/suite-figure.json` for the script's own CONSERVATION verdict line.
+### 2. DECISION POINT — CAMPAIGN MECHANICALLY COMPLETE (operator call m0225); ROUND 88 ONLY ON OPERATOR DIRECTION
 
-### 2. ACTIONABLE QUEUE — ZERO SURVIVORS: PHASE-2 COMPLETE, MINT PENDING
-
-**(a) Row census = 0 survivors.** Command run against `docs/plans/crush_code_backlog_triage.md` at this
-closeout (OPEN + PARTIAL + STALE-CITATION + UNCERTAIN section tables, status/evidence cells lead-scanned
-per the census rule):
+**(a) Row census = 2 survivors** (command RE-RUN at the filemap regen; output verbatim):
 
 ```
 $ awk -F'|' '/^## `OPEN`/{sec="OPEN"} /^## `PARTIAL`/{sec="PARTIAL"}
     /^## `STALE-CITATION`/{sec="STALE"} /^## `UNCERTAIN`/{sec="UNCERTAIN"}
-    /^## `SUPERSEDED`/{sec=""} /^\| \*\*E/{gsub(/^ +| +$/,"",$4);
+    /^## `SUPERSEDED`/{sec=""} /^| \*\*E/{gsub(/^ +| +$/,"",$4);
     if (sec!="" && $4 !~ /^\*\*CLOSED/) print sec" "$2}' docs/plans/crush_code_backlog_triage.md
-(no survivor lines)
+OPEN  **E736** 
+OPEN  **E742** 
+$   # 2 survivors: E736 (umbrella — ALL remaining shape is ruling/feature, every tail row dispositioned at r87) + E742 (cube palette — RULING required before any build)
 ```
 
-(EMPTY output = zero survivors — verified LIVE at this closeout after the E699 CLOSED-in-place flip.)
-**PHASE 2 (MCP, r77–r80) is COMPLETE: E695, E696(α+deny-notation), E697, E698, E699, E700, E701, E702,
-E703 all CLOSED.** The incoming phase-3 queue is MINTED SEPARATELY — see (c).
+**(b) THE SURVIVORS (none is defect work):**
 
-**(b) TRIGGER-WATCH ROSTER (watches are NOT rows — carry list):**
+1. **§E742** — candy-vt Theme cube palette mis-alignment: orchestrator RULING correct-to-xterm (user-visible; vt goldens + ansi-index census ripple + consumer snapshots) vs document-fallback (record-only + KNOWN-DIVERGENT pin). Posture: NOT auto-built (behavior-change STOP).
+2. **§E736 tails, all trigger-gated:** forms Phase-5 (DECLINED wholesale r86-v6 — reopen ONLY on real consumer demand); vt 6.4 `scrollUpOne` (DEFERRED-WITH-TRIGGER — needs new public Buffer row-shift API, own ruling on demand); shine/layout/bits/charts declines ride the row; MATCHUPS 🟡/🔴 port completions = full add-a-lib checklist per lib, one lib per wave, only when scheduled by the operator.
+3. **Phase-12 stays PAUSED** — never auto-resume (standing user decision).
 
-- **E696-deny-residual** — if a round ever mints a `denyPatterns` config producer, the deny half must ship
-  ENFORCED in the same change (never again "config that lies").
-- **`updateRegistration()` redirect-churn seam** (design nd §2.2) — re-registering with a changed loopback
-  redirect_uri can be rejected by servers that pin registrations; revisit if a real-world server trips it.
-- **E309** — DenialKind fourth-case-vs-qualifier product decision; watch only (r70 verdict).
-- **E611 tripwire** — reopen if a round ever ships out-of-ownership CODE edits UN-REPORTED.
-- **E694 step-3 / E25 re-severity** — agent memory tool DECLINED until a re-severity review + corpus
-  census justify it.
-- **E655** — "KeyboardHandlerPaletteTest" PHANTOM stays VOID — do NOT re-issue without a real target.
-- **LspClientDispatchPumpTest** — ~10s load-flake under shard contention: ambient, never a lane.
-- **Chat.php:8266 `scheduleBackendCompletion()` → RuntimeNoticeSink::beginTurn() seam** (r69-fn, opt-in by
-  design) — wire when notice-drain product work starts.
-- ~~tempnam hygiene~~ — **STRUCK r80: ob closed the whole family** (capture-base-clean-both idiom).
-
-**(c) MINT PENDING (phase-3 candidates, under investigation THIS session 2026-09-14 — three
-operator-reported UX findings; lanes to be minted round-81 as p* from probe verdicts, NOT yet rows):**
-
-1. **Multiline/paste input handling** — reported defect shape under probe.
-2. **Possible reasoning truncation** — reported symptom under probe (provider vs render half TBD).
-3. **MCP config-shape compat for opencode users** — foreign config shapes reported; compat vs documented
-   divergence under probe.
-
-**(d) Rules unchanged** — operating rules 1–10 + addenda -66…-73 in force, plus the r77 law carried
-forward: **every src-touching lane's brief gate list adds `SwallowingCatchCensusTest`** (held clean r78,
-r79, AND r80 — keep the gate, it is cheap) — and r80's reminder that whole-tree doc/comment censuses are
-serial-only, so the drift-fix policy (one disclosed commit) stays in the merge cadence.
-Evidence-to-files, land-verify-over-reports, resume-blank-forever, fresh-recut-on-replay,
-≤8 concurrent keep-filled, census-in-step, figures-cite-cwd+mode.
+**(c) TRIGGER-WATCH ROSTER (watches are NOT rows):** carried from §0-NOW-89 EXCEPT two retirements — **rv-v4 sixel single-channel key-collapse leg CLOSED by w3** (the memo key now requires every channel — pinned by blue-only/green-only pairs, M1/M2 each redden exactly it) and **rv-v1 era-figure seam CLOSED by w1 in-lane** (305 not 288). Still watching: CallbackAuthoredRefusalTest in-shard flake; candy-freeze zsh asymmetry; JsonStreamBackend flush-door; wish stale README badge; q15 DECSCUSR re-verify; q10 carrier-list arm; pa paste-while-modal pin; ReadPathCensus backslash blind spot; pf maxOutputTokens threading seam + ClaudeCode ceiling no-op; E696-deny-residual; updateRegistration() redirect-churn; E309 DenialKind decision; E611 tripwire; E694 step-3 / E25 re-severity gate; E655 stays VOID; LspClientDispatchPumpTest ambient; Chat.php:8266 notice-drain seam; rv-v2 Expression mutable-`$terms` freeze-seam; rv-v3 Confirm shared-carrier fold-when-possible; rv-v3 Input::withValidator/mutate trait-drop family STILL LIVE (Phase-8/2-domain); rv-v5 render-dump arg shape; rv-v5 vim j/k product ruling; bits Select workerPool stores-dead asymmetry; r87 adds: **w2 zone-cost ≈13 cells law** (measure stripped rows for any Width::of geometry pin).
 
 ### RESTART INSTRUCTIONS — the new-session startup recipe
 
-**Tip chain:** `492314c17` (r79 filemap) → picks `896c18205`+`ad8dfda12`+`e438c9dca`+`f0ef430fc`+
-`b57ed8fec`+`4b9ab1258` → drift-fix `b11a34ca3` → weld `710544154` (floor anchor) → this closeout's docs.
+**Tip chain:** this closeout's docs commits (companion/stamps/worklog/RESUME/pointer + filemap regen) sit atop the six picks + `7988f2305`; master is fast-forwarded to the final closeout tip. NEVER pushed.
 
-1. Read this §0-NOW-82, the worklog `## ROUND 80` section (`docs/plans/crush_code_worklog.md`), and
-   `docs/plans/crush_code_filemap.md`.
-2. Pre-flight: `php scripts/refresh-deps.php --status` → linked **18/18 + 7/7** — FULL including candy-pty
-   (an INCOMPLETE link deterministically poisons 5 InteractivePromptContainmentTest env reds: verify BEFORE
-   briefing lanes, r76 lesson); `git status` clean at the tip; if any figure is doubted, run the floor gate
-   FIRST: `bash scripts/parallel-tests.sh --durations scripts/parallel-tests-durations.tsv
-   --against-json sugar-crush/tests/Config/Support/suite-figure.json` — K defaults to min(nproc,8), ~90s at
-   11,870T, **through a PLAIN PIPE, not a PTY** (`-u LINES -u COLUMNS`) — a ctty-carrying harness
-   deterministically reddens the `TerminalSizeFallbackIsolationTest` pair + the stdin-pin arms; serial is
-   reserved for figure re-pins (long serials: `tmux new-session -d` with `< /dev/null` redirect INSIDE the
-   tmux command — r75/r79 proven; setsid and nohup both die, never a PTY harness). Fresh lane sandboxes have NO
-   root `vendor/` — run gates as `sugar-crush/vendor/bin/phpunit -c sugar-crush/phpunit.xml`. Residue check:
-   the round-80 lane worktrees/branches (`crush-lane-ob`, `crush-lane-oc`, `lane/ob`, `lane/oc`) were removed
-   at this closeout (cherry all '-'); `sugarcraft-cc` is foreign, leave it alone.
-3. THE QUEUE CARRIES NO LANES. Mint round-81 p* lanes ONLY from adjudicated §2(c) operator-findings probes
-   (or a fresh audit sweep the operator calls for), off the closeout tip: `git -C /home/sites/sugarcraft
-   worktree add /home/sites/crush-lane-<id> -b lane/<id> <tip>` then `php scripts/refresh-deps.php
-   --mode=linked` inside — verified working IN-WORKTREE (r73 env fact).
-4. Per-bundle loop unchanged: implement (task+coder) → **verify claimed SHAs + worktree (rule 4,
-   four-case triage)** → review (task+coder, verdict-first, WITH the guard filters + SwallowingCatch) →
-   fix round → merged-suite green (PIPE, not PTY) → commit (author `Joe Huss <[EMAIL]>`). Never push.
-   Blank report — builder OR reviewer → RESUME the same task_id (-70, -71); IDENTICAL replay → fresh
-   re-cut, SALVAGE-FIRST step 0 (-72); taking over a DEAD session → audit master for unreviewed picks
-   FIRST and review-after-merge (-73).
-5. Close any future round exactly as r80 did: worklog entry + triage/backlog stamps + a new `§0-NOW-83` +
-   filemap regen + `crush_code.md` pointer flip + durations/README/suite-figure re-pin when the lane set
-   moves tests (census sextet) — actionable derived from the ROW CENSUS (recount the four section tables, do
-   NOT chain; status prefixes must be exactly `**CLOSED`, `**CLOSED (FULL)`, `**CLOSED-VERDICT`, `**OPEN`,
-   `**PARTIAL`, `**STALE-CITATION`, `**UNCERTAIN`); re-pin cadence per r78 facts — hand-bump the json tests
-   field ONLY, green serial, refresher rewrites json+README pair in one weld commit. NEVER run unanchored
-   `re.S` substitutions against the backlog ledger — scope per-section via `re.split(r'(?m)^(?=### E)')`,
-   assert exactly-1, verify with numstat + a far-away canary grep (r77 lc wiped 3,837 lines to a git restore).
-6. Honor rules 1–10 + the -66…-73 addenda throughout. STOP only at the four stop-and-ask items.
-   No live decisions ride at this close (the E699 gate was RULED and shipped in r80).
-
----
+1. Read this §0-NOW-90, the worklog `## ROUND 87` section, and `docs/plans/crush_code_filemap.md` (2 rows = census: E736 + E742).
+2. Preflight in any fresh sandbox: `git -C /home/sites/sugarcraft status --porcelain` shows ONLY ignorable operator dirt at the tip; `php scripts/refresh-deps.php --mode=linked` FULL then EXPLICIT census **sugar-crush 19/19 + candy-pty 8/8**; config at-rest truth `d96e124ee7967eb34ef479ef824231ad`; floor gate if doubted: K=8 `bash scripts/parallel-tests.sh --durations scripts/parallel-tests-durations.tsv --out <fresh>` (~85s) or plain-pipe serial (cwd=sugar-crush).
+3. **DO NOT auto-open round 88** — the campaign is mechanically complete per the operator (m0225). If directed: the §2 menu is E742-ruling-first (one small lane either way), then trigger-gated E736 tails only with real demand. NEVER push; author `Joe Huss <[EMAIL]>`; no composer, no caliber, no touch of `.mcp.json`/`.sugar-crush/config*` operator files or foreign `sugarcraft-cc`.
+4. Per-lane loop unchanged (task+coder implement → SHA/worktree verify → task+coder review → fix round → weld; blank/fragment reports → RESUME same task_id ≤10x with disk-probes, salvage-first before any redo).
+5. If a future round welds: close as rounds 83–87 did — worklog + stamps + `§0-NOW-91` + pointer + filemap regen; re-pin crush figures ONLY when sugar-crush files move (four rounds now proven on the zero-move EXACT-carry shape).
 
 ## APPENDIX I — STANDING ORDERS (the surviving rule set, consolidated 2026-09-12)
 

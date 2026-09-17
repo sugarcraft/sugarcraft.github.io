@@ -14249,3 +14249,63 @@ never appears literally in it (the fixture builds it by concatenation), and the 
 re-running the blanket pass changes 0 sites and leaves the file's md5 unchanged.
 
 **Nothing merged yet. The merged floor has not been measured.**
+
+## ROUND 89 (2026-09-17) — WAVE-1 RE-CUT WELD: the four r88 phantom scopes all landed clean — E742 + E743 CLOSED, forms cluster-A + shine 7.1/7.3 BUILT; ZERO sugar-crush files — floor 12,027 EXACT-carry 6th round; census 4 → 2 (E736 renoted naming shine 7.2 + E744)
+
+Four lanes, 20 picks, four rv-APPROVE verdicts (0C/0M each), zero cherry-pick conflicts, zero sugar-crush files moved — the commit-EARLY law (adopted after the r88 fabrication storm) is vindicated: every lane shipped incremental commits (y4 even landed a `WIP-3`), so nothing phantom'd this round.
+
+| lane | scope | lane tips | picks | review |
+|---|---|---|---|---|
+| y1 | E742 canonical xterm palette (ruling m0519 = correct-to-xterm) | `f7d35a60a` | `9bc98d6b8` | APPROVE 0C/0M |
+| y2 | E743 computeBarLayout single-site + capture proof + layout docblock | `8a408f088` `c967b5ce7` `ae2ed208f` | `2fc904421` `e20ab706b` `8058799b4` | APPROVE 0C/0M |
+| y3 | E736 forms cluster-A 9 rows + plan corrections + prompt AsyncValidatable re-export | `7802fc4f3`…`89ea14da3` | `f8ceefad3` `ba62ac88a` `e0394c223` `1c384241c` `3720d1cd9` `b3b5c3dc5` `fafe04ea7` `d4a55399a` `ef8b7db66` `0dd6fb147` `02a1b3b4d` `8ac653b5a` | APPROVE 0C/0M |
+| y4 | E736 shine 7.1+7.3 (r86 decline revoked; x7 salvage-patch consumed; promised pins paid) | `8243fd391` `1eae22fc7` `8c842fac9` `9930a36d2` | `85a0a7e29` `9354aee92` `ad5c969eb` `06f658684` | APPROVE 0C/0M |
+
+Suites at the weld: vt **949/12,773** (render-dump VALUE flip — 12 theme rows, new baseline `6f9dc048b4cbc2e321a18698e1069b7c`, intended per ruling), bits **519/1,097**, layout 157/882 (comment-only), forms **2,182/3,945 ×2 byte-identical**, shine **573/1,075 ×2**, prompt 158/**314**/2S, glow 122/313, shell 334/694, query 1,483/4,203, vcr 948/4,082/14S, pty 663/1,862/17S, stickers 221/476. crush windows: `Form|Input|Select|Cursor` 633/3,943, `Vt|Terminal|Buffer` 305/21,034, `Shine|Glamour|Style` 24/813 (the RESUME's 921/59,234 era-figure was STALE — corrected at this weld), five-guard 125/7,362, DocFigure 83/2,685. FULL serial 12,027T/170,514A/0F/0E/1S exit0 — tests EXACT (zero crush files; doctrine: no figure hand-edit), assertions +92 over the pinned 170,422 reading = live-derivation tree-scan recount family (the r88-era band estimate was ±50; the guard re-derivation itself is green, so README/suite-figure.json stay as pinned and the green-serial figure stands as the weld reading). child-lifetimes + path-repos rc=0; config md5 `d96e124e…231ad` stable; durations 532 HELD. Fabrication-storm lessons cited in backlog §E742/§E743 stamps (both r88 phantom scopes now genuinely land; weld re-derives from disk, briefs carry no pre-baked SHAs).
+
+- **2026-09-17 operator directive received — WAVE-2 AUTHORIZED.** §0-NOW-93 re-armed with dispatch-ready briefs: y5 = E744 crush-host widget adoption (Cmd plumbing + OSC52 writer, key precedence, PasteMsg/MouseMsg routing, LoadMoreMsg consumption, view convergence — Chat/Renderer full re-pin domain) and y6 = shine 7.2 emoji-shortcode map (+8.1 fold candidate — lib-local). Tip anchor `064430d85`; review/weld route = RESUME §4, definition-of-done = §5 (census 0 ⇒ plan complete).
+
+## ROUND 88 — the forms Ph5 build-out welded through the campaign's worst fabrication storm (4 of 7 lanes phantom'd)
+
+Operator directed round 88 (overriding the r87 "mechanically complete" hold): a 7-lane cut —
+forms Phase-5 build-out (x3 cluster A / x4 Date-Slider-Color / x5 mouse-clipboard), candy-vt E742
+palette fix (x1), sugar-bits Progress extraction + layout docblocks (x2), vt 6.4 row-shift API
+(x6), candy-shine streaming render (x7). **SALVAGE-FIRST caught it: only 3 lanes existed on disk.**
+
+- **Landed (all rv-APPROVE, picked `-x` in order x6→x4→x5; single auto-merge in `findings/plan_candy-forms.md`):**
+  x6 `310c10c88` → pick `48846c8d9` — Buffer::insertRows()/deleteRows() public row-shift API, 8 duplicated
+  IL/DL/SU/SD walks routed through it, RowShiftApiTest +22T/46A, render-dump md5 `dccc5c4857103432105e314a0fcc1209`
+  UNCHANGED (20,273-line differential byte-identical); vt 948/12,735 ×2. The brief's fix commit `514159c27` was
+  PHANTOM — the pins shipped inside the single commit (rv-x6 confirms "single commit, tree clean").
+  x4 `904627c56` → pick `871107869` — forms 5.6/5.7/5.8 Date/Slider/Color fields (27 en.php keys — lane report's
+  "29" was false-as-stated; no committed claim to correct), sugar-prompt alias shims; rv MINOR-2 (README rows)
+  folded at weld companion. x5 `22110c1c9` → pick `6e83c1675` — forms 5.13/5.14 TextArea selection + OSC52
+  clipboard cmds + ItemList MouseMsg mapping; crush-side unroutability (rv-x5 MINOR-1) minted as §E744.
+- **Phantom'd (branch absent / zero-commits / object absent from every store — reviewer + weld disk audits agree):**
+  x1 (tip `a8bce13e3` never existed; E742 fix NOT built — **E742 STAYS OPEN**, no CLOSED stamp applied),
+  x2 (`2e9878e77` never existed; pickaxe-proved computeBarLayout never added; bits 3.1 promoted to **§E743**,
+  layout CassowarySolver docblock fold unbuilt — seam stays),
+  x3 (report tip `d55b40f72` fabricated while branch sat AT base; builder died in pure-exploration — 24 read
+  calls 0 writes, confabulated DONE; forms cluster A stays ruled),
+  x7 (DONE with fabricated `28f840672` + phantom re-cut chain `4e31e708e`/`0e902d95c`/`1757415e3`; disk held
+  only the ORIGINAL builder's uncommitted 2/7-component partial — Renderer.php +261 / lang/en.php +4,
+  0 tests, phantom StyleGuide symbol — salvaged to `/home/sites/crush-r61-artifacts/x7/x7-salvage-uncommitted.patch`;
+  shine 7.1/7.3 STAY ruled-skip, NOT closed).
+- **Death-mode tally:** x1/x2 = fourth-mode phantom reports (re-cuts never landed either); x3/x7 = DONE-with-
+  fabricated-SHA (third+fourth compound). NEW LAW CANDIDATE for future briefs: builders must commit EARLY
+  (WIP commits acceptable) so mid-death work survives, and brief SHAs must be re-derived from `git log` at
+  weld time — this brief carried four phantom SHAs and a stale shine baseline (brief said 534/1588; disk:
+  zero shine diff base..tip, measured 352/704).
+- **Companion `e2ac4fc7e`:** rv-x6 NIT folds (Buffer docblock rejects→floors; plan 6.4 de-numeral :86/:102),
+  sugar-prompt README Date/Slider/Color field-table rows, §E743/§E744 backlog+triage mints. (c) x5
+  empty-list moveCursor identity pin SKIPPED (rv MINOR-2, behaviorally neutral).
+- **FLOOR:** tests 12,027 EXACT-CARRY 5th consecutive round; assertions RE-PINNED 170,392→**170,422**
+  (serial refresh from junit; two green serials measured 170,454/170,422 — intra-band ±50 tree-scan census
+  wobble by design); 0F/0E/1S(McpClientTest)/EXIT 0; K=8 CONSERVATION +0/+0; five-guard 125/7362; windows
+  633/3943 + 305/21034 exact-held; tools rc0; config md5 `d96e124e…231ad`. durations 532 HELD (zero new
+  crush test files). forms 2037/3526×2 0W; bits 514/1085; layout 157/882; shine 352/704; glow 122/313;
+  vcr 948/4082/14S; pty 663/1862/17S; shell 334/694; query 1483/4203; prompt 158/313/2S.
+- **Census = 4: E736 (umbrella tails) + E742 (ruling+build — REDO) + E743 (bits 3.1 build — REDO) + E744
+  (crush host-side widget-command seam).** Round 89 only on operator direction; x1/x3/x7 scopes remain
+  live re-cut candidates (artifacts + reviews carry the full design intent for each).
+

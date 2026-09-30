@@ -64,6 +64,8 @@ Status legend:
 | [EthanEFung/bubble-datepicker](https://github.com/EthanEFung/bubble-datepicker) | **SugarCalendar** | `sugar-calendar/` | `sugarcraft/sugar-calendar` | `SugarCraft\Calendar` | 🟢 |
 | [DaltonSW/bubbleup](https://github.com/daltonsw/bubbleup) | **SugarToast** | `sugar-toast/` | `sugarcraft/sugar-toast` | `SugarCraft\Toast` | 🟢 |
 | [76creates/stickers](https://github.com/76creates/stickers) | **SugarStickers** | `sugar-stickers/` | `sugarcraft/sugar-stickers` | `SugarCraft\Stickers` | 🟢 |
+| — (first-party) | **SugarDiff** | `sugar-diff/` | `sugarcraft/sugar-diff` | `SugarCraft\Diff` | 🟢 | Unified-diff engine — LCS line diff, context hunks, GNU `diff -u` writer + line-number scanner. Extracted from sugar-crush (BuildsUnifiedDiff + DiffGutter region model). No 1:1 upstream; first-party. |
+| — (first-party) | **SugarMcp** | `sugar-mcp/` | `sugarcraft/sugar-mcp` | `SugarCraft\Mcp` | 🟢 | MCP client core — JSON-RPC 2.0 codec + envelopes, stdio transport (newline framing, bounded lifecycle via candy-core BoundedShutdown), initialize/tools handshake, deny-before-allow tool narrowing. Extracted from sugar-crush MCP stack; protocol per Model Context Protocol spec; first-party. |
 
 ## Apps
 

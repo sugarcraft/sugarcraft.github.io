@@ -1,8 +1,8 @@
-# SugarCraft/candy-mines
+# SugarCraft/candy-minesweeper
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/candy-mines
+- **URL:** https://github.com/sugarcraft/candy-minesweeper
 
 - **Upstream:** [maxpaulus43/go-sweep](https://github.com/maxpaulus43/go-sweep)
 
@@ -14,15 +14,15 @@
 
 - **Status:** 🟢 v1 ready
 
-- **Composer:** `sugarcraft/candy-mines`
+- **Composer:** `sugarcraft/candy-minesweeper`
 
-- **Namespace:** `SugarCraft\Mines`
+- **Namespace:** `SugarCraft\Minesweeper`
 
 ---
 
 ## Overview
 
-`candy-mines` is a Minesweeper clone ported from Go to PHP, running on the SugarCraft TUI stack (`candy-core` + `candy-sprinkles`). It faithfully reproduces the upstream `go-sweep` experience while adding PHP-native improvements: immutable value objects, injectable deterministic RNG for testing, O(1) win detection, mid-game serialization, and i18n support.
+`candy-minesweeper` is a Minesweeper clone ported from Go to PHP, running on the SugarCraft TUI stack (`candy-core` + `candy-sprinkles`). It faithfully reproduces the upstream `go-sweep` experience while adding PHP-native improvements: immutable value objects, injectable deterministic RNG for testing, O(1) win detection, mid-game serialization, and i18n support.
 
 ---
 
@@ -296,7 +296,7 @@ func checkDidWin(m model) bool {
 }
 ```
 
-This is **O(width × height)** per check. The candy-mines approach is **O(1)** — critical when `isWon()` is called after every user input.
+This is **O(width × height)** per check. The candy-minesweeper approach is **O(1)** — critical when `isWon()` is called after every user input.
 
 **Counter maintenance:** `revealedCount` is incremented in two places:
 - `floodReveal()` — every cell revealed during flood fill
@@ -403,9 +403,9 @@ This prevents corruption if a crash occurs mid-write.
 
 ---
 
-## Upstream Differences (go-sweep vs candy-mines)
+## Upstream Differences (go-sweep vs candy-minesweeper)
 
-| Aspect | go-sweep | candy-mines |
+| Aspect | go-sweep | candy-minesweeper |
 |---|---|---|
 | Language | Go | PHP 8.3+ |
 | Framework | Bubble Tea | candy-core (ReactPHP) |
@@ -425,7 +425,7 @@ This prevents corruption if a crash occurs mid-write.
 // TODO instantiate the mines after the first sweep to make sure first
 // click never hits a mine
 ```
-The candy-mines port implements this correctly.
+The candy-minesweeper port implements this correctly.
 
 ---
 
@@ -451,8 +451,8 @@ $board = Board::blank(5, 5, 1)->reveal(2, 2, $rand);
 ## File Inventory
 
 ```
-candy-mines/
-├── bin/candy-mines              # CLI entry point
+candy-minesweeper/
+├── bin/candy-minesweeper              # CLI entry point
 ├── composer.json
 ├── phpunit.xml
 ├── README.md
@@ -518,7 +518,7 @@ candy-mines/
 
 ## Conclusion
 
-`candy-mines` is a faithful and improved port of `go-sweep`. It adds significant value over the upstream:
+`candy-minesweeper` is a faithful and improved port of `go-sweep`. It adds significant value over the upstream:
 - First-click safety (fully working vs upstream's TODO)
 
 - O(1) win detection (vs O(n) grid scan)

@@ -1,4 +1,4 @@
-# candy-mines Research: Minesweeper Implementation Patterns
+# candy-minesweeper Research: Minesweeper Implementation Patterns
 
 **Date:** 2026-05-13
 **Upstream:** [maxpaulus43/go-sweep](https://github.com/maxpaulus43/go-sweep) (54 stars, Go + Bubble Tea TUI)
@@ -43,7 +43,7 @@
 
 ## 2. Flood Fill Algorithm Comparison
 
-### candy-mines (Current)
+### candy-minesweeper (Current)
 
 ```php
 // Board.php:L158-195 — iterative BFS with explicit stack
@@ -84,7 +84,7 @@ private function floodReveal(int $sx, int $sy): self
 }
 ```
 
-**Source:** `/home/sites/sugarcraft/candy-mines/src/Board.php:L158-195`
+**Source:** `/home/sites/sugarcraft/candy-minesweeper/src/Board.php:L158-195`
 
 ### Go-sweep (Upstream)
 
@@ -137,7 +137,7 @@ match board.state() {
 
 | Implementation | Algorithm | Notes |
 |----------------|-----------|-------|
-| candy-mines | Iterative BFS | **BUG at L178-179**: stops expanding from numbered cells but doesn't properly continue flood from zero-cells. The `continue` at L179 skips adding neighbours for numbered cells which is correct, but the logic flow appears correct. |
+| candy-minesweeper | Iterative BFS | **BUG at L178-179**: stops expanding from numbered cells but doesn't properly continue flood from zero-cells. The `continue` at L179 skips adding neighbours for numbered cells which is correct, but the logic flow appears correct. |
 | go-sweep | Recursive DFS | Simple but risks stack overflow |
 | React examples | Iterative BFS with queue | Proper wave-front revelation |
 | wesmar/C++ | Circular buffer BFS | O(1) victory check via counter |
@@ -146,7 +146,7 @@ match board.state() {
 
 ## 3. First-Click Safety
 
-### candy-mines (Current) ✅ CORRECT
+### candy-minesweeper (Current) ✅ CORRECT
 
 ```php
 // Board.php:L109-156
@@ -167,7 +167,7 @@ private function placeMines(int $sx, int $sy, \Closure $rand): self
 }
 ```
 
-**Source:** `/home/sites/sugarcraft/candy-mines/src/Board.php:L109-120`
+**Source:** `/home/sites/sugarcraft/candy-minesweeper/src/Board.php:L109-120`
 
 ### Web Pattern (Same Approach)
 
@@ -186,7 +186,7 @@ if (safeRow !== null && safeCol !== null) {
 
 ### Key Findings
 
-- **candy-mines is correct** — 3×3 safe zone (9 cells) matches industry standard
+- **candy-minesweeper is correct** — 3×3 safe zone (9 cells) matches industry standard
 - go-sweep likely does the same (implicit in most implementations)
 - Some older implementations relocate mine if first click hits it; the 3×3 exclusion is better UX
 
@@ -194,7 +194,7 @@ if (safeRow !== null && safeCol !== null) {
 
 ## 4. Flag Handling
 
-### candy-mines (Current)
+### candy-minesweeper (Current)
 
 ```php
 // Board.php:L94-106
@@ -219,7 +219,7 @@ public function toggleFlag(): self
 }
 ```
 
-**Source:** `/home/sites/sugarcraft/candy-mines/src/Board.php:L94-106`, `Cell.php:L41-47`
+**Source:** `/home/sites/sugarcraft/candy-minesweeper/src/Board.php:L94-106`, `Cell.php:L41-47`
 
 ### JSMinesweeper (Advanced)
 
@@ -231,7 +231,7 @@ public function toggleFlag(): self
 
 ### Missing Feature: Chord Clicks
 
-**Not implemented in candy-mines.** Classic Minesweeper allows:
+**Not implemented in candy-minesweeper.** Classic Minesweeper allows:
 
 - **Middle-click or double-click on a revealed number**
 - **If flag count === adjacent mine count**, auto-reveal all unflagged neighbours
@@ -256,7 +256,7 @@ Multi Click Algorithm:
 
 ## 5. Win Detection
 
-### candy-mines (Current) ✅ CORRECT
+### candy-minesweeper (Current) ✅ CORRECT
 
 ```php
 // Board.php:L198-209
@@ -274,7 +274,7 @@ public function isWon(): bool
 }
 ```
 
-**Source:** `/home/sites/sugarcraft/candy-mines/src/Board.php:L198-209`
+**Source:** `/home/sites/sugarcraft/candy-minesweeper/src/Board.php:L198-209`
 
 ### Optimized Approach (wesmar/C++)
 
@@ -414,15 +414,15 @@ chord(x, y):
 
 # Run existing tests
 
-cd /home/sites/sugarcraft/candy-mines && composer install && vendor/bin/phpunit
+cd /home/sites/sugarcraft/candy-minesweeper && composer install && vendor/bin/phpunit
 
 # Test flood fill specifically
 
-cd /home/sites/sugarcraft/candy-mines && vendor/bin/phpunit --filter FloodFill
+cd /home/sites/sugarcraft/candy-minesweeper && vendor/bin/phpunit --filter FloodFill
 
 # Test first-click safety
 
-cd /home/sites/sugarcraft/candy-mines && vendor/bin/phpunit --filter FirstReveal
+cd /home/sites/sugarcraft/candy-minesweeper && vendor/bin/phpunit --filter FirstReveal
 ```
 
 ---

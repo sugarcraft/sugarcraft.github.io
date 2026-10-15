@@ -1,6 +1,6 @@
 # Overview
 
-`candy-mines` is a Minesweeper clone ported from Go (`maxpaulus43/go-sweep`) to PHP, running on the SugarCraft TUI stack (`candy-core` + `candy-sprinkles`). It faithfully reproduces the upstream experience while adding PHP-native improvements: immutable value objects, injectable deterministic RNG for testing, O(1) win detection, mid-game serialization, and i18n support across 16 locales.
+`candy-minesweeper` is a Minesweeper clone ported from Go (`maxpaulus43/go-sweep`) to PHP, running on the SugarCraft TUI stack (`candy-core` + `candy-sprinkles`). It faithfully reproduces the upstream experience while adding PHP-native improvements: immutable value objects, injectable deterministic RNG for testing, O(1) win detection, mid-game serialization, and i18n support across 16 locales.
 
 **Biggest opportunity areas:**
 
@@ -144,7 +144,7 @@ DifficultyStats (atomic JSON persistence)
 ### 1. Undo/Redo System
 
 **Title:** Implement undo/redo using immutable architecture
-**Description:** Every state transition in candy-mines returns a new Board instance. This makes undo/redo trivial to implement by maintaining a history stack of Board states.
+**Description:** Every state transition in candy-minesweeper returns a new Board instance. This makes undo/redo trivial to implement by maintaining a history stack of Board states.
 **Why it matters:** Major UX improvement for a puzzle game — players can recover from mistakes without restarting.
 **Source repo:** N/A (architectural opportunity)
 **Source PR/issue/discussion:** N/A
@@ -165,7 +165,7 @@ DifficultyStats (atomic JSON persistence)
 ### 2. Testing Infrastructure
 
 **Title:** First-class testing utilities for TUI games
-**Description:** Bubble Tea v2 has no official testing framework (issue #1654). Textual has Pilot class. candy-mines could lead with superior testing DX.
+**Description:** Bubble Tea v2 has no official testing framework (issue #1654). Textual has Pilot class. candy-minesweeper could lead with superior testing DX.
 **Why it matters:** Ensures game logic correctness, enables TDD, prevents regressions
 **Source repo:** `charmbracelet/bubbletea` issue #1654, `textualize/textual` Pilot class
 **Source PR/issue/discussion:** `pr_charmbracelet_bubbletea.md:65-74`
@@ -335,14 +335,14 @@ DifficultyStats (atomic JSON persistence)
 
 ### 11. Web Rendering Path
 
-**Title:** Browser-based rendering for candy-mines
+**Title:** Browser-based rendering for candy-minesweeper
 **Description:** Textual offers textual-web. SugarCraft has no equivalent.
 **Why it matters:** Access from non-terminal environments
 **Source repo:** `textualize/textual` web driver
 **Source PR/issue/discussion:** `pr_textualize_textual.md:798-802`
 **Implementation ideas:**
 
-- Not recommended for candy-mines — significant architecture change
+- Not recommended for candy-minesweeper — significant architecture change
 
 - Would require separate package
 **Estimated complexity:** Very High
@@ -373,7 +373,7 @@ DifficultyStats (atomic JSON persistence)
 
 ### 1. O(1) Win Detection (Already Superior)
 
-**Current candy-mines:** Track `revealedCount` counter, increment on every reveal. Win = `revealedCount === width * height - mineCount`.
+**Current candy-minesweeper:** Track `revealedCount` counter, increment on every reveal. Win = `revealedCount === width * height - mineCount`.
 
 **Upstream go-sweep:** Scans entire grid on every `isWon()` call.
 
@@ -385,7 +385,7 @@ DifficultyStats (atomic JSON persistence)
 
 ### 2. Flood-Fill (Already Superior)
 
-**Current candy-mines:** Iterative stack-based `floodReveal()`.
+**Current candy-minesweeper:** Iterative stack-based `floodReveal()`.
 
 **Upstream go-sweep:** Recursive `sweep()` function.
 
@@ -397,7 +397,7 @@ DifficultyStats (atomic JSON persistence)
 
 ### 3. First-Click Safety (Already Superior)
 
-**Current candy-mines:** Mines placed after first click, excluding 3x3 neighborhood.
+**Current candy-minesweeper:** Mines placed after first click, excluding 3x3 neighborhood.
 
 **Upstream go-sweep:** Has TODO comment acknowledging unimplemented first-click safety.
 
@@ -409,7 +409,7 @@ DifficultyStats (atomic JSON persistence)
 
 ### 4. Serialization (Opportunity for Enhancement)
 
-**Current candy-mines:** Versioned JSON with all cell data.
+**Current candy-minesweeper:** Versioned JSON with all cell data.
 
 **External approaches:** Binary serialization for compactness, streaming for large boards.
 
@@ -558,9 +558,9 @@ $game = Game::builder()
 
 ## 3. Porting Guide
 
-**Topic:** How candy-mines differs from go-sweep (reference for future ports).
+**Topic:** How candy-minesweeper differs from go-sweep (reference for future ports).
 
-**Key differences documented in sugarcraft_candy-mines.md lines 363-386.
+**Key differences documented in sugarcraft_candy-minesweeper.md lines 363-386.
 
 **Opportunity:** Expand into full porting documentation for other game ports.
 
@@ -725,7 +725,7 @@ public function testRendererOutput(): void
 ### Issue #1599 / #1690: Data Races
 
 **Summary:** Shared state between render loop and input handlers caused races.
-**Relevance:** candy-mines uses immutable objects but candy-core renderer could have similar issues.
+**Relevance:** candy-minesweeper uses immutable objects but candy-core renderer could have similar issues.
 **Lessons learned:** All shared state between loops must be mutex-protected.
 
 ## From textualize/textual (via pr_textualize_textual.md)
@@ -747,7 +747,7 @@ public function testRendererOutput(): void
 ### Issue #27: Empty State Handling
 
 **Summary:** Selection widget with empty choices caused silent failure via tea.Quit.
-**Relevance:** Similar pattern could affect candy-mines with edge cases.
+**Relevance:** Similar pattern could affect candy-minesweeper with edge cases.
 **Lessons learned:** Document explicit contracts for edge cases; don't use early termination.
 
 ### Issue #7: Contextual Validation Errors
@@ -867,13 +867,13 @@ public function testRendererOutput(): void
 
 # Final Strategic Assessment
 
-`candy-mines` is a well-executed Minesweeper port that already exceeds its upstream in several meaningful ways: first-click safety, O(1) win detection, deterministic testing via injectable RNG, and atomic persistence. The immutable architecture is sound and enables several high-value features that haven't been implemented yet.
+`candy-minesweeper` is a well-executed Minesweeper port that already exceeds its upstream in several meaningful ways: first-click safety, O(1) win detection, deterministic testing via injectable RNG, and atomic persistence. The immutable architecture is sound and enables several high-value features that haven't been implemented yet.
 
 The most immediate opportunity is implementing **undo/redo** — the architecture already supports it trivially, and this is a standard feature users expect from puzzle games. Combined with **snapshot testing** for the renderer, these two additions would significantly improve reliability and UX.
 
 The **achievement system** and **replay system** represent medium-complexity, high-impact features that would increase engagement without major architectural changes. Both leverage the existing serialization infrastructure.
 
-The **AI solver/hint system** is more ambitious but would differentiate candy-mines from other Minesweeper implementations by demonstrating PHP's capability for constraint-based reasoning.
+The **AI solver/hint system** is more ambitious but would differentiate candy-minesweeper from other Minesweeper implementations by demonstrating PHP's capability for constraint-based reasoning.
 
 Looking at the broader TUI ecosystem, several lessons from `charmbracelet/bubbletea` and `textualize/textual` are directly applicable:
 

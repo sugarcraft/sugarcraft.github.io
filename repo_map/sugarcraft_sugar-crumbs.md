@@ -52,7 +52,7 @@ $shell2 = $shell->withPop();  // new Shell instance, $shell unchanged
 ```
 sugar-crumbs
 ├── candy-core (dev-master)   — TUI framework foundation, Width util, Msg types
-└── candy-zone (dev-master)  — Manager for mouse-click zone tracking (optional)
+└── candy-mouse (dev-master)  — Manager for mouse-click zone tracking (optional)
 ```
 
 ---
@@ -172,7 +172,7 @@ Items are kept from **most-recent to oldest** until they fit within `maxWidth`. 
 // Output: "… Medium Parent › Current Page"  (fits within 30 chars)
 ```
 
-**Zone-based mouse handling (via candy-zone `Manager`):**
+**Zone-based mouse handling (via candy-mouse `Manager`):**
 
 When a `Manager` is attached via `withZoneManager()`, each crumb is wrapped in a named APC zone marker:
 
@@ -357,7 +357,7 @@ Prevents separator collision when titles contain ` > `. The escape character is 
 
 ### bubbleo Components NOT in sugar-crumbs
 
-1. **Menu component** (`menu/model.go`) — wraps `bubbles/list` for choice selection. sugar-crumbs does not port this; use `SugarCraft\Bits\ItemList` or `SugarCraft\Prompt\Form` instead.
+1. **Menu component** (`menu/model.go`) — wraps `bubbles/list` for choice selection. sugar-crumbs does not port this; use `SugarCraft\Bits\ItemList` or `SugarCraft\Forms\Form` instead.
 
 2. **Styles package** — lipgloss-based styling constants. sugar-crumbs is unstyled by default; apply `SugarCraft\Sprinkles\Style` to output strings as desired.
 
@@ -443,7 +443,7 @@ Prevents separator collision when titles contain ` > `. The escape character is 
 
 ### Gaps
 
-1. **No Menu component** — bubbleo's menu (wrapping bubbles/list) is not ported. Use `SugarCraft\Bits\ItemList` or `SugarCraft\Prompt\Form` for selection UI.
+1. **No Menu component** — bubbleo's menu (wrapping bubbles/list) is not ported. Use `SugarCraft\Bits\ItemList` or `SugarCraft\Forms\Form` for selection UI.
 
 2. **No message-driven navigation** — bubbleo's `PushNavigation`/`PopNavigation` messages with `tea.Cmd` return values have no PHP equivalent. Applications must call methods directly.
 
@@ -465,7 +465,7 @@ sugar-crumbs is the navigation primitive for SugarCraft TUI applications. Its fr
 
 - `/home/sites/sugarcraft/repo_map/charmbracelet_bubbletea.md` — Framework sugar-crumbs can integrate with
 
-- `/home/sites/sugarcraft/repo_map/sugarcraft_candy-zone.md` — Mouse zone tracking for clickable breadcrumbs
+- `/home/sites/sugarcraft/repo_map/sugarcraft_candy-mouse-zones.md` — Mouse zone tracking for clickable breadcrumbs
 
 - `/home/sites/sugarcraft/repo_map/sugarcraft_candy-core.md` — TUI framework foundation
 

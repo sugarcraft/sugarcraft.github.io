@@ -503,7 +503,7 @@ Create `SugarCraft\Core\Util\Width` class with static methods:
 
 - `ansiStrip(string $s): string` — remove ANSI codes for width calculation
 
-This could be used by `candy-hermit`, `sugar-bits`, `sugar-prompt`, and other rendering components.
+This could be used by `candy-hermit`, `sugar-bits`, `candy-forms`, and other rendering components.
 
 ## 2. Extract Grapheme Aware String Utils
 
@@ -708,9 +708,9 @@ Add golden file tests for `View()` output at various states:
 public function withListRenderer(ListRenderer $renderer): self;
 ```
 
-## 2. Integration with `candy-zone`
+## 2. Integration with `candy-mouse`
 
-Add mouse support via `candy-zone` for clickable item selection:
+Add mouse support via `candy-mouse` for clickable item selection:
 ```php
 public function withMouseSelection(): self;
 ```
@@ -844,7 +844,7 @@ Document using Hermit as the search mechanism for desktop launcher integration.
    - Support cancellation
 
 10. **Mouse selection support**
-    - Integration with `candy-zone` for click handling
+    - Integration with `candy-mouse` for click handling
 
     - Track item regions for hit testing
 

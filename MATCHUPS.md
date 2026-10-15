@@ -37,11 +37,10 @@ called out in the table below.
 | **SugarCraft** (`candy-core/`) | 🟢 ready | MVC-style Model–Update–View runtime — Model / Msg / Cmd / Program. Namespace is `SugarCraft\Core\` (exception to the naming rule). |
 | **CandySprinkles** (`candy-sprinkles/`) | 🟢 ready | Declarative styling + layout. |
 | **HoneyBounce** (`honey-bounce/`) | 🟢 ready | Spring physics + Newtonian projectile sim. |
-| **CandyMouse** (`candy-mouse/`) | 🟢 ready | Self-contained Mark/Scan/Get mouse hit-testing + ZoneClickTracker for press/release deduplication — the mouse foundation the rest of the stack builds on. |
-| **CandyZone** (`candy-zone/`) | 🟢 ready | Façade over candy-mouse — Manager plus hover / drag / multi-click trackers and package-level `Zones`. Delegates Mark/Scan to `SugarCraft\Mouse`; not a second take on mouse hit-testing. |
+| **CandyMouse** (`candy-mouse/`) | 🟢 ready | Self-contained Mark/Scan/Get mouse hit-testing + ZoneClickTracker for press/release deduplication, plus the bubblezone-style `Zones` Manager (hover / drag / multi-click trackers) under `SugarCraft\Mouse\Zones` — the mouse foundation the rest of the stack builds on. |
 | **SugarBits** (`sugar-bits/`) | 🟡 in progress | Seventeen prebuilt components (TextInput, ItemList, Table, …). |
 | **SugarCharts** (`sugar-charts/`) | 🟡 in progress | Sparkline / Bar / Line / Heatmap / Scatter / TimeSeries / OHLC / picture. |
-| **SugarPrompt** (`sugar-prompt/`) | 🟢 ready | Form library — Note / Input / Confirm / Select / MultiSelect / Text / FilePicker / Date / Slider / Color. |
+| **CandyForms** (`candy-forms/`) | 🟢 ready | Form library — Note / Input / Confirm / Select / MultiSelect / Text / FilePicker / Date / Slider / Color. |
 | **CandyShine** (`candy-shine/`) | 🟡 in progress | Markdown → ANSI renderer (themes, syntax, OSC 8 hyperlinks). |
 | **CandyKit** (`candy-kit/`) | 🟢 ready | CLI presentation helpers (StatusLine / Banner / Section / Stage / HelpText). |
 | **CandyWish** (`candy-wish/`) | 🟢 ready | SSH-server middleware framework (leans on host `sshd`); pluggable Transport: InProcessTransport (default — candy-pty supervisor + Spawn middleware) or HostSshdTransport (legacy, opt-in — inline middleware, including running SugarCraft apps in SSH sessions). |
@@ -49,14 +48,14 @@ called out in the table below.
 | **CandyLog** (`candy-log/`) | 🟢 ready | Minimal, colorful logging library. |
 | **CandyPalette** (`candy-palette/`) | 🟢 ready | Terminal color detection + ICC profile handling. |
 | **CandyMosaic** (`candy-mosaic/`) | 🟢 ready | Image-to-cell renderer (Sixel, Kitty, iTerm2, Unicode half-block); Picker facade; ext-gd. |
+| **CandyFlip** (`candy-flip/`) | 🟢 ready | ANSI/GIF animation toolkit — GIF decode + frame playback (antecedent: gifterm) and `.ansi` art playback (`AnsiArt` / `ArtLibrary` / `ArtLoop`); solid + density render presets; ext-gd for GIFs. The viewer CLI lives in candy-gifview. |
 | **CandyVt** (`candy-vt/`) | 🟡 in progress | In-memory virtual terminal emulator; ANSI byte stream → cell grid + cursor + mode state. |
 | **CandyAnsi** (`candy-ansi/`) | 🟢 ready | ANSI escape-sequence parser and state machine (SGR, cursor, erase, DEC modes); feeds into CandyVt for cell-grid rendering. |
 | **CandyBuffer** (`candy-buffer/`) | 🟢 ready | Cell-grid value objects — Buffer (2-D cell grid) and Cell (rune/style/link/width); shared foundation for all rendering, with minimal-repaint diffs via `Buffer::diff()`. |
 | **CandyVcr** (`candy-vcr/`) | 🟢 ready | Record + replay candy-core sessions — JSONL/YAML cassettes, Recorder hook, Player + Byte/Screen assertions, CLI. |
 | **CandyPty** (`candy-pty/`) | 🟢 ready | PTY primitive (Linux + macOS) — contract interfaces (`PtySystem` / `MasterPty` / `SlavePty` / `Child` / `Process` / `Pump` / `Termios`) + POSIX implementations, all syscalls via FFI to libc; opt-in controlling-terminal support. Legacy facades (`Pty`, `Spawn`, `Child`) remain @deprecated through v1.x. Windows ConPTY planned. |
-| **CandyForms** (`candy-forms/`) | 🟡 in progress | Foundation: form primitives (TextInput, TextArea, ItemList, Viewport, FilePicker, Field interface, Confirm, Form) — extraction in progress. |
 | **CandyFocus** (`candy-focus/`) | 🟢 ready | Dependency-free focus ring — ordered focusable regions with a single focused member + wrap-around Tab/Shift-Tab traversal. |
-| **SugarGallery** (`sugar-gallery/`) | 🟢 ready | Poster grids & rails for media TUIs — a 2-D virtualized, sparse, absolute-indexed `PosterGrid` with owner-driven `need-range` paging (+ optional candy-zone mouse), a horizontal `Rail` carousel, and a renderer-agnostic `PosterCard` tile. |
+| **SugarGallery** (`sugar-gallery/`) | 🟢 ready | Poster grids & rails for media TUIs — a 2-D virtualized, sparse, absolute-indexed `PosterGrid` with owner-driven `need-range` paging (+ optional candy-mouse mouse), a horizontal `Rail` carousel, and a renderer-agnostic `PosterCard` tile. |
 | **CandyFuzzy** (`candy-fuzzy/`) | 🟢 ready | Fuzzy string matching with scored matched indices — Smith–Waterman + Sahilm algorithms. Unblocks filter-highlighting UI across the ecosystem. Extracted from candy-forms. |
 | **CandyLayout** (`candy-layout/`) | 🟡 in progress | Foundation: Cassowary simplex + greedy constraint solvers for terminal layout. |
 | **CandyTesting** (`candy-testing/`) | 🟢 ready | Test harness for SugarCraft apps — ProgramSimulator, golden-file assertions, snapshot helpers. |
@@ -96,7 +95,7 @@ called out in the table below.
 | **CandyQuery** (`candy-query/`) | 🟢 ready | SQLite/MySQL/PostgreSQL browser TUI — schema introspection, query editor, EXPLAIN plans, server status, alerting, query history. |
 | **SugarTick** (`sugar-tick/`) | 🟢 ready | Privacy-first coding-time tracker — JSONL on disk. |
 | **CandyMines** (`candy-mines/`) | 🟢 ready | Minesweeper — first-click safety / flood-fill. |
-| **CandyFlip** (`candy-flip/`) | 🟢 ready | ASCII GIF viewer (ext-gd). |
+| **CandyGifView** (`candy-gifview/`) | 🟢 ready | Terminal GIF + .ansi-art viewer CLI (ext-gd via candy-flip) — port of gifterm. |
 | **SugarReel** (`sugar-reel/`) | 🟢 ready | Terminal video player (mp4 → ascii/ansi/half-block/sixel/kitty) — ffmpeg pipe + pure-PHP GIF fallback, delta repaint, seek, speed, audio companion. |
 | **CandyTop** (`candy-top/`) | 🟢 ready | Terminal system monitor — cpu / mem+disks / net / process boxes, battery + NVIDIA GPU readouts, braille, block and sextant graphs, menus, presets, 43 themes, btop-compatible config with save/reload; Linux `/proc`+`/sys` and FreeBSD collectors; container/VM tags; adopted btop upstream PRs. |
 | **HoneyFlap** (`honey-flap/`) | 🟢 ready | Flappy Bird clone — the bird is a HoneyBounce projectile. |
@@ -113,7 +112,7 @@ package. Suffixes are short, technical, and describe the role.
 | Prefix | Meaning | Example uses |
 |---|---|---|
 | **Candy-** | foundation / system / framework | runtime (SugarCraft), shell (CandyShell), markdown (CandyShine) |
-| **Sugar-** | components / data / forms / apps | components (SugarBits), forms (SugarPrompt), charts (SugarCharts) |
+| **Sugar-** | components / data / forms / apps | components (SugarBits), charts (SugarCharts) |
 | **Honey-** | math / physics / motion | spring physics (HoneyBounce), Flappy clone (HoneyFlap) |
 
 `Candy-` (Files) is the file manager naming. Don't mint new prefixes without a discussion in
@@ -156,9 +155,8 @@ reference projects supplied the ideas, not the code.
 | CandyAsync (candy-async/) | none — first-party |
 | CandyBuffer (candy-buffer/) | [vte](https://github.com/charmbracelet/vte) |
 | CandyFiles (candy-files/) | [superfile](https://github.com/yorukot/superfile) |
-| CandyFlip (candy-flip/) | [gifterm](https://github.com/namzug16/gifterm) |
+| CandyGifView (candy-gifview/) | [gifterm](https://github.com/namzug16/gifterm) |
 | CandyFocus (candy-focus/) | [bubbles](https://github.com/charmbracelet/bubbles) (focus behavior) |
-| CandyForms (candy-forms/) | none — first-party |
 | CandyFreeze (candy-freeze/) | [freeze](https://github.com/charmbracelet/freeze) |
 | CandyFuzzy (candy-fuzzy/) | [fuzzy](https://github.com/sahilm/fuzzy) (+ internal algorithms) |
 | CandyHermit (candy-hermit/) | [theHermit](https://github.com/Genekkion/theHermit) |
@@ -185,7 +183,6 @@ reference projects supplied the ideas, not the code.
 | CandyVcr (candy-vcr/) | [x/vcr](https://github.com/charmbracelet/x/tree/main/vcr) |
 | CandyVt (candy-vt/) | [x/vt](https://github.com/charmbracelet/x/tree/main/vt) |
 | CandyWish (candy-wish/) | [wish](https://github.com/charmbracelet/wish) |
-| CandyZone (candy-zone/) | [bubblezone](https://github.com/lrstanley/bubblezone) (via candy-mouse) |
 | HoneyBounce (honey-bounce/) | [harmonica](https://github.com/charmbracelet/harmonica) |
 | HoneyFlap (honey-flap/) | [flapioca](https://github.com/kbrgl/flapioca) |
 | SugarBits (sugar-bits/) | [bubbles](https://github.com/charmbracelet/bubbles) |
@@ -202,7 +199,7 @@ reference projects supplied the ideas, not the code.
 | SugarGlow (sugar-glow/) | [glow](https://github.com/charmbracelet/glow) |
 | SugarMcp (sugar-mcp/) | none — first-party |
 | SugarPost (sugar-post/) | [pop](https://github.com/charmbracelet/pop) |
-| SugarPrompt (sugar-prompt/) | [huh](https://github.com/charmbracelet/huh) |
+| CandyForms (candy-forms/) | [huh](https://github.com/charmbracelet/huh) |
 | SugarReadline (sugar-readline/) | [promptkit](https://github.com/erikgeiser/promptkit) |
 | SugarReel (sugar-reel/) | [tplay](https://github.com/maxcurzi/tplay) · [glyph](https://github.com/seatedro/glyph) · [video-to-ascii](https://github.com/joelibaceta/video-to-ascii) |
 | SugarSkate (sugar-skate/) | [skate](https://github.com/charmbracelet/skate) |

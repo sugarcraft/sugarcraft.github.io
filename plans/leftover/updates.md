@@ -198,7 +198,7 @@ review for step 03.08 · clean · PR#541
   step 04.02 · PR#566 · sugar-stickers: compose sugar-bits Viewport + Scrollbar (leftover-rollout step 04.02)
 review for step 04.02 · clean · PR#566
 docs for step 04.02 · PR#567 · document Viewport/Scrollbar SSOT in README + docs/lib/sugar-stickers.html
-step 04.03 · PR#568 · sugar-crumbs: wire Zone::mark() emit/exit in Breadcrumb rendering + candy-zone dep
+step 04.03 · PR#568 · sugar-crumbs: wire Zone::mark() emit/exit in Breadcrumb rendering + candy-mouse dep
 review for step 04.03 · clean · PR#568
 tests-ci for step 04.03 · clean
 docs for step 04.03 · PR#569 · document withZoneManager() in README + CALIBER_LEARNINGS.md + docs/lib/sugar-crumbs.html
@@ -299,13 +299,13 @@ step 07.07 · PR#631 · candy-vt: BCE (SGR bg erase) + combining-char compositio
 review for step 07.07 · PR#631 · code clean, 467 tests pass; 4 CALIBER_LEARNINGS issues (see Open review findings — 07.07)
 fix for step 07.07 · PR#632 · resolved 4 findings (CALIBER_LEARNINGS: BCE/combining/sync updated + 2 new entries)
 docs for step 07.07 · PR#633 · document BCE/sync-output/combining in README + docs/lib/candy-vt.html feature grid + API table
- step 07.08 · PR#634 · candy-zone: ZoneHoverTracker + ZoneEnterMsg/ZoneExitMsg (leftover-rollout step 07.08)
+ step 07.08 · PR#634 · candy-zone: ZoneHoverTracker + ZoneEnterMsg/ZoneExitMsg (leftover-rollout step 07.08) @rename-keep legacy wire token / historical log
  review for step 07.08 · clean · PR#634
  docs for step 07.08 · clean · PR#635
- step 07.09 · PR#636 · candy-zone: DragTracker + ZoneDragStartMsg/ZoneDragMoveMsg/ZoneDragEndMsg (leftover-rollout step 07.09)
+ step 07.09 · PR#636 · candy-zone: DragTracker + ZoneDragStartMsg/ZoneDragMoveMsg/ZoneDragEndMsg (leftover-rollout step 07.09) @rename-keep legacy wire token / historical log
  review for step 07.09 · clean · PR#636
  docs for step 07.09 · clean · PR#637
-  step 07.10 · PR#638 · candy-zone: ClickCounter (DoubleClickMsg/TripleClickMsg) + Manager::setMotionTracking (leftover-rollout step 07.10)
+  step 07.10 · PR#638 · candy-zone: ClickCounter (DoubleClickMsg/TripleClickMsg) + Manager::setMotionTracking (leftover-rollout step 07.10) @rename-keep legacy wire token / historical log
   review for step 07.10 · clean · PR#638
   docs for step 07.10 · PR#639 · document ClickCounter/DoubleClickMsg/TripleClickMsg/setMotionTracking in README + end-user HTML + CALIBER
   step 07.11 · PR#640 · candy-mosaic: QuarterBlockRenderer (░▒▓█ 2×2 pixel rendering) + PixelGrid::fromGdQuarter() + 12 tests (leftover-rollout step 07.11)
@@ -355,18 +355,18 @@ docs for step 07.17 · PR#673 · document waitpid FFI fast-path in README + CALI
   docs for step 07.21 · PR#681 · document withIdleTrim() in README/end-user HTML/dev HTML/admin HTML + ReplayCommand PHPDoc + CALIBER entry
   step 07.22 · PR#682 · candy-vcr: add FocusInMsg/FocusOutMsg to BuiltinSerializer + update candy-vt FocusInMsg/FocusOutMsg to implemenets Msg + path-repo; 29 tests green
   docs for step 07.22 · PR#683 · update BuiltinSerializer msg count 14→19 in README + end-user HTML; add @implements Msg to FocusInMsg/FocusOutMsg docblocks; note FocusInMsg/FocusOutMsg implements Msg in CALIBER_LEARNINGS
-  step 08.01 · PR#684 · sugar-prompt: add Validator interface + Required/Email/MinLength/MaxLength/Pattern classes; Input::withValidator() chains multiple validators (leftover-rollout step 08.01)
+  step 08.01 · PR#684 · candy-forms: add Validator interface + Required/Email/MinLength/MaxLength/Pattern classes; Input::withValidator() chains multiple validators (leftover-rollout step 08.01)
   review for step 08.01 · clean · PR#684
   tests-ci for step 08.01 · clean
-  docs for step 08.01 · PR#685 · document Validator interface + 5 built-in subclasses in README (chaining quickstart + API table + custom impl example) + update docs/lib/sugar-prompt.html quickstart + feature grid
-  step 08.02 · PR#686 · sugar-prompt: add FuzzyMatcher (Smith-Waterman scoring) + withFuzzySuggestions() in Input/Select (leftover-rollout step 08.02)
+  docs for step 08.01 · PR#685 · document Validator interface + 5 built-in subclasses in README (chaining quickstart + API table + custom impl example) + update docs/lib/candy-forms.html quickstart + feature grid
+  step 08.02 · PR#686 · candy-forms: add FuzzyMatcher (Smith-Waterman scoring) + withFuzzySuggestions() in Input/Select (leftover-rollout step 08.02)
   review for step 08.02 · clean · PR#686
   tests-ci for step 08.02 · clean
   docs for step 08.02 · PR#687 · document FuzzyMatcher + withFuzzySuggestions() in README (fuzzy quickstart + field tables) + end-user HTML (quickstart/feature grid/API table) + new CALIBER_LEARNINGS.md [pattern:fuzzy-smith-waterman-two-row]
-  step 08.03 · PR#688 · sugar-prompt: add withAsyncSuggestions() to Input/Select (150ms debounce + SuggestionsReadyMsg + Deferred pattern; leftover-rollout step 08.03)
+  step 08.03 · PR#688 · candy-forms: add withAsyncSuggestions() to Input/Select (150ms debounce + SuggestionsReadyMsg + Deferred pattern; leftover-rollout step 08.03)
   review for step 08.03 · clean · PR#688
   tests-ci for step 08.03 · clean
-  step 08.04 · PR#690 · sugar-prompt: MultiSelect vim keys (j/k nav + space toggle) + Form::validateAll() + Select::withEnum(\BackedEnum) + Theme::$errorSummary slot (leftover-rollout step 08.04)
+  step 08.04 · PR#690 · candy-forms: MultiSelect vim keys (j/k nav + space toggle) + Form::validateAll() + Select::withEnum(\BackedEnum) + Theme::$errorSummary slot (leftover-rollout step 08.04)
   review for step 08.04 · clean · PR#690 (2 docs gaps: validateAll + withEnum not in README API tables)
   tests-ci for step 08.04 · clean
   docs for step 08.04 · PR#691 · document validateAll in Form chainables table + withEnum in Select knobs + MultiSelect vim keys + errorSummary in README/end-user HTML
@@ -439,13 +439,13 @@ docs for step 07.17 · PR#673 · document waitpid FFI fast-path in README + CALI
 
 ### Phase 08 complete (all 14 steps shipped)
 
-- [x] sugar-prompt/README.md: `Form::validateAll(): array<string,string>` not documented in the Form-level chainables table (lines 80-88) — ✅ resolved PR#691
-- [x] sugar-prompt/README.md: `Select::withEnum(\BackedEnum::class)` not documented in the Select field notable knobs column (line 47) — ✅ resolved PR#691
+- [x] candy-forms/README.md: `Form::validateAll(): array<string,string>` not documented in the Form-level chainables table (lines 80-88) — ✅ resolved PR#691
+- [x] candy-forms/README.md: `Select::withEnum(\BackedEnum::class)` not documented in the Select field notable knobs column (line 47) — ✅ resolved PR#691
 
 ## Open review findings — 08.03
 
-- [x] sugar-prompt/README.md: `withAsyncSuggestions()` not documented in the Input field API table or Select field API table. — ✅ resolved PR#689
-- [x] sugar-prompt/CALIBER_LEARNINGS.md: no new pattern entry for the async debounce + `Loop::addTimer` + `Deferred` + `SuggestionsReadyMsg` dispatch pattern. — ✅ resolved PR#689
+- [x] candy-forms/README.md: `withAsyncSuggestions()` not documented in the Input field API table or Select field API table. — ✅ resolved PR#689
+- [x] candy-forms/CALIBER_LEARNINGS.md: no new pattern entry for the async debounce + `Loop::addTimer` + `Deferred` + `SuggestionsReadyMsg` dispatch pattern. — ✅ resolved PR#689
 
 ## Open review findings — 07.16
 

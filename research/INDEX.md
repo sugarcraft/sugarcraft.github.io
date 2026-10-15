@@ -34,7 +34,7 @@ To implement an item:
 |---------|--------------|-------------------|
 | **sugar-dash** | [research/libraries/sugar-dash-research.md](libraries/sugar-dash-research.md) | 1. Constraint layout, 2. StatefulWidget separation, 3. Reactive props |
 | **sugar-bits** | [research/libraries/sugar-bits-research.md](libraries/sugar-bits-research.md) | 1. validate_on timing, 2. restrict regex, 3. Table sorting/filtering |
-| **sugar-prompt** | [research/libraries/sugar-prompt-research.md](libraries/sugar-prompt-research.md) | 1. Vim keys, 2. Built-in validators, 3. Enhanced KeyMap |
+| **candy-forms** | [research/libraries/candy-forms-research.md](libraries/candy-forms-research.md) | 1. Vim keys, 2. Built-in validators, 3. Enhanced KeyMap |
 | **sugar-table** | [research/libraries/sugar-table-research.md](libraries/sugar-table-research.md) | 1. StyleFunc, 2. Flex columns, 3. Viewport virtualization |
 | **sugar-charts** | [research/libraries/sugar-charts-research.md](libraries/sugar-charts-research.md) | 1. Nice ticks, 2. Streaming, 3. Area fill |
 | **sugar-veil** | [research/libraries/sugar-veil-research.md](libraries/sugar-veil-research.md) | 1. Backdrop, 2. Animation, 3. Border chrome |
@@ -69,7 +69,7 @@ To implement an item:
 | **sugar-glow** | [research/libraries/sugar-glow-research.md](libraries/sugar-glow-research.md) | 1. Pygments highlighting, 2. Enhanced themes, 3. File watching |
 | **candy-freeze** | [research/libraries/candy-freeze-research.md](libraries/candy-freeze-research.md) | 1. Bg colors, 2. Lang detection, 3. VS Code themes |
 | **candy-mosaic** | [research/libraries/candy-mosaic-research.md](libraries/candy-mosaic-research.md) | 1. WezTerm fix, 2. Image deletion, 3. Quarter-block |
-| **candy-zone** | [research/libraries/candy-zone-research.md](libraries/candy-zone-research.md) | 1. Hover tracking, 2. Drag detection, 3. Click count |
+| **candy-mouse** | [research/libraries/candy-mouse-research.md](libraries/candy-mouse-research.md) | 1. Hover tracking, 2. Drag detection, 3. Click count |
 | **candy-palette** | [research/libraries/candy-palette-research.md](libraries/candy-palette-research.md) | 1. CLICOLOR, 2. Terminfo Tc, 3. tmux handling |
 | **candy-metrics** | [research/libraries/candy-metrics-research.md](libraries/candy-metrics-research.md) | 1. Histogram buckets, 2. Metric describe, 3. UpDownCounter |
 
@@ -144,7 +144,7 @@ To implement an item:
 
 ### Input & Forms
 
-- **sugar-prompt**: Built-in validators, vim keys, fuzzy suggestions
+- **candy-forms**: Built-in validators, vim keys, fuzzy suggestions
 - **sugar-readline**: History persistence, auto-suggest, vi mode
 - **sugar-bits**: validate_on timing, restrict regex, table sorting
 - **sugar-calendar**: Date range picker, event store, localization
@@ -153,7 +153,7 @@ To implement an item:
 
 - **candy-vt**: Scrollback buffer, subparam parsing, cursor shapes
 - **candy-pty**: openpty FFI, waitpid FFI, raw mode
-- **candy-zone**: Hover tracking, drag detection, click count
+- **candy-mouse**: Hover tracking, drag detection, click count
 - **candy-palette**: CLICOLOR, terminfo Tc, color space handling
 
 ### App-Level

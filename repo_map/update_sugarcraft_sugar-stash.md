@@ -157,7 +157,7 @@
 **Implementation ideas:**
 
 - Wire `MouseMsg` handler in `App::update()` alongside `KeyMsg`
-- Use `candy-zone` for zone-based hit detection if available
+- Use `candy-mouse` for zone-based hit detection if available
 - Click on pane border to switch focus
 - Click on entry to move cursor + optional action trigger
 - Mouse wheel for scrolling in long lists
@@ -456,7 +456,7 @@
 
 2. **Editor Integration:** Add keybinding (`e`) to open files in `$EDITOR` for editing, similar to how gum's write command opens vim.
 
-3. **Integration with sugar-prompt:** Use sugar-prompt for inline text collection instead of the gated input pattern, for a more flexible input experience.
+3. **Integration with candy-forms:** Use candy-forms for inline text collection instead of the gated input pattern, for a more flexible input experience.
 
 4. **Candy-vcr Recording:** Use `candy-vcr` to record git operations for playback in tests, enabling integration tests without fixture git repos.
 
@@ -549,7 +549,7 @@
 
 4. **Address performance** — async git operations and GitDriver caching would make the TUI feel more responsive, especially on slower systems or large repositories.
 
-5. **Consider ecosystem leverage** — `honey-bounce` (spring animations), `candy-zone` (mouse zones), and fuzzy search libraries could all be integrated to improve the TUI without significant new development.
+5. **Consider ecosystem leverage** — `honey-bounce` (spring animations), `candy-mouse` (mouse zones), and fuzzy search libraries could all be integrated to improve the TUI without significant new development.
 
 **Competitive position:** sugar-stash competes directly with lazygit (Go) and offers a PHP-native alternative that integrates well with PHP tooling and workflows. The TypeScript/JS ecosystem has no direct equivalent, making sugar-stash a unique offering for PHP developers who prefer git TUI applications.
 

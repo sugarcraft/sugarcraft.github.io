@@ -23,7 +23,7 @@ From `repo_map/lrstanley_bubblezone.md`:
 |---|---|---|
 | `zone.Mark(id, v)` | `sugar-bits` (focus/mouse zone tracking) | Partial |
 | `zone.Get(id).InBounds(msg)` collision | `candy-core` (BubbleTea model port) | Partial |
-| `zone.Scan()` ANSI marker stripping | `sugar-prompt` / lipgloss port | Not started |
+| `zone.Scan()` ANSI marker stripping | `candy-forms` / lipgloss port | Not started |
 | `zone.NewPrefix()` unique ID generation | `candy-shell` | Partial |
 | Mouse tracking constants | `sugar-bits` + `candy-core` | Partial |
 | `ZoneInfo.Pos()` relative coordinates | `sugar-bits` | Partial |
@@ -467,7 +467,7 @@ Go's goroutine-based async is elegant. SugarCraft can replicate this with ReactP
 
 ## 25. High ROI Recommendations
 
-### For SugarCraft `candy-zone` (or `sugar-zone`) development:
+### For SugarCraft `candy-mouse` (or `sugar-zone`) development:
 
 1. **Implement `ZoneManager::trackClick()`** (HIGH ROI) — Provides built-in click deduplication without depending on upstream mouse event structure changes. Go bubblezone users still implement this manually.
 

@@ -1,4 +1,4 @@
-# honey-flap Research: Flappy Bird Clone Implementations
+# candy-flappy Research: Flappy Bird Clone Implementations
 
 **Date:** 2026-05-13  
 **Upstream:** kbrgl/flapioca (Go + Bubble Tea)  
@@ -20,7 +20,7 @@
 
 ### Physics Model
 
-**Source:** `honey-flap/src/Bird.php:L22-L65`
+**Source:** `candy-flappy/src/Bird.php:L22-L65`
 
 ```php
 final class Bird
@@ -81,9 +81,9 @@ func (m Model) Frame() (tea.Model, tea.Cmd) {
 }
 ```
 
-### Key Differences from honey-flap
+### Key Differences from candy-flappy
 
-| Aspect | flapioca | honey-flap |
+| Aspect | flapioca | candy-flappy |
 |--------|----------|------------|
 | Gravity | 1 cell/tick (discrete) | 70.0 cells/sec² (continuous) |
 | Tick rate | 5 Hz | 30 Hz |
@@ -191,7 +191,7 @@ pub fn jump(mut query: Query<&mut Bird>, keyboard_input: Res<ButtonInput<KeyCode
 
 ## 4. Comparison Matrix
 
-| Feature | flapioca (Go) | honey-flap (PHP) | Bevy (Rust) |
+| Feature | flapioca (Go) | candy-flappy (PHP) | Bevy (Rust) |
 |---------|---------------|------------------|-------------|
 | **Physics** | Discrete gravity | HoneyBounce Projectile | ECS gravity system |
 | **Gravity value** | 1 cell/tick | 70.0 cells/sec² | 9.8 * 150 scale factor |
@@ -205,7 +205,7 @@ pub fn jump(mut query: Query<&mut Bird>, keyboard_input: Res<ButtonInput<KeyCode
 
 ---
 
-## 5. Specific Improvements for honey-flap
+## 5. Specific Improvements for candy-flappy
 
 ### 5.1 Bird Rotation (High Priority)
 
@@ -376,13 +376,13 @@ public const TERMINAL_VELOCITY = 100.0;
 
 ## 7. Key Insights
 
-1. **Physics approach difference:** honey-flap uses continuous physics (HoneyBounce Projectile) vs Rust discrete timestep. The 30fps tick rate with 70.0 gravity gives ~2.3 cells/tick² acceleration.
+1. **Physics approach difference:** candy-flappy uses continuous physics (HoneyBounce Projectile) vs Rust discrete timestep. The 30fps tick rate with 70.0 gravity gives ~2.3 cells/tick² acceleration.
 
-2. **No rotation in current impl:** Both Go upstream and PHP honey-flap lack bird rotation. Bevy implementations all add velocity-based rotation for game feel.
+2. **No rotation in current impl:** Both Go upstream and PHP candy-flappy lack bird rotation. Bevy implementations all add velocity-based rotation for game feel.
 
 3. **Collision is simple cell-based:** Works for ASCII but limits visual polish. Rust implementations use AABB/Circle for pixel-perfect detection.
 
-4. **High score persistence is unique to honey-flap:** Neither flapioca nor Rust implementations persist scores.
+4. **High score persistence is unique to candy-flappy:** Neither flapioca nor Rust implementations persist scores.
 
 5. **Test coverage is decent:** 4 test files covering Bird, Game, Pipe, Renderer. Missing edge cases around collision timing.
 
@@ -395,4 +395,4 @@ public const TERMINAL_VELOCITY = 100.0;
 - **Tutorial:** [rustfinity.com Flappy Bird](https://rustfinity.com/tutorials/flappy-rust) - Bevy 0.14
 - **Rust impl:** [dangreen07/Flappy-Bird-Rust](https://github.com/dangreen07/Flappy-Bird-Rust)
 - **HoneyBounce:** `/home/sites/sugarcraft/honey-bounce/src/Projectile.php`
-- **Current tests:** `/home/sites/sugarcraft/honey-flap/tests/`
+- **Current tests:** `/home/sites/sugarcraft/candy-flappy/tests/`

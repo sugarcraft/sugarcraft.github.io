@@ -1,14 +1,14 @@
 <p class="lede" style="margin-top: 28px;">Physics-driven flap game — the bird's vertical motion is a HoneyBounce projectile (gravity + an upward velocity kick on each tap), pipes scroll left at a fixed cell rate, collision is per-cell. Pure-state Game class; the renderer is a one-pass canvas fill.</p>
 
     <h3 style="margin-top: 32px;">Install</h3>
-    <pre class="code"><code class="language-shell">composer require sugarcraft/honey-flap</code></pre>
+    <pre class="code"><code class="language-shell">composer require sugarcraft/candy-flappy</code></pre>
 
     <h3 style="margin-top: 32px;">Quickstart</h3>
-    <pre class="code"><code class="language-shell">./bin/honey-flap</code></pre>
+    <pre class="code"><code class="language-shell">./bin/candy-flappy</code></pre>
     <pre class="code"><code class="language-php">// Programmatic:
 use SugarCraft\Core\Program;
 use SugarCraft\Core\ProgramOptions;
-use SugarCraft\Flap\Game;
+use SugarCraft\Flappy\Game;
 
 (new Program(Game::start(),
              new ProgramOptions(useAltScreen: true)))-&gt;run();</code></pre>
@@ -26,9 +26,9 @@ use SugarCraft\Flap\Game;
 
     <h3 style="margin-top: 40px;">Source &amp; demos</h3>
     <ul>
-      <li><a href="https://github.com/sugarcraft/honey-flap">Source on GitHub</a></li>
-      <li><a href="https://github.com/sugarcraft/honey-flap/blob/master/README.md">Full README</a></li>
-      <li><a href="https://github.com/sugarcraft/honey-flap/tree/main/examples">Runnable examples</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-flappy">Source on GitHub</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-flappy/blob/master/README.md">Full README</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-flappy/tree/main/examples">Runnable examples</a></li>
       <li>Originally inspired by <a href="https://github.com/kbrgl/flapioca">flapioca</a> (Go); SugarCraft is developed as a native PHP project.</li>
     </ul>
 
@@ -54,7 +54,7 @@ use SugarCraft\Flap\Game;
         <p class="lede">VHS-recorded GIFs of every example shipped with the app. Regenerated automatically on every push that touches the source.</p>
         <div class="demo-grid">
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/honey-flap/.vhs/play.gif" alt="Play">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-flappy/.vhs/play.gif" alt="Play">
                 <h3>Play</h3>
                 <span class="demo-caption">Physics-driven flapping with scrolling pipes.</span>
             </div>

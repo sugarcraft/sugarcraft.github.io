@@ -1,6 +1,6 @@
 # Overview
 
-**sugar-skate** is a pure-PHP personal key/value store and the definitive PHP port of `charmbracelet/skate`. It provides multi-database isolation via SQLite file-per-database architecture, binary data storage via base64 encoding, glob pattern matching (translated to SQL LIKE), ordered listing, TTL/expiry, Levenshtein-based typo suggestions, and JSON/YAML import/export. The library is built with `final` classes, `declare(strict_types=1)`, PSR-4, and requires only PHP 8.3+ with `ext-sqlite3`.
+**candy-kv** is a pure-PHP personal key/value store and the definitive PHP port of `charmbracelet/skate`. It provides multi-database isolation via SQLite file-per-database architecture, binary data storage via base64 encoding, glob pattern matching (translated to SQL LIKE), ordered listing, TTL/expiry, Levenshtein-based typo suggestions, and JSON/YAML import/export. The library is built with `final` classes, `declare(strict_types=1)`, PSR-4, and requires only PHP 8.3+ with `ext-sqlite3`.
 
 **Biggest opportunity areas:**
 
@@ -27,8 +27,8 @@
 ### Package Structure
 
 ```
-sugar-skate/
-├── bin/skate                          # CLI entry point (280 lines)
+candy-kv/
+├── bin/candy-kv                          # CLI entry point (280 lines)
 ├── src/
 │   ├── Store.php                      # Main API (340 lines) - key routing, database caching
 │   ├── Database.php                  # SQLite wrapper (345 lines) - glob→SQL LIKE translation
@@ -77,7 +77,7 @@ sugar-skate/
 - Atomic import via reflection accessing `Store::$databases`
 - Multi-database atomic import throws `RuntimeException` (documented limitation)
 
-### CLI Interface (`bin/skate`)
+### CLI Interface (`bin/candy-kv`)
 
 | Command | Description |
 |---------|-------------|
@@ -117,7 +117,7 @@ sugar-skate/
 
 **Description:** All data stored in plain files in `~/.config/skate/` — anyone with file access can read everything including keys, values, and TTL metadata.
 
-**Why it matters:** Privacy-sensitive data (passwords, tokens, personal notes) stored via sugar-skate are fully readable. This limits the library's use for credentials and sensitive configuration.
+**Why it matters:** Privacy-sensitive data (passwords, tokens, personal notes) stored via candy-kv are fully readable. This limits the library's use for credentials and sensitive configuration.
 
 **Source repo:** N/A - no external repo provides encryption for simple KV stores in the same way
 
@@ -224,7 +224,7 @@ sugar-skate/
 - Add `Database::vacuum(): void` method
 - Add `Store::vacuumAll(): void` for all databases
 - Implement automatic vacuum after N writes (configurable)
-- Add CLI command: `skate vacuum [db]`
+- Add CLI command: `candy-kv vacuum [db]`
 - Consider read-only VACUUM to ` vacuumbdb` for SQLite
 
 **Estimated complexity:** Low - SQLite has built-in VACUUM command
@@ -241,7 +241,7 @@ sugar-skate/
 
 **Why it matters:** Web applications or long-running PHP scripts may have concurrent access needs.
 
-**Source repo:** SQLite itself handles this via file locking but sugar-skate doesn't expose or manage it
+**Source repo:** SQLite itself handles this via file locking but candy-kv doesn't expose or manage it
 
 **Implementation ideas:**
 
@@ -310,7 +310,7 @@ sugar-skate/
 
 **Implementation ideas:**
 
-- Implement `skate browse [db]` command using `candy-core`
+- Implement `candy-kv browse [db]` command using `candy-core`
 - Browse entries with vim-style navigation
 - Support search/filter within the browser
 - Add interactive key-value editor
@@ -334,7 +334,7 @@ sugar-skate/
 
 - Add `Store::stats(string $dbName): DatabaseStats` with entry count, total size, WAL size
 - Add `Store::oldestExpiry(): ?\DateTimeImmutable` for TTL analysis
-- Add CLI command: `skate stats [db]`
+- Add CLI command: `candy-kv stats [db]`
 - Consider `Database::analyze(): AnalysisResult` for SQLite ANALYZE integration
 
 **Estimated complexity:** Low - straightforward aggregation queries
@@ -353,7 +353,7 @@ sugar-skate/
 
 **Implementation ideas:**
 
-- Add `skate complete bash` / `skate complete zsh` commands
+- Add `candy-kv complete bash` / `candy-kv complete zsh` commands
 - Support key completion for `get`, `delete`, `list` commands
 - Support database name completion for `list-dbs`, `export`
 - Generate completion scripts via CLI
@@ -370,7 +370,7 @@ sugar-skate/
 
 ### 1. Storage Backend: SQLite vs BadgerDB (LSM-tree)
 
-**Current (sugar-skate):**
+**Current (candy-kv):**
 
 - SQLite with B-tree storage engine
 - File-per-database architecture
@@ -413,7 +413,7 @@ sugar-skate/
 
 ### 3. Data Directory Resolution
 
-**Current (sugar-skate):**
+**Current (candy-kv):**
 
 - Respects `$XDG_CONFIG_HOME` environment variable
 - Falls back to `~/.config/skate`
@@ -583,7 +583,7 @@ $store->batch(function (Batch $b) {
 
 ```php
 $store = Store::create()
-    ->withEncryption(getenv('SUGAR_SKATE_KEY'))
+    ->withEncryption(getenv('CANDY_KV_KEY'))
     ->build();
 
 // Store sensitive data
@@ -636,7 +636,7 @@ foreach ($store->listDatabases() as $db) {
 
 ## 3. Migration Guide
 
-- From Go skate (Badger) to sugar-skate (SQLite)
+- From Go skate (Badger) to candy-kv (SQLite)
 - From other KV stores (Redis, Memcached)
 - Schema migration for legacy databases with missing `expires_at`
 
@@ -646,7 +646,7 @@ foreach ($store->listDatabases() as $db) {
 
 ## 1. Interactive Browser Mode
 
-Using `candy-core` (TUI framework), implement `skate browse [db]`:
+Using `candy-core` (TUI framework), implement `candy-kv browse [db]`:
 
 - Vim-style key navigation (j/k/h/l, gg, G)
 - Real-time search/filter as you type
@@ -716,7 +716,7 @@ Add benchmarks for:
 
 Implement `symfony/cache` `CacheItemPoolInterface`:
 ```php
-use SugarCraft\Skate\SymfonyCacheAdapter;
+use SugarCraft\Kv\SymfonyCacheAdapter;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 $adapter = new SymfonyCacheAdapter($store, 'default');
@@ -727,7 +727,7 @@ $cache = new FilesystemAdapter('', 0, '', $adapter);
 
 Implement `psr/simple-cache`:
 ```php
-use SugarCraft\Skate\Psr16Cache;
+use SugarCraft\Kv\Psr16Cache;
 use Psr\SimpleCache\CacheInterface;
 
 $cache = new Psr16Cache($store, 'default');
@@ -764,21 +764,21 @@ $result = await $awaitable;
 ## charmbracelet/skate#142 - Query by value
 
 **Summary:** Request to add value-based filtering beyond keys
-**Relevance:** sugar-skate has same limitation
+**Relevance:** candy-kv has same limitation
 **Lessons learned:** Could implement SQLite FTS5 for value search
 **Potential adaptation:** Add `Store::findByValue(string $pattern)` using FTS5
 
 ## charmbracelet/skate#89 - Fuzzy search performance
 
 **Summary:** Levenshtein is slow on large key sets
-**Relevance:** sugar-skate uses identical algorithm
+**Relevance:** candy-kv uses identical algorithm
 **Lessons learned:** Trigram index or approximate nearest neighbor could help
 **Potential adaptation:** Add configurable suggestion threshold
 
 ## charmbracelet/skate#67 - Encryption at rest
 
 **Summary:** Feature request for encrypted storage
-**Relevance:** sugar-skate has same gap
+**Relevance:** candy-kv has same gap
 **Lessons learned:** Encryption should be transparent to API
 **Potential adaptation:** Implement `Store::withEncryption()` wrapper
 
@@ -796,7 +796,7 @@ $result = await $awaitable;
 ## Immediate Wins (0-1 month)
 
 1. **Add encryption helpers** - `openssl_encrypt`/`openssl_decrypt` wrapper
-2. **Implement VACUUM command** - `skate vacuum [db]`
+2. **Implement VACUUM command** - `candy-kv vacuum [db]`
 3. **Add streaming export** - Chunked JSON export for large databases
 4. **Database statistics** - Entry count, size, expiry distribution
 
@@ -844,7 +844,7 @@ $result = await $awaitable;
 
 # Final Strategic Assessment
 
-**sugar-skate** represents a mature, well-engineered PHP port of `charmbracelet/skate` that successfully adapts the Go original's design to PHP's SQLite-backed ecosystem. The library excels in its zero-configuration operation, multi-database isolation, and thoughtful CLI interface with STDIN/stdout separation.
+**candy-kv** represents a mature, well-engineered PHP port of `charmbracelet/skate` that successfully adapts the Go original's design to PHP's SQLite-backed ecosystem. The library excels in its zero-configuration operation, multi-database isolation, and thoughtful CLI interface with STDIN/stdout separation.
 
 **Core strengths:**
 
@@ -864,7 +864,7 @@ $result = await $awaitable;
 
 **Competitive positioning:**
 
-- Compared to Go `skate`: Adds import/export, i18n, schema migration, but lacks BadgerDB's performance
+- Compared to Go `skate`: Adds import/export, i18n, schema migration, but lacks BadgerDB's performance <!-- @rename-keep -->
 - Compared to `pterm/pterm`: Focuses purely on KV storage rather than general CLI output
 - Compared to `ratatui/ratatui`: Not a TUI framework, just a data storage library
 - Compared to `charmbracelet/gum`: More programmatic API, not shell-script focused

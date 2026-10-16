@@ -1,19 +1,19 @@
-# sugar-skate Library Research
+# candy-kv Library Research
 
 **Date:** 2026-05-13
-**Library:** sugar-skate (PHP 8.3+ port of charmbracelet/skate)
+**Library:** candy-kv (PHP 8.3+ port of charmbracelet/skate)
 **Research Scope:** Key/value store patterns across Go, Rust, and Python
 
 ---
 
 ## Executive Summary
 
-This document researches key/value store libraries in Go, Rust, and Python to identify patterns that could improve sugar-skate. The current implementation is solid but has opportunities to:
+This document researches key/value store libraries in Go, Rust, and Python to identify patterns that could improve candy-kv. The current implementation is solid but has opportunities to:
 
-1. **Add import/export functionality** (ABSENT in sugar-skate, present in most alternatives)
+1. **Add import/export functionality** (ABSENT in candy-kv, present in most alternatives)
 2. **Add typo-suggestions via Levenshtein distance** (present in Go skate, absent in PHP port)
-3. **Add TTL/expiration support** (present in Rust's tinykv/rkv, absent in sugar-skate)
-4. **Improve key parsing robustness** (Go skate lowercases keys, sugar-skate does not)
+3. **Add TTL/expiration support** (present in Rust's tinykv/rkv, absent in candy-kv)
+4. **Improve key parsing robustness** (Go skate lowercases keys, candy-kv does not)
 5. **Add pattern-based key iteration helpers** (e.g., prefix, range scans)
 6. **Add JSON/nested value support** (TinyDB pattern, not currently needed but could be useful)
 
@@ -121,7 +121,7 @@ func findDb(name string) (string, error) {
 }
 ```
 
-### Missing Features (vs sugar-skate)
+### Missing Features (vs candy-kv)
 
 1. **No import/export** - Cannot dump to JSON/CSV
 2. **No TTL/expiration** - Values persist forever
@@ -146,7 +146,7 @@ Skate uses BadgerDB which stores `[]byte` keys and `[]byte` values. No schema en
 
 ### Operations
 
-| Operation | Go skate | sugar-skate |
+| Operation | Go skate | candy-kv |
 |-----------|----------|-------------|
 | `set key[@db] value` | ✓ | ✓ |
 | `get key[@db]` | ✓ | ✓ |
@@ -236,7 +236,7 @@ store.put(&mut writer, "blob", &Value::Blob(b"bytes"))?;
 
 **Key patterns:**
 
-- **Typed values** - sugar-skate could benefit from typed entries
+- **Typed values** - candy-kv could benefit from typed entries
 - **Value::Json variant** - Store JSON documents
 
 ---
@@ -398,7 +398,7 @@ db.incr('counter')  # Atomic counter operations
 
 ---
 
-## 6. Specific Improvements for sugar-skate
+## 6. Specific Improvements for candy-kv
 
 ### Priority 1: Import/Export (High Value, Low Effort)
 
@@ -413,7 +413,7 @@ db.incr('counter')  # Atomic counter operations
 **Recommendation:** Add `Store::export(string $dbName, string $format = 'json'): string` and `Store::import(string $dbName, string $data, string $format = 'json'): int`
 
 ```php
-// sugar-skate/src/Store.php additions
+// candy-kv/src/Store.php additions
 public function export(string $dbName = null, string $format = 'json'): string
 {
     $db = $this->database($dbName ?? $this->defaultDb);
@@ -456,7 +456,7 @@ public function import(string $dbName, string $data): int
 **Recommendation:** Add `Database::suggestSimilar(string $name): array` and use in error messages.
 
 ```php
-// sugar-skate/src/Database.php
+// candy-kv/src/Database.php
 public static function suggestSimilar(string $name, array $candidates): array
 {
     $suggestions = [];
@@ -512,7 +512,7 @@ db.expire("key", Duration::from_secs(60));
 **Recommendation:** Add `Entry::expireAt()` or `Store::setWithTtl()`.
 
 ```php
-// sugar-skate/src/Entry.php addition
+// candy-kv/src/Entry.php addition
 final readonly class Entry
 {
     // existing properties...
@@ -524,7 +524,7 @@ final readonly class Entry
     }
 }
 
-// sugar-skate/src/Database.php schema change
+// candy-kv/src/Database.php schema change
 // CREATE TABLE entries (
 //     key TEXT PRIMARY KEY,
 //     value TEXT NOT NULL,
@@ -547,7 +547,7 @@ final readonly class Entry
 **Recommendation:** Add `Store::setFromStdin(string $key): Entry` or CLI wrapper.
 
 ```php
-// sugar-skate/src/Store.php
+// candy-kv/src/Store.php
 public function setFromStdin(string $key, bool $binary = false): Entry
 {
     $value = file_get_contents('php://stdin');
@@ -608,7 +608,7 @@ This is the highest-priority improvement. Here's the detailed implementation pla
 ### 8.1 Store Methods to Add
 
 ```php
-// sugar-skate/src/Store.php
+// candy-kv/src/Store.php
 
 /**
  * Export all entries from a database as JSON.
@@ -671,7 +671,7 @@ public function exportEntry(string $key): string
 ### 8.2 Entry Method to Add
 
 ```php
-// sugar-skate/src/Entry.php
+// candy-kv/src/Entry.php
 
 /**
  * Convert entry to array for serialization.
@@ -693,7 +693,7 @@ public function toArray(): array
 ### 8.3 Lang Strings to Add
 
 ```php
-// sugar-skate/lang/en.php additions
+// candy-kv/lang/en.php additions
 'store.export_success' => 'Exported {count} entries from {db}',
 'store.import_success' => 'Imported {count} entries to {db}',
 'store.invalid_json' => 'Invalid JSON data: {error}',
@@ -727,7 +727,7 @@ Go skate historically used Charm KV with E2E encryption. This was removed in v1.
 
 ### 10.2 Cloud Sync
 
-Go skate had cloud sync via Charm Cloud (deprecated Nov 2024). Not recommended for sugar-skate without clear use case.
+Go skate had cloud sync via Charm Cloud (deprecated Nov 2024). Not recommended for candy-kv without clear use case.
 
 ### 10.3 HTTP API
 

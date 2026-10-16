@@ -1,8 +1,8 @@
-# SugarCraft/sugar-skate — Innovation & Comparison Report
+# SugarCraft/candy-kv — Innovation & Comparison Report
 
 ## Overview
 
-**sugar-skate** is a pure-PHP personal key/value store and the definitive PHP port of `charmbracelet/skate`. It provides multi-database isolation, binary data storage, glob pattern matching, ordered listing, TTL/expiry, Levenshtein-based typo suggestions, and JSON/YAML import/export — all backed by SQLite instead of the Go project's BadgerDB. The library is `final` classes, `declare(strict_types=1)`, PSR-4, and works on PHP 8.3+ with only `ext-sqlite3` required.
+**candy-kv** is a pure-PHP personal key/value store and the definitive PHP port of `charmbracelet/skate`. It provides multi-database isolation, binary data storage, glob pattern matching, ordered listing, TTL/expiry, Levenshtein-based typo suggestions, and JSON/YAML import/export — all backed by SQLite instead of the Go project's BadgerDB. The library is `final` classes, `declare(strict_types=1)`, PSR-4, and works on PHP 8.3+ with only `ext-sqlite3` required.
 
 **Key statistics:**
 
@@ -27,8 +27,8 @@
 ### Package Structure
 
 ```
-sugar-skate/
-├── bin/skate                          # CLI entry point (280 lines)
+candy-kv/
+├── bin/candy-kv                          # CLI entry point (280 lines)
 ├── src/
 │   ├── Store.php                      # Main API (340 lines)
 │   ├── Database.php                   # SQLite wrapper (345 lines)
@@ -240,7 +240,7 @@ PHP has no native Badger equivalent. SQLite was chosen because:
 
 ### Levenshtein-Based Key Suggestions
 
-The fuzzy search in sugar-skate operates on **keys within a database**, triggered when `get()` finds no matching entry. This differs from Go skate's fuzzy search, which operates on **database names** when a database lookup fails.
+The fuzzy search in candy-kv operates on **keys within a database**, triggered when `get()` finds no matching entry. This differs from Go skate's fuzzy search, which operates on **database names** when a database lookup fails.
 
 **Algorithm** (`src/Store.php`, lines 146–165):
 
@@ -279,7 +279,7 @@ The practical difference:
 
 ## CLI Interface
 
-The CLI (`bin/skate`, 280 lines) implements 7 commands:
+The CLI (`bin/candy-kv`, 280 lines) implements 7 commands:
 
 | Command | Description | Notable Features |
 |---|---|---|
@@ -327,11 +327,11 @@ The CLI (`bin/skate`, 280 lines) implements 7 commands:
 
 ---
 
-## Comparison: sugar-skate vs charmbracelet/skate (Go)
+## Comparison: candy-kv vs charmbracelet/skate (Go)
 
 ### Feature Parity Matrix
 
-| Feature | Go skate | PHP sugar-skate | Notes |
+| Feature | Go skate | PHP candy-kv | Notes |
 |---|---|---|---|
 | Key/value storage | ✅ | ✅ | |
 | Multi-database (`key@db`) | ✅ | ✅ | |
@@ -350,7 +350,7 @@ The CLI (`bin/skate`, 280 lines) implements 7 commands:
 
 | Aspect | Go Implementation | PHP Implementation |
 |---|---|---|
-| Single-file CLI | Yes (main.go, 443 lines) | No (bin/skate 280 + 5 src files) |
+| Single-file CLI | Yes (main.go, 443 lines) | No (bin/candy-kv 280 + 5 src files) |
 | Storage backend | BadgerDB (LSM-tree) | SQLite 3 (B-tree) |
 | Transaction pattern | `wrap()` helper closure | `Database::transaction()` method |
 | Multi-database | Subdirectories | Separate `.db` files |
@@ -383,13 +383,13 @@ Beyond the upstream `charmbracelet/skate`, several other projects in the ecosyst
 
 2. **sqlite** (PHP's backend): Sugar-skate uses SQLite3 directly — no abstraction layer between PHP and the database.
 
-3. **symfony/cache** (optional dependency): Could theoretically back sugar-skate, but would add significant weight for a CLI tool.
+3. **symfony/cache** (optional dependency): Could theoretically back candy-kv, but would add significant weight for a CLI tool.
 
 4. **sugarcraft/candy-core** (dependency): Provides `SugarCraft\Core\I18n\T` for i18n — not a storage dependency.
 
 ### Notable Patterns
 
-The **file-per-database** pattern in sugar-skate (`<name>.db` files in a shared directory) is a common approach in CLI tools:
+The **file-per-database** pattern in candy-kv (`<name>.db` files in a shared directory) is a common approach in CLI tools:
 - `go-skate` uses subdirectories per database
 
 - Many CLI tools (e.g., `less` history, `fzf` cache) use this pattern
@@ -462,7 +462,7 @@ The **TTL as expiry timestamp** (storing ISO 8601 datetime in a TEXT column) is 
 | `src/Cli/ImportCommand.php` | 73 | JSON/YAML import dispatcher |
 | `src/Import/JsonImporter.php` | 131 | JSON import with `_ttl` map and atomic transaction support |
 | `src/Import/YamlImporter.php` | 213 | YAML import with `skate_ttl_` prefix convention and fallback parser |
-| `bin/skate` | 280 | CLI entry point, 7 commands, stdin handling, option parsing |
+| `bin/candy-kv` | 280 | CLI entry point, 7 commands, stdin handling, option parsing |
 | `lang/en.php` | 25 | English translations (template for other 16 locales) |
 | `tests/StoreTest.php` | 310 | 26 tests covering Store API, TTL, multi-db, binary, glob |
 | `tests/DatabaseTest.php` | 275 | 18 tests covering Database operations, transactions, glob |

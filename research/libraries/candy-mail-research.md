@@ -1,25 +1,25 @@
-# sugar-post Research: Terminal Social Media TUI Patterns
+# candy-mail Research: Terminal Social Media TUI Patterns
 
 **Date:** 2026-05-13
-**Library:** sugar-post (PHP port of charmbracelet/pop)
+**Library:** candy-mail (PHP port of charmbracelet/pop)
 **Researcher:** Research Agent
 
 ---
 
 > ## ⚠️ Decision update — 2026-05-19
 >
-> **sugar-post is staying an email tool.** A social-media TUI pivot
+> **candy-mail is staying an email tool.** A social-media TUI pivot
 > was considered and rejected. See
-> [`plans/sugar-post-identity.md`](../../../plans/sugar-post-identity.md)
+> [`plans/candy-mail-identity.md`](../../../plans/candy-mail-identity.md)
 > for the full memo and rationale.
 >
 > Treat the social-media sections of this doc (§2.2 onward, including
 > Mastodon / Bluesky / X client benchmarks like Perch, Mastui, Toot,
 > Unrager, Tootles, TerminalRant) as **archival reference for a
 > hypothetical future `sugar-toot` / `sugar-feed` library** — not as
-> the sugar-post roadmap. The shipped sugar-post correctly tracks
+> the candy-mail roadmap. The shipped candy-mail correctly tracks
 > [`charmbracelet/pop`](https://github.com/charmbracelet/pop) (email
-> TUI); the next sugar-post work is the upstream Pop TUI surface
+> TUI); the next candy-mail work is the upstream Pop TUI surface
 > (Bubble Tea Model + filepicker + spinner + markdown preview), not
 > microblog features.
 
@@ -27,9 +27,9 @@
 
 ## Executive Summary
 
-**Critical Finding:** sugar-post is currently an **email client** (sending via Resend API or SMTP), not a social media TUI. The README and source confirm it's a direct port of `charmbracelet/pop` for sending emails. This research examines the current architecture and provides recommendations for either enhancing it as an email TUI or pivoting toward a social media TUI implementation.
+**Critical Finding:** candy-mail is currently an **email client** (sending via Resend API or SMTP), not a social media TUI. The README and source confirm it's a direct port of `charmbracelet/pop` for sending emails. This research examines the current architecture and provides recommendations for either enhancing it as an email TUI or pivoting toward a social media TUI implementation.
 
-**Source:** `/home/sites/sugarcraft/sugar-post/README.md:L13`
+**Source:** `/home/sites/sugarcraft/candy-mail/README.md:L13`
 > "PHP port of [charmbracelet/pop](https://github.com/charmbracelet/pop) — send emails from PHP via Resend API or direct SMTP."
 
 ---
@@ -38,7 +38,7 @@
 
 ### 1.1 Core Components
 
-The current sugar-post follows a clean transport pattern:
+The current candy-mail follows a clean transport pattern:
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
@@ -50,7 +50,7 @@ The current sugar-post follows a clean transport pattern:
 | `Mailer` | `src/Mailer.php` | High-level API wrapping a Transport |
 | `Lang` | `src/Lang.php` | i18n facade wrapping `SugarCraft\Core\I18n\T` |
 
-**Source:** `sugar-post/src/` (all files)
+**Source:** `candy-mail/src/` (all files)
 
 ### 1.2 Current Strengths
 
@@ -73,7 +73,7 @@ The current sugar-post follows a clean transport pattern:
 | **Media Handling** | File attachments only, no inline image rendering | Medium |
 | **Real-time Updates** | None — email is not real-time | N/A |
 
-**Source:** `bin/pop` (CLI only, no TUI component found)
+**Source:** `bin/candy-mail` (CLI only, no TUI component found)
 
 ---
 
@@ -288,11 +288,11 @@ perch schedule daemon --interval 30                # Run scheduler
 | **Unrager** | Session-based cookie auth | Browser cookies + OAuth 2.0 PKCE |
 | **birdy** | Token rotation across accounts | X auth tokens |
 
-**Best Pattern for sugar-post:**
+**Best Pattern for candy-mail:**
 ```
-sugar-post account add <name> --network mastodon --token <token>
-sugar-post account list
-sugar-post account remove <name>
+candy-mail account add <name> --network mastodon --token <token>
+candy-mail account list
+candy-mail account remove <name>
 ```
 
 **Key Insight:** Account credentials should be stored in platform-specific secure storage (Keychain on macOS, Secret Service on Linux).
@@ -433,7 +433,7 @@ final class TimelineStream {
 
 ---
 
-## Part 4: Recommendations for sugar-post
+## Part 4: Recommendations for candy-mail
 
 ### 4.1 Option A: Enhance as Email TUI
 
@@ -476,7 +476,7 @@ For either option, adopt this layered architecture:
 ```
 ┌─────────────────────────────────────────────────────┐
 │                    CLI Layer                        │
-│  bin/sugar-post (commands: send, account, timeline) │
+│  bin/candy-mail (commands: send, account, timeline) │
 ├─────────────────────────────────────────────────────┤
 │                    TUI Layer                        │
 │  Interactive terminal UI with views and keybindings │
@@ -541,7 +541,7 @@ final class KeyMap {
 final class AccountStore {
     private string $baseDir;
 
-    public function __construct(string $baseDir = '~/.config/sugar-post/accounts') {
+    public function __construct(string $baseDir = '~/.config/candy-mail/accounts') {
         $this->baseDir = \expandPath($baseDir);
     }
 
@@ -661,7 +661,7 @@ final class OAuthHandler {
 
 ### High Priority (Implement First)
 
-1. **Add TUI infrastructure** — Without this, sugar-post remains CLI-only
+1. **Add TUI infrastructure** — Without this, candy-mail remains CLI-only
 2. **Implement vim keybindings** — Standard expectation for Charm ecosystem ports
 3. **Add Markdown body support** — Pop's signature feature
 4. **Improve post composer** — Character counter, CW, visibility

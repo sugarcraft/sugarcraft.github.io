@@ -1,8 +1,8 @@
-# SugarCraft/sugar-post
+# SugarCraft/candy-mail
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/sugar-post
+- **URL:** https://github.com/sugarcraft/candy-mail
 
 - **Language:** PHP 8.3+
 
@@ -21,21 +21,21 @@
 ### Package Structure (6 source files)
 
 ```
-sugar-post/src/
+candy-mail/src/
   Email.php           — Immutable value object (271 lines)
   Attachment.php     — Immutable attachment (174 lines)
   Transport.php       — Interface (22 lines)
   ResendTransport.php — Resend API transport (116 lines)
   SmtpTransport.php   — Raw SMTP transport (323 lines)
   Mailer.php          — High-level sender (45 lines)
-sugar-post/bin/pop    — CLI binary (221 lines)
-sugar-post/lang/      — 16 locales (en.php + 15 translations)
+candy-mail/bin/candy-mail    — CLI binary (221 lines)
+candy-mail/lang/      — 16 locales (en.php + 15 translations)
 ```
 
 ### Dependency Graph
 
 ```
-sugar-post
+candy-mail
   └── sugarcraft/candy-core  (dev-master, path-repo)
        └── sugarcraft/candy-shine (styling)
 ```
@@ -97,13 +97,13 @@ public readonly ?string $signature;    // Appended to body
 
 **Comparison to upstream Go pop:**
 
-- Go `pop` uses a `NewEmail()` constructor struct with all fields, then builder-style `With*()` methods
+- Go `pop` uses a `NewEmail()` constructor struct with all fields, then builder-style `With*()` methods <!-- @rename-keep -->
 
 - PHP port uses named constructor params (PHP 8 named args) as primary API
 
 - Go has a `Send()` method directly on Email that auto-selects transport; PHP separates `Mailer::send()`
 
-- Go has Gmail smart-default detection in SMTP; PHP does not (the CLI does via env check in `bin/pop`)
+- Go has Gmail smart-default detection in SMTP; PHP does not (the CLI does via env check in `bin/candy-mail`)
 
 ### 2. Attachment (`src/Attachment.php` — 174 lines)
 
@@ -377,13 +377,13 @@ final class Mailer {
 
 **Comparison to upstream Go pop:**
 
-- Go `pop` has `pop.Send()` that auto-selects transport and sends directly (no separate Mailer class)
+- Go `pop` has `pop.Send()` that auto-selects transport and sends directly (no separate Mailer class) <!-- @rename-keep -->
 
 - Go does validation inline; PHP separates Mailer as a distinct layer
 
-- Go has `pop.SendEmail()` for direct send without TUI; PHP's Mailer is the equivalent
+- Go has `pop.SendEmail()` for direct send without TUI; PHP's Mailer is the equivalent <!-- @rename-keep -->
 
-### 7. CLI (`bin/pop` — 221 lines)
+### 7. CLI (`bin/candy-mail` — 221 lines)
 
 **Standalone CLI binary** for sending email from terminal/shell scripts.
 
@@ -447,13 +447,13 @@ if ($signature !== null) { $email = $email->withSignature($signature); }
 
 - Go uses Cobra for argument parsing; PHP uses manual parsing
 
-- Go has `pop < message.md --from ... --to ...` pipe mode via `hasStdin()` check
+- Go has `pop < message.md --from ... --to ...` pipe mode via `hasStdin()` check <!-- @rename-keep -->
 
 - Go has interactive TUI mode (Bubble Tea); PHP has no TUI (this is a library-only port)
 
-- Go has `pop man` for man page generation; PHP has no equivalent
+- Go has `pop man` for man page generation; PHP has no equivalent <!-- @rename-keep -->
 
-- Go has `pop completion` for shell completions; PHP has no equivalent
+- Go has `pop completion` for shell completions; PHP has no equivalent <!-- @rename-keep -->
 
 - Go saves failed emails to temp files; PHP has no equivalent
 
@@ -571,7 +571,7 @@ Delegates to `SugarCraft\Core\I18n\T` with 'post' namespace baked in.
 
 4. **MIME type fallback chain** — PHP tries `mime_content_type()` first, then 35-entry extension map; Go uses single `http.DetectContentType` which is less accurate for common types
 
-5. **Minimal transport interface** — `Transport` interface is 2 methods; Go mixes transport selection into `pop.Send()` and `NewEmail()` with env var checks
+5. **Minimal transport interface** — `Transport` interface is 2 methods; Go mixes transport selection into `pop.Send()` and `NewEmail()` with env var checks <!-- @rename-keep -->
 
 6. **Transport-agnostic Mailer validation** — Mailer checks recipient/from before calling transport; Go sends directly without a separate validation layer
 
@@ -587,7 +587,7 @@ Delegates to `SugarCraft\Core\I18n\T` with 'post' namespace baked in.
 
 ## Gaps vs Upstream Go pop
 
-1. **No TUI** — Go pop is a full Bubble Tea TUI application; sugar-post is library-only
+1. **No TUI** — Go pop is a full Bubble Tea TUI application; candy-mail is library-only
 
 2. **No Markdown → HTML conversion** — Go uses goldmark; PHP has no markdown rendering
 
@@ -595,9 +595,9 @@ Delegates to `SugarCraft\Core\I18n\T` with 'post' namespace baked in.
 
 4. **No failed-email temp file recovery** — Go saves failed email bodies to `pop-YYYY-MM-DD-*.txt`
 
-5. **No shell completion** — Go has `pop completion bash/zsh/fish`
+5. **No shell completion** — Go has `pop completion bash/zsh/fish` <!-- @rename-keep -->
 
-6. **No man page generation** — Go has `pop man`
+6. **No man page generation** — Go has `pop man` <!-- @rename-keep -->
 
 7. **No interactive filepicker** — Go uses Bubble Tea's filepicker; PHP has no TUI for this
 
@@ -611,67 +611,67 @@ Delegates to `SugarCraft\Core\I18n\T` with 'post' namespace baked in.
 
 ### Source Files
 
-- `/home/sites/sugarcraft/sugar-post/src/Email.php` — 271 lines
+- `/home/sites/sugarcraft/candy-mail/src/Email.php` — 271 lines
 
-- `/home/sites/sugarcraft/sugar-post/src/Attachment.php` — 174 lines
+- `/home/sites/sugarcraft/candy-mail/src/Attachment.php` — 174 lines
 
-- `/home/sites/sugarcraft/sugar-post/src/Transport.php` — 22 lines
+- `/home/sites/sugarcraft/candy-mail/src/Transport.php` — 22 lines
 
-- `/home/sites/sugarcraft/sugar-post/src/ResendTransport.php` — 116 lines
+- `/home/sites/sugarcraft/candy-mail/src/ResendTransport.php` — 116 lines
 
-- `/home/sites/sugarcraft/sugar-post/src/SmtpTransport.php` — 323 lines
+- `/home/sites/sugarcraft/candy-mail/src/SmtpTransport.php` — 323 lines
 
-- `/home/sites/sugarcraft/sugar-post/src/Mailer.php` — 45 lines
+- `/home/sites/sugarcraft/candy-mail/src/Mailer.php` — 45 lines
 
-- `/home/sites/sugarcraft/sugar-post/bin/pop` — 221 lines
+- `/home/sites/sugarcraft/candy-mail/bin/candy-mail` — 221 lines
 
-- `/home/sites/sugarcraft/sugar-post/src/Lang.php` — 22 lines
+- `/home/sites/sugarcraft/candy-mail/src/Lang.php` — 22 lines
 
 ### Test Files
 
-- `/home/sites/sugarcraft/sugar-post/tests/EmailTest.php` — 156 lines
+- `/home/sites/sugarcraft/candy-mail/tests/EmailTest.php` — 156 lines
 
-- `/home/sites/sugarcraft/sugar-post/tests/AttachmentTest.php` — 93 lines
+- `/home/sites/sugarcraft/candy-mail/tests/AttachmentTest.php` — 93 lines
 
-- `/home/sites/sugarcraft/sugar-post/tests/EmailFactoryTest.php` — 77 lines
+- `/home/sites/sugarcraft/candy-mail/tests/EmailFactoryTest.php` — 77 lines
 
-- `/home/sites/sugarcraft/sugar-post/tests/AttachmentEdgeTest.php` — 49 lines
+- `/home/sites/sugarcraft/candy-mail/tests/AttachmentEdgeTest.php` — 49 lines
 
-- `/home/sites/sugarcraft/sugar-post/tests/SmtpTransportTest.php` — 58 lines
+- `/home/sites/sugarcraft/candy-mail/tests/SmtpTransportTest.php` — 58 lines
 
-- `/home/sites/sugarcraft/sugar-post/tests/ResendTransportTest.php` — 36 lines
+- `/home/sites/sugarcraft/candy-mail/tests/ResendTransportTest.php` — 36 lines
 
 ### Examples
 
-- `/home/sites/sugarcraft/sugar-post/examples/basic.php` — Resend API quickstart
+- `/home/sites/sugarcraft/candy-mail/examples/basic.php` — Resend API quickstart
 
-- `/home/sites/sugarcraft/sugar-post/examples/smtp.php` — SMTP with credentials
+- `/home/sites/sugarcraft/candy-mail/examples/smtp.php` — SMTP with credentials
 
-- `/home/sites/sugarcraft/sugar-post/examples/attachments.php` — File attachment demo
+- `/home/sites/sugarcraft/candy-mail/examples/attachments.php` — File attachment demo
 
-- `/home/sites/sugarcraft/sugar-post/examples/html-email.php` — HTML + CC/BCC
+- `/home/sites/sugarcraft/candy-mail/examples/html-email.php` — HTML + CC/BCC
 
-- `/home/sites/sugarcraft/sugar-post/examples/pipeline.php` — STDIN compose
+- `/home/sites/sugarcraft/candy-mail/examples/pipeline.php` — STDIN compose
 
-- `/home/sites/sugarcraft/sugar-post/examples/showcase.php` — Full showcase
+- `/home/sites/sugarcraft/candy-mail/examples/showcase.php` — Full showcase
 
 ### i18n
 
-- `/home/sites/sugarcraft/sugar-post/lang/en.php` — 36 keys
+- `/home/sites/sugarcraft/candy-mail/lang/en.php` — 36 keys
 
-- `/home/sites/sugarcraft/sugar-post/lang/` — 15 additional locales
+- `/home/sites/sugarcraft/candy-mail/lang/` — 15 additional locales
 
 ### Config
 
-- `/home/sites/sugarcraft/sugar-post/phpunit.xml` — PHPUnit 10 config
+- `/home/sites/sugarcraft/candy-mail/phpunit.xml` — PHPUnit 10 config
 
-- `/home/sites/sugarcraft/sugar-post/composer.json` — Package metadata
+- `/home/sites/sugarcraft/candy-mail/composer.json` — Package metadata
 
 ---
 
 ## Analysis
 
-**sugar-post** is a focused, well-structured PHP port of the email-sending portion of charmbracelet/pop. It deliberately omits the TUI (Bubble Tea interactive interface) and focuses on the library-level email composition and sending logic, which is what most PHP applications need.
+**candy-mail** is a focused, well-structured PHP port of the email-sending portion of charmbracelet/pop. It deliberately omits the TUI (Bubble Tea interactive interface) and focuses on the library-level email composition and sending logic, which is what most PHP applications need.
 
 **Strengths:**
 
@@ -705,7 +705,7 @@ Delegates to `SugarCraft\Core\I18n\T` with 'post' namespace baked in.
 
 - Private `mutate()` helper pattern for immutable updates
 
-- PSR-4 namespaced under `SugarCraft\Post`
+- PSR-4 namespaced under `SugarCraft\Mail`
 
 - PHPUnit 10 tests with behavior/coercion patterns
 
@@ -729,7 +729,7 @@ Delegates to `SugarCraft\Core\I18n\T` with 'post' namespace baked in.
 
 - No async/ReactPHP support for concurrent sending
 
-**Strategic position:** sugar-post fills a genuine gap in the PHP ecosystem — a lightweight, dependency-free email sending library with both SMTP and Resend API support. It is not trying to be a full邮件 client (no TUI), focusing instead on the library portion that PHP applications actually need. The pure-PHP SMTP implementation is particularly valuable as it removes the need for `ext-mail` or external libraries like PHPMailer/SwiftMailer for simple use cases.
+**Strategic position:** candy-mail fills a genuine gap in the PHP ecosystem — a lightweight, dependency-free email sending library with both SMTP and Resend API support. It is not trying to be a full邮件 client (no TUI), focusing instead on the library portion that PHP applications actually need. The pure-PHP SMTP implementation is particularly valuable as it removes the need for `ext-mail` or external libraries like PHPMailer/SwiftMailer for simple use cases.
 
 ---
 

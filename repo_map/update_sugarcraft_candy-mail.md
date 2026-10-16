@@ -1,13 +1,13 @@
 # Overview
 
-sugar-post is a PHP email sending library ported from charmbracelet/pop (Go). It provides immutable Email/Attachment value objects, dual transport abstraction (Resend API + raw SMTP), and a CLI binary. The library is well-structured with proper i18n (16 locales), but its primary opportunity is expanding beyond send-only to become a comprehensive email composition pipeline. Biggest gaps vs ecosystem: no markdown rendering pipeline, no headless/non-interactive mode, no failed-email recovery, no Gmail smart defaults, no MIME message output for piping.
+candy-mail is a PHP email sending library ported from charmbracelet/pop (Go). It provides immutable Email/Attachment value objects, dual transport abstraction (Resend API + raw SMTP), and a CLI binary. The library is well-structured with proper i18n (16 locales), but its primary opportunity is expanding beyond send-only to become a comprehensive email composition pipeline. Biggest gaps vs ecosystem: no markdown rendering pipeline, no headless/non-interactive mode, no failed-email recovery, no Gmail smart defaults, no MIME message output for piping.
 
 # Internal Capability Summary
 
 ## Architecture
 
 - **6 source files**: Email.php (271L), Attachment.php (174L), Transport.php (22L), ResendTransport.php (116L), SmtpTransport.php (323L), Mailer.php (45L)
-- **CLI binary**: bin/pop (221L) — manual argument parsing, no getopt
+- **CLI binary**: bin/candy-mail (221L) — manual argument parsing, no getopt
 - **Transport interface**: Minimal 2-method contract (`send()`, `name()`)
 - **Immutable pattern**: readonly properties + with*() builders returning new instances
 
@@ -66,7 +66,7 @@ sugar-post is a PHP email sending library ported from charmbracelet/pop (Go). It
 ### 1. Headless/Non-Interactive Mode
 
 **Description:** The CLI requires TTY detection and doesn't work in cron jobs or CI pipelines without a terminal.
-**Why it matters:** Users cannot use sugar-post in automated scripts (cron, CI/CD, systemd services).
+**Why it matters:** Users cannot use candy-mail in automated scripts (cron, CI/CD, systemd services).
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md` — Issue #160
 **Source PR:** PR #162 (31 lines, in production use a week before PR)
 **Implementation ideas:**
@@ -80,7 +80,7 @@ sugar-post is a PHP email sending library ported from charmbracelet/pop (Go). It
 ### 2. Raw MIME Message Output (Pipeline Composition)
 
 **Description:** No way to output a composed MIME message without sending it — prevents piping to other delivery agents.
-**Why it matters:** Users want `pop -o - | msmtp -a gmail` composition pattern.
+**Why it matters:** Users want `candy-mail -o - | msmtp -a gmail` composition pattern.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md` — Issue #95
 **Implementation ideas:**
 
@@ -171,7 +171,7 @@ sugar-post is a PHP email sending library ported from charmbracelet/pop (Go). It
 **Source:** `docs/repo_map/charmbracelet_pop.md` — Feature list #23
 **Implementation ideas:**
 
-- Generate completion scripts via `pop completion bash|zsh|fish`
+- Generate completion scripts via `candy-mail completion bash|zsh|fish`
 - Use Symfony Console's built-in completion support
 - Auto-register completion in candy-scriptui style
 
@@ -235,7 +235,7 @@ sugar-post is a PHP email sending library ported from charmbracelet/pop (Go). It
 
 ### 13. Man Page Generation
 
-**Description:** No `pop man` equivalent for generating ROFF man pages.
+**Description:** No `pop man` equivalent for generating ROFF man pages. <!-- @rename-keep -->
 **Source:** `docs/repo_map/charmbracelet_pop.md` — Feature list #23
 **Implementation ideas:**
 
@@ -426,12 +426,12 @@ SmtpTransport::fromDsn('smtp://user:pass@smtp.gmail.com:587');
 
 ## 2. Cron Job / CI Integration Guide
 
-**Content:** Using `pop --no-tty` in scheduled tasks
+**Content:** Using `candy-mail --no-tty` in scheduled tasks
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md` — Issue #160
 
 ## 3. Pipeline Composition Examples
 
-**Content:** `pop -o - | msmtp -a gmail`, `pop -o - | mdeliver ...`, etc.
+**Content:** `candy-mail -o - | msmtp -a gmail`, `candy-mail -o - | mdeliver ...`, etc.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md` — Issue #95
 
 ## 4. Batch Sending Patterns
@@ -479,7 +479,7 @@ $mailer->send($email, onProgress: fn(int $sent, int $total) => ...);
 ## 1. Mock Transport Tests
 
 **Problem:** No tests for actual send() behavior.
-**Source:** `docs/repo_map/sugarcraft_sugar-post.md` — Test Suite Analysis
+**Source:** `docs/repo_map/sugarcraft_candy-mail.md` — Test Suite Analysis
 **Solution:** Add mock transports:
 ```php
 final class FakeSmtpTransport implements Transport {
@@ -529,7 +529,7 @@ public function testMimeOutputWithAttachment(): void {
 **Problem:** Users with existing Symfony Mailer usage can't easily switch.
 **Solution:** Add Symfony Mailer transport bridge:
 ```php
-use SugarCraft\Post\SmtpTransport;
+use SugarCraft\Mail\SmtpTransport;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mailer\Mailer;
 
@@ -540,11 +540,11 @@ $mailer = new Mailer($transport);
 ## 2. Laravel Notification Channel
 
 **Problem:** Laravel users expect notification channel pattern.
-**Solution:** Create sugar-post Laravel notification channel:
+**Solution:** Create candy-mail Laravel notification channel:
 ```php
 class EmailNotification extends Notification {
     public function via(object $notifiable): array {
-        return [SugarPostChannel::class];
+        return [CandyMailChannel::class];
     }
     public function toSugarPost(object $notifiable): Email { ... }
 }
@@ -562,14 +562,14 @@ final class ResendTransport implements ClientInterface {
 
 ## 4. MIME Output for msmtp/mdeliver Integration
 
-**Problem:** Users want to compose with sugar-post, deliver with other agents.
+**Problem:** Users want to compose with candy-mail, deliver with other agents.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md` — Issue #95
 **Solution:** Output RFC 2821 message:
 ```php
 $message = $composer->render($email);
 file_put_contents('php://stdout', $message);
 ```
-Enable: `pop --output - --from a@b.com --to c@d.com < body.md`
+Enable: `candy-mail --output - --from a@b.com --to c@d.com < body.md`
 
 # Notable PRs / Issues / Discussions
 
@@ -582,19 +582,19 @@ Enable: `pop --output - --from a@b.com --to c@d.com < body.md`
 ## PR #162: Add initial no-tty implementation (Feb 2026)
 
 **Summary:** 31-line PR for headless mode, fork was in production use a week before PR
-**Lessons:** Community implements features themselves when PR review is slow. sugar-post needs faster review.
+**Lessons:** Community implements features themselves when PR review is slow. candy-mail needs faster review.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md`
 
 ## PR #147: Add support to POP_BCC environment variable (Sep 2025)
 
 **Summary:** 7-line PR for BCC env var, mergeable
-**Lessons:** Tiny PRs still sit open for months. sugar-post should prioritize small PRs.
+**Lessons:** Tiny PRs still sit open for months. candy-mail should prioritize small PRs.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md`
 
 ## Issue #136: Optional SMTP credentials (Jun 2025)
 
 **Summary:** Required username+password even for anonymous relays, 11+ months open
-**Lessons:** This gate caused years of pain in Go pop. sugar-post should never require optional components.
+**Lessons:** This gate caused years of pain in Go pop. candy-mail should never require optional components.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md`
 
 ## Issue #116: Markdown tables not rendered (Dec 2024)
@@ -606,7 +606,7 @@ Enable: `pop --output - --from a@b.com --to c@d.com < body.md`
 ## Issue #115: Plain text option (Dec 2024)
 
 **Summary:** Default to HTML without warning surprises users
-**Lessons:** Default behavior should be explicit. sugar-post should default to plaintext unless user requests HTML.
+**Lessons:** Default behavior should be explicit. candy-mail should default to plaintext unless user requests HTML.
 **Source:** `docs/repo_map/pr_charmbracelet_pop.md`
 
 # Recommended Roadmap
@@ -664,9 +664,9 @@ Enable: `pop --output - --from a@b.com --to c@d.com < body.md`
 
 # Final Strategic Assessment
 
-sugar-post is a well-structured email sending library that successfully ports the core sending logic of charmbracelet/pop to PHP. Its immutability patterns, dual-transport abstraction, and pure-PHP SMTP implementation are solid technical foundations. The library is particularly strong as a dependency-free email sender for PHP applications that need SMTP or Resend API without the weight of PHPMailer or SwiftMailer.
+candy-mail is a well-structured email sending library that successfully ports the core sending logic of charmbracelet/pop to PHP. Its immutability patterns, dual-transport abstraction, and pure-PHP SMTP implementation are solid technical foundations. The library is particularly strong as a dependency-free email sender for PHP applications that need SMTP or Resend API without the weight of PHPMailer or SwiftMailer.
 
-However, the package is conspicuously missing features that the upstream Go pop has developed over 2+ years, creating a growing gap. Most critically, the **lack of headless mode** and **raw MIME output** prevents sugar-post from being used in the automated/pipeline workflows that are increasingly central to modern DevOps. The **markdown rendering gap** means developers who expect markdown→HTML email composition will be disappointed.
+However, the package is conspicuously missing features that the upstream Go pop has developed over 2+ years, creating a growing gap. Most critically, the **lack of headless mode** and **raw MIME output** prevents candy-mail from being used in the automated/pipeline workflows that are increasingly central to modern DevOps. The **markdown rendering gap** means developers who expect markdown→HTML email composition will be disappointed.
 
 The most strategic immediate improvements are:
 
@@ -678,6 +678,6 @@ The medium-term priority should be a **shared markdown rendering pipeline** — 
 
 Architecture-wise, the **Composer/DeliveryAgent separation** is the most important structural improvement — it cleanly enables the raw MIME output feature and sets up a more extensible transport system.
 
-Against the broader ecosystem, sugar-post fills a genuine niche in the PHP ecosystem. There is no competing pure-PHP email sending library with the same combination of immutability, dual-transport, and dependency-free SMTP implementation. This positioning is defensible and valuable.
+Against the broader ecosystem, candy-mail fills a genuine niche in the PHP ecosystem. There is no competing pure-PHP email sending library with the same combination of immutability, dual-transport, and dependency-free SMTP implementation. This positioning is defensible and valuable.
 
-The 2.5-year release gap in the upstream Go pop (issue #87) is a cautionary tale about sporadic releases — sugar-post should commit to regular small releases rather than large infrequent ones.
+The 2.5-year release gap in the upstream Go pop (issue #87) is a cautionary tale about sporadic releases — candy-mail should commit to regular small releases rather than large infrequent ones.

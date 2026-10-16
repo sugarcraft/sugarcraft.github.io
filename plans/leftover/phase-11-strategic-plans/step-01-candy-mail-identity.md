@@ -1,12 +1,12 @@
-# Step 11.01 — Write plans/sugar-post-identity.md
+# Step 11.01 — Write plans/candy-mail-identity.md
 
 **Source:** `leftover_updates_later.md` §6 strategic decisions
-**Branch:** `ai/plan-sugar-post-identity`
-**This step writes a plan file only. No code changes to sugar-post itself.**
+**Branch:** `ai/plan-candy-mail-identity`
+**This step writes a plan file only. No code changes to candy-mail itself.**
 
 ## Deliverable
 
-Create `plans/sugar-post-identity.md` — a decision document for sugar-post.
+Create `plans/candy-mail-identity.md` — a decision document for candy-mail.
 
 Research describes a social-media TUI; shipped lib is an email client.
 The decision must be made before any feature work continues.
@@ -27,19 +27,19 @@ The plan file should cover:
 
 ## Files
 
-**Create:** `plans/sugar-post-identity.md` (~200-400 lines).
+**Create:** `plans/candy-mail-identity.md` (~200-400 lines).
 
 ## Acceptance
 
-- `ls plans/sugar-post-identity.md` returns the file.
+- `ls plans/candy-mail-identity.md` returns the file.
 - File is structured per above and clearly marks the user-decision
   blocker.
 
 ## Notes
 
 - After landing, the user reviews and picks A/B/C. Subsequent
-  sugar-post feature work then flows from the chosen path.
-- Do **not** touch `sugar-post/src/` in this step.
+  candy-mail feature work then flows from the chosen path.
+- Do **not** touch `candy-mail/src/` in this step.
 
 ---
 

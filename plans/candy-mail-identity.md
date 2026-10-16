@@ -1,10 +1,10 @@
-# sugar-post identity — strategic decision
+# candy-mail identity — strategic decision
 
 **Status:** ✅ **DECIDED — Option A (stay an email tool)** · 2026-05-19 ·
-chosen by Joe Huss · **Branch:** `ai/sugar-post-option-a-decision`
+chosen by Joe Huss · **Branch:** `ai/candy-mail-option-a-decision`
 
 **Origin:** `plans/leftover_updates_later.md` §6 strategic decisions ·
-`plans/leftover/phase-11-strategic-plans/step-01-sugar-post-identity.md`
+`plans/leftover/phase-11-strategic-plans/step-01-candy-mail-identity.md`
 
 > This document does **not** ship code. It is a decision memo. The
 > decision is now Option A: finish the upstream Pop TUI surface
@@ -17,13 +17,13 @@ chosen by Joe Huss · **Branch:** `ai/sugar-post-option-a-decision`
 
 ## TL;DR
 
-The shipped `sugar-post` is a faithful PHP port of **charmbracelet/pop**
+The shipped `candy-mail` is a faithful PHP port of **charmbracelet/pop**
 — a CLI mailer that sends email via Resend HTTP API or direct SMTP. The
-research doc (`docs/research/libraries/sugar-post-research.md`) names
+research doc (`docs/research/libraries/candy-mail-research.md`) names
 the shipped lib an email client up front, then proposes a strategic
 pivot toward a **"social-media TUI"** and benchmarks the latter
 framing against Mastodon clients like Perch, Mastui, Toot, and Tootles.
-That pivot framing reads sugar-post as a microblog client even though
+That pivot framing reads candy-mail as a microblog client even though
 "Pop" in the Charm ecosystem is an email TUI.
 
 Three options:
@@ -42,14 +42,14 @@ upstream and i18n coverage is already done across 16 locales.
 
 **Outcome (2026-05-19):** Option A chosen. Options B/C shelved
 indefinitely; no microblog work is planned. If a microblog TUI is ever
-wanted, it becomes a separate `sugar-<name>` library — not a sugar-post
+wanted, it becomes a separate `sugar-<name>` library — not a candy-mail
 rewrite.
 
 ---
 
 ## 1. Current state — what shipped
 
-`sugar-post/` is a working PHP-8.3 port of
+`candy-mail/` is a working PHP-8.3 port of
 [`charmbracelet/pop`](https://github.com/charmbracelet/pop):
 
 | Surface | File | LOC | Status |
@@ -61,15 +61,15 @@ rewrite.
 | SMTP transport (full multipart MIME + TLS) | `src/SmtpTransport.php` | 323 | done |
 | High-level Mailer | `src/Mailer.php` | 45 | done |
 | i18n facade | `src/Lang.php` | 31 | done |
-| CLI binary `pop` (stdin compose, attach, env config) | `bin/pop` | — | done |
+| CLI binary `pop` (stdin compose, attach, env config) | `bin/candy-mail` | — | done | <!-- @rename-keep -->
 | Tests (Attachment, Email, ResendTransport, SmtpTransport, CoverageBoost) | `tests/*.php` | — | 7 files, green |
 | i18n locales (`ar cs de en es fr it ja ko nl pl pt pt-br ru tr zh-cn`) | `lang/*.php` | — | 16 locales |
 | Examples (`basic`, `attachments`, `html-email`, `pipeline`, `showcase`, `smtp`) | `examples/*.php` | — | 6 files |
 | MATCHUPS.md row | — | — | 🟢 |
 
-What's **not** in the shipped lib (relative to upstream `pop`):
+What's **not** in the shipped lib (relative to upstream `pop`): <!-- @rename-keep -->
 
-| Upstream Pop feature | Status in sugar-post |
+| Upstream Pop feature | Status in candy-mail |
 |---|---|
 | Bubble Tea Model/Update/View TUI | absent — CLI only |
 | `State` enum (`idle`, `pickingFile`, `sendingEmail`, `hoveringSendButton`) | absent |
@@ -84,18 +84,18 @@ Everything else upstream Pop does has a matching PHP surface.
 
 **Source citations:**
 
-- `sugar-post/README.md:L13` — "PHP port of charmbracelet/pop"
-- `sugar-post/composer.json:L2` — `sugarcraft/sugar-post`
-- `sugar-post/src/Email.php:L21–L32` — immutable readonly props
-- `sugar-post/src/SmtpTransport.php` — full MIME builder
+- `candy-mail/README.md:L13` — "PHP port of charmbracelet/pop"
+- `candy-mail/composer.json:L2` — `sugarcraft/candy-mail`
+- `candy-mail/src/Email.php:L21–L32` — immutable readonly props
+- `candy-mail/src/SmtpTransport.php` — full MIME builder
 
 ---
 
 ## 2. The research-doc confusion
 
-`docs/research/libraries/sugar-post-research.md` opens with:
+`docs/research/libraries/candy-mail-research.md` opens with:
 
-> "**Critical Finding:** sugar-post is currently an **email client**
+> "**Critical Finding:** candy-mail is currently an **email client**
 > (sending via Resend API or SMTP), not a social media TUI."
 
 The research then surveys six terminal Mastodon / Bluesky / X clients
@@ -105,7 +105,7 @@ post composers with content warnings, virtual-scroll timelines, SSE
 streaming, and Kitty / iTerm2 / Sixel image rendering.
 
 The research doc proposes a microblog *pivot* as a strategic
-alternative — its framing reads sugar-post as a social-media TUI even
+alternative — its framing reads candy-mail as a social-media TUI even
 though the doc itself names the shipped lib an email client up front
 and cites `charmbracelet/pop` as the upstream throughout. **No
 charmbracelet repo named `post` exists.** The actual upstream is
@@ -119,7 +119,7 @@ reference implementation" for "email TUI port from Pop."
 
 `plans/leftover_updates_later.md` §6 carries the same misframing:
 
-> "**sugar-post identity** — research describes a social-media TUI;
+> "**candy-mail identity** — research describes a social-media TUI;
 > the shipped lib is an email client. Pick one before adding features."
 
 The sentence is technically accurate but loaded — it presents the two
@@ -130,8 +130,8 @@ already tracks the real upstream correctly.
 
 ## 3. Option A — Stay an email tool (match upstream Pop)
 
-**Bet:** sugar-post completes its current trajectory. The user picks it
-up via `composer require sugarcraft/sugar-post` and gets a drop-in
+**Bet:** candy-mail completes its current trajectory. The user picks it
+up via `composer require sugarcraft/candy-mail` and gets a drop-in
 mailer that mirrors charmbracelet/pop's surface area, including the
 interactive TUI.
 
@@ -148,7 +148,7 @@ interactive TUI.
 | **Help bar** with key hints | ½ d | candy-sprinkles HelpBar or candy-forms help |
 | **TUI tests** — model snapshot + scripted-input view tests | 1 d | follow `candy-forms/tests/` pattern |
 | **VHS tape** for README GIF | ½ d | `.vhs/compose.tape` |
-| **Docs** (README, `docs/lib/sugar-post.html`, end-user docs feature grid) | 1 d | — |
+| **Docs** (README, `docs/lib/candy-mail.html`, end-user docs feature grid) | 1 d | — |
 
 **Total:** ~8 working days (~2 weeks calendar).
 
@@ -165,7 +165,7 @@ All social-media-specific items from the research doc:
   posts, polls, @mention / #hashtag autocomplete)
 - Real-time SSE / WebSocket streaming of feeds
 - Image rendering inside the TUI for received posts (Kitty / iTerm2 /
-  Sixel) — sugar-post does not need to display arbitrary media; attach
+  Sixel) — candy-mail does not need to display arbitrary media; attach
   / send is enough
 - Cross-posting to multiple networks
 - "Doctor" / health-check command
@@ -180,7 +180,7 @@ roadmap).
 - Tests stay intact.
 - `MATCHUPS.md` row stays 🟢; only sub-status moves from "library
   surface complete" to "library surface + TUI complete."
-- No dependency churn — sugar-post stays on `candy-core` and gains
+- No dependency churn — candy-mail stays on `candy-core` and gains
   `candy-forms` / `candy-mdview` / `candy-sprinkles` (all already
   monorepo siblings).
 
@@ -195,7 +195,7 @@ roadmap).
 ## 4. Option B — Pivot to social-media TUI (microblog client)
 
 **Bet:** the research doc's framing is what users actually want, and
-"sugar-post" is renamed mentally to mean "post a status update."
+"candy-mail" is renamed mentally to mean "post a status update."
 
 ### Work required
 
@@ -203,11 +203,11 @@ This is a **full rewrite** in everything but name:
 
 | Item | Effort | Notes |
 |---|---|---|
-| **Delete** Email / Attachment / Transport / ResendTransport / SmtpTransport / Mailer / their tests / `bin/pop` / all 6 examples | 0.5 d | mechanical |
-| **Rename** `sugar-post` → keep the slug, redefine identity in README + composer description + matchups row | 0.5 d | |
+| **Delete** Email / Attachment / Transport / ResendTransport / SmtpTransport / Mailer / their tests / `bin/candy-mail` / all 6 examples | 0.5 d | mechanical |
+| **Rename** `candy-mail` → keep the slug, redefine identity in README + composer description + matchups row | 0.5 d | |
 | **Add** Mastodon API transport (OAuth 2.0 PKCE, accounts, posts, timelines, notifications) | 5 d | non-trivial; many endpoints |
 | **Add** Bluesky AT-protocol transport | 5 d | protocol is unstable; risk |
-| **Add** account store (~/.config/sugar-post/accounts, file-perm 0600, optional Keychain integration) | 2 d | |
+| **Add** account store (~/.config/candy-mail/accounts, file-perm 0600, optional Keychain integration) | 2 d | |
 | **Add** Timeline value object + virtual-scroll renderer | 3 d | matches Perch three-pane layout |
 | **Add** Post composer (content warning, visibility, media upload, character counter per network) | 3 d | |
 | **Add** vim keybindings (`j/k/g/G/r/n/c/l/b/q`) | 1 d | |
@@ -217,13 +217,13 @@ This is a **full rewrite** in everything but name:
 | **Add** cross-posting orchestrator | 2 d | |
 | **Rewrite** the i18n surface — current locales are mail-specific keys (`mailer.no_recipient`, `cli.send_failed`); all 16 locales would need re-translation against a microblog vocabulary | 4 d | translator time, not coder time, but blocker |
 | **Tests** — TimelineRenderer, ComposerModel, OAuth flow, AccountStore, MastodonTransport (mocked), BlueskyTransport (mocked) | 5 d | |
-| **Docs** — README rewrite, end-user docs page rewrite, docs/lib/sugar-post.html rewrite, MATCHUPS.md row change (no upstream charmbracelet match) | 2 d | |
+| **Docs** — README rewrite, end-user docs page rewrite, docs/lib/candy-mail.html rewrite, MATCHUPS.md row change (no upstream charmbracelet match) | 2 d | |
 | **Examples** — replace 6 mailer examples with timeline / compose / cross-post examples | 2 d | |
 | **VHS tapes** | 1 d | |
 
 **Total:** ~10–14 weeks calendar; ~45–55 working days.
 
-### What carries forward from current sugar-post
+### What carries forward from current candy-mail
 
 Honestly: **almost nothing.**
 
@@ -233,14 +233,14 @@ Honestly: **almost nothing.**
   attachments."
 - The 16 i18n files would need full re-translation (all current keys
   are email-specific).
-- The CLI argument parser in `bin/pop` is generic enough to keep, but
+- The CLI argument parser in `bin/candy-mail` is generic enough to keep, but
   it's 221 lines — small enough to rewrite.
 
 ### Risks
 
 1. **MATCHUPS.md becomes a lie.** No charmbracelet repo named
    `post` exists; the row currently points at `charmbracelet/pop`.
-   Pivoting forces either deleting the row (sugar-post no longer
+   Pivoting forces either deleting the row (candy-mail no longer
    ports anything in the Charm ecosystem) or pointing it at a
    non-existent upstream.
 2. **Scope explosion.** "Social-media TUI" is several apps' worth of
@@ -267,10 +267,10 @@ infrastructure and CLI parsing.
 
 - Keep all of Option A.
 - Add all of Option B alongside it.
-- Two bin/ entries: `bin/pop` (mailer) + `bin/sugar-post` (microblog).
+- Two bin/ entries: `bin/candy-mail` (mailer) + `bin/candy-mail` (microblog).
 - Two namespaces:
-  - `SugarCraft\Post\Mail\Email` etc.
-  - `SugarCraft\Post\Microblog\Post` etc.
+  - `SugarCraft\Mail\Mail\Email` etc.
+  - `SugarCraft\Mail\Microblog\Post` etc.
 
 ### Work required
 
@@ -282,7 +282,7 @@ generalisation).
 
 ### Issues
 
-1. **Composer package identity.** `composer require sugarcraft/sugar-post`
+1. **Composer package identity.** `composer require sugarcraft/candy-mail`
    pulls **both** a mailer and a microblog client. Users who only want
    one get unused dependencies (Mastodon HTTP client, Bluesky SDK, etc.)
    regardless. The composer description must explain "this is two
@@ -296,10 +296,10 @@ generalisation).
    for mailer users; bumping mailer half breaks semver for microblog
    users. Library-level versioning becomes a coordination chore.
 5. **Discoverability.** Anyone searching Packagist for "mastodon php
-   tui" will not find `sugarcraft/sugar-post`. Anyone searching for
+   tui" will not find `sugarcraft/candy-mail`. Anyone searching for
    "php mailer" will find it but be confused by the social-media docs.
 
-The honest alternative to C is: **two libraries** (`sugar-post` mailer
+The honest alternative to C is: **two libraries** (`candy-mail` mailer
 + a new `sugar-<name>` for microblogging). At that point Option C
 reduces to Option A plus a separate, deferred library — i.e. Option A
 with an asterisk.
@@ -312,7 +312,7 @@ with an asterisk.
 surface.** Joe Huss confirmed on 2026-05-19. Options B and C are
 shelved; no microblog work is planned. If a microblog TUI is ever
 wanted, it spawns a separate `sugar-<name>` library (probably
-`sugar-toot` / `sugar-feed`) — sugar-post stays a 1:1 port of
+`sugar-toot` / `sugar-feed`) — candy-mail stays a 1:1 port of
 `charmbracelet/pop`.
 
 ### Rationale
@@ -327,12 +327,12 @@ wanted, it spawns a separate `sugar-<name>` library (probably
    outside the monorepo.
 3. **i18n investment preserved.** 16 locales of mail-specific strings
    stay valid.
-4. **No upstream tracking lie.** sugar-post continues to mirror
+4. **No upstream tracking lie.** candy-mail continues to mirror
    `charmbracelet/pop` 1:1.
 5. **The "social-media TUI" itch is a separate library, if anyone
    actually wants it.** If a user later asks for a Mastodon TUI in
    PHP, the right answer is a new `sugar-<name>` (probably
-   `sugar-toot` or `sugar-feed`) — not retconning sugar-post into
+   `sugar-toot` or `sugar-feed`) — not retconning candy-mail into
    something it never was. The research doc's six-tool benchmark
    (Perch, Mastui, Toot, etc.) is reusable when that library actually
    gets scoped.
@@ -362,7 +362,7 @@ None held → Option A confirmed.
 The following questions guided the call. Recording the answers as a
 post-decision audit trail.
 
-1. **Was the original intent of `sugar-post` ever a microblog client,
+1. **Was the original intent of `candy-mail` ever a microblog client,
    or has the slug always meant "send a message" (= email)?**
    - If always email → Option A.
    - If genuinely intended as a microblog → B or C, and the research
@@ -378,7 +378,7 @@ post-decision audit trail.
    - If yes → A (or C, but C still has all of B's risks).
    - If no → B becomes cheaper (~3 weeks saved on retranslation).
 
-4. **Do we accept that "sugar-post" can stop tracking
+4. **Do we accept that "candy-mail" can stop tracking
    `charmbracelet/pop` and become an in-house lib with no upstream
    counterpart?**
    - If yes → B is on the table.
@@ -394,15 +394,15 @@ post-decision audit trail.
 
 ## 8. Next steps (post-decision — Option A)
 
-1. ✅ **(this PR)** Annotate `docs/research/libraries/sugar-post-research.md`
+1. ✅ **(this PR)** Annotate `docs/research/libraries/candy-mail-research.md`
    with a prefatory note flagging the social-media framing as a
    rejected pivot path. Sections on Mastodon / Bluesky / X clients are
    archival reference for a hypothetical future `sugar-toot` /
-   `sugar-feed` library, not for sugar-post.
+   `sugar-feed` library, not for candy-mail.
 2. ✅ **(this PR)** Close `plans/leftover_updates_later.md` §6
-   sugar-post bullet — mark resolved with a pointer to this memo.
+   candy-mail bullet — mark resolved with a pointer to this memo.
 3. ⏭️ **(follow-up)** Spawn step files under a new
-   `plans/leftover/phase-NN-sugar-post-tui/` directory (or fold into a
+   `plans/leftover/phase-NN-candy-mail-tui/` directory (or fold into a
    later phase slot) covering:
    - step `01` — Bubble Tea Model + state enum + form fields
    - step `02` — Filepicker integration
@@ -426,7 +426,7 @@ re-litigating this memo.
 
 ## Appendix — file inventory under each option
 
-### Option A — files to add (sugar-post/)
+### Option A — files to add (candy-mail/)
 
 ```
 src/Tui/
@@ -447,7 +447,7 @@ examples/
     compose.tape
 ```
 
-### Option B — files to add (sugar-post/, post-rename)
+### Option B — files to add (candy-mail/, post-rename)
 
 ```
 src/Microblog/
@@ -471,16 +471,16 @@ src/Microblog/
         Scheduler.php
     Image/Renderer.php (delegates to candy-mosaic)
 [plus a Tui/ tree analogous to Option A but for microblog flows]
-[delete all current sugar-post/src/* files except Lang.php]
-[rewrite all sugar-post/lang/*.php with new keys]
+[delete all current candy-mail/src/* files except Lang.php]
+[rewrite all candy-mail/lang/*.php with new keys]
 [rewrite README, examples, docs]
 ```
 
 ### Option C — files to add
 
 Everything in Option A's tree under `src/Mail/` + everything in Option
-B's tree under `src/Microblog/`. Two bin entries: `bin/pop` (existing,
-mailer) and `bin/sugar-post` (new, microblog).
+B's tree under `src/Microblog/`. Two bin entries: `bin/candy-mail` (existing,
+mailer) and `bin/candy-mail` (new, microblog).
 
 ---
 

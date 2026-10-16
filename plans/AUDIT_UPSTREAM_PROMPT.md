@@ -150,26 +150,26 @@ that are tiny but together justify a PR.
 - charmbracelet/bubbletea → candy-core
 - charmbracelet/lipgloss → candy-sprinkles
 - charmbracelet/harmonica → honey-bounce
-- lrstanley/bubblezone → candy-mouse
-- charmbracelet/bubbles → sugar-bits
+- lrstanley/bubblezone → sugar-mouse
+- charmbracelet/bubbles → sugar-widgets
 - NimbleMarkets/ntcharts → sugar-charts
-- charmbracelet/huh → candy-forms
+- charmbracelet/huh → sugar-forms
 - charmbracelet/glamour → candy-shine
 - charmbracelet/fang → candy-kit
 - charmbracelet/wish → candy-wish
 - charmbracelet/promwish → candy-metrics
 - charmbracelet/log → candy-log
 - charmbracelet/colorprofile → candy-palette
-- treilik/bubblelister → candy-lister
-- treilik/bubbleboxer → sugar-boxer
-- rmhubbert/bubbletea-overlay → sugar-veil
-- KevM/bubbleo → sugar-crumbs
-- Genekkion/theHermit → candy-hermit
+- treilik/bubblelister → sugar-treelist
+- treilik/bubbleboxer → sugar-panels
+- rmhubbert/bubbletea-overlay → sugar-overlay
+- KevM/bubbleo → sugar-navstack
+- Genekkion/theHermit → sugar-quickpick
 - Evertras/bubble-table → sugar-table
 - erikgeiser/promptkit → sugar-readline
 - EthanEFung/bubble-datepicker → sugar-datepicker
 - daltonsw/bubbleup → sugar-toast
-- 76creates/stickers → sugar-stickers
+- 76creates/stickers → sugar-flexbox
 
 ### Apps
 

@@ -14,56 +14,56 @@
 
 ---
 
-## SUGAR-DASH (TUI Dashboard) - Your Starting Point
+## SUGAR-DASHBOARD (TUI Dashboard) - Your Starting Point
 
 ### [ ] Constraint-based Layout (like Ratatui)
 
 - **Priority**: P1 - High
 - **Effort**: 2-3 weeks
 - **Impact**: Major layout system improvement
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ### [ ] StatefulWidget Separation (external state for selection)
 
 - **Priority**: P1 - High
 - **Effort**: 1-2 weeks
 - **Impact**: Better state management for tables/lists
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ### [ ] Reactive Properties (watch pattern)
 
 - **Priority**: P1 - High
 - **Effort**: 1 week
 - **Impact**: Auto-calling watchers on property change
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ### [ ] Block Wrapper (composable borders/padding)
 
 - **Priority**: P2 - Medium
 - **Effort**: 3-5 days
 - **Impact**: Cleaner component composition
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ### [ ] Improved Spinner (explicit tick, not time-based)
 
 - **Priority**: P3 - Low
 - **Effort**: 1 day
 - **Impact**: Better animation control
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ### [ ] Lifecycle Interface (mount/unmount hooks)
 
 - **Priority**: P2 - Medium
 - **Effort**: 2-3 days
 - **Impact**: Better component lifecycle
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ### [ ] FlexBox Layout API (justifyContent/alignItems)
 
 - **Priority**: P2 - Medium
 - **Effort**: 1-2 weeks
 - **Impact**: CSS-like flexbox for TUIs
-- **Research**: `libraries/sugar-dash-research.md`
+- **Research**: `libraries/sugar-dashboard-research.md`
 
 ---
 
@@ -175,24 +175,24 @@
 - **Effort**: 1-2 hours
 - **Research**: `libraries/candy-flip-research.md`
 
-### sugar-crumbs
+### sugar-navstack
 
 ### [ ] Fix broken examples (view/filter/pushDirectory)
 
 - **Effort**: 1 hour
-- **Research**: `libraries/sugar-crumbs-research.md`
+- **Research**: `libraries/sugar-navstack-research.md`
 
 ### [ ] Add separator escaping for titles with ›
 
 - **Effort**: 1 hour
-- **Research**: `libraries/sugar-crumbs-research.md`
+- **Research**: `libraries/sugar-navstack-research.md`
 
-### candy-hermit
+### sugar-quickpick
 
 ### [ ] Add Item interface + Numbered Items
 
 - **Effort**: 2-3 hours
-- **Research**: `libraries/candy-hermit-research.md`
+- **Research**: `libraries/sugar-quickpick-research.md`
 
 ### candy-codeshot
 
@@ -283,51 +283,51 @@
 
 ## COMPONENT IMPROVEMENTS
 
-### sugar-bits
+### sugar-widgets
 
 ### [ ] TextInput `validate_on` timing (blur/changed/submit)
 
 - **Priority**: P1 - High
 - **Effort**: 2-3 hours
-- **Research**: `libraries/sugar-bits-research.md`
+- **Research**: `libraries/sugar-widgets-research.md`
 
 ### [ ] TextInput `restrict` regex
 
 - **Priority**: P1 - High
 - **Effort**: 1-2 hours
-- **Research**: `libraries/sugar-bits-research.md`
+- **Research**: `libraries/sugar-widgets-research.md`
 
 ### [ ] Table sorting (SortByDesc/SortByAsc)
 
 - **Priority**: P2 - Medium
 - **Effort**: 3-4 hours
-- **Research**: `libraries/sugar-bits-research.md`
+- **Research**: `libraries/sugar-widgets-research.md`
 
 ### [ ] Table filtering (WithFiltered per-column)
 
 - **Priority**: P2 - Medium
 - **Effort**: 2-3 hours
-- **Research**: `libraries/sugar-bits-research.md`
+- **Research**: `libraries/sugar-widgets-research.md`
 
-### candy-forms
+### sugar-forms
 
 ### [ ] Vim keys in MultiSelect (j/k/g/G)
 
 - **Priority**: P1 - High
 - **Effort**: 1 day
-- **Research**: `libraries/candy-forms-research.md`
+- **Research**: `libraries/sugar-forms-research.md`
 
 ### [ ] Built-in validators (Required, MinLength, Pattern, Email)
 
 - **Priority**: P1 - High
 - **Effort**: 1 day
-- **Research**: `libraries/candy-forms-research.md`
+- **Research**: `libraries/sugar-forms-research.md`
 
 ### [ ] Enhanced KeyMap defaults (j/k nav)
 
 - **Priority**: P1 - High
 - **Effort**: 4 hours
-- **Research**: `libraries/candy-forms-research.md`
+- **Research**: `libraries/sugar-forms-research.md`
 
 ### sugar-table
 
@@ -369,25 +369,25 @@
 - **Effort**: Low
 - **Research**: `libraries/sugar-charts-research.md`
 
-### sugar-veil
+### sugar-overlay
 
 ### [ ] Backdrop/Dimming
 
 - **Priority**: P1 - High
 - **Effort**: 2-3 days
-- **Research**: `libraries/sugar-veil-research.md`
+- **Research**: `libraries/sugar-overlay-research.md`
 
 ### [ ] Animation System (slide-in, easing)
 
 - **Priority**: P1 - High
 - **Effort**: 3-4 days
-- **Research**: `libraries/sugar-veil-research.md`
+- **Research**: `libraries/sugar-overlay-research.md`
 
 ### [ ] Border Chrome/Frame wrapper
 
 - **Priority**: P1 - High
 - **Effort**: 1-2 days
-- **Research**: `libraries/sugar-veil-research.md`
+- **Research**: `libraries/sugar-overlay-research.md`
 
 ---
 
@@ -435,8 +435,8 @@ All 45 research documents available at:
 | candy-core | 17KB |
 | candy-flip | 16KB |
 | candy-codeshot | 23KB |
-| candy-hermit | 21KB |
-| candy-lister | 15KB |
+| sugar-quickpick | 21KB |
+| sugar-treelist | 15KB |
 | candy-log | 17KB |
 | candy-metrics | 20KB |
 | candy-minesweeper | 15KB |
@@ -452,28 +452,28 @@ All 45 research documents available at:
 | candy-vcr | 23KB |
 | candy-vt | 26KB |
 | candy-wish | 24KB |
-| candy-mouse | 14KB |
+| sugar-mouse | 14KB |
 | honey-bounce | 25KB |
 | candy-flappy | 11KB |
-| sugar-bits | 26KB |
-| sugar-boxer | 16KB |
+| sugar-widgets | 26KB |
+| sugar-panels | 16KB |
 | sugar-datepicker | 19KB |
 | sugar-charts | 23KB |
-| sugar-crumbs | 14KB |
+| sugar-navstack | 14KB |
 | sugar-crush | 15KB |
-| sugar-dash | 25KB |
+| sugar-dashboard | 25KB |
 | candy-mdview | 17KB |
 | candy-mail | 25KB |
-| candy-forms | 20KB |
+| sugar-forms | 20KB |
 | sugar-readline | 18KB |
 | candy-kv | 21KB |
 | candy-ansi-inspect | 13KB |
 | candy-git | 23KB |
-| sugar-stickers | 14KB |
+| sugar-flexbox | 14KB |
 | sugar-table | 19KB |
 | candy-codetime | 19KB |
 | sugar-toast | 20KB |
-| sugar-veil | 21KB |
+| sugar-overlay | 21KB |
 | candy-ssh-launcher | 16KB |
 | super-candy | 18KB |
 

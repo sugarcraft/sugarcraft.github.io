@@ -78,11 +78,11 @@ No high-comment open issues found. Repo is quiet.
 
 ---
 
-## lrstanley/bubblezone → candy-mouse
+## lrstanley/bubblezone → sugar-mouse
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-mouse | Notes |
+| Upstream | Title | Status in sugar-mouse | Notes |
 |---|---|:--:|---|
 | [#51](https://github.com/lrstanley/bubblezone/pull/51) (2026-02-28) | breaking: bubbletea/lipgloss/bubbles v2 | ⚪ | v2 dependency update — no semantic change for zone tracking |
 | [#20](https://github.com/lrstanley/bubblezone/pull/20) (2024-06-09) | use private CSI sequence for marking | 🟡 | Private CSI sequence for marking — verify PHP implementation matches |
@@ -94,11 +94,11 @@ No high-comment open issues found. Repo is relatively quiet.
 
 ---
 
-## charmbracelet/bubbles → sugar-bits
+## charmbracelet/bubbles → sugar-widgets
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in sugar-bits | Notes |
+| Upstream | Title | Status in sugar-widgets | Notes |
 |---|---|:--:|---|
 | [#910](https://github.com/charmbracelet/bubbles/pull/910) (2026-03-25) | feat(textarea): dynamic height | 🟡 | TextArea has `withHeight()` but dynamic height based on content needs review |
 | [#891](https://github.com/charmbracelet/bubbles/pull/891) (2026-02-24) | fix(filepicker): fix a panic due to unchecked assertion | 🟡 | FilePicker 可能需要类似修复 |
@@ -109,7 +109,7 @@ No high-comment open issues found. Repo is relatively quiet.
 
 | Upstream | Title | Applicability | Recommendation |
 |---|---|---|---|
-| [#12](https://github.com/charmbracelet/bubbles/issues/12) (11c) | Choose and filter don't work well with long lines | 🟡 | 可能需要审查 sugar-bits 中长文本处理 |
+| [#12](https://github.com/charmbracelet/bubbles/issues/12) (11c) | Choose and filter don't work well with long lines | 🟡 | 可能需要审查 sugar-widgets 中长文本处理 |
 
 ---
 
@@ -127,11 +127,11 @@ No high-comment open issues found. Repo is very quiet.
 
 ---
 
-## charmbracelet/huh → candy-forms
+## charmbracelet/huh → sugar-forms
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-forms | Notes |
+| Upstream | Title | Status in sugar-forms | Notes |
 |---|---|:--:|---|
 | [#749](https://github.com/charmbracelet/huh/pull/749) (2026-03-10) | fix(select): ensure cursor visibility when navigating multiline options | 🟡 | Select cursor visibility — verify PHP implementation |
 | [#746](https://github.com/charmbracelet/huh/pull/746) (2026-03-10) | fix: Prevent double paste in focused field | 🔴 | **Effort**: 1h **Benefit**: Fixes unexpected paste behavior **Downside**: Minimal |
@@ -256,7 +256,7 @@ No high-comment open issues.
 |---|---|---|---|
 | [#921](https://github.com/charmbracelet/gum/issues/921) (17c) | Module checksum error while installing with go install | ⚪ | Go installation issue, not TUI relevant |
 | [#12](https://github.com/charmbracelet/gum/issues/12) (11c) | Choose and filter don't work well with long lines | 🟡 | Long line handling — may affect filter/choose implementation |
-| [#153](https://github.com/charmbracelet/gum/issues/153) (10c) | Add `gum progress` bar | 🔴 | **Effort**: 3-4h **Benefit**: Add Progress component to sugar-bits **Downside**: New component API |
+| [#153](https://github.com/charmbracelet/gum/issues/153) (10c) | Add `gum progress` bar | 🔴 | **Effort**: 3-4h **Benefit**: Add Progress component to sugar-widgets **Downside**: New component API |
 | [#445](https://github.com/charmbracelet/gum/issues/445) (7c) | Double encoding in Powershell | ⚪ | Windows/PowerShell edge case |
 | [#434](https://github.com/charmbracelet/gum/issues/434) (7c) | Add command to tail n lines of output | 🔴 | **Effort**: 2h **Benefit**: `gum tail` command **Downside**: New command in shell |
 
@@ -371,8 +371,8 @@ No high-comment open issues.
    - **Effort**: 2-3h **Benefit**: High — adds fuzzy search to tables, a common need
    - **Downside**: New dependency (levenshtein or similar)
 
-2. **gum progress bar** → sugar-bits (new Progress component)
-   - **Effort**: 3-4h **Benefit**: High — Progress is a missing component in sugar-bits
+2. **gum progress bar** → sugar-widgets (new Progress component)
+   - **Effort**: 3-4h **Benefit**: High — Progress is a missing component in sugar-widgets
    - **Downside**: New API surface, snapshot tests needed
 
 3. **glamour wikilinks support** → candy-shine
@@ -389,7 +389,7 @@ No high-comment open issues.
 
 ### Smaller fixes worth bundling into a cleanup PR
 
-1. **huh double-paste fix** — 1h — confirm candy-forms doesn't have same issue
+1. **huh double-paste fix** — 1h — confirm sugar-forms doesn't have same issue
 2. **glamour Gruvbox theme** — 30min — easy theme addition
 3. **glamour frontmatter support** — 1-2h — small new feature
 4. **bubbletea garbage chars on early exit** — 1-2h — bug fix

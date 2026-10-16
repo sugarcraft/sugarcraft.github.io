@@ -92,8 +92,8 @@ candy-core  Program             (existing — Bubble Tea runtime)
 candy-git-server  RepoListModel ←→ ChildModels (NEW — phases 1–5)
     │
     ├── candy-sprinkles  Style          (border, fg, bg, padding)
-    ├── sugar-boxer      SugarBoxer     (titled boxes / split panes)
-    ├── sugar-stickers   Viewport       (scrolling lists, scrollbar)
+    ├── sugar-panels      SugarPanels     (titled boxes / split panes)
+    ├── sugar-flexbox   Viewport       (scrolling lists, scrollbar)
     ├── candy-shine      Renderer       (markdown → ANSI for README)
     ├── candy-shine      SyntaxHighlighter (file viewer colourisation)
     ├── candy-git      Git            (`log`, `show`, `cat-file`, `ls-tree`)
@@ -165,10 +165,10 @@ in place; the TUI just composes them.
 
 ### 2.4 Layout primitives
 
-- **sugar-boxer** — titled bordered boxes via `SugarBoxer`
-  (`sugar-boxer/src/SugarBoxer.php`); we use it for the outer frame
+- **sugar-panels** — titled bordered boxes via `SugarPanels`
+  (`sugar-panels/src/SugarPanels.php`); we use it for the outer frame
   around each pane.
-- **sugar-stickers** — `Viewport` for the scrollable lists (repo list,
+- **sugar-flexbox** — `Viewport` for the scrollable lists (repo list,
   file tree, commit log) and `Scrollbar` to render the indicator.
 - **candy-sprinkles** — `Style` for inline runs (highlight selected
   row, dim metadata text, brand colour for branch names).
@@ -214,7 +214,7 @@ Non-stories (deliberately out of scope):
 ## 4. Layout sketch — main screens
 
 Mock-ups are 80×24 (the smallest size soft-serve targets). Boxes are
-sugar-boxer; arrow keys + `j`/`k` move; `Enter` activates; `Esc`/`q`
+sugar-panels; arrow keys + `j`/`k` move; `Enter` activates; `Esc`/`q`
 goes back; `?` opens help.
 
 ### 4.1 Repo list view (phase 1)
@@ -238,7 +238,7 @@ goes back; `?` opens help.
 
 - Left gutter chevron (`▸`) marks selection.
 - Right column shows visibility + last-activity (relative).
-- Footer is the keymap (sugar-stickers shows scrollbar at right when
+- Footer is the keymap (sugar-flexbox shows scrollbar at right when
   list exceeds height; here it does not).
 
 ### 4.2 Repo detail view (phase 2)
@@ -267,7 +267,7 @@ goes back; `?` opens help.
 
 - Top metadata block is static text.
 - Three side-by-side panes for branches / tags / collaborators (use
-  sugar-stickers `FlexBox` to lay them out).
+  sugar-flexbox `FlexBox` to lay them out).
 - README rendered through `candy-shine\Renderer`.
 - `tab` cycles focus between the three list panes.
 - `f` jumps to file browser, `l` jumps to commit log.
@@ -292,7 +292,7 @@ goes back; `?` opens help.
 ```
 
 - Selected ref shown in title (default `master`); `b` pops a small
-  modal to pick a branch/tag (sugar-bits `Selector`).
+  modal to pick a branch/tag (sugar-widgets `Selector`).
 - Dirs sort first (alpha), then files (alpha).
 - Sizes for files only.
 
@@ -304,7 +304,7 @@ goes back; `?` opens help.
 │   2                                                                       │
 │   3  declare(strict_types=1);                                             │
 │   4                                                                       │
-│   5  namespace SugarCraft\Dash\Foundation;                                │
+│   5  namespace SugarCraft\Dashboard\Foundation;                                │
 │   6                                                                       │
 │   7  /**                                                                  │
 │   8   * Cell grid for ANSI rendering.                                     │
@@ -345,7 +345,7 @@ candy-sprinkles).
 
 ### 4.6 Help panel (phase 5)
 
-Modal overlay (sugar-bits `Toast`-style) showing the global keymap +
+Modal overlay (sugar-widgets `Toast`-style) showing the global keymap +
 per-screen extras. Press `?` again or `Esc` to dismiss.
 
 ---
@@ -385,8 +385,8 @@ and the repo-list screen.
 
 - `candy-git-server/composer.json` — add `sugarcraft/candy-wish`,
   `sugarcraft/candy-core`, `sugarcraft/candy-sprinkles`,
-  `sugarcraft/candy-git`, `sugarcraft/sugar-boxer`,
-  `sugarcraft/sugar-stickers`, `sugarcraft/candy-shine` as `@dev` plus
+  `sugarcraft/candy-git`, `sugarcraft/sugar-panels`,
+  `sugarcraft/sugar-flexbox`, `sugarcraft/candy-shine` as `@dev` plus
   matching path-repo entries (closure via `tools/check-path-repos.php
   --fix`).
 - `candy-git-server/bin/candy-git-server` — add `tui` subcommand.
@@ -408,7 +408,7 @@ and the repo-list screen.
 **Acceptance:**
 
 - `ssh user@host` (with no command) starts the TUI and shows the repo
-  list rendered through candy-sprinkles + sugar-boxer.
+  list rendered through candy-sprinkles + sugar-panels.
 - `git clone ssh://user@host:23231/<repo>` still works (existing
   path).
 - `vendor/bin/phpunit` green in candy-git-server + all four consuming libs
@@ -558,9 +558,9 @@ Pre-conditions that **must** be true before phase-1 ships:
 | candy-core OSC 52 emitter | ✅ shipped | `candy-core/src/Cmd.php` (`Cmd::setClipboard()`, L267) | clipboard for `c` keybind (phase 5) |
 | candy-shine Renderer | ✅ shipped | `candy-shine/src/Renderer.php` | README block |
 | candy-shine SyntaxHighlighter | ✅ shipped | `candy-shine/src/SyntaxHighlighter.php` | file viewer |
-| sugar-stickers Viewport | ✅ shipped | `sugar-stickers/src/Viewport.php` | scrollable lists |
-| sugar-stickers FlexBox | ✅ shipped | `sugar-stickers/src/Flex/FlexBox.php` | 3-pane layout on RepoDetailView |
-| sugar-boxer SugarBoxer | ✅ shipped | `sugar-boxer/src/SugarBoxer.php` | bordered panes |
+| sugar-flexbox Viewport | ✅ shipped | `sugar-flexbox/src/Viewport.php` | scrollable lists |
+| sugar-flexbox FlexBox | ✅ shipped | `sugar-flexbox/src/Flex/FlexBox.php` | 3-pane layout on RepoDetailView |
+| sugar-panels SugarPanels | ✅ shipped | `sugar-panels/src/SugarPanels.php` | bordered panes |
 | candy-git Git | 🟡 partial — phases 2–4 blocked on patches | `candy-git/src/Git.php` | only `status()`, `branches()`, `log(int $limit)`, `stage()`, `unstage()` shipped. Missing `tags()`, `show()`, `lsTree()`, `catFile()` and the `log($ref, $skip, $limit)` windowed signature — see §6.1 candy-git blockers below |
 
 ### 6.1 candy-git blockers (hard preconditions for phases 2–4)
@@ -650,7 +650,7 @@ A phase is "done" when:
    translations are a separate i18n carry-forward).
 6. `vendor/bin/phpunit` in **every** consumer lib that candy-git-server
    pulls in (candy-wish, candy-core, candy-git, candy-shine,
-   candy-sprinkles, sugar-boxer, sugar-stickers) still green.
+   candy-sprinkles, sugar-panels, sugar-flexbox) still green.
 7. `php tools/check-path-repos.php` reports closure clean.
 
 ---
@@ -660,7 +660,7 @@ A phase is "done" when:
 ### 9.1 Will candy-core handle this scale?
 
 candy-core's `Program` event loop has been tested on smaller TUIs
-(sugar-bits demos, sugar-dash dashboard). A repo-browser TUI is not
+(sugar-widgets demos, sugar-dashboard dashboard). A repo-browser TUI is not
 unreasonably bigger — five screens, single-user, single-program. The
 main load point is the commit log on a large repo (10k+ commits);
 phase 4 addresses that with windowed loading. **No expected
@@ -794,9 +794,9 @@ the wire-protocol port — the marquee TUI feature has not been built.
   OSC 52 emitter helper used by phase-5 clipboard keybind.
 - `candy-sprinkles/src/Style.php` + `candy-sprinkles/src/Theme.php` —
   styling.
-- `sugar-boxer/src/SugarBoxer.php` — bordered titled boxes.
-- `sugar-stickers/src/Viewport.php` + `sugar-stickers/src/Scrollbar.php`
-  + `sugar-stickers/src/Flex/FlexBox.php` — scrolling lists + layout.
+- `sugar-panels/src/SugarPanels.php` — bordered titled boxes.
+- `sugar-flexbox/src/Viewport.php` + `sugar-flexbox/src/Scrollbar.php`
+  + `sugar-flexbox/src/Flex/FlexBox.php` — scrolling lists + layout.
 - `candy-shine/src/Renderer.php` — README markdown.
 - `candy-shine/src/SyntaxHighlighter.php` — file viewer colouring.
 - `candy-git/src/Git.php` (`GitDriver` impl) — git shell-out.

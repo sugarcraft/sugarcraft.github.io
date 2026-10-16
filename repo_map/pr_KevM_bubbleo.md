@@ -25,15 +25,15 @@ From `MATCHUPS.md`:
 
 | Upstream | SugarCraft Port | Subdir | Status |
 |---|---|---|---|
-| KevM/bubbleo | **SugarCrumbs** | `sugar-crumbs/` | 🟢 |
+| KevM/bubbleo | **SugarNavstack** | `sugar-navstack/` | 🟢 |
 
-The mapping is specifically to `sugar-crumbs` for breadcrumb rendering. However, the upstream `bubbleo` library encompasses multiple components:
+The mapping is specifically to `sugar-navstack` for breadcrumb rendering. However, the upstream `bubbleo` library encompasses multiple components:
 
 | bubbleo Component | SugarCraft Mapping | Notes |
 |---|---|---|
-| `navstack.Model` | `candy-forms` (navigation), `candy-scriptui` (composition) | Stack-based navigation is distinct from CandyForms's form model |
-| `menu.Model` | `sugar-bits` (list widget) | Wraps bubbles/list for menu selection |
-| `breadcrumb.Model` | `sugar-crumbs` | Full mapping exists |
+| `navstack.Model` | `sugar-forms` (navigation), `candy-scriptui` (composition) | Stack-based navigation is distinct from CandyForms's form model  <!-- @rename-keep historical provenance --> |
+| `menu.Model` | `sugar-widgets` (list widget) | Wraps bubbles/list for menu selection |
+| `breadcrumb.Model` | `sugar-navstack` | Full mapping exists |
 | `shell.Model` | `candy-scriptui` | Composite nav + breadcrumb |
 | `window.Model` | `candy-core` | Offset-based dimension management |
 | `Closable` interface | Not directly mapped | Resource cleanup pattern |
@@ -98,9 +98,9 @@ func (m *tea.Model) View() {
 
 **Strategic Interpretation**:
 
-- **Direct Risk to SugarCraft**: HIGH. If `sugar-crumbs` or related libs implement `Closable`-like cleanup, the same concern applies: cleanup commands cannot be properly sequenced in the current design.
+- **Direct Risk to SugarCraft**: HIGH. If `sugar-navstack` or related libs implement `Closable`-like cleanup, the same concern applies: cleanup commands cannot be properly sequenced in the current design.
 - **Feature Opportunity**: SugarCraft should implement disposal-as-command pattern (`Dispose() tea.Cmd`) rather than `Close() error`. This allows proper cleanup sequencing in the TEA model lifecycle.
-- **The async init pattern** (`onDataInit`/`onDataInited`) mirrors React's `componentDidMount` and is a common request for data-loading in TUI apps. CandyForms handles this differently (via its form fields), but a general-purpose async init lifecycle hook could be valuable across all SugarCraft models.
+- **The async init pattern** (`onDataInit`/`onDataInited`) mirrors React's `componentDidMount` and is a common request for data-loading in TUI apps. SugarForms handles this differently (via its form fields), but a general-purpose async init lifecycle hook could be valuable across all SugarCraft models.
 
 ---
 
@@ -117,7 +117,7 @@ func (m *tea.Model) View() {
 | Pain Point | Evidence | Relevance to SugarCraft |
 |---|---|---|
 | **Resource cleanup timing** | Issue #5 requests `Dispose() tea.Cmd`; v0.1.5 added symmetry (close on push AND pop) | HIGH — SugarCraft's disposal patterns should handle both push and pop |
-| **Menu help visibility control** | PR #4 requests control over initial help display state | MEDIUM — sugar-bits may have similar toggle needs |
+| **Menu help visibility control** | PR #4 requests control over initial help display state | MEDIUM — sugar-widgets may have similar toggle needs |
 | **Delimiter override in Shell** | PR #6 bugfix: Shell.View() was overriding configured delimiter | MEDIUM — candy-scriptui composition must preserve child configurations |
 | **Quit-on-empty-stack behavior** | PR #2: Option to not quit when stack empties | MEDIUM — navigation models need configurable empty-state behavior |
 | **Functional options API** | PR #3: Builder pattern via functional options for Menu config | MEDIUM — SugarCraft APIs should use functional options for optional params |
@@ -161,7 +161,7 @@ func (m *tea.Model) View() {
 
 **Why it matters**: Some apps want help visible by default (e.g., CLI wizards, onboarding flows). Currently help is hidden on first keypress automatically.
 
-**SugarCraft Opportunity**: sugar-bits should support configurable help visibility state at initialization time.
+**SugarCraft Opportunity**: sugar-widgets should support configurable help visibility state at initialization time.
 
 ### PR #6: "Don't override configured delimiter in shell View" (Merged, by LaiArturs)
 
@@ -394,10 +394,10 @@ Maintainer (KevM) has merged PR #6 (external contributor) but left PRs #2, #3, #
 | Problem | Direct Risk | Severity |
 |---|---|---|
 | **Disposal not integrated with command system** | HIGH | `Closable.Close() error` is fire-and-forget. If SugarCraft uses similar disposal, cleanup actions can't be sequenced properly. |
-| **Empty-stack quit behavior is rigid** | MEDIUM | sugar-crumbs/nav should allow configurable empty-stack behavior |
+| **Empty-stack quit behavior is rigid** | MEDIUM | sugar-navstack/nav should allow configurable empty-stack behavior |
 | **Help state machine bugs** | MEDIUM | Help visibility toggle is error-prone. SugarCraft should test this explicitly. |
 | **Shell composition overrides child config** | MEDIUM | candy-scriptui must preserve child configuration (like the delimiter bug in PR #6) |
-| **No async data loading lifecycle** | MEDIUM | Issue #5's `onDataInit`/`onDataInited` pattern is a common need. candy-forms handles this for forms, but general models need a lifecycle hook. |
+| **No async data loading lifecycle** | MEDIUM | Issue #5's `onDataInit`/`onDataInited` pattern is a common need. sugar-forms handles this for forms, but general models need a lifecycle hook. |
 | **Functional options not used in v0.1.0 API** | LOW | Early API was designed before functional options adoption. PR #3 is retroactively fixing this. SugarCraft should use functional options from the start. |
 
 ---
@@ -445,7 +445,7 @@ interface Option {
 }
 ```
 
-**Libraries to update**: sugar-bits (many components), candy-forms, sugar-charts.
+**Libraries to update**: sugar-widgets (many components), sugar-forms, sugar-charts.
 
 ### 4. Empty-Stack Behavior Configuration (Priority: MEDIUM)
 
@@ -461,7 +461,7 @@ class NavigationOptions {
 
 ### 5. Configurable Help Visibility (Priority: LOW-MEDIUM)
 
-Similar to PR #4, sugar-bits components should allow:
+Similar to PR #4, sugar-widgets components should allow:
 - Initial help visibility state
 - Prevention of auto-hide on first keypress
 - Programmatic help toggle
@@ -521,7 +521,7 @@ PR #3 explicitly chose functional options because "it makes it much easier to ad
 
 ### Trend 1: Functional Options Adoption in Go TUI Ecosystem
 
-The adoption of functional options in PR #3 reflects a broader trend in the Go TUI ecosystem (and Go ecosystem generally) toward this pattern for API extensibility. Libraries like `charmbracelet/huh` (upstream of CandyForms) use functional options extensively.
+The adoption of functional options in PR #3 reflects a broader trend in the Go TUI ecosystem (and Go ecosystem generally) toward this pattern for API extensibility. Libraries like `charmbracelet/huh` (upstream of SugarForms) use functional options extensively.
 
 **SugarCraft alignment**: This is already the intended pattern per AGENTS.md guidelines.
 
@@ -529,7 +529,7 @@ The adoption of functional options in PR #3 reflects a broader trend in the Go T
 
 The request in Issue #5 for `onDataInit`/`onDataInited` hooks reflects a common need: TUI applications frequently need to load data asynchronously (HTTP, database, file I/O) and display loading states.
 
-**SugarCraft gap**: CandyForms handles this for form fields but there's no general-purpose async init lifecycle. This could be a SugarCraft-wide pattern.
+**SugarCraft gap**: SugarForms handles this for form fields but there's no general-purpose async init lifecycle. This could be a SugarCraft-wide pattern.
 
 ### Trend 3: Lifecycle Command Sequencing
 
@@ -549,9 +549,9 @@ The v0.1.5 push-symmetry change (closing on push AND pop) reflects a maturing un
 
 ### 1. First-Class Stack Navigation Library
 
-**Opportunity**: SugarCraft lacks a dedicated stack navigation primitive. `candy-forms` handles forms, `candy-scriptui` is a CLI shell, but neither provides the bubbleo-style `NavStack` with push/pop/close semantics.
+**Opportunity**: SugarCraft lacks a dedicated stack navigation primitive. `sugar-forms` handles forms, `candy-scriptui` is a CLI shell, but neither provides the bubbleo-style `NavStack` with push/pop/close semantics.
 
-**Recommendation**: Consider creating `sugar-nav` (or expanding `sugar-crumbs`) to provide:
+**Recommendation**: Consider creating `sugar-nav` (or expanding `sugar-navstack`) to provide:
 
 - `NavigationStack` model with configurable empty behavior
 - `NavigationItem` with `Disposable` disposal
@@ -596,7 +596,7 @@ trait AsyncInitializable {
 
 **Opportunity**: Ensure ALL SugarCraft APIs use functional options for optional parameters.
 
-**Recommendation**: Audit all existing SugarCraft constructors and add functional options where missing. This is especially important for `sugar-bits` components and `sugar-charts`.
+**Recommendation**: Audit all existing SugarCraft constructors and add functional options where missing. This is especially important for `sugar-widgets` components and `sugar-charts`.
 
 ---
 
@@ -618,7 +618,7 @@ trait AsyncInitializable {
 
 ### Priority 1: Fix Disposal Pattern (HIGH ROI)
 
-**Action**: Create `Disposable` interface in `candy-core` that returns `?Command`. Update `sugar-crumbs` and any navigation model to use it.
+**Action**: Create `Disposable` interface in `candy-core` that returns `?Command`. Update `sugar-navstack` and any navigation model to use it.
 
 **Why**: The current `Closable.Close() error` pattern cannot integrate with the command system. This is a foundational pattern used everywhere — fixing it early prevents cascading rework.
 

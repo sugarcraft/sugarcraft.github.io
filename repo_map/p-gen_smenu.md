@@ -168,7 +168,7 @@ Uses `setitimer()` with `SECOND/FREQ` granularity (100ms ticks via `TCK`). Multi
 
 ## SugarCraft Mapping
 
-### sugar-bits (Low-level components)
+### sugar-widgets (Low-level components)
 
 The TST implementation in `index.c` maps to tree-based data structures. The bitmap tracking for search matches is a notable pattern. However, `smenu` is a full application, not a library, so this is only a partial conceptual match.
 
@@ -178,7 +178,7 @@ The TST implementation in `index.c` maps to tree-based data structures. The bitm
 - Bit array utilities
 - Linked list implementation
 
-### candy-forms / candy-shine (TUI elements)
+### sugar-forms / candy-shine (TUI elements)
 
 `smenu` is itself a TUI selection widget. SugarCraft has no direct equivalent yet for terminal-based selection menus. A port would be a significant undertaking requiring:
 - Terminal capability detection

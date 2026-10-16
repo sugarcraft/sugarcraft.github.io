@@ -28,11 +28,11 @@ From the first-pass analysis (`repo_map/Genekkion_theHermit.md`):
 | theHermit Feature | SugarCraft Library | Notes |
 |------------------|-------------------|-------|
 | List overlay/quick fix popup | `sugar-list` | Needs overlay/wrapper pattern |
-| Item interface (`Title()`) | `sugar-bits` | Mirrors component/item protocol |
+| Item interface (`Title()`) | `sugar-widgets` | Mirrors component/item protocol |
 | Border rendering + styling | `candy-shine` | Lipgloss-based styling system |
 | Overlay rendering (centered) | `candy-scriptui` | Viewport/window management |
-| Background view preservation | `sugar-bits` (renderer) | Concurrent view update pattern |
-| Keyboard navigation (up/down) | `candy-forms` | Input handling, cursor movement |
+| Background view preservation | `sugar-widgets` (renderer) | Concurrent view update pattern |
+| Keyboard navigation (up/down) | `sugar-forms` | Input handling, cursor movement |
 | tea.Model interface | `candy-core` | Core TUI component contract |
 
 **Key architectural insight**: The Hermit is a wrapper/overlay pattern that spans multiple libs — no single SugarCraft lib maps directly.
@@ -343,7 +343,7 @@ The only insight is from the **original README's TODO list**:
 
 **theHermit solution**: Split background view into lines, overwrite the bounding box region, preserve surrounding content.
 
-**SugarCraft relevance**: `sugar-bits` renderer and `candy-scriptui` viewport management would need to support this pattern if we implement overlay components.
+**SugarCraft relevance**: `sugar-widgets` renderer and `candy-scriptui` viewport management would need to support this pattern if we implement overlay components.
 
 **Direct risk**: HIGH — This is core to SugarCraft's TUI rendering model. ANSI handling and overlay rendering are fundamental concerns.
 

@@ -32,15 +32,15 @@ To implement an item:
 
 | Library | Research Doc | Top Priority Items |
 |---------|--------------|-------------------|
-| **sugar-dash** | [research/libraries/sugar-dash-research.md](libraries/sugar-dash-research.md) | 1. Constraint layout, 2. StatefulWidget separation, 3. Reactive props |
-| **sugar-bits** | [research/libraries/sugar-bits-research.md](libraries/sugar-bits-research.md) | 1. validate_on timing, 2. restrict regex, 3. Table sorting/filtering |
-| **candy-forms** | [research/libraries/candy-forms-research.md](libraries/candy-forms-research.md) | 1. Vim keys, 2. Built-in validators, 3. Enhanced KeyMap |
+| **sugar-dashboard** | [research/libraries/sugar-dashboard-research.md](libraries/sugar-dashboard-research.md) | 1. Constraint layout, 2. StatefulWidget separation, 3. Reactive props |
+| **sugar-widgets** | [research/libraries/sugar-widgets-research.md](libraries/sugar-widgets-research.md) | 1. validate_on timing, 2. restrict regex, 3. Table sorting/filtering |
+| **sugar-forms** | [research/libraries/sugar-forms-research.md](libraries/sugar-forms-research.md) | 1. Vim keys, 2. Built-in validators, 3. Enhanced KeyMap |
 | **sugar-table** | [research/libraries/sugar-table-research.md](libraries/sugar-table-research.md) | 1. StyleFunc, 2. Flex columns, 3. Viewport virtualization |
 | **sugar-charts** | [research/libraries/sugar-charts-research.md](libraries/sugar-charts-research.md) | 1. Nice ticks, 2. Streaming, 3. Area fill |
-| **sugar-veil** | [research/libraries/sugar-veil-research.md](libraries/sugar-veil-research.md) | 1. Backdrop, 2. Animation, 3. Border chrome |
-| **sugar-stickers** | [research/libraries/sugar-stickers-research.md](libraries/sugar-stickers-research.md) | 1. Viewport, 2. Sticky via FlexBox, 3. Scrollbar |
-| **sugar-boxer** | [research/libraries/sugar-boxer-research.md](libraries/sugar-boxer-research.md) | 1. Box styles enum, 2. Text alignment, 3. Box titles |
-| **sugar-crumbs** | [research/libraries/sugar-crumbs-research.md](libraries/sugar-crumbs-research.md) | 1. Fix examples, 2. Closable interfaces, 3. Click regions |
+| **sugar-overlay** | [research/libraries/sugar-overlay-research.md](libraries/sugar-overlay-research.md) | 1. Backdrop, 2. Animation, 3. Border chrome |
+| **sugar-flexbox** | [research/libraries/sugar-flexbox-research.md](libraries/sugar-flexbox-research.md) | 1. Viewport, 2. Sticky via FlexBox, 3. Scrollbar |
+| **sugar-panels** | [research/libraries/sugar-panels-research.md](libraries/sugar-panels-research.md) | 1. Box styles enum, 2. Text alignment, 3. Box titles |
+| **sugar-navstack** | [research/libraries/sugar-navstack-research.md](libraries/sugar-navstack-research.md) | 1. Fix examples, 2. Closable interfaces, 3. Click regions |
 | **MySQL Workbench status & performance dashboard** (candy-sql parity study) | [mysql_workbench_dash.md](mysql_workbench_dash.md) | 1. Performance page metrics, 2. Two-connection cache model, 3. Page lifecycle / event-task model |
 
 ### Input & Readline
@@ -60,7 +60,7 @@ To implement an item:
 | **candy-log** | [research/libraries/candy-log-research.md](libraries/candy-log-research.md) | 1. NO_COLOR env, 2. PadLevelText, 3. Level values |
 | **candy-wish** | [research/libraries/candy-wish-research.md](libraries/candy-wish-research.md) | 1. Context propagation, 2. Channel events, 3. Session metadata |
 | **candy-ssh-launcher** | [research/libraries/candy-ssh-launcher-research.md](libraries/candy-ssh-launcher-research.md) | 1. proxy_jump, 2. SSH config import, 3. Identity files |
-| **candy-hermit** | [research/libraries/candy-hermit-research.md](libraries/candy-hermit-research.md) | 1. Item interface, 2. Filter injection, 3. Persistent history |
+| **sugar-quickpick** | [research/libraries/sugar-quickpick-research.md](libraries/sugar-quickpick-research.md) | 1. Item interface, 2. Filter injection, 3. Persistent history |
 
 ### Rendering & Media
 
@@ -69,7 +69,7 @@ To implement an item:
 | **candy-mdview** | [research/libraries/candy-mdview-research.md](libraries/candy-mdview-research.md) | 1. Pygments highlighting, 2. Enhanced themes, 3. File watching |
 | **candy-codeshot** | [research/libraries/candy-codeshot-research.md](libraries/candy-codeshot-research.md) | 1. Bg colors, 2. Lang detection, 3. VS Code themes |
 | **candy-mosaic** | [research/libraries/candy-mosaic-research.md](libraries/candy-mosaic-research.md) | 1. WezTerm fix, 2. Image deletion, 3. Quarter-block |
-| **candy-mouse** | [research/libraries/candy-mouse-research.md](libraries/candy-mouse-research.md) | 1. Hover tracking, 2. Drag detection, 3. Click count |
+| **sugar-mouse** | [research/libraries/sugar-mouse-research.md](libraries/sugar-mouse-research.md) | 1. Hover tracking, 2. Drag detection, 3. Click count |
 | **candy-palette** | [research/libraries/candy-palette-research.md](libraries/candy-palette-research.md) | 1. CLICOLOR, 2. Terminfo Tc, 3. tmux handling |
 | **candy-metrics** | [research/libraries/candy-metrics-research.md](libraries/candy-metrics-research.md) | 1. Histogram buckets, 2. Metric describe, 3. UpDownCounter |
 
@@ -92,7 +92,7 @@ To implement an item:
 | **sugar-crush** | [research/libraries/sugar-crush-research.md](libraries/sugar-crush-research.md) | 1. Session persistence, 2. Streaming UI, 3. Context compaction |
 | **candy-mail** | [research/libraries/candy-mail-research.md](libraries/candy-mail-research.md) | 1. TUI infra, 2. Vim keys, 3. Mastodon API |
 | **candy-sql** | [research/libraries/candy-sql-research.md](libraries/candy-sql-research.md) | 1. Schema columns, 2. Pagination, 3. Cell editing |
-| **candy-lister** | [research/libraries/candy-lister-research.md](libraries/candy-lister-research.md) | 1. FilterFunc interface, 2. FuzzyMatch, 3. Match indices |
+| **sugar-treelist** | [research/libraries/sugar-treelist-research.md](libraries/sugar-treelist-research.md) | 1. FilterFunc interface, 2. FuzzyMatch, 3. Match indices |
 | **super-candy** | [research/libraries/super-candy-research.md](libraries/super-candy-research.md) | 1. Copy/move, 2. Bookmarks, 3. Preview |
 | **candy-git-server** | [research/libraries/candy-git-server-research.md](libraries/candy-git-server-research.md) | 1. Interactive TUI, 2. Repo browser, 3. HTTP server |
 | **candy-starter** | [research/libraries/candy-starter-research.md](libraries/candy-starter-research.md) | 1. editorconfig, 2. CI workflow, 3. configure.php |
@@ -111,9 +111,9 @@ To implement an item:
 | 5 | sugar-toast | Stack offset fix | 1h | [link](libraries/sugar-toast-research.md) |
 | 6 | candy-ansi-inspect | SGR underline styles | 1h | [link](libraries/candy-ansi-inspect-research.md) |
 | 7 | candy-ansi-inspect | C0/C1 codes | 1-2h | [link](libraries/candy-ansi-inspect-research.md) |
-| 8 | candy-hermit | Item interface | 2-3h | [link](libraries/candy-hermit-research.md) |
-| 9 | sugar-crumbs | Fix examples | 1h | [link](libraries/sugar-crumbs-research.md) |
-| 10 | sugar-crumbs | Separator escaping | 1h | [link](libraries/sugar-crumbs-research.md) |
+| 8 | sugar-quickpick | Item interface | 2-3h | [link](libraries/sugar-quickpick-research.md) |
+| 9 | sugar-navstack | Fix examples | 1h | [link](libraries/sugar-navstack-research.md) |
+| 10 | sugar-navstack | Separator escaping | 1h | [link](libraries/sugar-navstack-research.md) |
 | 11 | candy-codeshot | Background colors | 2h | [link](libraries/candy-codeshot-research.md) |
 | 12 | candy-codeshot | Ligature flag | 1h | [link](libraries/candy-codeshot-research.md) |
 | 13 | candy-mosaic | WezTerm detection fix | 0.5h | [link](libraries/candy-mosaic-research.md) |
@@ -131,10 +131,10 @@ To implement an item:
 
 ### Layout & Compositing
 
-- **sugar-dash**: Constraint layout, StatefulWidget separation
-- **sugar-veil**: Backdrop, animation, overlay stacking
-- **sugar-boxer**: Multiple box styles, text alignment, titles
-- **sugar-stickers**: Viewport component, sticky positioning
+- **sugar-dashboard**: Constraint layout, StatefulWidget separation
+- **sugar-overlay**: Backdrop, animation, overlay stacking
+- **sugar-panels**: Multiple box styles, text alignment, titles
+- **sugar-flexbox**: Viewport component, sticky positioning
 
 ### Data Visualization
 
@@ -144,16 +144,16 @@ To implement an item:
 
 ### Input & Forms
 
-- **candy-forms**: Built-in validators, vim keys, fuzzy suggestions
+- **sugar-forms**: Built-in validators, vim keys, fuzzy suggestions
 - **sugar-readline**: History persistence, auto-suggest, vi mode
-- **sugar-bits**: validate_on timing, restrict regex, table sorting
+- **sugar-widgets**: validate_on timing, restrict regex, table sorting
 - **sugar-datepicker**: Date range picker, event store, localization
 
 ### Terminal Capabilities
 
 - **candy-vt**: Scrollback buffer, subparam parsing, cursor shapes
 - **candy-pty**: openpty FFI, waitpid FFI, raw mode
-- **candy-mouse**: Hover tracking, drag detection, click count
+- **sugar-mouse**: Hover tracking, drag detection, click count
 - **candy-palette**: CLICOLOR, terminfo Tc, color space handling
 
 ### App-Level

@@ -637,9 +637,9 @@ candy-kit's StatusLine is visually similar to log levels but lacks log semantics
 
 - **candy-log:** Time-stamped, leveled, potentially high-volume logging
 
-## 3. sugar-bits Progress Integration
+## 3. sugar-widgets Progress Integration
 
-Stage is for visual sequencing; `sugar-bits` progress components are for bars/gauges. Document the distinction.
+Stage is for visual sequencing; `sugar-widgets` progress components are for bars/gauges. Document the distinction.
 
 ---
 
@@ -696,7 +696,7 @@ pterm's `TextPrinter` interface with 8 formatting methods provides API consisten
 
 Textual's command palette uses fuzzy search with custom `Provider` system for extensible commands.
 
-**Lesson:** SugarCraft could add a `CommandPalette` component to candy-forms or candy-kit.
+**Lesson:** SugarCraft could add a `CommandPalette` component to sugar-forms or candy-kit.
 
 **Relevance:** Future interactive CLI enhancement.
 

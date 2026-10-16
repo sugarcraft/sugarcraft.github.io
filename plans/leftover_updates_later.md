@@ -2,7 +2,7 @@
 status: open
 phase: post-PTY-consolidation
 updated: 2026-05-17
-goal: Consolidated library-feature, single-source-of-truth, and sugar-dash leftovers
+goal: Consolidated library-feature, single-source-of-truth, and sugar-dashboard leftovers
 parent_plans:
   - plans/leftover_updates.md
   - docs/research/libraries/*.md
@@ -11,11 +11,11 @@ parent_plans:
   - plans/dash_update_opencoder_openagent.md
 ---
 
-# SugarCraft — library + single-source-of-truth + sugar-dash leftovers
+# SugarCraft — library + single-source-of-truth + sugar-dashboard leftovers
 
 Consolidated from a re-audit of `docs/research/libraries/*.md` (44 files,
 written **before** the PTY consolidation landed) and a deep audit of
-`sugar-dash`. The PTY-specific gaps live in `plans/leftover_updates.md`;
+`sugar-dashboard`. The PTY-specific gaps live in `plans/leftover_updates.md`;
 this file is everything else.
 
 The audit categories:
@@ -29,7 +29,7 @@ The audit categories:
 3. **Cross-cutting: ColorProfile + env detection** — should live in
    `candy-palette`, not be re-rolled in each lib.
 4. **Per-library leftover features** — verified gaps per research doc.
-5. **Sugar-dash detailed plan** — finish the Phase-0 reorg, fix the
+5. **Sugar-dashboard detailed plan** — finish the Phase-0 reorg, fix the
    broken `ExternalModule`, wire a real interactive dashboard, kill the
    chart duplication.
 6. **Strategic-decision items** — candy-mail (email vs social), candy-git-server
@@ -54,15 +54,15 @@ Today:
 
 | Primitive | Canonical (intended) | Duplicates found |
 |---|---|---|
-| `Style` | `candy-sprinkles/src/Style.php` (Lipgloss-style) | `sugar-dash/src/Foundation/Style.php` (~100 LOC bespoke) |
-| `Color` | `candy-core/src/Util/Color.php` | `sugar-dash/src/Foundation/Color.php` (thin alias that re-exposes every method) |
-| `Rect` | `candy-core/src/Rect.php` | `sugar-dash/src/Foundation/Rect.php` (62 LOC bespoke) |
-| `Buffer` | `candy-vt/src/Buffer/Buffer.php` | `sugar-dash/src/Foundation/Buffer.php` (288 LOC) + `sugar-dash/src/Grid/Buffer.php` (legacy) |
-| `Cell` | `candy-vt/src/Cell/Cell.php` | `sugar-dash/src/Foundation/Cell.php` |
-| `Theme` | (none yet — gap) | `sugar-dash/src/Foundation/Theme.php` (349 LOC) |
-| `Border` / `BorderTitle` | `candy-sprinkles/src/Border/*` | sugar-boxer plans to add its own; sugar-dash has `Components/Modal` border re-rolls |
-| `Viewport` / `Scrollbar` | `sugar-bits/src/Viewport/`, `sugar-bits/src/Scrollbar/` | `sugar-stickers` research plans to add these from scratch |
-| `StyleParser` (`[text](fg:red,bg:blue)`) | `sugar-dash/src/Foundation/StyleParser.php` (251 LOC) | `candy-sprinkles` will likely want it too; pick one home before second consumer ships |
+| `Style` | `candy-sprinkles/src/Style.php` (Lipgloss-style) | `sugar-dashboard/src/Foundation/Style.php` (~100 LOC bespoke) |
+| `Color` | `candy-core/src/Util/Color.php` | `sugar-dashboard/src/Foundation/Color.php` (thin alias that re-exposes every method) |
+| `Rect` | `candy-core/src/Rect.php` | `sugar-dashboard/src/Foundation/Rect.php` (62 LOC bespoke) |
+| `Buffer` | `candy-vt/src/Buffer/Buffer.php` | `sugar-dashboard/src/Foundation/Buffer.php` (288 LOC) + `sugar-dashboard/src/Grid/Buffer.php` (legacy) |
+| `Cell` | `candy-vt/src/Cell/Cell.php` | `sugar-dashboard/src/Foundation/Cell.php` |
+| `Theme` | (none yet — gap) | `sugar-dashboard/src/Foundation/Theme.php` (349 LOC) |
+| `Border` / `BorderTitle` | `candy-sprinkles/src/Border/*` | sugar-panels plans to add its own; sugar-dashboard has `Components/Modal` border re-rolls |
+| `Viewport` / `Scrollbar` | `sugar-widgets/src/Viewport/`, `sugar-widgets/src/Scrollbar/` | `sugar-flexbox` research plans to add these from scratch |
+| `StyleParser` (`[text](fg:red,bg:blue)`) | `sugar-dashboard/src/Foundation/StyleParser.php` (251 LOC) | `candy-sprinkles` will likely want it too; pick one home before second consumer ships |
 
 **Decision points:**
 
@@ -77,63 +77,63 @@ Today:
 
 **Actions (each ≤1 PR):**
 
-- SSOT-01a — Move `Theme.php` from sugar-dash Foundation to
-  candy-sprinkles. Update sugar-dash to import. Delete duplicate.
-- SSOT-01b — Delete `sugar-dash/src/Foundation/Style.php`; replace usages
+- SSOT-01a — Move `Theme.php` from sugar-dashboard Foundation to
+  candy-sprinkles. Update sugar-dashboard to import. Delete duplicate.
+- SSOT-01b — Delete `sugar-dashboard/src/Foundation/Style.php`; replace usages
   with `\SugarCraft\Sprinkles\Style`.
-- SSOT-01c — Delete `sugar-dash/src/Foundation/Color.php`; replace
+- SSOT-01c — Delete `sugar-dashboard/src/Foundation/Color.php`; replace
   type-hints with `\SugarCraft\Core\Util\Color`.
-- SSOT-01d — Delete `sugar-dash/src/Foundation/Rect.php`; replace with
+- SSOT-01d — Delete `sugar-dashboard/src/Foundation/Rect.php`; replace with
   `\SugarCraft\Core\Rect`.
-- SSOT-01e — Replace `sugar-dash/src/Foundation/Buffer.php` and
-  `sugar-dash/src/Foundation/Cell.php` with re-export aliases of
+- SSOT-01e — Replace `sugar-dashboard/src/Foundation/Buffer.php` and
+  `sugar-dashboard/src/Foundation/Cell.php` with re-export aliases of
   `\SugarCraft\Vt\Buffer\Buffer` and `\SugarCraft\Vt\Cell\Cell`.
-- SSOT-01f — Delete `sugar-dash/src/Grid/Buffer.php` (legacy
+- SSOT-01f — Delete `sugar-dashboard/src/Grid/Buffer.php` (legacy
   pre-reorg duplicate).
-- SSOT-01g — Move `sugar-dash/src/Foundation/StyleParser.php` to
+- SSOT-01g — Move `sugar-dashboard/src/Foundation/StyleParser.php` to
   `candy-sprinkles/src/StyleParser.php` (no logic change). Add a one-line
-  alias in sugar-dash if call-site count is high.
-- SSOT-01h — Add `candy-sprinkles` to `sugar-dash/composer.json` `require`
+  alias in sugar-dashboard if call-site count is high.
+- SSOT-01h — Add `candy-sprinkles` to `sugar-dashboard/composer.json` `require`
   (it already requires `candy-core` + `candy-sprinkles` per audit, so
   verify; if missing, add).
 
-**Acceptance:** `grep -rn "class Style\|class Color\|class Theme\|class Rect\|class Buffer\|class Cell\|class StyleParser" /home/sites/sugarcraft/*/src` shows exactly one canonical file per primitive; sugar-dash test suite green; `composer validate` clean per lib.
+**Acceptance:** `grep -rn "class Style\|class Color\|class Theme\|class Rect\|class Buffer\|class Cell\|class StyleParser" /home/sites/sugarcraft/*/src` shows exactly one canonical file per primitive; sugar-dashboard test suite green; `composer validate` clean per lib.
 
-### SSOT-02 — sugar-boxer composes, doesn't reinvent
+### SSOT-02 — sugar-panels composes, doesn't reinvent
 
-sugar-boxer research lists `BoxStyle` enum (Single/Double/Round/Bold/Classic/Hidden/Block), text alignment, box titles, colors, margin as missing features. **All five live in candy-sprinkles.** sugar-boxer should compose `\SugarCraft\Sprinkles\Style` + `\SugarCraft\Sprinkles\Border\Border` instead of rolling its own.
-
-**Action:**
-
-- SSOT-02 — Refactor sugar-boxer to accept `Style` and `Border` from candy-sprinkles. Delete any internal `Border*`. Adds candy-sprinkles to require (transitive via candy-core OK; verify path-repo per `tools/check-path-repos.php`).
-
-### SSOT-03 — sugar-stickers composes sugar-bits
-
-sugar-stickers research's Priority 1 is `Viewport`, Priority 3 is `Scrollbar`. **Both already exist** in `sugar-bits/src/Viewport/Viewport.php` and `sugar-bits/src/Scrollbar/`. The sticker-specific behaviour (sticky positioning, scroll sync) should layer **on top** of sugar-bits, not replace.
+sugar-panels research lists `BoxStyle` enum (Single/Double/Round/Bold/Classic/Hidden/Block), text alignment, box titles, colors, margin as missing features. **All five live in candy-sprinkles.** sugar-panels should compose `\SugarCraft\Sprinkles\Style` + `\SugarCraft\Sprinkles\Border\Border` instead of rolling its own.
 
 **Action:**
 
-- SSOT-03 — sugar-stickers' `Viewport` becomes a `final class` extending or composing `\SugarCraft\Bits\Viewport\Viewport` with the sticky-positioning extras. Add sugar-bits to require.
+- SSOT-02 — Refactor sugar-panels to accept `Style` and `Border` from candy-sprinkles. Delete any internal `Border*`. Adds candy-sprinkles to require (transitive via candy-core OK; verify path-repo per `tools/check-path-repos.php`).
 
-### SSOT-04 — sugar-crumbs click regions use candy-mouse
+### SSOT-03 — sugar-flexbox composes sugar-widgets
 
-sugar-crumbs research P4 calls for "Click-region rendering". `candy-mouse` is the canonical zone-tracking lib (APC marker + scan algorithm). sugar-crumbs should emit zone markers via candy-mouse, not embed click coordinates.
-
-**Action:**
-
-- SSOT-04 — When implementing click regions in sugar-crumbs, use `\SugarCraft\Mouse\Zones\Manager::mark()` for each crumb. Acceptance: `grep -n "zoneMark\|APC" sugar-crumbs/src` returns hits to candy-mouse, not inline copies.
-
-### SSOT-05 — Chart duplication: sugar-dash depends on sugar-charts
-
-`sugar-dash/src/Plot/Chart/{Bar,Heatmap,HeatMapChart,OHLC,Sparkline,SparklineArea,SparklineBar,SparkArea,Chart}` overlaps with `sugar-charts/src/{BarChart,Heatmap,OHLC,Sparkline,Chart,LineChart}`. Two parallel chart libraries.
-
-**Decision:** sugar-charts is the focused chart library — keep it canonical. sugar-dash's Plot/Chart should delegate.
+sugar-flexbox research's Priority 1 is `Viewport`, Priority 3 is `Scrollbar`. **Both already exist** in `sugar-widgets/src/Viewport/Viewport.php` and `sugar-widgets/src/Scrollbar/`. The sticker-specific behaviour (sticky positioning, scroll sync) should layer **on top** of sugar-widgets, not replace.
 
 **Action:**
 
-- SSOT-05a — Audit each `sugar-dash/src/Plot/Chart/*.php` against `sugar-charts/src/*.php`. For each direct duplicate, delete the dash version + replace with re-export.
-- SSOT-05b — sugar-dash variants that add value beyond sugar-charts (e.g. `GaugeWithDetail`, `WordCloud`, `Treemap`) stay in dash; document the rule "leaf chart families = sugar-charts; visualizations + dashboard widgets = sugar-dash."
-- SSOT-05c — Add `sugarcraft/sugar-charts` to `sugar-dash/composer.json` `require`.
+- SSOT-03 — sugar-flexbox' `Viewport` becomes a `final class` extending or composing `\SugarCraft\Widgets\Viewport\Viewport` with the sticky-positioning extras. Add sugar-widgets to require.
+
+### SSOT-04 — sugar-navstack click regions use sugar-mouse
+
+sugar-navstack research P4 calls for "Click-region rendering". `sugar-mouse` is the canonical zone-tracking lib (APC marker + scan algorithm). sugar-navstack should emit zone markers via sugar-mouse, not embed click coordinates.
+
+**Action:**
+
+- SSOT-04 — When implementing click regions in sugar-navstack, use `\SugarCraft\Mouse\Zones\Manager::mark()` for each crumb. Acceptance: `grep -n "zoneMark\|APC" sugar-navstack/src` returns hits to sugar-mouse, not inline copies.
+
+### SSOT-05 — Chart duplication: sugar-dashboard depends on sugar-charts
+
+`sugar-dashboard/src/Plot/Chart/{Bar,Heatmap,HeatMapChart,OHLC,Sparkline,SparklineArea,SparklineBar,SparkArea,Chart}` overlaps with `sugar-charts/src/{BarChart,Heatmap,OHLC,Sparkline,Chart,LineChart}`. Two parallel chart libraries.
+
+**Decision:** sugar-charts is the focused chart library — keep it canonical. sugar-dashboard's Plot/Chart should delegate.
+
+**Action:**
+
+- SSOT-05a — Audit each `sugar-dashboard/src/Plot/Chart/*.php` against `sugar-charts/src/*.php`. For each direct duplicate, delete the dash version + replace with re-export.
+- SSOT-05b — sugar-dashboard variants that add value beyond sugar-charts (e.g. `GaugeWithDetail`, `WordCloud`, `Treemap`) stay in dash; document the rule "leaf chart families = sugar-charts; visualizations + dashboard widgets = sugar-dashboard."
+- SSOT-05c — Add `sugarcraft/sugar-charts` to `sugar-dashboard/composer.json` `require`.
 
 ### SSOT-06 — `posix_isatty` direct calls
 
@@ -159,7 +159,7 @@ Found in `candy-mosaic/src/Detect.php:236-237`. Canonical: `\SugarCraft\Pty\Cont
 
 ### SSOT-09 — `Module\Module` contract aligns with candy-core `Model`
 
-sugar-dash's `Module/Module.php` uses `array<string,mixed>` state. candy-core's `\SugarCraft\Core\Model` is the established Elm-style contract (`update(Msg): [Model, ?Cmd]`). Two incompatible contracts in one monorepo.
+sugar-dashboard's `Module/Module.php` uses `array<string,mixed>` state. candy-core's `\SugarCraft\Core\Model` is the established Elm-style contract (`update(Msg): [Model, ?Cmd]`). Two incompatible contracts in one monorepo.
 
 **Action:**
 
@@ -176,9 +176,9 @@ Canonical pattern: `candy-ssh-launcher/src/Lang.php` wraps `\SugarCraft\Core\I18
 - `sugar-datepicker` — only ships `DatePicker.php`; user-facing date strings hardcoded.
 - `sugar-table` — header / pagination / empty-state strings hardcoded.
 - `sugar-toast` — alert level labels (Info/Warning/Error) hardcoded.
-- `sugar-stickers` — when feature work lands, must include Lang.
-- `sugar-boxer` — alignment-mode labels in examples.
-- `sugar-crumbs` — separator + ellipsis labels.
+- `sugar-flexbox` — when feature work lands, must include Lang.
+- `sugar-panels` — alignment-mode labels in examples.
+- `sugar-navstack` — separator + ellipsis labels.
 - `super-candy` — file-manager prompts.
 - `candy-git` — many user-facing strings (commit prompts, errors).
 
@@ -252,7 +252,7 @@ because research adds three items the PTY plan did not call out:)
 - `/dev/tty` size-forwarding variant of `SignalForwarder::attachSigwinch` — current variant writes only to PTY master.
 - Public `Pty::setControllingTerminal(int $fd)` extraction — currently embedded in `bin/pty-shim.php`.
 
-### candy-mouse
+### sugar-mouse
 
 - `ZoneHoverTracker` + `MsgZoneEnter` / `MsgZoneExit` (Priority 1).
 - `DragTracker` + `MsgZoneDragStart/Move/End` (Priority 2).
@@ -297,7 +297,7 @@ because research adds three items the PTY plan did not call out:)
 - STDIN value input (P5).
 - Atomic `Database::transaction(callable)` wrapping SQLite tx (P6).
 
-### sugar-veil
+### sugar-overlay
 
 - Backdrop/dimming effect (§4.1).
 - Animation system slide/fade/scale (§4.2).
@@ -306,7 +306,7 @@ because research adds three items the PTY plan did not call out:)
 - Auto-sizing/content-aware dimensions (§4.5).
 - Border chrome (§4.6) — must compose `candy-sprinkles` Border.
 
-### candy-forms
+### sugar-forms
 
 - Built-in validators: Required, Email, MinLength, MaxLength, Pattern (§3.1 P1).
 - Fuzzy autocomplete `withFuzzySuggestions()` (§3.2 P2).
@@ -316,7 +316,7 @@ because research adds three items the PTY plan did not call out:)
 - Select with enum/index mode (§3.6).
 - `Theme::$errorSummary` separate from `Theme::$error` (§2.4).
 
-### sugar-bits
+### sugar-widgets
 
 - TextInput `validate_on` timing enum (Phase 1, HIGH).
 - TextInput `restrict` regex pattern (Phase 1, HIGH).
@@ -333,7 +333,7 @@ because research adds three items the PTY plan did not call out:)
 - LineChart `withFill()` area fill (§3.1.3).
 - MarkLine (Min/Max/Average) (§3.2.2).
 - Data aggregation: `bucketByTime`, `movingAverage`, `resample` (§3.2.3).
-- Optional `BrailleCanvas` rendering mode (§3.2.1) — should consume `sugar-dash/src/Plot/Braille` (or move braille to candy-sprinkles).
+- Optional `BrailleCanvas` rendering mode (§3.2.1) — should consume `sugar-dashboard/src/Plot/Braille` (or move braille to candy-sprinkles).
 - Named color themes (Dracula, OneDark, Solarized, TokyoNight) — pulled from candy-sprinkles Theme once SSOT-01a lands.
 
 ### candy-sprinkles
@@ -355,7 +355,7 @@ because research adds three items the PTY plan did not call out:)
 - VS Code / chroma JSON theme compatibility (§4.1.3).
 - Font embedding in SVG via base64 TTF (§4.2.1).
 - Line highlighting (§4.3.2).
-- Interactive TUI customization (§4.3.3) — depends on candy-forms features.
+- Interactive TUI customization (§4.3.3) — depends on sugar-forms features.
 
 ### candy-flip
 
@@ -369,7 +369,7 @@ because research adds three items the PTY plan did not call out:)
 - Kitty/WezTerm graphics-protocol output path (P10) — overlap with candy-mosaic; pick one home. **Recommendation:** Kitty/WezTerm rendering belongs in candy-mosaic; candy-flip emits frame bytes only.
 - Frame cache (P12).
 
-### candy-hermit
+### sugar-quickpick
 
 - `Item` interface + numbered items (§3.1 P1).
 - Filter function injection `setFilterFn()` (§3.2 P2).
@@ -400,7 +400,7 @@ because research adds three items the PTY plan did not call out:)
 (Scaffold-template lib; most items are repo-level concerns already
 handled by the monorepo.) Skip until someone uses it as a template.
 
-### candy-lister
+### sugar-treelist
 
 - Filter interface (Priority 1) — `withFilterFn()`.
 - `FuzzyMatch` class with Smith-Waterman scoring (Priority 2).
@@ -482,9 +482,9 @@ research's H1-H5, M1-M3, and Phase-2 terminfo `infocmp` items.
 - Text wrapping inside cells, multi-line row support.
 - Multiple border styles — consume candy-sprinkles.
 
-### sugar-stickers
+### sugar-flexbox
 
-- See SSOT-03 (Viewport / Scrollbar consume sugar-bits).
+- See SSOT-03 (Viewport / Scrollbar consume sugar-widgets).
 - Sticky positioning via FlexBox extension (Priority 2).
 - Scroll synchronization (Priority 4, low).
 
@@ -520,16 +520,16 @@ research's H1-H5, M1-M3, and Phase-2 terminfo `infocmp` items.
 - EventStore architecture.
 - i18n (needs Lang.php; see §2).
 
-### sugar-crumbs
+### sugar-navstack
 
 - Implement missing `pushDirectory` / `view` / `filter` referenced by `examples/navigation.php` (P1).
 - `Closable` + lifecycle hooks `onEnter` / `onLeave` (P2).
 - URL/path derivation methods on `NavStack` (P3).
-- Click-region rendering (P4) — see SSOT-04 (consume candy-mouse).
+- Click-region rendering (P4) — see SSOT-04 (consume sugar-mouse).
 - Separator escaping in titles (P5).
 - aria-current / semantic HTML rendering (P6).
 
-### sugar-boxer
+### sugar-panels
 
 - See SSOT-02. After consuming candy-sprinkles, the surface that's
   actually leftover: text alignment Left/Center/Right; margin (outer
@@ -557,7 +557,7 @@ research's H1-H5, M1-M3, and Phase-2 terminfo `infocmp` items.
 
 ---
 
-## 4. Sugar-dash — thorough plan
+## 4. Sugar-dashboard — thorough plan
 
 The audit found that the Phase-0 reorg from `plans/dash_update_claude.md`
 **stalled mid-move**. The legacy `src/Grid/` namespace still holds 74
@@ -597,11 +597,11 @@ feature work.
      right subnamespace, delete Grid version. ~30%.
    - **Delete** (legacy, no consumer): drop. ~10%.
 
-2. Walk each file's reverse-deps with `grep -rn "use SugarCraft\\Dash\\Grid\\<Name>"`
+2. Walk each file's reverse-deps with `grep -rn "use SugarCraft\\Dashboard\\Grid\\<Name>"`
    and update. **All 16 examples** are dependents — bulk rewrite under
    `examples/`.
 
-3. Add `class Grid_Foo extends \SugarCraft\Dash\<NewNs>\Foo {}` aliases
+3. Add `class Grid_Foo extends \SugarCraft\Dashboard\<NewNs>\Foo {}` aliases
    ONLY when grep finds a public extern call site (unlikely pre-1.0).
    Otherwise just delete.
 
@@ -610,18 +610,18 @@ feature work.
 
 **Acceptance:**
 
-- `find sugar-dash/src/Grid -type f` returns zero files (or only a single
+- `find sugar-dashboard/src/Grid -type f` returns zero files (or only a single
   `Grid.php` BC stub if grep found an extern caller).
 - `vendor/bin/phpunit` green.
 - `examples/*.php` all run cleanly.
-- `MATCHUPS.md` row for sugar-dash unchanged.
+- `MATCHUPS.md` row for sugar-dashboard unchanged.
 
 **Size:** [multi-PR, ~3]. Split as: Foundation primitives + layout
 enums (one), chart family (one), event plumbing + state (one).
 
 ### Dash-02 — Fix `Plugin/ExternalModule.php`
 
-**Bug:** `sugar-dash/src/Plugin/ExternalModule.php:139,153` reads
+**Bug:** `sugar-dashboard/src/Plugin/ExternalModule.php:139,153` reads
 `proc_get_status($this->process)['pipes']`. `proc_get_status()` does
 not include a `pipes` key — those come from the `&$pipes` byref param
 to `proc_open()` and must be stored separately.
@@ -637,7 +637,7 @@ to `proc_open()` and must be stored separately.
    reading JSON from stdin, echoing back. The existing
    `tests/Plugin/ExternalModuleTest.php` must round-trip against this
    fixture (not against mocks).
-4. Add `sugarcraft/candy-pty` to `sugar-dash/composer.json` `require`
+4. Add `sugarcraft/candy-pty` to `sugar-dashboard/composer.json` `require`
    + path-repo.
 
 **Acceptance:** integration test `ExternalModuleRoundTripTest` boots a
@@ -648,12 +648,12 @@ correct response shape on each. No mocks.
 
 ### Dash-03 — SSOT pass on Foundation
 
-Apply SSOT-01a..h from §1. After this, sugar-dash imports `Style`,
+Apply SSOT-01a..h from §1. After this, sugar-dashboard imports `Style`,
 `Color`, `Buffer`, `Cell`, `Rect`, `Theme`, `StyleParser` from canonical
 homes. The `src/Foundation/` directory shrinks to just `Drawable.php`,
-`Item.php`, `Sizer.php` (sugar-dash-specific interfaces).
+`Item.php`, `Sizer.php` (sugar-dashboard-specific interfaces).
 
-**Acceptance:** `wc -l sugar-dash/src/Foundation/*.php` shows < 200 LOC
+**Acceptance:** `wc -l sugar-dashboard/src/Foundation/*.php` shows < 200 LOC
 total. Composer require lists `candy-vt` + `candy-sprinkles` + `candy-core`.
 
 **Size:** 1 PR (combines a–h since they touch the same lib).
@@ -707,10 +707,10 @@ What it exercises:
   Model contract (Dash-04).
 - `\SugarCraft\Pty\TermiosFactory` + `\SugarCraft\Pty\SignalForwarder` —
   raw mode + SIGWINCH (zero direct `stty` shell-outs).
-- `\SugarCraft\Dash\Layout\Boxer\Boxer` — bubbleboxer-style address tree
+- `\SugarCraft\Dashboard\Layout\Boxer\Boxer` — bubbleboxer-style address tree
   + ModelMap (independent per-leaf updates).
-- `\SugarCraft\Dash\Layout\Tile\Resolver` — 5-phase constraint resolver.
-- `\SugarCraft\Dash\Layout\FocusManager` — tab/arrow focus rotation.
+- `\SugarCraft\Dashboard\Layout\Tile\Resolver` — 5-phase constraint resolver.
+- `\SugarCraft\Dashboard\Layout\FocusManager` — tab/arrow focus rotation.
 - 1Hz `TickMsg` driving Clock + System refresh; Weather refresh on a
   longer interval via the Module's `interval()` declaration.
 - `q` / `Ctrl-C` for quit; `tab` / `arrows` for focus.
@@ -806,11 +806,11 @@ process restart in a test.
 
 ### Dash-11 — Chart duplication cleanup (SSOT-05)
 
-Apply SSOT-05a-c. `sugar-dash/src/Plot/Chart/*` files that duplicate
+Apply SSOT-05a-c. `sugar-dashboard/src/Plot/Chart/*` files that duplicate
 sugar-charts get deleted; dash declares `sugarcraft/sugar-charts`
 dependency.
 
-**Acceptance:** `grep` shows no duplicate class names. sugar-dash test
+**Acceptance:** `grep` shows no duplicate class names. sugar-dashboard test
 suite green using imported sugar-charts versions.
 
 **Size:** 1 PR.
@@ -842,14 +842,14 @@ No widget receives a Theme today — colors are hardcoded hex literals in
 each component's render. Add `Drawable::withTheme(Theme): self` (default
 impl: pass-through). Layout containers fan the theme down.
 
-Once landed, sugar-dash dashboards can switch dark/light at runtime via
+Once landed, sugar-dashboard dashboards can switch dark/light at runtime via
 a Msg.
 
 **Size:** 1 PR (touches many widgets — bulk find/replace).
 
 ### Dash-15 — Cleanup: delete one-shot migration scripts
 
-`sugar-dash/` root contains:
+`sugar-dashboard/` root contains:
 - `delete_grid_files.{php,py,sh}`
 - `delete-moved-files.sh`
 - `migrate.sh`
@@ -874,7 +874,7 @@ until a real profiler trace flags the cost.
 - `SplFixedArray` for Buffer cells (3MB vs 12MB at 200×60).
 - Style flyweight: intern Styles by `(fg, bg, modifier)` triple.
 - Render diffing: dirty-rect tracking per widget.
-- Indexed `RingBuffer` (O(1) push) — already in `sugar-dash/src/Plot/RingBuffer.php`; verify it's indexed, not slice-shift.
+- Indexed `RingBuffer` (O(1) push) — already in `sugar-dashboard/src/Plot/RingBuffer.php`; verify it's indexed, not slice-shift.
 
 ---
 
@@ -909,9 +909,9 @@ CLAUDE.md gotcha).
 3. SSOT-08a/b/c — `candy-palette::Probe` consolidation.
 4. SSOT-09 — `Module\Module` aligns with `Model` (depends on SSOT-01a
    being available so Modules can use Theme).
-5. Dash-03 (sugar-dash imports the new canonical primitives).
+5. Dash-03 (sugar-dashboard imports the new canonical primitives).
 
-**Group B — sugar-dash core (sequence: D1 → D2 → D3=A5 → D4 → D5 → … D15):**
+**Group B — sugar-dashboard core (sequence: D1 → D2 → D3=A5 → D4 → D5 → … D15):**
 
 The Dash-01..15 list above, mostly serial. Dash-01 is multi-PR; the rest
 are 1 PR each.
@@ -923,7 +923,7 @@ are 1 PR each.
 - candy-bits Table sort/filter/paginate (Phase 2/3).
 - candy-prompt validators + fuzzy autocomplete.
 - candy-vt P0 items (DECSTBM, DECAWM, subparams).
-- candy-mouse hover/drag/click-counter.
+- sugar-mouse hover/drag/click-counter.
 - candy-mosaic quarter-block renderer + delete API.
 - … (each lib's bullet list above is its own backlog.)
 

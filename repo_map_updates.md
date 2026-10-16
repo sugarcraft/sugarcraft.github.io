@@ -24,8 +24,8 @@ Files using ReactPHP (excluding vendor/):
 - `candy-core/src/Program.php`: `Loop`, `LoopInterface` — **candy-async should NOT interfere** (core runtime, owns the shared loop)
 - `candy-core/src/WorkerPool.php`: `LoopInterface`, `TimerInterface`, `Deferred`, `PromiseInterface` — **Would benefit from candy-async** (could use CancellationToken for worker cancellation)
 - `candy-core/src/ProgramOptions.php`: `LoopInterface` — **candy-async should NOT interfere** (just a config object)
-- `candy-forms/src/Field/Input.php`: `Loop`, `Deferred` — **Would benefit from candy-async** (debounce via Loop::addTimer, could use AsyncOps::debounce)
-- `candy-forms/src/Field/Select.php`: `Loop`, `Deferred` — **Would benefit from candy-async** (same debounce pattern as Input)
+- `sugar-forms/src/Field/Input.php`: `Loop`, `Deferred` — **Would benefit from candy-async** (debounce via Loop::addTimer, could use AsyncOps::debounce)
+- `sugar-forms/src/Field/Select.php`: `Loop`, `Deferred` — **Would benefit from candy-async** (same debounce pattern as Input)
 - `candy-mosaic/src/AsyncRenderer.php`: `PromiseInterface` — **Would benefit from candy-async** (just a strategy interface)
 - `candy-mosaic/src/SyncAsyncRenderer.php`: Not read yet — likely PromiseInterface
 - `candy-mosaic/src/AdaptiveImage.php`: Not read yet — likely Loop/Promise
@@ -41,18 +41,18 @@ Existing ReactPHP versions pinned:
 - `react/promise: ^3.3` (candy-core, candy-mosaic, sugar-crush, super-candy)
 - `react/promise-timer: ^1.9` (candy-wish)
 
-Roadmap for step-23 (candy-forms/candy-forms/candy-core migrate to candy-async):
+Roadmap for step-23 (sugar-forms/sugar-forms/candy-core migrate to candy-async):
 - Replace `Loop::addTimer` debounce with `AsyncOps::debounce()` in Input.php, Select.php
 - Replace manual 30s timeout in AsyncMiddleware.php with `AsyncOps::withTimeout()`
 - WorkerPool.php cancellation via CancellationToken
 
 ## Active Items
 
-_All items in this section have been resolved by the completion of steps 20–40 (PRs #899–#920 merged). Step-15 (candy-forms) was confirmed complete (PRs #870, #895) — all 7 namespace imports map to candy-* packages; 709 tests pass; no sugar-* dependencies remain. Step-37 catch-all confirmed no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, candy-mouse, candy-starter). See the Resolved Items section below for the full archive._
+_All items in this section have been resolved by the completion of steps 20–40 (PRs #899–#920 merged). Step-15 (sugar-forms) was confirmed complete (PRs #870, #895) — all 7 namespace imports map to candy-* packages; 709 tests pass; no sugar-* dependencies remain. Step-37 catch-all confirmed no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, sugar-mouse, candy-starter). See the Resolved Items section below for the full archive._
 
 ## Resolved Items
 
-- [RESOLVED | 2026-06-01 | step-41 | scribe] All Active Items drained — steps 20–40 complete (PRs #899–#920 merged). Step-15 (candy-forms) confirmed complete — PRs #870, #895 wired candy-forms onto shared foundations; step-37 verified no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, candy-mouse, candy-starter).
+- [RESOLVED | 2026-06-01 | step-41 | scribe] All Active Items drained — steps 20–40 complete (PRs #899–#920 merged). Step-15 (sugar-forms) confirmed complete — PRs #870, #895 wired sugar-forms onto shared foundations; step-37 verified no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, sugar-mouse, candy-starter).
 
 - [RESOLVED | 2026-06-01 | step-35 | coder] candy-codetime + candy-mail + candy-git-server: adopt candy-async — MERGED PR #915:
   - candy-codetime: added CancellationToken support to Store::append()
@@ -60,7 +60,7 @@ _All items in this section have been resolved by the completion of steps 20–40
   - candy-git-server: added Subscriptions for graceful shutdown in GitDaemon
   - Branch ai/async-adopters merged to master; Commit SHA: 30ea7afa
 
-- [RESOLVED | 2026-05-31 | step-32 | coder] candy-tetris + candy-minesweeper: adopt candy-buffer + candy-mouse + candy-testing — MERGED PR #911:
+- [RESOLVED | 2026-05-31 | step-32 | coder] candy-tetris + candy-minesweeper: adopt candy-buffer + sugar-mouse + candy-testing — MERGED PR #911:
   - candy-tetris: Buffer-based playfield rendering; candy-minesweeper: Buffer-based minefield
   - Branch ai/games-shared merged to master
 
@@ -90,11 +90,11 @@ _All items in this section have been resolved by the completion of steps 20–40
 
 - [2026-05-28 | step-01 | fixer] CsiHandlerImpl.php created as self-contained no-op stub — terminal delegation deferred to step-12. (was: BLOCKING entry about missing CsiHandlerImpl.php)
 
-- [2026-05-31 | step-22 | fixer] sugar-veil + candy-lister coverage gap fix:
-  - **candy-lister**: 95.12% overall lines (234/246) — ✅ ABOVE 95% TARGET
+- [2026-05-31 | step-22 | fixer] sugar-overlay + sugar-treelist coverage gap fix:
+  - **sugar-treelist**: 95.12% overall lines (234/246) — ✅ ABOVE 95% TARGET
     - Item: 100% lines (3/3), StringItem: 100% lines (2/2), DefaultPrefixer: 100%, DefaultSuffixer: 100%, FuzzyMatch: 100%, Model: 92.64% (151/163)
-    - Added: `candy-lister/tests/ItemTest.php` (5 tests covering Item::string(), id, value property), `DefaultPrefixerTest.php` (10 tests covering initPrefixer, prefix, ansiWidth, various prefixer modes), expanded ModelTest.php with 13 new tests covering cursor edge cases, style setters, sort/filter edge cases, multi-line items, private method exercise via public API (splitOverWidth, hardWrap, renderItem wrap logic), 75 total tests, 122 assertions, ALL PASS
-  - **sugar-veil**: 88.37% overall lines (266/301) — BELOW 95% TARGET
+    - Added: `sugar-treelist/tests/ItemTest.php` (5 tests covering Item::string(), id, value property), `DefaultPrefixerTest.php` (10 tests covering initPrefixer, prefix, ansiWidth, various prefixer modes), expanded ModelTest.php with 13 new tests covering cursor edge cases, style setters, sort/filter edge cases, multi-line items, private method exercise via public API (splitOverWidth, hardWrap, renderItem wrap logic), 75 total tests, 122 assertions, ALL PASS
+  - **sugar-overlay**: 88.37% overall lines (266/301) — BELOW 95% TARGET
     - Fade: 100% lines ✅, Scale: 94.44% (17/18 — 1 line in private easing() method), Slide: 88.89% (32/36 — 4 lines in private helper methods isTopAnchor/isBottomAnchor/isLeftAnchor/isRightAnchor), Position: 100% ✅, Veil: 86.13% (149/173), VeilStack: 86.05% (37/43)
     - Added: `FadeTest.php::testOpacity*` (7 tests covering opacity() method at progress 0/0.5/1.0, custom easing, monotonicity), `VeilStackTest.php::testCompositeAll*` (2 tests for empty stack), `VeilStackTest.php::testCountMethod` (1 test for Countable interface), `VeilTest.php::testAnimate*` (5 tests for animate() without animation, with slide/fade/scale animation at various progress values), `VeilTest.php::testGetManager*` (2 tests for deprecated getManager()), `VeilTest.php::testWithBackdrop*` (3 tests for backdrop clamping at negative/positive/over100), `VeilTest.php::testWithAnimation*` (3 tests for animation kind setters), 129 total tests, 200 assertions, ALL PASS
     - **Uncovered gaps** (architectural — cannot be directly tested):
@@ -141,11 +141,11 @@ _All items in this section have been resolved by the completion of steps 20–40
   - Tests: candy-mdview 68 pass (143 assertions), candy-wish 144 pass (352 assertions)
   - TerminalProbe already in candy-mdview dependency tree (via candy-shine -> candy-mdview path-repos); NOT in candy-wish dependency tree before this step
 
-- [2026-05-31 | step-33 | coder] candy-kv + candy-ssh-launcher + candy-git: adopt candy-fuzzy:
-  - Added `sugarcraft/candy-fuzzy: dev-master` + path-repo to all three libs' composer.json
+- [2026-05-31 | step-33 | coder] candy-kv + candy-ssh-launcher + candy-git: adopt sugar-fuzzy:
+  - Added `sugarcraft/sugar-fuzzy: dev-master` + path-repo to all three libs' composer.json
   - candy-ssh-launcher: replaced `Picker::filterMatches()` `str_contains`-style filter with `SmithWatermanMatcher::matchAll()` — scored ranking + match-highlight indices wired into renderer via `highlightLine()` (ANSI bold+cyan on matched grapheme clusters)
-  - candy-kv: no interactive filter UI present — only glob-to-SQLLIKE pattern filtering in `Database::buildGlobQuery()`. Added candy-fuzzy dependency as infrastructure for future fuzzy key search (Levenshtein `suggestSimilar()` remains typo-suggestion only).
-  - candy-git: no interactive filter UI present — StashManager has cursor navigation but no type-to-search. Added candy-fuzzy dependency as infrastructure for future fuzzy stash search.
+  - candy-kv: no interactive filter UI present — only glob-to-SQLLIKE pattern filtering in `Database::buildGlobQuery()`. Added sugar-fuzzy dependency as infrastructure for future fuzzy key search (Levenshtein `suggestSimilar()` remains typo-suggestion only).
+  - candy-git: no interactive filter UI present — StashManager has cursor navigation but no type-to-search. Added sugar-fuzzy dependency as infrastructure for future fuzzy stash search.
   - Tests: candy-ssh-launcher 70 pass (180 assertions), candy-kv 66 pass (122 assertions), candy-git 116 pass (333 assertions, 2 skipped)
   - Path-repo closure: clean (55 libs scanned)
   - Branch: ai/filter-consumers
@@ -163,7 +163,7 @@ _All items in this section have been resolved by the completion of steps 20–40
 - [2026-06-01 | step-37 | shipper] NO-OP — step-37 catch-all: deferral sweep complete, no remaining actionable libs — MERGED PR #917:
   - Branch ai/sweep-catchall merged to master
   - 1 file changed, 8 insertions(+) in docs/repo_map_update_followups.md (DEFERRED notes only, no source code changes)
-  - All 4 remaining libs from step-30 audit have DEFERRED status in followups (candy-pty, candy-mouse, candy-metrics, candy-log, candy-starter)
+  - All 4 remaining libs from step-30 audit have DEFERRED status in followups (candy-pty, sugar-mouse, candy-metrics, candy-log, candy-starter)
   - No source code changes; PR is documentation-only marker for end of actionable migration work
   - Commit SHA: 237fad86
 
@@ -177,7 +177,7 @@ _All items in this section have been resolved by the completion of steps 20–40
   - Branch ai/docs-site merged to master
   - 17 files changed, 47 insertions(+)
   - docs/repo_map_update.md: +47 lines status section for 8 new shared foundation libs
-  - docs/img/icons/: 8 new placeholder PNG icons (candy-ansi, candy-async, candy-buffer, candy-fuzzy, candy-input, candy-layout, candy-mouse, candy-testing)
+  - docs/img/icons/: 8 new placeholder PNG icons (candy-ansi, candy-async, candy-buffer, sugar-fuzzy, candy-input, candy-layout, sugar-mouse, candy-testing)
   - media/icons/: 8 new placeholder PNG icons (same 8 libs)
   - Commit SHA: 218695bd
 

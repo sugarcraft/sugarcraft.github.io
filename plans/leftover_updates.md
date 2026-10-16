@@ -447,7 +447,7 @@ slightly different ioctl numbers. Pull from `nix` crate's per-platform
 `ioctl.rs` files when a user reports needing one.
 
 🪦 **`MultiPump` promotion to first-class API** — promoted out of "P6
-stretch" if `candy-mouse` (tmux-style panes) starts using it. Profile
+stretch" if `sugar-mouse` (tmux-style panes) starts using it. Profile
 first to confirm scaling claims hold up to ~16 concurrent PTYs.
 
 🪦 **Expect-style scripting API expansion** — current `Expect` is a
@@ -504,7 +504,7 @@ gaps the audit surfaced.
 ## Out of scope for this file
 
 - **Library research-doc gaps** (single-source-of-truth violations *outside*
-  the PTY surface, missing features in non-PTY libs, sugar-dash dashboards).
+  the PTY surface, missing features in non-PTY libs, sugar-dashboard dashboards).
   See `plans/leftover_updates_later.md`.
 - **New PTY features beyond the deferred list.** If a user requests
   `forkpty(3)`-style anonymous spawn (no `proc_open` shim), open a new

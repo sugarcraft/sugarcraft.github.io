@@ -1,8 +1,8 @@
-# SugarCraft/sugar-calendar
+# SugarCraft/sugar-datepicker
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/sugar-calendar
+- **URL:** https://github.com/sugarcraft/sugar-datepicker
 
 - **Language:** PHP 8.3+
 
@@ -28,7 +28,7 @@
 ### Package Structure
 
 ```
-sugar-calendar/
+sugar-datepicker/
 ├── src/
 │   ├── DatePicker.php        — 572 lines: main component
 │   ├── DateRange.php         — 60 lines: immutable range value object
@@ -52,7 +52,7 @@ sugar-calendar/
 ### Dependency Graph
 
 ```
-sugar-calendar
+sugar-datepicker
 └── sugarcraft/candy-core (dev-master)
     ├── SugarCraft\Core\Util\Ansi — ANSI SGR code helpers (DatePicker.php line 8)
     └── SugarCraft\Core\I18n\Lang — Base i18n facade (Lang.php line 7)
@@ -463,7 +463,7 @@ This prevents silent translation key omissions — a common i18n bug.
 
 **Status: Not yet implemented**
 
-The upstream Go bubble-datepicker has **no min/max date constraint** system. SugarCraft's research doc (`docs/research/libraries/sugar-calendar-research.md`) identifies this as a planned enhancement.
+The upstream Go bubble-datepicker has **no min/max date constraint** system. SugarCraft's research doc (`docs/research/libraries/sugar-datepicker-research.md`) identifies this as a planned enhancement.
 
 ### Planned Design (from research doc)
 
@@ -632,7 +632,7 @@ Each cell is 2 characters wide. Empty cells are `'  '`.
 
 ## Comparison: SugarCraft vs. Upstream
 
-| Feature | sugar-calendar | EthanEFung/bubble-datepicker (Go) |
+| Feature | sugar-datepicker | EthanEFung/bubble-datepicker (Go) |
 |---|---|---|
 | Date selection | ✅ | ✅ |
 | Month/year navigation | ✅ | ✅ |
@@ -653,7 +653,7 @@ Each cell is 2 characters wide. Empty cells are `'  '`.
 
 ## Comparison: SugarCraft vs. ratatui Calendar
 
-| Feature | sugar-calendar | ratatui `Calendar::Monthly` (Rust) |
+| Feature | sugar-datepicker | ratatui `Calendar::Monthly` (Rust) |
 |---|---|---|
 | Interactive selection | ✅ | ❌ (display-only) |
 | Keyboard navigation | ✅ | ❌ |
@@ -668,7 +668,7 @@ Each cell is 2 characters wide. Empty cells are `'  '`.
 
 ## Comparison: SugarCraft vs. textual-timepiece
 
-| Feature | sugar-calendar | textual-timepiece (Python) |
+| Feature | sugar-datepicker | textual-timepiece (Python) |
 |---|---|---|
 | Date range picker | 🟡 (DateRange + rangeMode) | ✅ (DateRangePicker) |
 | Date picker | ✅ | ✅ |
@@ -744,51 +744,51 @@ Translation completeness test that statically analyzes source files and verifies
 
 ### Source Files
 
-- `/home/sites/sugarcraft/sugar-calendar/src/DatePicker.php` — main component (572 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/src/DatePicker.php` — main component (572 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/src/DateRange.php` — range value object (60 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/src/DateRange.php` — range value object (60 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/src/Navigation.php` — grid movement helper (39 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/src/Navigation.php` — grid movement helper (39 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/src/EventStore.php` — event store (39 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/src/EventStore.php` — event store (39 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/src/EventStoreInterface.php` — store interface (20 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/src/EventStoreInterface.php` — store interface (20 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/src/Lang.php` — i18n facade (22 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/src/Lang.php` — i18n facade (22 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/lang/en.php` — English translations (34 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/lang/en.php` — English translations (34 lines)
 
 ### Test Files
 
-- `/home/sites/sugarcraft/sugar-calendar/tests/DatePickerTest.php` — 27 tests (384 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/tests/DatePickerTest.php` — 27 tests (384 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/tests/NavigationTest.php` — 11 tests (80 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/tests/NavigationTest.php` — 11 tests (80 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/tests/DateRangeTest.php` — 12 tests (123 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/tests/DateRangeTest.php` — 12 tests (123 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/tests/EventStoreTest.php` — 7 tests (74 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/tests/EventStoreTest.php` — 7 tests (74 lines)
 
-- `/home/sites/sugarcraft/sugar-calendar/tests/LangCoverageTest.php` — translation completeness (148 lines)
+- `/home/sites/sugarcraft/sugar-datepicker/tests/LangCoverageTest.php` — translation completeness (148 lines)
 
 ### Examples
 
-- `/home/sites/sugarcraft/sugar-calendar/examples/basic.php` — basic demo
+- `/home/sites/sugarcraft/sugar-datepicker/examples/basic.php` — basic demo
 
-- `/home/sites/sugarcraft/sugar-calendar/examples/constraints.php` — navigation + selection demo
+- `/home/sites/sugarcraft/sugar-datepicker/examples/constraints.php` — navigation + selection demo
 
 ### VHS Demos
 
-- `/home/sites/sugarcraft/sugar-calendar/.vhs/basic.tape` + `basic.gif`
+- `/home/sites/sugarcraft/sugar-datepicker/.vhs/basic.tape` + `basic.gif`
 
-- `/home/sites/sugarcraft/sugar-calendar/.vhs/constraints.tape` + `constraints.gif`
+- `/home/sites/sugarcraft/sugar-datepicker/.vhs/constraints.tape` + `constraints.gif`
 
 ### Documentation
 
-- `/home/sites/sugarcraft/docs/research/libraries/sugar-calendar-research.md` — 600-line feature research doc
+- `/home/sites/sugarcraft/docs/research/libraries/sugar-datepicker-research.md` — 600-line feature research doc
 
-- `/home/sites/sugarcraft/sugar-calendar/README.md` — 75-line package README
+- `/home/sites/sugarcraft/sugar-datepicker/README.md` — 75-line package README
 
-- `/home/sites/sugarcraft/plans/leftover/phase-05-i18n/step-01-sugar-calendar.md` — i18n implementation plan
+- `/home/sites/sugarcraft/plans/leftover/phase-05-i18n/step-01-sugar-datepicker.md` — i18n implementation plan
 
 - `/home/sites/sugarcraft/plans/leftover/phase-10-apps/step-20-calendar-range-eventstore.md` — range + event store plan
 
@@ -810,7 +810,7 @@ Translation completeness test that statically analyzes source files and verifies
 
 ## Analysis
 
-**sugar-calendar** is a well-structured PHP port that significantly enhances its upstream Go source. The most notable innovations are the immutable + fluent architecture (every method returns clones), the date range selection system (DateRange + rangeMode + handleKey), and the i18n framework (Lang facade + LangCoverageTest). The pure ANSI renderer design is strategically sound — it decouples the calendar from any specific TUI framework, making it composable with both candy-core and standalone use.
+**sugar-datepicker** is a well-structured PHP port that significantly enhances its upstream Go source. The most notable innovations are the immutable + fluent architecture (every method returns clones), the date range selection system (DateRange + rangeMode + handleKey), and the i18n framework (Lang facade + LangCoverageTest). The pure ANSI renderer design is strategically sound — it decouples the calendar from any specific TUI framework, making it composable with both candy-core and standalone use.
 
 **Strengths:**
 
@@ -844,4 +844,4 @@ Translation completeness test that statically analyzes source files and verifies
 
 - No compound widget (input + dropdown calendar)
 
-**Strategic position:** sugar-calendar occupies the date-picker niche in SugarCraft's component library. Its pure renderer approach makes it a building block for higher-level widgets (DateSelect with input field, DateTimePicker with time component). The 🟢 v1 ready status is appropriate — the core selection and navigation work well, but several enhancements from the research doc remain unimplemented.
+**Strategic position:** sugar-datepicker occupies the date-picker niche in SugarCraft's component library. Its pure renderer approach makes it a building block for higher-level widgets (DateSelect with input field, DateTimePicker with time component). The 🟢 v1 ready status is appropriate — the core selection and navigation work well, but several enhancements from the research doc remain unimplemented.

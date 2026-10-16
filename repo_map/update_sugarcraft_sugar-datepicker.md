@@ -1,6 +1,6 @@
 # Overview
 
-SugarCalendar is a 🟢 v1-ready PHP port of EthanEFung/bubble-datepicker (Go) — an interactive month-grid date picker with keyboard navigation, date range selection, locale day names, event store architecture, and pure ANSI rendering. The package occupies the date-picker niche in SugarCraft's component library as a building block for higher-level widgets (DateSelect with input field, DateTimePicker with time component).
+SugarDatepicker is a 🟢 v1-ready PHP port of EthanEFung/bubble-datepicker (Go) — an interactive month-grid date picker with keyboard navigation, date range selection, locale day names, event store architecture, and pure ANSI rendering. The package occupies the date-picker niche in SugarCraft's component library as a building block for higher-level widgets (DateSelect with input field, DateTimePicker with time component).
 
 **Biggest opportunity areas:**
 
@@ -25,7 +25,7 @@ SugarCalendar is a 🟢 v1-ready PHP port of EthanEFung/bubble-datepicker (Go) �
 ## Current Architecture
 
 ```
-sugar-calendar/
+sugar-datepicker/
 ├── src/
 │   ├── DatePicker.php        — 572 lines: main component
 │   ├── DateRange.php        — 60 lines: immutable range value object
@@ -179,7 +179,7 @@ Enforcement in `dateAtCursor()` and `SelectDate()` returning null or clamping.
 ### 4. Focus Zone Navigation
 
 **Title:** Three-Tier Focus System
-**Description:** Upstream Go has HeaderMonth → HeaderYear → Calendar focus zones navigated via Tab; sugar-calendar has flat cursor model
+**Description:** Upstream Go has HeaderMonth → HeaderYear → Calendar focus zones navigated via Tab; sugar-datepicker has flat cursor model
 **Why it matters:** Upstream design enables vim-like navigation where arrows change behavior based on focus (month scroll vs year scroll vs day selection)
 **Source repo:** `EthanEFung_bubble-datepicker.md` — Focus enum with FocusNone/FocusHeaderMonth/FocusHeaderYear/FocusCalendar
 **Implementation ideas:**
@@ -288,7 +288,7 @@ public function Blur(): self
 
 ### Grid Rendering Algorithm
 
-**Current (sugar-calendar):**
+**Current (sugar-datepicker):**
 ```php
 for ($i = 0; $i < 42; $i++) {
     $dayNum = $i - $firstDow + 1;
@@ -315,7 +315,7 @@ for ($i = 0; $i < 42; $i++) {
 **Tradeoffs:**
 
 - ratatui's approach requires trait system + widget framework
-- sugar-calendar's inline approach is simpler for pure PHP
+- sugar-datepicker's inline approach is simpler for pure PHP
 
 **Applicability:** Medium — could add DayStylerInterface for extensibility without full framework adoption
 
@@ -569,7 +569,7 @@ DatePicker as a form field:
 
 ```php
 use SugarCraft\Forms\Form;
-use SugarCraft\Calendar\DatePicker;
+use SugarCraft\DatePicker\DatePicker;
 
 $form = new Form();
 $form->addField('start_date', new DatePicker());
@@ -615,19 +615,19 @@ Bubble Tea v2 shifted from imperative commands to declarative View properties. K
 - View struct fields as single source of truth
 - Eliminates race conditions between commands and rendering
 
-**Lesson for sugar-calendar:** Consider declarative styling configuration rather than imperative `With*` methods.
+**Lesson for sugar-datepicker:** Consider declarative styling configuration rather than imperative `With*` methods.
 
 **Issue #831: Textarea Performance** (`docs/repo_map/pr_charmbracelet_bubbletea.md`)
 
 Performance dominated by `wrap()` calls. Fix: memoization cache + faster package (uniseg vs go-runewidth).
 
-**Lesson for sugar-calendar:** Memoize expensive operations in DatePicker (width calculations, day number conversions).
+**Lesson for sugar-datepicker:** Memoize expensive operations in DatePicker (width calculations, day number conversions).
 
 **Issue #1690: Data Race onMouse** (`docs/repo_map/pr_charmbracelet_bubbletea.md`)
 
 `lastView` read without mutex in `onMouse()` causing race condition.
 
-**Lesson for sugar-calendar:** Any shared state between render and input loops needs mutex protection.
+**Lesson for sugar-datepicker:** Any shared state between render and input loops needs mutex protection.
 
 ## From ratatui (Rust Calendar)
 
@@ -635,7 +635,7 @@ Performance dominated by `wrap()` calls. Fix: memoization cache + faster package
 
 ratatui's Calendar widget uses a `DateStyler` trait enabling custom per-day styling without modifying the calendar core.
 
-**Lesson for sugar-calendar:** Design DayStylerInterface for extensibility.
+**Lesson for sugar-datepicker:** Design DayStylerInterface for extensibility.
 
 ---
 
@@ -692,7 +692,7 @@ ratatui's Calendar widget uses a `DateStyler` trait enabling custom per-day styl
 
 # Final Strategic Assessment
 
-SugarCalendar is a well-architected PHP port that meaningfully enhances its upstream Go source through immutable patterns, date range selection, and localization support. The pure ANSI renderer design is strategically sound — it decouples the calendar from any specific TUI framework, making it composable with both candy-core and standalone use.
+SugarDatepicker is a well-architected PHP port that meaningfully enhances its upstream Go source through immutable patterns, date range selection, and localization support. The pure ANSI renderer design is strategically sound — it decouples the calendar from any specific TUI framework, making it composable with both candy-core and standalone use.
 
 **Key differentiators from upstream:**
 
@@ -725,4 +725,4 @@ The focus zone system from upstream Go is valuable for power users but adds comp
 **Testing infrastructure** should include snapshot tests for View() output using golden files, following the `CHARM_TEST_UPDATE=1` pattern from bubbletea's experimental teatest package.
 
 **Long-term vision:**
-SugarCalendar should evolve toward a compound DateSelect widget (input + dropdown), eventually supporting DateTimePicker composition. The pure renderer approach positions it well for embedding in both candy-shell (terminal) and potential web-based contexts. Consider the textual-web model for browser-based TUI rendering as a future differentiator.
+SugarDatepicker should evolve toward a compound DateSelect widget (input + dropdown), eventually supporting DateTimePicker composition. The pure renderer approach positions it well for embedding in both candy-shell (terminal) and potential web-based contexts. Consider the textual-web model for browser-based TUI rendering as a future differentiator.

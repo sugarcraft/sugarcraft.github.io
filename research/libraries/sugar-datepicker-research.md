@@ -1,7 +1,7 @@
-# SugarCalendar: Date Picker Library Research
+# SugarDatepicker: Date Picker Library Research
 
 **Date:** 2026-05-13
-**Component:** sugar-calendar (PHP 8.3+ TUI date picker)
+**Component:** sugar-datepicker (PHP 8.3+ TUI date picker)
 **Upstream:** EthanEFung/bubble-datepicker (Go)
 **Sources Consulted:** bubble-datepicker (Go), ratatui (Rust), textual-timepiece (Python), tkcalendar (Python), tview (Go)
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The current sugar-calendar implementation is a direct port of the Go upstream with basic date selection. Research across Go, Rust, and Python ecosystems reveals significant opportunities for enhancement: **date range selection**, **focus-based navigation**, **event/store architecture**, **localization framework**, and **compound widget composition**.
+The current sugar-datepicker implementation is a direct port of the Go upstream with basic date selection. Research across Go, Rust, and Python ecosystems reveals significant opportunities for enhancement: **date range selection**, **focus-based navigation**, **event/store architecture**, **localization framework**, and **compound widget composition**.
 
 **Priority Recommendations:**
 
@@ -23,7 +23,7 @@ The current sugar-calendar implementation is a direct port of the Go upstream wi
 
 ## 1. Current Implementation Analysis
 
-**Source:** `/home/sites/sugarcraft/sugar-calendar/src/DatePicker.php`
+**Source:** `/home/sites/sugarcraft/sugar-datepicker/src/DatePicker.php`
 
 ### Strengths
 
@@ -34,7 +34,7 @@ The current sugar-calendar implementation is a direct port of the Go upstream wi
 
 ### Gaps vs. Upstream & Peers
 
-| Feature | sugar-calendar | bubble-datepicker (Go) | ratatui (Rust) | textual-timepiece (Python) |
+| Feature | sugar-datepicker | bubble-datepicker (Go) | ratatui (Rust) | textual-timepiece (Python) |
 |---------|---------------|------------------------|----------------|---------------------------|
 | Date range selection | ❌ | ❌ | ❌ | ✅ `DateRangePicker` |
 | Focus-based nav (header/month/year) | ❌ | ✅ | N/A display only | ✅ compound widgets |
@@ -587,9 +587,9 @@ private const DEFAULT_KEY_MAP = [
 | textual-timepiece | `/docs/CHANGELOG.md` | DateRangePicker evolution |
 | tkcalendar | `/tkcalendar/calendar.py` | Calendar widget with mindate/maxdate |
 | tkcalendar | `/tkcalendar/dateentry.py` | DateEntry dropdown compound |
-| sugar-calendar | `/sugar-calendar/src/DatePicker.php:L1-50` | Current state structure |
-| sugar-calendar | `/sugar-calendar/src/DatePicker.php:L130-200` | Cursor movement methods |
-| sugar-calendar | `/sugar-calendar/src/DatePicker.php:L260-290` | View() rendering |
+| sugar-datepicker | `/sugar-datepicker/src/DatePicker.php:L1-50` | Current state structure |
+| sugar-datepicker | `/sugar-datepicker/src/DatePicker.php:L130-200` | Cursor movement methods |
+| sugar-datepicker | `/sugar-datepicker/src/DatePicker.php:L260-290` | View() rendering |
 
 ---
 

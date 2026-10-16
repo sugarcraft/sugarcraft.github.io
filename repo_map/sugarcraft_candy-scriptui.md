@@ -1,8 +1,8 @@
-# sugarcraft/candy-shell
+# sugarcraft/candy-scriptui
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/candy-shell
+- **URL:** https://github.com/sugarcraft/candy-scriptui
 
 - **Language:** PHP 8.3+
 
@@ -21,8 +21,8 @@
 ### 1.1 Directory Structure
 
 ```
-candy-shell/
-├── bin/candyshell           # Entry point
+candy-scriptui/
+├── bin/candy-scriptui           # Entry point
 ├── src/
 │   ├── Application.php      # Symfony Console app with auto-discovery
 │   ├── CompletionCommand.php  # Shell completion generator
@@ -84,7 +84,7 @@ candy-shell/
 ### 1.2 Dependency Graph
 
 ```
-candy-shell
+candy-scriptui
 ├── symfony/console ^6.4 || ^7.0    (CLI framework)
 ├── sugarcraft/candy-core              (TUI runtime: Program, Msg, Model)
 ├── sugarcraft/candy-forms             (form components: TextInput, ItemList, etc.)
@@ -121,7 +121,7 @@ Non-interactive commands execute synchronously and return formatted strings.
 
 **Upstream:** `gum choose` — grid-based item picker with vim-style navigation
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `ChooseCommand.php` — CLI flag binding via Symfony Console
 
@@ -149,11 +149,11 @@ Non-interactive commands execute synchronously and return formatted strings.
 
 - gum uses `paginator.Model` + custom 2D grid navigation (hjkl/arrows in both dimensions)
 
-- candy-shell uses `ItemList` which is a 1D list with paging — no grid layout
+- candy-scriptui uses `ItemList` which is a 1D list with paging — no grid layout
 
 - gum supports `--cursor` prefix for unselected items, but also `--selected-prefix` and `--unselected-suffix`
 
-- candy-shell only has `--cursor-prefix` and `--unselected-prefix`
+- candy-scriptui only has `--cursor-prefix` and `--unselected-prefix`
 
 **Component dependency:** `SugarCraft\Forms\ItemList\ItemList` → `SugarCraft\Forms\ItemList\StringItem`
 
@@ -163,7 +163,7 @@ Non-interactive commands execute synchronously and return formatted strings.
 
 **Upstream:** `gum confirm` — confirmation with exit code mapping
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `ConfirmCommand.php` — exit codes: 0=yes, 1=no, 2=abort
 
@@ -197,7 +197,7 @@ const EXIT_ABORT  = 2;
 
 **Upstream:** `gum filter` — reads stdin lines, incremental filter, multi-select
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `FilterCommand.php` — reads from stdin
 
@@ -240,7 +240,7 @@ const EXIT_ABORT  = 2;
 
 **Upstream:** `gum input` — text input with placeholder/password/prompt
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `InputCommand.php`
 
@@ -270,7 +270,7 @@ const EXIT_ABORT  = 2;
 
 **Upstream:** `gum write` — textarea with Ctrl+D submit, Ctrl+E external editor
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `WriteCommand.php`
 
@@ -305,7 +305,7 @@ const EXIT_ABORT  = 2;
 
 **Upstream:** `gum file` — filesystem tree navigation
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `FileCommand.php`
 
@@ -332,7 +332,7 @@ const EXIT_ABORT  = 2;
 
 **Upstream:** `gum pager` — read-only scrolling for long input
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `PagerCommand.php`
 
@@ -364,7 +364,7 @@ const EXIT_ABORT  = 2;
 
 **Upstream:** `gum spin` — run command with spinner, capture output
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `SpinCommand.php` — spawns child process, manages spinner lifecycle
 
@@ -403,7 +403,7 @@ line, dot, minidot, points, pulse, globe, meter, jump, moon, monkey, hamburger, 
 
 **Upstream:** `gum style` — apply lipgloss styling to text
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `StyleCommand.php` — non-interactive, no Program loop
 
@@ -447,7 +447,7 @@ line, dot, minidot, points, pulse, globe, meter, jump, moon, monkey, hamburger, 
 
 **Upstream:** `gum format` — render markdown with glamour
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `FormatCommand.php` — non-interactive
 
@@ -481,7 +481,7 @@ line, dot, minidot, points, pulse, globe, meter, jump, moon, monkey, hamburger, 
 
 **Upstream:** `gum table` — render tabular data with optional border styling
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `TableCommand.php` — non-interactive, uses `SugarCraft\Sprinkles\Table\Table`
 
@@ -511,7 +511,7 @@ line, dot, minidot, points, pulse, globe, meter, jump, moon, monkey, hamburger, 
 
 **Upstream:** `gum join` — horizontal/vertical text joining (lipgloss JoinHorizontal/JoinVertical)
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `JoinCommand.php` — non-interactive, pure PHP
 
@@ -537,7 +537,7 @@ line, dot, minidot, points, pulse, globe, meter, jump, moon, monkey, hamburger, 
 
 **Upstream:** `gum log` — leveled log output with formatters
 
-**candy-shell implementation:**
+**candy-scriptui implementation:**
 
 - `LogCommand.php` — non-interactive, pure PHP
 
@@ -601,7 +601,7 @@ return Command::SUCCESS;
 
 ### 3.2 Component Mapping
 
-| candy-shell Command | candy-forms Component | Notes |
+| candy-scriptui Command | candy-forms Component | Notes |
 |---|---|---|
 | choose | `ItemList` + `StringItem` | 1D list, not grid |
 | confirm | `Field\Confirm` | Binary choice field |
@@ -630,14 +630,14 @@ return Command::SUCCESS;
 
 ### 4.1 Symfony Console as Foundation
 
-Unlike gum which uses `kong` (a Go CLI parsing library), candy-shell uses Symfony Console:
+Unlike gum which uses `kong` (a Go CLI parsing library), candy-scriptui uses Symfony Console:
 
 ```php
 final class Application extends SymfonyApplication
 {
     public function __construct()
     {
-        parent::__construct('candyshell', $this->versionFromComposer());
+        parent::__construct('candy-scriptui', $this->versionFromComposer());
         $this->addCommands([
             new ChooseCommand(),
             new ConfirmCommand(),
@@ -688,13 +688,13 @@ public function scan(string $namespace, Application $application): array
 
 ### 4.4 Env Var Fallback
 
-`Application::doRun()` applies `CANDYSHELL_*` fallbacks:
+`Application::doRun()` applies `CANDY_SCRIPTUI_*` fallbacks:
 
 ```php
 private function applyEnvVarFallbackToInput(InputInterface $input, Command $command): void
 {
     foreach ($command->getDefinition()->getOptions() as $option) {
-        $envVar = 'CANDYSHELL_' . preg_replace('/[^A-Z0-9_]/', '_', strtoupper($option->getName()));
+        $envVar = 'CANDY_SCRIPTUI_' . preg_replace('/[^A-Z0-9_]/', '_', strtoupper($option->getName()));
         $envValue = getenv($envVar);
         if ($envValue === false) continue;
         // ... set option from env
@@ -702,7 +702,7 @@ private function applyEnvVarFallbackToInput(InputInterface $input, Command $comm
 }
 ```
 
-Example: `CANDYSHELL_FOREGROUND=#ff0000 CANDYSHELL_BOLD=1 candyshell style "Hello"`
+Example: `CANDY_SCRIPTUI_FOREGROUND=#ff0000 CANDY_SCRIPTUI_BOLD=1 candy-scriptui style "Hello"`
 
 ### 4.5 Typo Suggestion
 
@@ -749,7 +749,7 @@ $completion = match ($shell) {
 
 **Stars:** ~8,700 | **Language:** Go | **License:** MIT
 
-| Aspect | gum | candy-shell |
+| Aspect | gum | candy-scriptui |
 |---|---|---|
 | CLI Framework | Kong | Symfony Console |
 | TUI Framework | Bubble Tea (goroutines) | Program (ReactPHP-like loop) |
@@ -758,12 +758,12 @@ $completion = match ($shell) {
 | Filter Algorithm | sahilm/fuzzy (Go) | ItemList substring (PHP) |
 | Fuzzy Matching | Full fuzzy + exact | Substring only (--fuzzy is no-op) |
 | External Editor | x/editor integration | Not implemented |
-| Env Var Fallback | `GUM_<CMD>_<FLAG>` | `CANDYSHELL_<FLAG>` |
+| Env Var Fallback | `GUM_<CMD>_<FLAG>` | `CANDY_SCRIPTUI_<FLAG>` |
 | Completion | kong compgen | custom Bash/Zsh/Fish generators |
 
-**Key gum features NOT in candy-shell:**
+**Key gum features NOT in candy-scriptui:**
 
-1. **Grid-based choose** — gum's choose uses a 2D grid with left/right navigation; candy-shell uses 1D list
+1. **Grid-based choose** — gum's choose uses a 2D grid with left/right navigation; candy-scriptui uses 1D list
 
 2. **Fuzzy matching** — `--fuzzy` flag exists but is a no-op
 
@@ -786,7 +786,7 @@ Maps to `candy-forms` (not yet fully implemented in SugarCraft). huh provides:
 
 - 7 field types: Input, Text, Select, MultiSelect, Confirm, FilePicker, Note
 
-**candy-shell gap:** huh's dynamic forms (fields that react to other fields' values) are not modeled. Each candy-shell command is a single-purpose prompt, not a composable form.
+**candy-scriptui gap:** huh's dynamic forms (fields that react to other fields' values) are not modeled. Each candy-scriptui command is a single-purpose prompt, not a composable form.
 
 ### 5.3 charmbracelet/bubbles (TUI Components)
 
@@ -795,7 +795,7 @@ Maps to `candy-forms` (not yet fully implemented in SugarCraft). huh provides:
 Maps to `sugar-bits` (and indirectly to `candy-forms`). Provides:
 - TextInput, TextArea, Viewport, Spinner, Table, List, Progress, Timer, etc.
 
-**candy-shell wraps:** These exact components — `candy-forms` is the PHP port of bubbles.
+**candy-scriptui wraps:** These exact components — `candy-forms` is the PHP port of bubbles.
 
 ### 5.4 c9s/CLIFramework (PHP CLI Framework)
 
@@ -803,7 +803,7 @@ Maps to `sugar-bits` (and indirectly to `candy-forms`). Provides:
 
 Similar scope (CLI application framework) but very different implementation:
 
-| Aspect | CLIFramework | candy-shell |
+| Aspect | CLIFramework | candy-scriptui |
 |---|---|---|
 | CLI Parser | GetOptionKit | Symfony Console |
 | Option Binding | Reflection + docblock | PHP 8.1 attributes |
@@ -828,7 +828,7 @@ A standalone terminal application (not a library). Key innovations:
 
 - **Fuzzy/substring/prefix search** all via TST traversal
 
-**candy-shell gap:** `filter` uses simple substring matching via `ItemList` — no TST, no fuzzy search, no bitmap highlighting of matched characters.
+**candy-scriptui gap:** `filter` uses simple substring matching via `ItemList` — no TST, no fuzzy search, no bitmap highlighting of matched characters.
 
 ---
 
@@ -838,7 +838,7 @@ Based on the README and codebase analysis:
 
 ### 6.1 Flag Parity Gaps (from README)
 
-> "The audit lists upstream-gum flags that are not yet wired in CandyShell."
+> "The audit lists upstream-gum flags that are not yet wired in CandyScriptui."
 
 - **`--style` dotted form** (`--header.foreground=red`) not wired across every command
 
@@ -848,7 +848,7 @@ Based on the README and codebase analysis:
 
 ### 6.2 Missing Features vs gum
 
-| Feature | gum | candy-shell | Status |
+| Feature | gum | candy-scriptui | Status |
 |---|---|---|---|
 | Grid-based choose (2D nav) | Yes | No (1D list only) | Not implemented |
 | Fuzzy matching | Yes (sahilm/fuzzy) | No (substring only) | Not implemented |
@@ -881,7 +881,7 @@ This is correctly handled (returns 130), but the comment in the code reveals a s
 
 ## 7. Innovation Points
 
-Despite being a port, candy-shell introduces some innovations not in upstream gum:
+Despite being a port, candy-scriptui introduces some innovations not in upstream gum:
 
 ### 7.1 Attribute-Based Discovery
 
@@ -897,11 +897,11 @@ final class ChooseCommand extends Command { ... }
 
 ### 7.2 Levenshtein Typo Suggester
 
-candy-shell implements command-level typo correction (distance ≤ 2) as a first-class feature of `Application::find()`. gum relies on shell tab-completion.
+candy-scriptui implements command-level typo correction (distance ≤ 2) as a first-class feature of `Application::find()`. gum relies on shell tab-completion.
 
 ### 7.3 Env Var Fallback Prefix
 
-`CANDYSHELL_<FLAG>` rather than `GUM_<CMD>_<FLAG>` — applies globally across all commands, simpler for dotfile configuration.
+`CANDY_SCRIPTUI_<FLAG>` rather than `GUM_<CMD>_<FLAG>` — applies globally across all commands, simpler for dotfile configuration.
 
 ### 7.4 Multiple Formatters for Log
 
@@ -916,7 +916,7 @@ Bash, Zsh, and Fish completion scripts generated from the application introspect
 ## 8. Dependencies Summary
 
 ```
-candy-shell
+candy-scriptui
 ├── candy-core          TUI runtime: Program, Model, Msg, KeyType, Cmd, Subscriptions
 ├── candy-forms         Components: TextInput, TextArea, ItemList, FilePicker, Viewport, Spinner, Confirm
 ├── candy-pty           PosixProcess for spawning child processes

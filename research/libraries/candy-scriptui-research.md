@@ -2,8 +2,8 @@
 
 ## Context
 
-**Library:** candy-shell (PHP 8.3+) — port of charmbracelet/gum
-**Location:** `/home/sites/sugarcraft/candy-shell/src/`
+**Library:** candy-scriptui (PHP 8.3+) — port of charmbracelet/gum
+**Location:** `/home/sites/sugarcraft/candy-scriptui/src/`
 **Upstream:** https://github.com/charmbracelet/gum
 **Current Framework:** Symfony Console (`symfony/console ^6.4 || ^7.0`)
 **Commands:** 13 subcommands (choose, confirm, file, filter, format, input, join, log, pager, spin, style, table, write)
@@ -15,7 +15,7 @@
 ### Source Structure
 
 ```
-candy-shell/src/
+candy-scriptui/src/
 ├── Application.php          # Extends SymfonyApplication, registers all commands
 ├── Command/                 # 13 Command classes extending Symfony Command
 │   ├── ChooseCommand.php    # Interactive selection (Model-based)
@@ -355,12 +355,12 @@ program.error('Custom processing failed', { exitCode: 2, code: 'custom' });
 - **Rust/Clap:** Enum-based routing — compiler guarantees exhaustive handling
 - **Click:** Decorator-based registration + context sharing
 
-**Recommendation for candy-shell:**
+**Recommendation for candy-scriptui:**
 Consider a `CommandRegistry` that auto-discovers `*Command.php` files and registers them programmatically:
 ```php
 // Concept: auto-discovery
 foreach (glob(__DIR__ . '/Command/*Command.php') as $file) {
-    $class = 'SugarCraft\\Shell\\Command\\' . basename($file, '.php');
+    $class = 'SugarCraft\\ScriptUi\\Command\\' . basename($file, '.php');
     $this->addCommands([new $class()]);
 }
 ```
@@ -375,7 +375,7 @@ foreach (glob(__DIR__ . '/Command/*Command.php') as $file) {
 - **Go/Cobra:** Builder pattern with validation helpers
 - **Click:** Type-safe decorators with automatic conversion
 
-**Recommendation for candy-shell:**
+**Recommendation for candy-scriptui:**
 Create a `FlagSpec` trait/attribute for declarative option definitions:
 ```php
 // Concept: declarative flag definition
@@ -491,7 +491,7 @@ final class StyleCommand extends Command
 
 ---
 
-## Specific Improvements for candy-shell
+## Specific Improvements for candy-scriptui
 
 ### High Priority
 
@@ -504,7 +504,7 @@ final class StyleCommand extends Command
 // In Application::__construct()
 $commandDir = __DIR__ . '/Command';
 foreach (glob("{$commandDir}/*Command.php") as $file) {
-    $class = 'SugarCraft\\Shell\\Command\\' . basename($file, '.php');
+    $class = 'SugarCraft\\ScriptUi\\Command\\' . basename($file, '.php');
     if (is_a($class, Command::class, true)) {
         $this->addCommands([new $class()]);
     }
@@ -579,7 +579,7 @@ $this->setExamples([
 
 #### 5. **Command Aliases** (Effort: Low, Impact: Low)
 
-**Problem:** `gum` has aliases (e.g., `filter` → `find`); candy-shell only has primary names.
+**Problem:** `gum` has aliases (e.g., `filter` → `find`); candy-scriptui only has primary names.
 
 **Solution:** `AsCommand` attribute accepts aliases:
 ```php

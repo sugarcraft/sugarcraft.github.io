@@ -1,11 +1,11 @@
 # Overview
 
-CandyShell is a PHP port of `charmbracelet/gum` (~8.7k stars, Go) — a composer-installable CLI providing 13 subcommands for interactive TUI primitives in shell scripts. The package sits at the **application framework tier** (`Candy-` prefix per naming conventions), wrapping foundation libs (`candy-core`, `candy-forms`, `candy-sprinkles`, `candy-shine`, `candy-pty`) with a Symfony Console surface. It provides ~85% functional parity with gum for typical shell script use cases.
+CandyScriptui is a PHP port of `charmbracelet/gum` (~8.7k stars, Go) — a composer-installable CLI providing 13 subcommands for interactive TUI primitives in shell scripts. The package sits at the **application framework tier** (`Candy-` prefix per naming conventions), wrapping foundation libs (`candy-core`, `candy-forms`, `candy-sprinkles`, `candy-shine`, `candy-pty`) with a Symfony Console surface. It provides ~85% functional parity with gum for typical shell script use cases.
 
 **Biggest opportunity areas:**
 
 - Fuzzy matching implementation (filter's `--fuzzy` is a no-op)
-- 2D grid choose (candy-shell only has 1D list navigation)
+- 2D grid choose (candy-scriptui only has 1D list navigation)
 - External editor integration for write command
 - Per-element style flags (dotted form `--header.foreground=red`)
 - Bubble Tea-style subscriptions for concurrent async commands
@@ -49,7 +49,7 @@ Command (Symfony Console layer)
 ### Dependencies
 
 ```
-candy-shell
+candy-scriptui
 ├── symfony/console ^6.4 || ^7.0     CLI framework
 ├── sugarcraft/candy-core             TEA runtime: Program, Model, Msg, KeyType, Cmd
 ├── sugarcraft/candy-forms             Components: TextInput, ItemList, FilePicker, etc.
@@ -81,7 +81,7 @@ candy-shell
 ### CLI Design Patterns
 
 1. **Attribute-based meta-programming** — `#[Command]`, `#[Alias]`, `#[Example]` for auto-discovery and rich help
-2. **Env var fallback** — `CANDYSHELL_<FLAG>` global prefix (vs gum's `GUM_<CMD>_<FLAG>` per-command)
+2. **Env var fallback** — `CANDY_SCRIPTUI_<FLAG>` global prefix (vs gum's `GUM_<CMD>_<FLAG>` per-command)
 3. **Levenshtein typo suggester** — distance ≤ 2 for command name correction
 4. **Shell completion** — custom Bash/Zsh/Fish generators from app introspection
 5. **i18n support** — 16 locales via `Lang.php` wrapper
@@ -144,7 +144,7 @@ candy-shell
 ### 2. 2D Grid Choose
 
 - **Title:** Add 2D grid-based item selection to `choose` command
-- **Description:** gum's choose uses `paginator.Model` with left/right navigation for 2D grid layout. candy-shell's choose uses 1D ItemList with up/down only.
+- **Description:** gum's choose uses `paginator.Model` with left/right navigation for 2D grid layout. candy-scriptui's choose uses 1D ItemList with up/down only.
 - **Why it matters:** Grid choose is essential for selecting from large numbers of items efficiently (e.g., emoji picker, file picker from many files).
 - **Source repo:** `charmbracelet/gum` (choose/choose.go + choose/model.go)
 - **Source PR/issue:** gum's use of `paginator.Model` and 2D navigation
@@ -172,7 +172,7 @@ candy-shell
 ### 4. External Editor for Write
 
 - **Title:** Implement `$EDITOR` integration for write command (Ctrl+E)
-- **Description:** gum's write uses `charmbracelet/x/editor` to open external editor on Ctrl+E. candy-shell has no editor integration.
+- **Description:** gum's write uses `charmbracelet/x/editor` to open external editor on Ctrl+E. candy-scriptui has no editor integration.
 - **Why it matters:** Multi-line text editing in terminal is painful without external editor fallback.
 - **Source repo:** `charmbracelet/gum` (write/write.go uses `x/editor`)
 - **Implementation ideas:**
@@ -225,8 +225,8 @@ candy-shell
 
 ### 8. Command Palette
 
-- **Title:** Add fuzzy command lookup with `candyshell` (no subcommand)
-- **Description:** textual has excellent command palette pattern. gum has none. Could add as candy-shell enhancement.
+- **Title:** Add fuzzy command lookup with `candy-scriptui` (no subcommand)
+- **Description:** textual has excellent command palette pattern. gum has none. Could add as candy-scriptui enhancement.
 - **Why it matters:** Improves discoverability for new users and power users who can't remember all 13 commands.
 - **Source repo:** `textualize/textual` (command.py — extensive command palette)
 - **Implementation ideas:**
@@ -252,7 +252,7 @@ candy-shell
 ### 10. Go Template Functions
 
 - **Title:** Add Go-style template functions to format --type template
-- **Description:** gum's template mode supports `upper`, `lower`, `default`, etc. candy-shell only has lightweight `{{VAR}}` expansion.
+- **Description:** gum's template mode supports `upper`, `lower`, `default`, etc. candy-scriptui only has lightweight `{{VAR}}` expansion.
 - **Source repo:** `charmbracelet/gum` (format/formats.go template functions)
 - **Estimated complexity:** Medium — requires template engine extension
 - **Expected impact:** Low — most users only need variable substitution
@@ -324,7 +324,7 @@ candy-shell
 
 - More complex implementation
 - Requires tracking previous buffer state
-- Most candy-shell commands are simple (single component)
+- Most candy-scriptui commands are simple (single component)
 
 **Applicability:**
 
@@ -412,7 +412,7 @@ This would draw from CLIFramework's extension system pattern.
 **Proposed:** Extend typo suggestion to:
 
 - Flag names within a command
-- Subcommand paths (e.g., "Did you mean `candyshell filter`?")
+- Subcommand paths (e.g., "Did you mean `candy-scriptui filter`?")
 - Enum value names
 
 ## 2. Typed Option Binding
@@ -446,10 +446,10 @@ final class ChooseCommand extends Command
 
 ## 1. Shell Scripting Guide
 
-candy-shell's primary purpose is shell script integration. Documentation should include:
+candy-scriptui's primary purpose is shell script integration. Documentation should include:
 
 - Basic usage examples for each command
-- Pipeline compositions (`candyshell filter | candyshell choose`)
+- Pipeline compositions (`candy-scriptui filter | candy-scriptui choose`)
 - Exit code handling in scripts
 - Environment variable configuration examples
 
@@ -466,7 +466,7 @@ Creating custom commands with `#[Command]` attribute is documented but could use
 Users coming from gum need a quick reference:
 
 - Flag name differences (all caps vs lowercase)
-- Env var prefix differences (`GUM_CHOOSE_HEIGHT` vs `CANDYSHELL_HEIGHT`)
+- Env var prefix differences (`GUM_CHOOSE_HEIGHT` vs `CANDY_SCRIPTUI_HEIGHT`)
 - Behavioral differences (2D grid vs 1D list, fuzzy vs substring)
 
 ---
@@ -544,16 +544,16 @@ Users coming from gum need a quick reference:
 
 ## 1. Integration with sugar-bits
 
-candy-shell currently uses candy-forms directly but could also expose sugar-bits components:
+candy-scriptui currently uses candy-forms directly but could also expose sugar-bits components:
 
 - `TreeView` for hierarchical file picker
 - `SelectionList` with custom renderers
 
 ## 2. Integration with sugar-charts
 
-Could add new command: `candyshell chart` that renders data via sugar-charts:
+Could add new command: `candy-scriptui chart` that renders data via sugar-charts:
 ```sh
-candyshell chart --type bar --data "a:10 b:20 c:30"
+candy-scriptui chart --type bar --data "a:10 b:20 c:30"
 ```
 
 ## 3. Integration with candy-palette
@@ -569,7 +569,7 @@ Could add `--theme` flag to more commands that respects terminal color profile d
 ### Fuzzy Matching Implementation
 
 - gum uses `sahilm/fuzzy` for real fuzzy matching
-- candy-shell's `--fuzzy` maps to substring matching (known gap)
+- candy-scriptui's `--fuzzy` maps to substring matching (known gap)
 - **Lesson:** Porting surface API is easier than porting algorithms
 
 ### External Editor Integration
@@ -595,7 +595,7 @@ Could add `--theme` flag to more commands that respects terminal color profile d
 ### Display Modes
 
 - smenu supports line/column/tabulate modes
-- candy-shell filter could benefit from similar display flexibility
+- candy-scriptui filter could benefit from similar display flexibility
 - **Lesson:** Multi-mode display is a useful pattern for selection tools
 
 ## textualize/textual Insights
@@ -604,12 +604,12 @@ Could add `--theme` flag to more commands that respects terminal color profile d
 
 - textual's command palette is extensive with provider pattern
 - Fuzzy search over commands with live filtering
-- **Lesson:** Could enhance candy-shell with optional palette mode
+- **Lesson:** Could enhance candy-scriptui with optional palette mode
 
 ### CSS Layout
 
 - textual's TCSS implementation is comprehensive
-- Could inspire enhanced layout in candy-shell's non-interactive commands
+- Could inspire enhanced layout in candy-scriptui's non-interactive commands
 - **Lesson:** Web developer familiarity is a major DX win
 
 ---
@@ -640,7 +640,7 @@ Could add `--theme` flag to more commands that respects terminal color profile d
 
 ## Experimental Ideas (6+ months)
 
-14. **WebAssembly target** — Serve candy-shell in browser (draws from textual-web)
+14. **WebAssembly target** — Serve candy-scriptui in browser (draws from textual-web)
 15. **Tree-sitter integration** — Syntax highlighting for code formatting
 16. **Async process pipeline** — Pipe commands together with proper stream handling
 
@@ -667,7 +667,7 @@ Could add `--theme` flag to more commands that respects terminal color profile d
 
 # Final Strategic Assessment
 
-candy-shell represents a well-executed port of charmbracelet/gum to PHP, achieving ~85% functional parity while introducing PHP-specific innovations (attributes, Levenshtein typo suggestion, env var global prefix). The architecture is clean — Symfony Console surface over TEA models over candy-forms components — and the codebase demonstrates good PHP 8.3+ practices throughout.
+candy-scriptui represents a well-executed port of charmbracelet/gum to PHP, achieving ~85% functional parity while introducing PHP-specific innovations (attributes, Levenshtein typo suggestion, env var global prefix). The architecture is clean — Symfony Console surface over TEA models over candy-forms components — and the codebase demonstrates good PHP 8.3+ practices throughout.
 
 **Key differentiators vs upstream gum:**
 
@@ -684,12 +684,12 @@ candy-shell represents a well-executed port of charmbracelet/gum to PHP, achievi
 - Subscriptions (requires Program loop enhancement)
 
 **Ecosystem positioning:**
-candy-shell sits at the application framework tier, serving as the **CLI entry point** for the SugarCraft TUI ecosystem. It depends on foundation libs (candy-core, candy-forms, candy-sprinkles, candy-shine, candy-pty) and provides no components itself — only command wrappers. This is the correct architecture: the foundation libs are reusable in custom TUI applications, while candy-shell provides the gum-compatible CLI surface for shell scripts.
+candy-scriptui sits at the application framework tier, serving as the **CLI entry point** for the SugarCraft TUI ecosystem. It depends on foundation libs (candy-core, candy-forms, candy-sprinkles, candy-shine, candy-pty) and provides no components itself — only command wrappers. This is the correct architecture: the foundation libs are reusable in custom TUI applications, while candy-scriptui provides the gum-compatible CLI surface for shell scripts.
 
 **Comparison with other PHP CLI frameworks:**
 
-- **vs c9s/CLIFramework:** candy-shell is more modern (PHP 8.3+ strict typing, attributes), has better TUI integration, but lacks CLIFramework's hierarchical command groups and extension system
-- **vs php-tui:** Different focus (php-tui is a widget library for building TUIs; candy-shell is a ready-made CLI tool)
+- **vs c9s/CLIFramework:** candy-scriptui is more modern (PHP 8.3+ strict typing, attributes), has better TUI integration, but lacks CLIFramework's hierarchical command groups and extension system
+- **vs php-tui:** Different focus (php-tui is a widget library for building TUIs; candy-scriptui is a ready-made CLI tool)
 
 **Recommended focus areas:**
 

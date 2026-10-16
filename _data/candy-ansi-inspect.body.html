@@ -1,19 +1,19 @@
-<p class="lede" style="margin-top: 28px;">Pipe styled output through SugarSpark and each escape becomes a labelled line. Decodes SGR / CSI / OSC / DCS / APC / SS3, DEC private modes, kitty keyboard protocol, synchronized output, unicode grapheme mode.</p>
+<p class="lede" style="margin-top: 28px;">Pipe styled output through CandyAnsiInspect and each escape becomes a labelled line. Decodes SGR / CSI / OSC / DCS / APC / SS3, DEC private modes, kitty keyboard protocol, synchronized output, unicode grapheme mode.</p>
 
     <h3 style="margin-top: 32px;">Install</h3>
-    <pre class="code"><code class="language-shell">composer require sugarcraft/sugar-spark</code></pre>
+    <pre class="code"><code class="language-shell">composer require sugarcraft/candy-ansi-inspect</code></pre>
 
     <h3 style="margin-top: 32px;">Quickstart</h3>
-    <pre class="code"><code class="language-text">$ printf '\e[31mhello\e[0m world\n' | sugarspark
+    <pre class="code"><code class="language-text">$ printf '\e[31mhello\e[0m world\n' | candy-ansi-inspect
 ESC[31m  SGR foreground red
 hello
 ESC[0m   SGR reset
  world
 
-$ printf '\e]0;new title\e\\' | sugarspark
+$ printf '\e]0;new title\e\\' | candy-ansi-inspect
 ESC]0;new title  set window title to "new title"
 
-$ printf '\e[?2026h' | sugarspark
+$ printf '\e[?2026h' | candy-ansi-inspect
 ESC[?2026h  enable synchronized output</code></pre>
 
     <h3 style="margin-top: 32px;">What's in the box</h3>
@@ -28,9 +28,9 @@ ESC[?2026h  enable synchronized output</code></pre>
 
     <h3 style="margin-top: 40px;">Source &amp; demos</h3>
     <ul>
-      <li><a href="https://github.com/sugarcraft/sugar-spark">Source on GitHub</a></li>
-      <li><a href="https://github.com/sugarcraft/sugar-spark/blob/master/README.md">Full README</a></li>
-      <li><a href="https://github.com/sugarcraft/sugar-spark/tree/main/examples">Runnable examples</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-ansi-inspect">Source on GitHub</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-ansi-inspect/blob/master/README.md">Full README</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-ansi-inspect/tree/main/examples">Runnable examples</a></li>
       <li>Originally inspired by <a href="https://github.com/charmbracelet/sequin">sequin</a> (Go); SugarCraft is developed as a native PHP project.</li>
     </ul>
 
@@ -53,7 +53,7 @@ ESC[?2026h  enable synchronized output</code></pre>
         <p class="lede">VHS-recorded GIFs of every example shipped with the library. Regenerated automatically on every push that touches the source.</p>
         <div class="demo-grid">
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-spark/.vhs/inspect.gif" alt="Inspect">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-ansi-inspect/.vhs/inspect.gif" alt="Inspect">
                 <h3>Inspect</h3>
                 <span class="demo-caption">Annotating SGR / OSC / DCS / APC streams in real time.</span>
             </div>

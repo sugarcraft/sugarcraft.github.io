@@ -1,4 +1,4 @@
-# sugar-spark Research: ANSI Escape Sequence Inspector Tools
+# candy-ansi-inspect Research: ANSI Escape Sequence Inspector Tools
 
 **Date:** 2026-05-13
 **Upstream:** [charmbracelet/sequin](https://github.com/charmbracelet/sequin)
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The current sugar-spark implementation is a solid direct port of sequin's functionality. However, several architectural improvements and feature additions from upstream and other ecosystems could significantly enhance the library. This research identifies **5 high-priority improvements** with estimated effort.
+The current candy-ansi-inspect implementation is a solid direct port of sequin's functionality. However, several architectural improvements and feature additions from upstream and other ecosystems could significantly enhance the library. This research identifies **5 high-priority improvements** with estimated effort.
 
 ---
 
@@ -16,7 +16,7 @@ The current sugar-spark implementation is a solid direct port of sequin's functi
 
 ### Architecture
 
-The current sugar-spark uses a **byte-by-byte parsing loop** with explicit sequence type detection based on escape character prefixes:
+The current candy-ansi-inspect uses a **byte-by-byte parsing loop** with explicit sequence type detection based on escape character prefixes:
 
 ```php
 // Inspector.php lines 38-151 - Main parsing loop
@@ -70,7 +70,7 @@ var csiHandlers = map[int]handlerFn{
 
 **Key Differences:**
 
-| Aspect | sugar-spark | sequin (Go) |
+| Aspect | candy-ansi-inspect | sequin (Go) |
 |--------|-------------|-------------|
 | Parser | Manual byte loop | State machine (`ansi.Parser`) |
 | Handler dispatch | `match` statements | Map-based `handlerFn` |
@@ -157,11 +157,11 @@ pub fn strip_str(data: &str) -> StrippedStr<'_>  // Strip ANSI from string
 
 ---
 
-## 3. Specific Improvements for sugar-spark
+## 3. Specific Improvements for candy-ansi-inspect
 
 ### Priority 1: Add Control Code (C0/C1) Support
 
-**Why:** sequin handles 0x00-0x1F (C0) and 0x80-0x9F (C1) control codes. sugar-spark ignores them.
+**Why:** sequin handles 0x00-0x1F (C0) and 0x80-0x9F (C1) control codes. candy-ansi-inspect ignores them.
 
 **Current state:** Control codes pass through as text.
 
@@ -301,7 +301,7 @@ public static function reportAsJson(string $input): string
 
 **Why:** Improve debugging DX with syntax highlighting and inline visualization.
 
-**Features from sequin not in sugar-spark:**
+**Features from sequin not in candy-ansi-inspect:**
 
 1. **Raw mode with inline highlighting:**
 ```bash
@@ -338,7 +338,7 @@ public static function highlight(string $input, HighlightTheme $theme = null): s
 
 ### From upstream sequin:
 
-| Sequence | sequin | sugar-spark | Notes |
+| Sequence | sequin | candy-ansi-inspect | Notes |
 |----------|--------|-------------|-------|
 | SOS (Start of String) | ✅ | ❌ | `\x98` ... `\x9c` |
 | PM (Privacy Message) | ✅ | ❌ | `\x9e` ... `\x9c` |
@@ -349,7 +349,7 @@ public static function highlight(string $input, HighlightTheme $theme = null): s
 ### SGR 4 underline styles (from sequin sgr.go):
 
 ```php
-// Current (sugar-spark):
+// Current (candy-ansi-inspect):
 $code === 4 => 'underline'
 
 // Should be (from sequin):

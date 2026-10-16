@@ -1,4 +1,4 @@
-# sugar-spark: ANSI Escape-Sequence Inspector
+# candy-ansi-inspect: ANSI Escape-Sequence Inspector
 
 ## Metadata
 
@@ -8,11 +8,11 @@
 
 - **Status:** 🟢 v1 ready
 
-- **Location:** `sugar-spark/`
+- **Location:** `candy-ansi-inspect/`
 
-- **Package:** `sugarcraft/sugar-spark`
+- **Package:** `sugarcraft/candy-ansi-inspect`
 
-- **Namespace:** `SugarCraft\Spark`
+- **Namespace:** `SugarCraft\AnsiInspect`
 
 - **PHP:** ^8.3
 
@@ -24,23 +24,23 @@
 
 ## 1. Overview
 
-sugar-spark is a PHP port of `charmbracelet/sequin` — a human-readable ANSI escape-sequence inspector/debugger for TUI development. Pipe styled terminal output through it and each escape sequence becomes a labelled, descriptive line. It serves as the SugarCraft ecosystem's dedicated **ANSI debugging tool**.
+candy-ansi-inspect is a PHP port of `charmbracelet/sequin` — a human-readable ANSI escape-sequence inspector/debugger for TUI development. Pipe styled terminal output through it and each escape sequence becomes a labelled, descriptive line. It serves as the SugarCraft ecosystem's dedicated **ANSI debugging tool**.
 
 ### Purpose
 
-When building TUI applications, developers often struggle to understand what ANSI escape sequences their code actually generates. sugar-spark decodes raw bytes into human-readable descriptions (e.g., `\x1b[31m` → `ESC[31m  SGR foreground red`).
+When building TUI applications, developers often struggle to understand what ANSI escape sequences their code actually generates. candy-ansi-inspect decodes raw bytes into human-readable descriptions (e.g., `\x1b[31m` → `ESC[31m  SGR foreground red`).
 
 ### Quick Start
 
 ```php
-use SugarCraft\Spark\Inspector;
+use SugarCraft\AnsiInspect\Inspector;
 
 foreach (Inspector::parse("\e[1;31mboom\e[0m") as $segment) {
     echo $segment->describe(), "\n";
 }
 
 // CLI
-$ printf '\e[31mhello\e[0m world\n' | sugarspark
+$ printf '\e[31mhello\e[0m world\n' | candy-ansi-inspect
 ```
 
 ---
@@ -131,7 +131,7 @@ The `composer.json` shows:
 }
 ```
 
-However, unlike Go sequin which uses `charmbracelet/x/ansi` for parsing, sugar-spark implements its own manual byte-parsing. The `candy-core` dependency appears to be for future integration rather than current parsing needs.
+However, unlike Go sequin which uses `charmbracelet/x/ansi` for parsing, candy-ansi-inspect implements its own manual byte-parsing. The `candy-core` dependency appears to be for future integration rather than current parsing needs.
 
 ---
 
@@ -234,7 +234,7 @@ The `C0C1.php` class provides lookup tables for all C0 (0x00-0x1F) and C1 (0x80-
 ### 4.2 Inspector::report Output Format
 
 ```
-$ printf '\e[31mhello\e[0m world\n' | sugarspark
+$ printf '\e[31mhello\e[0m world\n' | candy-ansi-inspect
 ESC[31m  SGR foreground red
 hello
 ESC[0m   SGR reset
@@ -289,7 +289,7 @@ Output:
 
 ### 5.1 Internationalization (i18n)
 
-sugar-spark uses SugarCraft's centralized i18n system:
+candy-ansi-inspect uses SugarCraft's centralized i18n system:
 - `Lang.php` extends `SugarCraft\Core\I18n\Lang`
 
 - Namespace: `'spark'`
@@ -303,13 +303,13 @@ The only translation key currently defined:
 ```php
 // lang/en.php
 return [
-    'cli.usage' => "usage: sugarspark [file]\n  or:  cmd | sugarspark",
+    'cli.usage' => "usage: candy-ansi-inspect [file]\n  or:  cmd | candy-ansi-inspect",
 ];
 ```
 
 ### 5.2 Theme Philosophy
 
-Unlike Go sequin which uses `lipgloss` for syntax-highlighted output with adaptive dark/light themes, sugar-spark produces **plain text output only**. There is no visual/color theme system — descriptions are text labels only.
+Unlike Go sequin which uses `lipgloss` for syntax-highlighted output with adaptive dark/light themes, candy-ansi-inspect produces **plain text output only**. There is no visual/color theme system — descriptions are text labels only.
 
 This is a deliberate design choice for simplicity and portability. Users pipe output to view in their terminal, which provides its own styling.
 
@@ -319,7 +319,7 @@ This is a deliberate design choice for simplicity and portability. Users pipe ou
 
 ### 6.1 Current State
 
-**sugar-spark does NOT have PTY execution.**
+**candy-ansi-inspect does NOT have PTY execution.**
 
 The Go sequin includes `exec.go` which creates a PTY to execute commands and capture their raw output:
 ```go
@@ -336,7 +336,7 @@ $ sequin -- some command
 
 ### 6.2 Implications
 
-sugar-spark can only inspect:
+candy-ansi-inspect can only inspect:
 1. Explicit strings passed to `parse()`/`report()`
 
 2. File contents read via CLI argument
@@ -351,7 +351,7 @@ It cannot execute a command and inspect its live output because PHP lacks a nati
 
 ### 7.1 Current Test Approach
 
-sugar-spark does **NOT** use golden file testing. Tests are unit-based, asserting specific labels for known inputs.
+candy-ansi-inspect does **NOT** use golden file testing. Tests are unit-based, asserting specific labels for known inputs.
 
 ### 7.2 Test Coverage
 
@@ -398,9 +398,9 @@ This is a notable architectural difference — Go sequin's golden files ensure o
 
 ### 8.1 Relationship to candy-vt
 
-sugar-spark and candy-vt serve **different purposes** despite both parsing ANSI:
+candy-ansi-inspect and candy-vt serve **different purposes** despite both parsing ANSI:
 
-| Aspect | sugar-spark | candy-vt |
+| Aspect | candy-ansi-inspect | candy-vt |
 |--------|-------------|----------|
 | **Purpose** | Debugging/explaining sequences | Terminal emulation |
 | **Output** | Human-readable labels | Rendered cell grid |
@@ -428,19 +428,19 @@ From `repo_map/sugarcraft_candy-vt.md` section 10.2:
 
 - **Go sequin** → Uses `charmbracelet/x/ansi` state-machine parser with handler dispatch maps
 
-- **sugar-spark** → Manual byte-by-byte loop with explicit sequence detection
+- **candy-ansi-inspect** → Manual byte-by-byte loop with explicit sequence detection
 
 - **candy-vt** → Paul Williams VT500 state machine directly ported from `charmbracelet/x/ansi/parser`
 
-sugar-spark does NOT use candy-vt for parsing — it implements its own lightweight parser optimized for explanation rather than emulation.
+candy-ansi-inspect does NOT use candy-vt for parsing — it implements its own lightweight parser optimized for explanation rather than emulation.
 
 ---
 
 ## 9. CLI Interface
 
-### 9.1 sugarspark Binary
+### 9.1 candy-ansi-inspect Binary
 
-Location: `bin/sugarspark` (33 lines)
+Location: `bin/candy-ansi-inspect` (33 lines)
 
 ```php
 #!/usr/bin/env php
@@ -452,17 +452,17 @@ Location: `bin/sugarspark` (33 lines)
 ```bash
 # From file
 
-$ sugarspark dump.txt
+$ candy-ansi-inspect dump.txt
 
 # From stdin
 
-$ printf '\e[31mred\e[0m' | sugarspark
+$ printf '\e[31mred\e[0m' | candy-ansi-inspect
 
 # Usage (when no input)
 
-$ sugarspark
-usage: sugarspark [file]
-  or:  cmd | sugarspark
+$ candy-ansi-inspect
+usage: candy-ansi-inspect [file]
+  or:  cmd | candy-ansi-inspect
 ```
 
 ### 9.2 inspect.sh Example Script
@@ -473,22 +473,22 @@ usage: sugarspark [file]
 # Demonstrates various sequence types
 
 echo "── SGR (foreground colours) ────────────────────"
-printf '\e[31mred\e[32m green\e[34m blue\e[0m default\n' | sugarspark
+printf '\e[31mred\e[32m green\e[34m blue\e[0m default\n' | candy-ansi-inspect
 
 echo "── DEC private modes ────────────────────────────"
-printf '\e[?2026h\e[?2027h\e[?1004h' | sugarspark
+printf '\e[?2026h\e[?2027h\e[?1004h' | candy-ansi-inspect
 
 echo "── OSC (clipboard write) ────────────────────────"
-printf '\e]52;c;dGVzdA==\e\\' | sugarspark
+printf '\e]52;c;dGVzdA==\e\\' | candy-ansi-inspect
 
 echo "── OSC 8 hyperlink ──────────────────────────────"
-printf '\e]8;;https://charm.sh\e\\Charm\e]8;;\e\\' | sugarspark
+printf '\e]8;;https://charm.sh\e\\Charm\e]8;;\e\\' | candy-ansi-inspect
 
 echo "── DCS (XTVERSION reply) ────────────────────────"
-printf '\eP>|xterm(367)\e\\' | sugarspark
+printf '\eP>|xterm(367)\e\\' | candy-ansi-inspect
 
 echo "── APC (CandyMouse marker) ───────────────────────"
-printf '\e_candyzone:S:btn:ok\e\\OK\e_candyzone:E:btn:ok\e\\' | sugarspark
+printf '\e_candyzone:S:btn:ok\e\\OK\e_candyzone:E:btn:ok\e\\' | candy-ansi-inspect
 ```
 
 ---
@@ -497,7 +497,7 @@ printf '\e_candyzone:S:btn:ok\e\\OK\e_candyzone:E:btn:ok\e\\' | sugarspark
 
 ### 10.1 Feature Parity Matrix
 
-| Feature | sequin (Go) | sugar-spark (PHP) | Notes |
+| Feature | sequin (Go) | candy-ansi-inspect (PHP) | Notes |
 |---------|-------------|-------------------|-------|
 | CSI parsing | ✅ | ✅ | Full support |
 | OSC parsing | ✅ | ✅ | Full support |
@@ -518,8 +518,8 @@ printf '\e_candyzone:S:btn:ok\e\\OK\e_candyzone:E:btn:ok\e\\' | sugarspark
 | OSC 8 hyperlinks | ✅ | ✅ | URI parsing |
 | OSC 52 clipboard | ✅ | ✅ | Base64 display |
 | OSC 7 cwd | ✅ | ✅ | file:// URL |
-| Streaming parse | ❌ | ✅ | **Unique to sugar-spark** |
-| JSON output | ❌ | ✅ | **Unique to sugar-spark** |
+| Streaming parse | ❌ | ✅ | **Unique to candy-ansi-inspect** |
+| JSON output | ❌ | ✅ | **Unique to candy-ansi-inspect** |
 | PTY execution | ✅ | ❌ | Go sequin only |
 | Raw mode (syntax highlight) | ✅ | ❌ | Go sequin only |
 | Theme support | ✅ | ❌ | Go sequin only |
@@ -528,7 +528,7 @@ printf '\e_candyzone:S:btn:ok\e\\OK\e_candyzone:E:btn:ok\e\\' | sugarspark
 
 ### 10.2 Architectural Differences
 
-| Aspect | Go sequin | PHP sugar-spark |
+| Aspect | Go sequin | PHP candy-ansi-inspect |
 |--------|-----------|-----------------|
 | **Parser** | `ansi.Parser` state machine from `charmbracelet/x/ansi` | Manual byte-by-byte loop |
 | **Handler dispatch** | Map-based `handlerFn` registry | `match` statements per sequence type |
@@ -538,7 +538,7 @@ printf '\e_candyzone:S:btn:ok\e\\OK\e_candyzone:E:btn:ok\e\\' | sugarspark
 | **Raw mode** | `--raw` flag for inline highlighting | Not available |
 | **C0/C1** | Full ctrlCodes map | Full C0C1 lookup table |
 
-### 10.3 Unique sugar-spark Contributions
+### 10.3 Unique candy-ansi-inspect Contributions
 
 Two features not present in Go sequin:
 
@@ -546,7 +546,7 @@ Two features not present in Go sequin:
 
 2. **JSON output** — Machine-readable format for tooling integration
 
-### 10.4 Missing from sugar-spark
+### 10.4 Missing from candy-ansi-inspect
 
 1. **PTY execution** — Cannot run commands and inspect output
 
@@ -589,7 +589,7 @@ Sleep 5s
 
 ## 12. Innovation Points
 
-### 12.1 What sugar-spark Does Well
+### 12.1 What candy-ansi-inspect Does Well
 
 1. **Comprehensive sequence coverage** — Handles CSI, OSC, DCS, APC, SS3, C0/C1, and two-byte ESC
 
@@ -633,11 +633,11 @@ Sleep 5s
 
 ## 13. Conclusion
 
-sugar-spark is a mature, well-tested PHP port of Go sequin that provides comprehensive ANSI escape sequence inspection for TUI debugging. It covers virtually all sequence types with detailed human-readable labels, and adds unique value through streaming incremental parsing and JSON output.
+candy-ansi-inspect is a mature, well-tested PHP port of Go sequin that provides comprehensive ANSI escape sequence inspection for TUI debugging. It covers virtually all sequence types with detailed human-readable labels, and adds unique value through streaming incremental parsing and JSON output.
 
 The implementation is clean and portable (pure PHP, no native deps), though it lacks some upstream features (PTY execution, theme support, golden file tests). The manual byte-by-byte parsing approach, while functional, differs from the state-machine approach used by Go sequin and candy-vt.
 
-As a debugging tool within the SugarCraft ecosystem, sugar-spark plays a crucial role in understanding what ANSI sequences the TUI libraries generate — serving as a mirror to the raw output that `candy-core` and other libraries produce.
+As a debugging tool within the SugarCraft ecosystem, candy-ansi-inspect plays a crucial role in understanding what ANSI sequences the TUI libraries generate — serving as a mirror to the raw output that `candy-core` and other libraries produce.
 
 ---
 
@@ -652,7 +652,7 @@ As a debugging tool within the SugarCraft ecosystem, sugar-spark plays a crucial
 | `src/Segment.php` | Abstract base (21 lines) |
 | `src/C0C1.php` | Control code tables (94 lines) |
 | `src/Lang.php` | i18n facade (22 lines) |
-| `bin/sugarspark` | CLI binary (33 lines) |
+| `bin/candy-ansi-inspect` | CLI binary (33 lines) |
 | `tests/InspectorTest.php` | 58 tests |
 | `tests/StreamingInspectorTest.php` | 14 tests |
 | `tests/SegmentTest.php` | 6 tests |

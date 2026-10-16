@@ -1,10 +1,10 @@
-# sugar-spark: ANSI Debugger — Innovation & Strategic Update Report
+# candy-ansi-inspect: ANSI Debugger — Innovation & Strategic Update Report
 
 ## Overview
 
-**sugar-spark** is a PHP port of `charmbracelet/sequin` — a human-readable ANSI escape-sequence inspector/debugger for TUI development. It serves as the SugarCraft ecosystem's dedicated **ANSI debugging tool**, allowing developers to pipe styled terminal output through it and see each escape sequence decoded into labelled, descriptive lines.
+**candy-ansi-inspect** is a PHP port of `charmbracelet/sequin` — a human-readable ANSI escape-sequence inspector/debugger for TUI development. It serves as the SugarCraft ecosystem's dedicated **ANSI debugging tool**, allowing developers to pipe styled terminal output through it and see each escape sequence decoded into labelled, descriptive lines.
 
-**Ecosystem Position:** sugar-spark occupies a unique niche as a *diagnostic tool* rather than a *rendering* or *framework* library. Unlike candy-vt (terminal emulation with cell grid output) or candy-core (TUI runtime), sugar-spark is purely about parsing and explaining ANSI byte streams in human-readable form. This makes it valuable across the entire ecosystem as a debugging companion.
+**Ecosystem Position:** candy-ansi-inspect occupies a unique niche as a *diagnostic tool* rather than a *rendering* or *framework* library. Unlike candy-vt (terminal emulation with cell grid output) or candy-core (TUI runtime), candy-ansi-inspect is purely about parsing and explaining ANSI byte streams in human-readable form. This makes it valuable across the entire ecosystem as a debugging companion.
 
 **Biggest Opportunity Areas:**
 
@@ -27,7 +27,7 @@
 ### Current Architecture
 
 ```
-sugar-spark/src/
+candy-ansi-inspect/src/
 ├── Inspector.php          # Main parsing engine (551 lines)
 ├── StreamingInspector.php # Incremental chunked parsing (238 lines)
 ├── SequenceSegment.php    # ANSI sequence segment (34 lines)
@@ -88,7 +88,7 @@ Inspector::report($input): string
 // Machine-readable output
 Inspector::reportAsJson($input): string
 
-// Streaming (unique to sugar-spark)
+// Streaming (unique to candy-ansi-inspect)
 $inspector = new StreamingInspector();
 $segs = $inspector->feed("pre \x1b[31m");  // Returns nothing yet
 $segs = $inspector->feed(" red \x1b[0m "); // Completes CSI, yields segments
@@ -142,11 +142,11 @@ $segs = $inspector->finish();              // Flushes trailing text
 
 #### 1. PTY Execution Integration
 
-**Description:** sugar-spark cannot execute a command and inspect its live output — it can only parse pre-captured strings or piped data.
+**Description:** candy-ansi-inspect cannot execute a command and inspect its live output — it can only parse pre-captured strings or piped data.
 
-**Why it matters:** The upstream Go sequin includes `exec.go` which creates a PTY to execute commands and capture their raw output. This enables `sequin -- some command` workflow. Without this, sugar-spark is limited to inspecting static output.
+**Why it matters:** The upstream Go sequin includes `exec.go` which creates a PTY to execute commands and capture their raw output. This enables `sequin -- some command` workflow. Without this, candy-ansi-inspect is limited to inspecting static output.
 
-**Source:** `charmbracelet/sequin` exec.go pattern (`docs/repo_map/sugarcraft_sugar-spark.md`)
+**Source:** `charmbracelet/sequin` exec.go pattern (`docs/repo_map/sugarcraft_candy-ansi-inspect.md`)
 
 **Implementation ideas:**
 
@@ -165,7 +165,7 @@ $segs = $inspector->finish();              // Flushes trailing text
 
 **Description:** Go sequin uses `charmbracelet/x/exp/golden` for snapshot testing with `.golden` files ensuring output stability.
 
-**Why it matters:** sugar-spark has 116 unit tests but no golden file regression tests. This means:
+**Why it matters:** candy-ansi-inspect has 116 unit tests but no golden file regression tests. This means:
 
 - Refactoring the parser could silently break output format
 - Cross-platform differences aren't explicitly tracked
@@ -190,7 +190,7 @@ $segs = $inspector->finish();              // Flushes trailing text
 
 #### 3. State Machine Parser
 
-**Description:** sugar-spark uses manual byte-by-byte parsing; Go sequin uses `charmbracelet/x/ansi` state machine parser.
+**Description:** candy-ansi-inspect uses manual byte-by-byte parsing; Go sequin uses `charmbracelet/x/ansi` state machine parser.
 
 **Why it matters:** 
 
@@ -286,7 +286,7 @@ $segs = $inspector->finish();              // Flushes trailing text
 
 **Implementation ideas:**
 
-- Create `sugar-spark-tui` example using `candy-core`
+- Create `candy-ansi-inspect-tui` example using `candy-core`
 - Scroll through sequences, search/filter, expand details
 - Show hexdump view alongside description
 
@@ -360,7 +360,7 @@ $segs = $inspector->finish();              // Flushes trailing text
 
 ### Current vs External Approach
 
-| Aspect | sugar-spark (Current) | Go sequin / charmbracelet/x |
+| Aspect | candy-ansi-inspect (Current) | Go sequin / charmbracelet/x |
 |--------|----------------------|------------------------------|
 | **Parser type** | Manual byte-by-byte loop | State machine (`ansi.Parser`) |
 | **Handler dispatch** | `match` statements per sequence type | Map-based `handlerFn` registry |
@@ -383,9 +383,9 @@ $segs = $inspector->finish();              // Flushes trailing text
 | **Manual byte loop** | Simple, no dependencies, easy to debug | Hard to extend, error-prone for edge cases |
 | **State machine** | Verifiable, extensible, standard-compliant | More complex, transition table overhead |
 
-### Applicability to sugar-spark
+### Applicability to candy-ansi-inspect
 
-The state machine approach is **highly applicable** — sugar-spark already needs to handle all the same sequence types as the Go implementation. The VT500 state machine used in `candy-vt` (directly ported from `charmbracelet/x/ansi/parser`) could serve as a reference implementation.
+The state machine approach is **highly applicable** — candy-ansi-inspect already needs to handle all the same sequence types as the Go implementation. The VT500 state machine used in `candy-vt` (directly ported from `charmbracelet/x/ansi/parser`) could serve as a reference implementation.
 
 However, the manual approach is **working and tested** — 116 tests pass. Migration should be done carefully with backwards compatibility.
 
@@ -562,12 +562,12 @@ final class OscSegment implements Segment { ... }
 
 **Content:**
 
-- Debugging TUI output: ` sugarspark < file.ansi`
-- Piping from other tools: `candy-core-app | sugarspark`
+- Debugging TUI output: ` candy-ansi-inspect < file.ansi`
+- Piping from other tools: `candy-core-app | candy-ansi-inspect`
 - Interpreting SGR sequences
 - Common patterns in bubble tea output
 
-**Location:** `sugar-spark/README.md` or `docs/debugging.md`
+**Location:** `candy-ansi-inspect/README.md` or `docs/debugging.md`
 
 ### 2. Cookbook Examples
 
@@ -619,12 +619,12 @@ final class OscSegment implements Segment { ... }
 ### 1. Interactive REPL
 
 ```bash
-$ sugarspark --interactive
-sugar-spark> \e[31mred\e[0m
+$ candy-ansi-inspect --interactive
+candy-ansi-inspect> \e[31mred\e[0m
 ESC[31m  SGR foreground red
-sugar-spark> \e[1;32mbold green\e[0m
+candy-ansi-inspect> \e[1;32mbold green\e[0m
 ESC[1;32m  SGR bold, foreground bright green
-sugar-spark> help
+candy-ansi-inspect> help
 Available commands: help, exit, stats, clear, load <file>
 ```
 
@@ -643,7 +643,7 @@ When stdout is a TTY, use `candy-shine` to colorize:
 ### 3. Diff Mode (-d)
 
 ```bash
-$ sugarspark -d output1.ansi output2.ansi
+$ candy-ansi-inspect -d output1.ansi output2.ansi
 --- output1.ansi
 +++ output2.ansi
 @@ -1,3 +1,3 @@
@@ -720,7 +720,7 @@ final class Snapshotter {
 **Implementation:**
 ```php
 use SugarCraft\Pty\PtySystemFactory;
-use SugarCraft\Spark\Inspector;
+use SugarCraft\AnsiInspect\Inspector;
 
 final class SparkPty {
     public function execute(string $command): list<Segment> {
@@ -755,7 +755,7 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 - Syntax highlighting for ANSI escape sequences in files
 - Hover to see decoded sequence meaning
-- Command palette: "Debug this file with sugar-spark"
+- Command palette: "Debug this file with candy-ansi-inspect"
 
 ### 4. Browser-based Inspector
 
@@ -775,7 +775,7 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 **Resolution:** Implemented in Go sequin via `exec.go` using `xpty`.
 
-**Lessons for sugar-spark:**
+**Lessons for candy-ansi-inspect:**
 
 - This is the #1 requested feature
 - Should prioritize candy-pty integration
@@ -787,7 +787,7 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 **Resolution:** Go sequin adopted `charmbracelet/x/exp/golden`.
 
-**Lessons for sugar-spark:**
+**Lessons for candy-ansi-inspect:**
 
 - Essential for long-term maintainability
 - Should be added before major refactors
@@ -799,15 +799,15 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 **Resolution:** Created the state machine-based `ansi.Parser` with handler maps.
 
-**Lessons for sugar-spark:**
+**Lessons for candy-ansi-inspect:**
 
 - State machine approach is battle-tested in upstream
 - Handler registry enables extensibility
 - Consider adopting even if manual parsing works
 
-### 4. sugar-spark CALIBER_LEARNINGS.md Absence
+### 4. candy-ansi-inspect CALIBER_LEARNINGS.md Absence
 
-**Observation:** sugar-spark has no `CALIBER_LEARNINGS.md` unlike most other SugarCraft libs.
+**Observation:** candy-ansi-inspect has no `CALIBER_LEARNINGS.md` unlike most other SugarCraft libs.
 
 **Recommendation:** Document key implementation decisions:
 
@@ -849,7 +849,7 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 5. **candy-pty integration for PTY execution**
    - Implement `Inspector::execute(string $cmd): list<Segment>`
-   - Add `bin/sugarspark-exec` wrapper script
+   - Add `bin/candy-ansi-inspect-exec` wrapper script
    - **Impact:** Primary Go sequin feature parity
 
 6. **Handler registry pattern**
@@ -859,7 +859,7 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 7. **Diff mode**
    - `Inspector::diff(string $before, string $after): DiffResult`
-   - CLI: `sugarspark --diff file1.ansi file2.ansi`
+   - CLI: `candy-ansi-inspect --diff file1.ansi file2.ansi`
    - **Impact:** Debugging productivity
 
 ### Major Architectural Upgrades (3-6 months)
@@ -908,7 +908,7 @@ foreach (Inspector::parse($terminal->screen()->toAnsi()) as $segment) {
 
 ## Final Strategic Assessment
 
-sugar-spark is a mature, well-tested PHP port of Go sequin that provides comprehensive ANSI escape sequence inspection for TUI debugging. Its 116 tests, 16-locale i18n system, and unique streaming inspector demonstrate production quality. The library's clean API (`parse()`, `report()`, `reportAsJson()`) and comprehensive sequence coverage make it invaluable for the SugarCraft ecosystem.
+candy-ansi-inspect is a mature, well-tested PHP port of Go sequin that provides comprehensive ANSI escape sequence inspection for TUI debugging. Its 116 tests, 16-locale i18n system, and unique streaming inspector demonstrate production quality. The library's clean API (`parse()`, `report()`, `reportAsJson()`) and comprehensive sequence coverage make it invaluable for the SugarCraft ecosystem.
 
 **Critical gaps compared to upstream:**
 
@@ -920,7 +920,7 @@ sugar-spark is a mature, well-tested PHP port of Go sequin that provides compreh
 The manual byte-by-byte parsing approach, while functional, differs from the state-machine approach used by both Go sequin (`charmbracelet/x/ansi`) and the ecosystem's own `candy-vt`. Migrating to a state machine would improve maintainability and align with the VT500 standard, but carries risk of regression. A phased approach (parallel operation, then migration) is recommended.
 
 **Ecosystem positioning:**
-sugar-spark is uniquely positioned as a debugging tool that complements rather than competes with other SugarCraft libs. It can be used alongside `candy-core` (TUI runtime), `candy-vt` (terminal emulation), `candy-pty` (PTY execution), and `candy-shine` (styling). The primary opportunity is integration with `candy-pty` to provide the PTY execution that makes Go sequin so powerful.
+candy-ansi-inspect is uniquely positioned as a debugging tool that complements rather than competes with other SugarCraft libs. It can be used alongside `candy-core` (TUI runtime), `candy-vt` (terminal emulation), `candy-pty` (PTY execution), and `candy-shine` (styling). The primary opportunity is integration with `candy-pty` to provide the PTY execution that makes Go sequin so powerful.
 
 **Recommended focus:**
 

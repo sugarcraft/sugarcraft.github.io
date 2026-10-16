@@ -1,4 +1,4 @@
-# SugarCraft/candy-serve
+# SugarCraft/candy-git-server
 
 ## Metadata
 
@@ -10,9 +10,9 @@
 
 - **License:** MIT
 
-- **Package:** `sugarcraft/candy-serve`
+- **Package:** `sugarcraft/candy-git-server`
 
-- **Namespace:** `SugarCraft\Serve`
+- **Namespace:** `SugarCraft\GitServer`
 
 - **Status:** 🟢 v1 ready
 
@@ -28,7 +28,7 @@
 
 - **Git daemon** (`GitDaemon.php`) — Native Git protocol on port 9418, anonymous read-only access, background daemon with PID file and signal handling
 
-- **HTTP Smart Protocol** (`HttpSmartProtocol/Server.php`) — Git-over-HTTP with Basic auth and custom `X-CandyServe-User` header support
+- **HTTP Smart Protocol** (`HttpSmartProtocol/Server.php`) — Git-over-HTTP with Basic auth and custom `X-CandyGitServer-User` header support
 
 ### User Management
 
@@ -72,7 +72,7 @@
 
 ### CLI Tool
 
-- **bin/soft-serve** — `serve`, `init`, `user add|key|list`, `repo list|create|info` commands
+- **bin/candy-git-server** — `serve`, `init`, `user add|key|list`, `repo list|create|info` commands
 
 - **Daemon mode** — pcntl_fork-based backgrounding, PID file management, graceful shutdown
 
@@ -142,7 +142,7 @@
 
 - `buildRefAdvertisement(Repo $repo, string $service): string` — Builds pkt-line encoded ref advertisement
 
-- `getUserFromHeaders(array $headers): ?User` — Extracts user from Basic auth or X-CandyServe-User header
+- `getUserFromHeaders(array $headers): ?User` — Extracts user from Basic auth or X-CandyGitServer-User header
 
 ### `src/LFS/LFSHandler.php`
 
@@ -216,7 +216,7 @@
 
 - `buildReadResponse(string $selection, string $data): string` — Builds OSC 52 response string for clipboard read
 
-### `bin/soft-serve`
+### `bin/candy-git-server`
 
 - `cmdServe(array $args)` — serve [--config path] [--daemon] [--pid-file], starts servers, lists repos
 
@@ -371,7 +371,7 @@ Minimal parser handles:
 
 4. Generates pack via `git pack-objects --stdout wantArgs` and streams back
 
-5. Authentication checked via Basic auth header or X-CandyServe-User custom header
+5. Authentication checked via Basic auth header or X-CandyGitServer-User custom header
 
 **Source:** `src/HttpSmartProtocol/Server.php:L170-251`
 
@@ -405,7 +405,7 @@ dataPath/
 ├── tmp/
 ├── hooks/
 ├── git-daemon.pid             (when running as daemon)
-└── candy-serve.db             (SQLite database)
+└── candy-git-server.db             (SQLite database)
 ```
 
 ### CLI Command Structure
@@ -421,7 +421,7 @@ soft-serve repo create <name> [dataPath]
 soft-serve repo info <name> [dataPath]
 ```
 
-**Source:** `bin/soft-serve`
+**Source:** `bin/candy-git-server`
 
 ---
 
@@ -503,7 +503,7 @@ soft-serve repo info <name> [dataPath]
 
 - Doesn't embed its own SSH transport (contrast with upstream Go soft-serve which uses charmbracelet/ssh)
 
-- The `candy-wish` library provides SSH server middleware, but candy-serve would need integration
+- The `candy-wish` library provides SSH server middleware, but candy-git-server would need integration
 
 ### 2. Git Operations Shell Out to git Binary
 
@@ -545,9 +545,9 @@ soft-serve repo info <name> [dataPath]
 
 - Upstream Go soft-serve has full Bubble Tea TUI for repo browsing, file viewing, commit history
 
-- This PHP port has no TUI — only CLI commands via bin/soft-serve
+- This PHP port has no TUI — only CLI commands via bin/candy-git-server
 
-- The `candy-wish` SSH middleware could theoretically serve TUI, but candy-serve doesn't use it
+- The `candy-wish` SSH middleware could theoretically serve TUI, but candy-git-server doesn't use it
 
 ### 7. Anonymous Access Has No Auth Layer
 
@@ -569,7 +569,7 @@ soft-serve repo info <name> [dataPath]
 
 ## Comparison with Upstream (charmbracelet/soft-serve)
 
-| Feature | Upstream (Go) | CandyServe (PHP) |
+| Feature | Upstream (Go) | CandyGitServer (PHP) |
 |---------|--------------|-----------------|
 | **SSH Git access** | ✅ Full SSH server via charmbracelet/ssh | ⚠️ Library only, needs external sshd or candy-wish |
 | **HTTP Git access** | ✅ Full HTTP server with gorilla/mux | ⚠️ Request handler only, no HTTP server |
@@ -587,11 +587,11 @@ soft-serve repo info <name> [dataPath]
 
 1. **TUI Absence** — The defining feature of upstream soft-serve (TUI over SSH) is not ported
 
-2. **Persistence** — Upstream uses proper database; candy-serve has no persistence layer
+2. **Persistence** — Upstream uses proper database; candy-git-server has no persistence layer
 
-3. **Full-stack vs Library** — Upstream is a complete application; candy-serve is a set of components
+3. **Full-stack vs Library** — Upstream is a complete application; candy-git-server is a set of components
 
-4. **SSH Transport** — Upstream embeds its own SSH server; candy-serve would need integration with candy-wish
+4. **SSH Transport** — Upstream embeds its own SSH server; candy-git-server would need integration with candy-wish
 
 ---
 
@@ -603,9 +603,9 @@ soft-serve repo info <name> [dataPath]
 
 - **candy-wish** is SugarCraft's port of wish
 
-- **candy-serve** is a git SERVER implementation, not middleware
+- **candy-git-server** is a git SERVER implementation, not middleware
 
-- wish/git middleware could power candy-serve's SSH transport
+- wish/git middleware could power candy-git-server's SSH transport
 
 **Source:** `repo_map/charmbracelet_wish.md`
 
@@ -613,9 +613,9 @@ soft-serve repo info <name> [dataPath]
 
 - **charm** provides KV store, filesystem, encryption, SSH-based auth
 
-- **candy-serve** provides git server
+- **candy-git-server** provides git server
 
-- No direct overlap — charm is user data infrastructure, candy-serve is git hosting
+- No direct overlap — charm is user data infrastructure, candy-git-server is git hosting
 
 **Source:** `repo_map/charmbracelet_charm.md`
 
@@ -627,7 +627,7 @@ soft-serve repo info <name> [dataPath]
 | **Gitolite** | Perl | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ |
 | **GitLab** | Ruby | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | **charmbracelet/soft-serve** | Go | SSH TUI | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **candy-serve** | PHP | SSH CLI | ⚠️ | ⚠️ | ✅ | ⚠️ | ✅ |
+| **candy-git-server** | PHP | SSH CLI | ⚠️ | ⚠️ | ✅ | ⚠️ | ✅ |
 
 ---
 
@@ -637,7 +637,7 @@ soft-serve repo info <name> [dataPath]
 
 - **candy-core** — Base runtime (implied by `SugarCraft\Core\I18n\Lang`)
 
-- **candy-wish** — Could provide SSH transport layer for candy-serve
+- **candy-wish** — Could provide SSH transport layer for candy-git-server
 
 - No other SugarCraft libs required (standalone git server)
 
@@ -678,13 +678,13 @@ soft-serve repo info <name> [dataPath]
 ## Files
 
 ```
-candy-serve/
+candy-git-server/
 ├── composer.json              Package metadata, sugarcraft/* dependencies
 ├── phpunit.xml              PHPUnit config with bootstrap, colors, cache
 ├── README.md                Overview, architecture diagram, usage examples
 ├── CALIBER_LEARNINGS.md     Project-specific patterns
 ├── .assets/icon.png         Package icon
-├── bin/soft-serve           Entry point CLI
+├── bin/candy-git-server           Entry point CLI
 ├── src/
 │   ├── Config.php           YAML config loading, defaults, path resolution
 │   ├── Repo.php             Bare Git repo model, immutable builder, git operations
@@ -722,6 +722,6 @@ candy-serve/
 
 - **Persistence** — No database layer; all data is in-memory; production use would need SQLite/PDO integration
 
-- **TUI** — No terminal UI implemented (contrast with upstream); only CLI commands via bin/soft-serve
+- **TUI** — No terminal UI implemented (contrast with upstream); only CLI commands via bin/candy-git-server
 
 - **Mirrors** — Repo model has mirrorFrom property but cron-based sync is not implemented

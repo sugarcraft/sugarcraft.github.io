@@ -1,20 +1,20 @@
-# candy-serve — Interactive SSH TUI milestone plan
+# candy-git-server — Interactive SSH TUI milestone plan
 
-**Status:** plan-only · **Owner:** product call → phase-1 implementer · **Branch:** `ai/plan-candy-serve-tui`
+**Status:** plan-only · **Owner:** product call → phase-1 implementer · **Branch:** `ai/plan-candy-git-server-tui`
 
 **Origin:** `plans/leftover_updates_later.md` §6 strategic-decision items ·
-`docs/research/libraries/candy-serve-research.md` §3.1 + §5 ·
-`plans/leftover/phase-11-strategic-plans/step-02-candy-serve-tui.md`
+`docs/research/libraries/candy-git-server-research.md` §3.1 + §5 ·
+`plans/leftover/phase-11-strategic-plans/step-02-candy-git-server-tui.md`
 
 > This document does **not** ship code. It is a milestone scope memo. Once
 > the user authorizes phase 1, an implementer drafts `plans/leftover/
-> phase-12-candy-serve-tui/` step files drawing from §5 below.
+> phase-12-candy-git-server-tui/` step files drawing from §5 below.
 
 ---
 
 ## TL;DR
 
-`candy-serve` is a faithful port of
+`candy-git-server` is a faithful port of
 [`charmbracelet/soft-serve`](https://github.com/charmbracelet/soft-serve)
 plumbing — SSH transport (`SSH/SSHServer.php`, 232 LOC),
 Git wire protocol (`Git/UploadPack.php` 176 LOC + `Git/ReceivePack.php`
@@ -83,13 +83,13 @@ candy-wish  Server               (existing — SSH listener + auth)
 candy-wish  Channel              (existing — pty-req, shell, window-change)
     │  Shell request
     ▼
-candy-serve  TuiSession         (NEW — phase 1)
+candy-git-server  TuiSession         (NEW — phase 1)
     │  builds context (user, accessible repos)
     ▼
 candy-core  Program             (existing — Bubble Tea runtime)
     │  Model / update / view
     ▼
-candy-serve  RepoListModel ←→ ChildModels (NEW — phases 1–5)
+candy-git-server  RepoListModel ←→ ChildModels (NEW — phases 1–5)
     │
     ├── candy-sprinkles  Style          (border, fg, bg, padding)
     ├── sugar-boxer      SugarBoxer     (titled boxes / split panes)
@@ -113,7 +113,7 @@ candy-wish already has the pieces we need:
 | `SugarCraft\Wish\Transport\InProcessTransport` | runs in this PHP process (no host sshd) |
 | `SugarCraft\Wish\Transport\HostSshdTransport` | opt-in: shell out to host sshd |
 
-candy-serve's current `SSH/SSHServer.php` uses `ext-ssh2`'s sftp-style
+candy-git-server's current `SSH/SSHServer.php` uses `ext-ssh2`'s sftp-style
 session model and only routes Git wire-protocol exec'd commands. The
 TUI plan **replaces this with candy-wish**:
 
@@ -151,7 +151,7 @@ uses `ScreenStack::push()` / `pop()` rather than re-implementing nav.
 ### 2.3 Git access (candy-git)
 
 candy-git already shells out to `git` and parses its output into PHP
-DTOs (`candy-git/src/Git.php` implements `GitDriver`). candy-serve
+DTOs (`candy-git/src/Git.php` implements `GitDriver`). candy-git-server
 will use candy-git's `Git` driver for `log` / `branch` / `tag` /
 `show` / `ls-tree` / `cat-file`. **We do not invent a second Git
 shell-out path**; if a helper is missing in candy-git it gets added
@@ -160,7 +160,7 @@ upstream there and consumed here.
 `Repo.php` already exposes the bare-repo metadata the TUI needs:
 `Repo::$isPublic` (readonly bool property), `Repo::withDescription()`
 (immutable+fluent setter — there is no `setDescription()`), and
-`Repo::readme()` (method, `candy-serve/src/Repo.php:L251`). Those stay
+`Repo::readme()` (method, `candy-git-server/src/Repo.php:L251`). Those stay
 in place; the TUI just composes them.
 
 ### 2.4 Layout primitives
@@ -206,7 +206,7 @@ Non-stories (deliberately out of scope):
 - "I want to file an issue / open a PR" — out of scope (separate lib if
   ever); see §7.
 - "I want to edit a file" — write-side TUI is not in upstream.
-- "I want web-based browsing" — covered by `gitea` / `cgit`; candy-serve
+- "I want web-based browsing" — covered by `gitea` / `cgit`; candy-git-server
   stays SSH-only per upstream.
 
 ---
@@ -220,7 +220,7 @@ goes back; `?` opens help.
 ### 4.1 Repo list view (phase 1)
 
 ```
-┌────────────────────────── CandyServe · git@host ────────────────────────────┐
+┌────────────────────────── CandyGitServer · git@host ────────────────────────────┐
 │                                                                              │
 │  ▸ sugarcraft         PHP port of the Charm ecosystem        public  2d ago  │
 │    dotfiles           my personal config                     private 3w ago  │
@@ -244,7 +244,7 @@ goes back; `?` opens help.
 ### 4.2 Repo detail view (phase 2)
 
 ```
-┌──────────────────── sugarcraft · CandyServe / sugarcraft ───────────────────┐
+┌──────────────────── sugarcraft · CandyGitServer / sugarcraft ───────────────────┐
 │  Description  PHP port of the Charm ecosystem (TUI libraries)               │
 │  Default      master                                                         │
 │  Clone        ssh://git@host:23231/sugarcraft                               │
@@ -252,7 +252,7 @@ goes back; `?` opens help.
 │  ┌── Branches ──────────────┐  ┌── Tags ──────────────┐  ┌── Collabs ───┐  │
 │  │ ▸ master                  │  │ v0.4.0                │  │ joe (admin)  │  │
 │  │   feat/tui-detail-view    │  │ v0.3.2                │  │ alice (rw)   │  │
-│  │   ai/plan-candy-serve-tui │  │ v0.3.1                │  │ bob   (r)    │  │
+│  │   ai/plan-candy-git-server-tui │  │ v0.3.1                │  │ bob   (r)    │  │
 │  │   …                       │  │ …                     │  │              │  │
 │  └───────────────────────────┘  └───────────────────────┘  └──────────────┘  │
 │                                                                              │
@@ -354,45 +354,45 @@ per-screen extras. Press `?` again or `Esc` to dismiss.
 
 ### Phase 1 — TUI session + repo list (≈ 2 weeks)
 
-Smallest shippable unit. Lands the candy-wish ↔ candy-serve handshake
+Smallest shippable unit. Lands the candy-wish ↔ candy-git-server handshake
 and the repo-list screen.
 
 **New files:**
 
-- `candy-serve/src/Tui/TuiSession.php` — bridge from candy-wish channel
+- `candy-git-server/src/Tui/TuiSession.php` — bridge from candy-wish channel
   to candy-core `Program`; resolves the authed user and starts a
   `RepoListModel`.
-- `candy-serve/src/Tui/RepoListModel.php` — Bubble Tea Model returning
+- `candy-git-server/src/Tui/RepoListModel.php` — Bubble Tea Model returning
   `[Model, ?Cmd]` from `update()`.
-- `candy-serve/src/Tui/RepoListView.php` — pure render function called
+- `candy-git-server/src/Tui/RepoListView.php` — pure render function called
   by `RepoListModel::view()`.
-- `candy-serve/src/Tui/Theme.php` — palette wrapper around
+- `candy-git-server/src/Tui/Theme.php` — palette wrapper around
   candy-sprinkles `Theme`.
-- `candy-serve/bin/soft-serve-tui` — TUI entry-point script that opens
+- `candy-git-server/bin/candy-git-server-tui` — TUI entry-point script that opens
   the TUI on stdin/stdout (used by candy-wish channel handler and as a
   standalone debug command). Lives under `bin/` next to the existing
-  `bin/soft-serve` per current candy-serve precedent. (The original
+  `bin/candy-git-server` per current candy-git-server precedent. (The original
   draft proposed a new top-level `cmd/` directory; review folded it
   back into `bin/` to avoid introducing a new convention. A future
-  step may also expose this as a `soft-serve tui` subcommand inside
-  the existing `bin/soft-serve` dispatcher — either path is fine as
+  step may also expose this as a `candy-git-server tui` subcommand inside
+  the existing `bin/candy-git-server` dispatcher — either path is fine as
   long as both live under `bin/`.)
-- `candy-serve/src/SSH/TuiChannelHandler.php` — `ChannelHandler` that
+- `candy-git-server/src/SSH/TuiChannelHandler.php` — `ChannelHandler` that
   delegates exec to existing `UploadPack`/`ReceivePack` and otherwise
   pipes the candy-core Program over the channel.
 
 **Changed files:**
 
-- `candy-serve/composer.json` — add `sugarcraft/candy-wish`,
+- `candy-git-server/composer.json` — add `sugarcraft/candy-wish`,
   `sugarcraft/candy-core`, `sugarcraft/candy-sprinkles`,
   `sugarcraft/candy-git`, `sugarcraft/sugar-boxer`,
   `sugarcraft/sugar-stickers`, `sugarcraft/candy-shine` as `@dev` plus
   matching path-repo entries (closure via `tools/check-path-repos.php
   --fix`).
-- `candy-serve/bin/soft-serve` — add `tui` subcommand.
-- `candy-serve/src/SSH/SSHServer.php` — branch on incoming exec
+- `candy-git-server/bin/candy-git-server` — add `tui` subcommand.
+- `candy-git-server/src/SSH/SSHServer.php` — branch on incoming exec
   command; non-exec sessions instantiate `TuiChannelHandler`.
-- `candy-serve/lang/en.php` (+ 15 other locales) — keymap labels and
+- `candy-git-server/lang/en.php` (+ 15 other locales) — keymap labels and
   list headers.
 
 **Tests (≥ 30):**
@@ -411,24 +411,24 @@ and the repo-list screen.
   list rendered through candy-sprinkles + sugar-boxer.
 - `git clone ssh://user@host:23231/<repo>` still works (existing
   path).
-- `vendor/bin/phpunit` green in candy-serve + all four consuming libs
+- `vendor/bin/phpunit` green in candy-git-server + all four consuming libs
   (candy-wish, candy-core, candy-git, candy-shine).
-- `cd candy-serve && composer validate` clean (drop `--strict`).
+- `cd candy-git-server && composer validate` clean (drop `--strict`).
 
 ### Phase 2 — Repo detail view (≈ 1.5 weeks)
 
 **New files:**
 
-- `candy-serve/src/Tui/RepoDetailModel.php`
-- `candy-serve/src/Tui/RepoDetailView.php`
-- `candy-serve/src/Tui/PaneFocus.php` — small enum cycling
+- `candy-git-server/src/Tui/RepoDetailModel.php`
+- `candy-git-server/src/Tui/RepoDetailView.php`
+- `candy-git-server/src/Tui/PaneFocus.php` — small enum cycling
   `Branches → Tags → Collaborators` for `tab`.
 
 **Changed files:**
 
 - `RepoListModel::update()` — `Enter` pushes `RepoDetailModel` on
   ScreenStack.
-- `candy-serve/lang/*.php` — strings for branches / tags / collabs /
+- `candy-git-server/lang/*.php` — strings for branches / tags / collabs /
   clone-cmd labels.
 
 **Dependencies (hard preconditions — see §6.1):**
@@ -452,13 +452,13 @@ The chunkiest phase — two new screens plus syntax highlighting.
 
 **New files:**
 
-- `candy-serve/src/Tui/FileTreeModel.php`
-- `candy-serve/src/Tui/FileTreeView.php`
-- `candy-serve/src/Tui/FileViewerModel.php`
-- `candy-serve/src/Tui/FileViewerView.php`
-- `candy-serve/src/Tui/RefSelectorModal.php` — small overlay listing
+- `candy-git-server/src/Tui/FileTreeModel.php`
+- `candy-git-server/src/Tui/FileTreeView.php`
+- `candy-git-server/src/Tui/FileViewerModel.php`
+- `candy-git-server/src/Tui/FileViewerView.php`
+- `candy-git-server/src/Tui/RefSelectorModal.php` — small overlay listing
   branches + tags, returned-on-pick.
-- `candy-serve/src/Tui/LanguageDetector.php` — map extension → language
+- `candy-git-server/src/Tui/LanguageDetector.php` — map extension → language
   string consumed by candy-shine `SyntaxHighlighter`.
 
 **Dependencies (hard preconditions — see §6.1):**
@@ -488,10 +488,10 @@ syntax-highlight, show placeholder); files >1 MB refuse to load.
 
 **New files:**
 
-- `candy-serve/src/Tui/CommitLogModel.php`
-- `candy-serve/src/Tui/CommitLogView.php`
-- `candy-serve/src/Tui/DiffModel.php`
-- `candy-serve/src/Tui/DiffView.php`
+- `candy-git-server/src/Tui/CommitLogModel.php`
+- `candy-git-server/src/Tui/CommitLogView.php`
+- `candy-git-server/src/Tui/DiffModel.php`
+- `candy-git-server/src/Tui/DiffView.php`
 
 **Dependencies (hard preconditions — see §6.1):**
 
@@ -543,7 +543,7 @@ clone URL to host clipboard on Kitty / iTerm2 / WezTerm / xterm.js;
 ## 6. Dependencies — cross-link to other plan steps
 
 This plan does **not** create new step files. Phase-1 starts by drafting
-`plans/leftover/phase-12-candy-serve-tui/step-{01..15}.md` under user
+`plans/leftover/phase-12-candy-git-server-tui/step-{01..15}.md` under user
 authorization.
 
 Pre-conditions that **must** be true before phase-1 ships:
@@ -570,9 +570,9 @@ interface (`candy-git/src/GitDriver.php`) currently expose only
 `status()`, `branches()`, `log(int $limit = 25)`, `stage()`, and
 `unstage()`. Each of the following methods is a **hard precondition**
 for the phase it gates — phase work cannot start until the matching
-candy-git patch has shipped (separate PR, landed before candy-serve
+candy-git patch has shipped (separate PR, landed before candy-git-server
 phase-N branch opens). Do **not** invent a parallel `git`-shell-out
-path inside candy-serve.
+path inside candy-git-server.
 
 | candy-git API | Phase blocked | What it must do |
 |---|---|---|
@@ -583,7 +583,7 @@ path inside candy-serve.
 | `GitDriver::log()` — broadened signature `log(string $ref = 'HEAD', int $skip = 0, int $limit = 25)` | **Phase 4** | extend existing `log(int $limit)` to accept `$ref` + `$skip` for windowed paging. Drives `CommitLogModel` paging. **Backwards compatible** — keep `$limit` as the third positional and default the first two. |
 
 Each of these is a separate candy-git PR with its own tests. Phase-1
-of candy-serve does **not** depend on any of them (only `branches()`
+of candy-git-server does **not** depend on any of them (only `branches()`
 which already ships). Phases 2–4 are gated:
 
 - **Phase 2 cannot open** until `tags()` ships in candy-git.
@@ -593,8 +593,8 @@ which already ships). Phases 2–4 are gated:
 
 Recommend a single candy-git umbrella step (e.g. "candy-git Git
 driver: tags / show / lsTree / catFile / windowed log") with five
-sub-PRs, scheduled ahead of candy-serve phase-2 kickoff. The
-candy-serve phase-1 plan files should reference that step ID once
+sub-PRs, scheduled ahead of candy-git-server phase-2 kickoff. The
+candy-git-server phase-1 plan files should reference that step ID once
 authored.
 
 **candy-core OSC 52 emitter — already shipped:**
@@ -615,12 +615,12 @@ Items deliberately excluded — do **not** drag these into the TUI phases:
 - **Issues / pull requests / wiki.** Upstream soft-serve does not ship
   these. If we ever want a forge-style surface, it belongs in a
   separate lib (working name candidate: `candy-forge`), depending on
-  candy-serve for the SSH-Git substrate.
+  candy-git-server for the SSH-Git substrate.
 - **Push surface via TUI.** Upstream is read-only TUI; writes go
   through `git push`. We match that.
 - **Web / HTTP browser UI.** That is `gitea` / `cgit` territory.
 - **HTTP smart protocol server** (`/git-upload-pack` over HTTPS).
-  Covered separately in `docs/research/libraries/candy-serve-research.md`
+  Covered separately in `docs/research/libraries/candy-git-server-research.md`
   §3.2; not part of the TUI plan.
 - **`git://` daemon.** Same as above, research §3.3.
 - **Real daemon mode** (signal handling, PID file, log rotation).
@@ -639,7 +639,7 @@ Items deliberately excluded — do **not** drag these into the TUI phases:
 A phase is "done" when:
 
 1. The new screen(s) render correctly at **80×24** and **120×40**.
-2. **All** existing candy-serve tests still pass (no regression in
+2. **All** existing candy-git-server tests still pass (no regression in
    wire-protocol path).
 3. **New tests** for the phase ship green: the per-phase test counts in
    §5 are floor estimates, not ceilings.
@@ -648,7 +648,7 @@ A phase is "done" when:
 5. Every user-facing string flows through `Lang::t()` and lands in all
    16 locale files (placeholder English fallback is fine; real
    translations are a separate i18n carry-forward).
-6. `vendor/bin/phpunit` in **every** consumer lib that candy-serve
+6. `vendor/bin/phpunit` in **every** consumer lib that candy-git-server
    pulls in (candy-wish, candy-core, candy-git, candy-shine,
    candy-sprinkles, sugar-boxer, sugar-stickers) still green.
 7. `php tools/check-path-repos.php` reports closure clean.
@@ -668,7 +668,7 @@ architectural blocker.**
 
 ### 9.2 What about `ext-ssh2` vs candy-wish overlap?
 
-candy-serve currently embeds `ext-ssh2`. candy-wish ships its own SSH
+candy-git-server currently embeds `ext-ssh2`. candy-wish ships its own SSH
 listener. Running both side-by-side (two listeners, two ports? Or two
 modes on one port?) is brittle.
 
@@ -698,7 +698,7 @@ user@host` works for both clone and TUI.
 
 ### 9.3 What about Windows?
 
-soft-serve runs on Linux / macOS. candy-serve inherits that. Windows
+soft-serve runs on Linux / macOS. candy-git-server inherits that. Windows
 support for the SSH-server path is out of scope (the existing
 SSH/SSHServer.php uses POSIX-style ext-ssh2). The TUI itself runs in
 any client terminal that supports ANSI; the server side is the gate.
@@ -733,7 +733,7 @@ phase-1 implementer must inherit the pattern explicitly.
 | 5 | ≈ 1 week | polish + clipboard + help |
 | **Total** | **≈ 8 weeks** | single full-time implementer |
 
-The candy-serve MATCHUPS.md row is currently 🟢 (v1 ready per
+The candy-git-server MATCHUPS.md row is currently 🟢 (v1 ready per
 research-doc-counted surface). After phase 5 ships it can credibly
 move to 🚀 (i.e. matches upstream feature surface). Today's 🟢 reflects
 the wire-protocol port — the marquee TUI feature has not been built.
@@ -743,13 +743,13 @@ the wire-protocol port — the marquee TUI feature has not been built.
 ## 11. After this plan lands
 
 1. User reviews + authorizes phase 1.
-2. Author drafts `plans/leftover/phase-12-candy-serve-tui/step-{01..06}.md`
+2. Author drafts `plans/leftover/phase-12-candy-git-server-tui/step-{01..06}.md`
    (one step per phase-1 deliverable per §5.1 — TuiSession,
    RepoListModel/View, candy-wish wiring, lang files, tests, docs).
 3. Phase-1 step files ship ship-as-you-go per CLAUDE.md cadence (2–4
    related items per PR).
 4. After phase 5, update `MATCHUPS.md` row to 🚀 and
-   `docs/research/libraries/candy-serve-research.md` to mark §3.1
+   `docs/research/libraries/candy-git-server-research.md` to mark §3.1
    shipped.
 
 ---
@@ -763,22 +763,22 @@ the wire-protocol port — the marquee TUI feature has not been built.
 
 ### Research
 
-- `docs/research/libraries/candy-serve-research.md` — full survey;
+- `docs/research/libraries/candy-git-server-research.md` — full survey;
   §3.1 (HIGH PRIORITY — Interactive SSH TUI) is the direct input for
   this plan.
 
-### Existing candy-serve code
+### Existing candy-git-server code
 
-- `candy-serve/src/SSH/SSHServer.php:L1–L232` — current SSH listener
+- `candy-git-server/src/SSH/SSHServer.php:L1–L232` — current SSH listener
   (ext-ssh2)
-- `candy-serve/src/Repo.php:L1–L284` — bare-repo model, `readme()`,
+- `candy-git-server/src/Repo.php:L1–L284` — bare-repo model, `readme()`,
   `description()`
-- `candy-serve/src/User.php:L1–L196` — user + SSH keys
-- `candy-serve/src/AccessControl.php:L1–L97` — read / write / admin
+- `candy-git-server/src/User.php:L1–L196` — user + SSH keys
+- `candy-git-server/src/AccessControl.php:L1–L97` — read / write / admin
   permission model
-- `candy-serve/src/Git/UploadPack.php:L1–L176` — clone / fetch path
-- `candy-serve/src/Git/ReceivePack.php:L1–L171` — push path
-- `candy-serve/bin/soft-serve` — current CLI entry point
+- `candy-git-server/src/Git/UploadPack.php:L1–L176` — clone / fetch path
+- `candy-git-server/src/Git/ReceivePack.php:L1–L171` — push path
+- `candy-git-server/bin/candy-git-server` — current CLI entry point
 
 ### Monorepo libs consumed by this plan
 
@@ -803,9 +803,9 @@ the wire-protocol port — the marquee TUI feature has not been built.
 
 ### This plan's own step file
 
-- `plans/leftover/phase-11-strategic-plans/step-02-candy-serve-tui.md`
+- `plans/leftover/phase-11-strategic-plans/step-02-candy-git-server-tui.md`
 
 ---
 
 **End of plan. Awaiting user authorization to draft `plans/leftover/
-phase-12-candy-serve-tui/` step files for phase 1.**
+phase-12-candy-git-server-tui/` step files for phase 1.**

@@ -1,12 +1,12 @@
-# Step 11.02 — Write plans/candy-serve-tui.md
+# Step 11.02 — Write plans/candy-git-server-tui.md
 
-**Source:** `leftover_updates_later.md` §6 + candy-serve research §3.1
-**Branch:** `ai/plan-candy-serve-tui`
-**This step writes a plan file only. No code changes to candy-serve itself.**
+**Source:** `leftover_updates_later.md` §6 + candy-git-server research §3.1
+**Branch:** `ai/plan-candy-git-server-tui`
+**This step writes a plan file only. No code changes to candy-git-server itself.**
 
 ## Deliverable
 
-Create `plans/candy-serve-tui.md` — milestone plan for the Interactive
+Create `plans/candy-git-server-tui.md` — milestone plan for the Interactive
 SSH TUI (soft-serve's marquee feature). This is a substantial TUI app;
 it warrants its own plan before any implementation.
 
@@ -31,11 +31,11 @@ The plan file should cover:
 
 ## Files
 
-**Create:** `plans/candy-serve-tui.md` (~400-800 lines).
+**Create:** `plans/candy-git-server-tui.md` (~400-800 lines).
 
 ## Acceptance
 
-- `ls plans/candy-serve-tui.md` returns the file.
+- `ls plans/candy-git-server-tui.md` returns the file.
 
 ## Notes
 

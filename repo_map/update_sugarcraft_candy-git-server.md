@@ -1,6 +1,6 @@
 # Overview
 
-**candy-serve** is a PHP port of `charmbracelet/soft-serve`, implementing a self-hostable Git server over SSH, HTTP Smart Protocol, and Git Daemon. It provides multi-protocol Git access with public key authentication, access control, and optional LFS support. The package positions itself as a complete Git server solution for the command line.
+**candy-git-server** is a PHP port of `charmbracelet/soft-serve`, implementing a self-hostable Git server over SSH, HTTP Smart Protocol, and Git Daemon. It provides multi-protocol Git access with public key authentication, access control, and optional LFS support. The package positions itself as a complete Git server solution for the command line.
 
 **Biggest opportunity areas:** TUI implementation (the defining upstream feature), persistent storage backend, hooks system, Prometheus metrics integration, mirror/sync automation, and webhook event system.
 
@@ -13,7 +13,7 @@
 ## Current Architecture
 
 ```
-candy-serve/
+candy-git-server/
 ├── src/
 │   ├── Config.php                    YAML config loader with minimal parser
 │   ├── Repo.php                      Bare Git repo model, immutable builder
@@ -29,7 +29,7 @@ candy-serve/
 │   ├── LFS/LocalStorageBackend.php   Filesystem storage with oid sharding
 │   ├── LFS/LFSStorageBackendInterface.php
 │   └── Clipboard/Osc52.php           OSC 52 clipboard protocol
-├── bin/soft-serve                     Entry point CLI
+├── bin/candy-git-server                     Entry point CLI
 └── tests/                            PHPUnit test suite
 ```
 
@@ -38,14 +38,14 @@ candy-serve/
 ### Multi-Protocol Git Server
 
 - **SSH**: Library-only (`SSHServer.php`), requires external sshd or `candy-wish` integration for actual serving
-- **Git Daemon**: Complete socket-based implementation with concurrent connections, signal handling, PID file management (`docs/repo_map/sugarcraft_candy-serve.md`)
-- **HTTP Smart Protocol**: Request handler only, no HTTP server integration (`docs/repo_map/sugarcraft_candy-serve.md`)
+- **Git Daemon**: Complete socket-based implementation with concurrent connections, signal handling, PID file management (`docs/repo_map/sugarcraft_candy-git-server.md`)
+- **HTTP Smart Protocol**: Request handler only, no HTTP server integration (`docs/repo_map/sugarcraft_candy-git-server.md`)
 
 ### User Management
 
 - SSH public key authentication with multiple keys per user
 - Supports ssh-ed25519, ssh-rsa, ecdsa-sha2-*, sk-ssh-ed25519@openssh.com
-- Key normalization for whitespace-insensitive comparison (`docs/repo_map/sugarcraft_candy-serve.md`)
+- Key normalization for whitespace-insensitive comparison (`docs/repo_map/sugarcraft_candy-git-server.md`)
 - Admin flag, active flag, on-demand key generation via ssh-keygen
 
 ### Repository Management
@@ -54,7 +54,7 @@ candy-serve/
 - Bare Git repo initialization via `git init --bare`
 - Collaborators list, public/private flags, mirror support (model only)
 - On-demand repo creation on first push for admin users
-- Four permission levels: ACCESS_NONE, ACCESS_READ, ACCESS_WRITE, ACCESS_ADMIN (`docs/repo_map/sugarcraft_candy-serve.md`)
+- Four permission levels: ACCESS_NONE, ACCESS_READ, ACCESS_WRITE, ACCESS_ADMIN (`docs/repo_map/sugarcraft_candy-git-server.md`)
 
 ### Git Protocol Implementation
 
@@ -67,7 +67,7 @@ candy-serve/
 - **LFSHandler**: Batch API implementation, concurrent transfer support
 - **LocalStorageBackend**: Standard LFS path layout `{oid[0:2]}/{oid[2:4]}/{oid}`
 - **LFSStorageBackendInterface**: Pluggable storage backend contract
-- **Critical gap**: Handler exists but actual upload/download endpoint not implemented (`docs/repo_map/sugarcraft_candy-serve.md`)
+- **Critical gap**: Handler exists but actual upload/download endpoint not implemented (`docs/repo_map/sugarcraft_candy-git-server.md`)
 
 ### Configuration
 
@@ -101,7 +101,7 @@ candy-serve/
 2. **HTTP Server is a request handler, not a server**: `HttpSmartProtocol\Server::handleRequest()` needs ReactPHP/Swoole integration for actual HTTP serving
 3. **No persistent storage**: No database layer; all data is in-memory only during server run
 4. **LFS is partial**: `LFSHandler` returns action URLs but actual upload/download endpoint is TODO
-5. **No TUI**: Upstream Go soft-serve has full Bubble Tea TUI for repo browsing, file viewing, commit history; candy-serve has only CLI commands
+5. **No TUI**: Upstream Go soft-serve has full Bubble Tea TUI for repo browsing, file viewing, commit history; candy-git-server has only CLI commands
 6. **Shell out to git binary**: All Git operations call `git` via exec(); no pure-PHP git library
 7. **Anonymous access has no rate limiting**: Git daemon allows anonymous access with no per-IP connection limits
 8. **Mirror/sync not implemented**: `Repo::withMirrorFrom()` exists but cron-based sync is not implemented
@@ -129,11 +129,11 @@ candy-serve/
 
 ### 1. TUI Implementation (The Defining Upstream Feature)
 
-**Description:** Upstream soft-serve's crown jewel is its full Bubble Tea TUI accessible over SSH. Users can browse repos, view files with syntax highlighting, and explore commit history — all through an interactive terminal UI. candy-serve has zero TUI implementation.
+**Description:** Upstream soft-serve's crown jewel is its full Bubble Tea TUI accessible over SSH. Users can browse repos, view files with syntax highlighting, and explore commit history — all through an interactive terminal UI. candy-git-server has zero TUI implementation.
 
-**Why it matters:** The TUI is soft-serve's primary differentiator. Without it, candy-serve is just another Git server, not the "mighty, self-hostable Git server for the command line" that charmbracelet built.
+**Why it matters:** The TUI is soft-serve's primary differentiator. Without it, candy-git-server is just another Git server, not the "mighty, self-hostable Git server for the command line" that charmbracelet built.
 
-**Source:** `docs/repo_map/charmbracelet_bubbletea.md`, `docs/repo_map/sugarcraft_candy-serve.md`
+**Source:** `docs/repo_map/charmbracelet_bubbletea.md`, `docs/repo_map/sugarcraft_candy-git-server.md`
 
 **Implementation ideas:**
 
@@ -145,15 +145,15 @@ candy-serve/
 
 **Estimated complexity:** Very High (requires implementing a full Bubble Tea-equivalent TUI framework in PHP)
 
-**Expected impact:** Transforms candy-serve from "Git server library" to "Git server application"
+**Expected impact:** Transforms candy-git-server from "Git server library" to "Git server application"
 
 ### 2. Persistence Layer (Database Backend)
 
-**Description:** candy-serve has no persistence — user/repo/collab data exists only in-memory. Upstream uses SQLite/PostgreSQL. Production use requires data surviving server restarts.
+**Description:** candy-git-server has no persistence — user/repo/collab data exists only in-memory. Upstream uses SQLite/PostgreSQL. Production use requires data surviving server restarts.
 
 **Why it matters:** Without persistence, every server restart loses all user registrations, repository metadata, and collaborator assignments. This is unacceptable for any production deployment.
 
-**Source:** `docs/repo_map/sugarcraft_candy-serve.md`
+**Source:** `docs/repo_map/sugarcraft_candy-git-server.md`
 
 **Implementation ideas:**
 
@@ -172,7 +172,7 @@ candy-serve/
 
 **Why it matters:** Current implementation requires external sshd or manual integration with `candy-wish`. A self-contained solution is needed.
 
-**Source:** `docs/repo_map/charmbracelet_wish.md`, `docs/repo_map/sugarcraft_candy-serve.md`
+**Source:** `docs/repo_map/charmbracelet_wish.md`, `docs/repo_map/sugarcraft_candy-git-server.md`
 
 **Implementation ideas:**
 
@@ -192,7 +192,7 @@ candy-serve/
 
 **Why it matters:** HTTP is the most accessible Git transport for clients behind firewalls that block SSH.
 
-**Source:** `docs/repo_map/sugarcraft_candy-serve.md`
+**Source:** `docs/repo_map/sugarcraft_candy-git-server.md`
 
 **Implementation ideas:**
 
@@ -225,11 +225,11 @@ candy-serve/
 
 ### 6. Server-Side Hooks System
 
-**Description:** Upstream implements pre-receive, update, and post-receive hooks. candy-serve has no hook system.
+**Description:** Upstream implements pre-receive, update, and post-receive hooks. candy-git-server has no hook system.
 
 **Why it matters:** Hooks enable integration with CI systems, enforcement of commit policies, notifications, and custom logic on push events.
 
-**Source:** `docs/repo_map/sugarcraft_candy-serve.md` (comparison table shows upstream has hooks, candy-serve doesn't)
+**Source:** `docs/repo_map/sugarcraft_candy-git-server.md` (comparison table shows upstream has hooks, candy-git-server doesn't)
 
 **Implementation ideas:**
 
@@ -243,11 +243,11 @@ candy-serve/
 
 ### 7. Webhook Event System
 
-**Description:** Upstream soft-serve has an event system for webhooks. candy-serve has no webhooks.
+**Description:** Upstream soft-serve has an event system for webhooks. candy-git-server has no webhooks.
 
 **Why it matters:** Webhooks enable external systems (Slack notifications, CI triggers, backup systems) to react to Git events.
 
-**Source:** `docs/repo_map/sugarcraft_candy-serve.md` (comparison table shows upstream has webhooks, candy-serve doesn't)
+**Source:** `docs/repo_map/sugarcraft_candy-git-server.md` (comparison table shows upstream has webhooks, candy-git-server doesn't)
 
 **Implementation ideas:**
 
@@ -268,7 +268,7 @@ candy-serve/
 
 **Why it matters:** Observability is critical for production deployments. Metrics enable monitoring of session counts, repo access patterns, and server health.
 
-**Source:** `docs/repo_map/charmbracelet_promwish.md`, `docs/repo_map/sugarcraft_candy-serve.md` (shows stats port in config but no implementation)
+**Source:** `docs/repo_map/charmbracelet_promwish.md`, `docs/repo_map/sugarcraft_candy-git-server.md` (shows stats port in config but no implementation)
 
 **Implementation ideas:**
 
@@ -287,7 +287,7 @@ candy-serve/
 
 **Why it matters:** Mirroring enables backup to external Git servers (GitHub, GitLab) and keeping forks synchronized.
 
-**Source:** `docs/repo_map/charmbracelet_soft-serve-action.md`, `docs/repo_map/sugarcraft_candy-serve.md`
+**Source:** `docs/repo_map/charmbracelet_soft-serve-action.md`, `docs/repo_map/sugarcraft_candy-git-server.md`
 
 **Implementation ideas:**
 
@@ -306,7 +306,7 @@ candy-serve/
 
 **Why it matters:** Prevents denial-of-service from uncontrolled anonymous access.
 
-**Source:** `docs/repo_map/sugarcraft_candy-serve.md` (weaknesses section)
+**Source:** `docs/repo_map/sugarcraft_candy-git-server.md` (weaknesses section)
 
 **Implementation ideas:**
 
@@ -322,7 +322,7 @@ candy-serve/
 
 ### 11. Command Palette
 
-**Description:** Textual's command palette with fuzzy search is highly ergonomic. No equivalent in candy-serve TUI (when implemented).
+**Description:** Textual's command palette with fuzzy search is highly ergonomic. No equivalent in candy-git-server TUI (when implemented).
 
 **Source:** `docs/repo_map/textualize_textual.md`
 
@@ -338,7 +338,7 @@ candy-serve/
 
 ### 12. SSH Certificate Authority Auth
 
-**Description:** wish supports `WithTrustedUserCAKeys()` for SSH certificate-based authorization. candy-serve only supports direct public key auth.
+**Description:** wish supports `WithTrustedUserCAKeys()` for SSH certificate-based authorization. candy-git-server only supports direct public key auth.
 
 **Source:** `docs/repo_map/charmbracelet_wish.md`
 
@@ -364,7 +364,7 @@ candy-serve/
 
 **External (git-lfs-transfer):** Also uses external git binary but implements proper streaming with `io.Copy` and SHA-256 verification via `VerifyingReader`.
 
-**Why external is better:** The `VerifyingReader` pattern in `git-lfs-transfer` computes hash incrementally during transfer and verifies at EOF. candy-serve's LFS implementation lacks this integrity check.
+**Why external is better:** The `VerifyingReader` pattern in `git-lfs-transfer` computes hash incrementally during transfer and verifies at EOF. candy-git-server's LFS implementation lacks this integrity check.
 
 **Tradeoffs:** Pure-Go git library (go-git) would eliminate shell dependency but is significantly more complex to implement. Current approach is pragmatic.
 
@@ -372,7 +372,7 @@ candy-serve/
 
 ### Concurrent Connection Management
 
-**Current:** `socket_select()` in main loop with linear scan for idle timeout cleanup (`docs/repo_map/sugarcraft_candy-serve.md`).
+**Current:** `socket_select()` in main loop with linear scan for idle timeout cleanup (`docs/repo_map/sugarcraft_candy-git-server.md`).
 
 **External (wish):** Goroutine-per-session model. Each session runs in its own goroutine with context propagation.
 
@@ -454,7 +454,7 @@ interface EventListener {
 
 **Benefit:** Enables webhooks, logging, and custom extensions without modifying core Git handling code.
 
-**Reference:** `docs/repo_map/sugarcraft_candy-serve.md` (comparison shows upstream has event system)
+**Reference:** `docs/repo_map/sugarcraft_candy-git-server.md` (comparison shows upstream has event system)
 
 ---
 
@@ -467,7 +467,7 @@ Current `Repo` and `User` builders are good but lack:
 - `Repo::new()` should accept name only and derive path from config
 - Validation in builders (e.g., repo name format, key format)
 
-**Reference:** `docs/repo_map/sugarcraft_candy-serve.md` (noted as strength but can improve)
+**Reference:** `docs/repo_map/sugarcraft_candy-git-server.md` (noted as strength but can improve)
 
 ## 2. Error Messages
 
@@ -530,7 +530,7 @@ Document key decisions:
 
 ## 3. API Documentation
 
-Current `bin/soft-serve` CLI commands lack man pages. Add:
+Current `bin/candy-git-server` CLI commands lack man pages. Add:
 
 - `--help` for all commands
 - Markdown conversion to man page format
@@ -551,7 +551,7 @@ Add example configurations for:
 
 ## 1. Interactive Setup Wizard
 
-Add `soft-serve init --wizard` that interactively:
+Add `candy-git-server init --wizard` that interactively:
 
 - Prompts for server name
 - Generates SSH host keys
@@ -633,7 +633,7 @@ Test reliability under:
 
 ## 1. GitHub Actions Integration
 
-Implement something like `charmbracelet/soft-serve-action` for GitHub → candy-serve sync:
+Implement something like `charmbracelet/soft-serve-action` for GitHub → candy-git-server sync:
 
 - Repository mirroring on push
 - Automatic repo creation
@@ -665,7 +665,7 @@ Integrate with `candy-metrics` for Prometheus scraping:
 
 scrape_configs:
 
-  - job_name: 'candy-serve'
+  - job_name: 'candy-git-server'
 
     static_configs:
       - targets: ['localhost:23233']
@@ -690,7 +690,7 @@ Implement webhook-driven notifications:
 
 **Summary:** Simple GitHub Action for syncing GitHub repos to Soft Serve servers.
 
-**Relevance:** Demonstrates the mirror/sync automation that candy-serve lacks. The action shows three key steps: mirror clone, SSH key setup, and push to Soft Serve.
+**Relevance:** Demonstrates the mirror/sync automation that candy-git-server lacks. The action shows three key steps: mirror clone, SSH key setup, and push to Soft Serve.
 
 **Lessons learned:**
 
@@ -698,9 +698,9 @@ Implement webhook-driven notifications:
 - `git push --mirror` is cleaner for full sync but `--prune --force --all --follow-tags` is better for incremental
 - Known hosts accumulation via `ssh-keyscan` is needed for host verification
 
-**Potential adaptations for candy-serve:**
+**Potential adaptations for candy-git-server:**
 
-- Create similar GitHub Action for candy-serve
+- Create similar GitHub Action for candy-git-server
 - Add SSH key scanning and agent setup
 - Support both mirror and incremental sync modes
 
@@ -708,7 +708,7 @@ Implement webhook-driven notifications:
 
 **Summary:** Complete LFS SSH transfer implementation with atomic uploads and file locking.
 
-**Relevance:** Shows what complete LFS implementation looks like. candy-serve's LFS is partial.
+**Relevance:** Shows what complete LFS implementation looks like. candy-git-server's LFS is partial.
 
 **Lessons learned:**
 
@@ -716,7 +716,7 @@ Implement webhook-driven notifications:
 - Atomic upload via temp file + hardlink prevents partial reads
 - Lock ID = SHA-256(version + ":" + path) provides deterministic naming
 
-**Potential adaptations for candy-serve:**
+**Potential adaptations for candy-git-server:**
 
 - Implement `VerifyingReader` for LFS upload verification
 - Add lock backend with proper lock ID generation
@@ -726,7 +726,7 @@ Implement webhook-driven notifications:
 
 **Summary:** Prometheus metrics middleware for SSH sessions.
 
-**Relevance:** candy-serve has a stats port configured but no metrics implementation.
+**Relevance:** candy-git-server has a stats port configured but no metrics implementation.
 
 **Lessons learned:**
 
@@ -734,7 +734,7 @@ Implement webhook-driven notifications:
 - Command label extraction allows per-command metrics
 - Graceful shutdown pattern for metrics server
 
-**Potential adaptations for candy-serve:**
+**Potential adaptations for candy-git-server:**
 
 - Implement `wish_sessions_created_total`, `wish_sessions_finished_total`, `wish_sessions_duration_seconds` metrics
 - Add histogram buckets for duration (0.1, 0.5, 1, 5, 10 seconds)
@@ -744,7 +744,7 @@ Implement webhook-driven notifications:
 
 **Summary:** Modern Python TUI framework with CSS styling, reactive state, and extensive widget library.
 
-**Relevance:** TUI patterns and styling approaches for when candy-serve TUI is implemented.
+**Relevance:** TUI patterns and styling approaches for when candy-git-server TUI is implemented.
 
 **Lessons learned:**
 
@@ -753,7 +753,7 @@ Implement webhook-driven notifications:
 - Spatial map for hit testing enables efficient mouse routing
 - 40+ built-in widgets covers most UI needs
 
-**Potential adaptations for candy-serve:**
+**Potential adaptations for candy-git-server:**
 
 - Implement CSS-like styling system using `candy-sprinkles`
 - Use reactive state pattern for TUI updates
@@ -852,20 +852,20 @@ Implement webhook-driven notifications:
 
 # Final Strategic Assessment
 
-**candy-serve** represents a solid foundation for a self-hostable Git server in PHP, successfully porting the core Git protocol implementations from the upstream Go project. The multi-protocol approach (SSH, HTTP Smart, Git Daemon) provides excellent client compatibility, and the clean domain model (User, Repo, AccessControl) is well-designed.
+**candy-git-server** represents a solid foundation for a self-hostable Git server in PHP, successfully porting the core Git protocol implementations from the upstream Go project. The multi-protocol approach (SSH, HTTP Smart, Git Daemon) provides excellent client compatibility, and the clean domain model (User, Repo, AccessControl) is well-designed.
 
 However, the package has significant gaps compared to its upstream:
 
-1. **The TUI is missing** — this is the defining feature that made soft-serve special. Without it, candy-serve is just another Git server library, not the "mighty" terminal UI experience charmbracelet built.
+1. **The TUI is missing** — this is the defining feature that made soft-serve special. Without it, candy-git-server is just another Git server library, not the "mighty" terminal UI experience charmbracelet built.
 
-2. **Persistence is missing** — production deployments require data surviving restarts. The in-memory-only design limits candy-serve to development/testing use cases.
+2. **Persistence is missing** — production deployments require data surviving restarts. The in-memory-only design limits candy-git-server to development/testing use cases.
 
 3. **Integration points are incomplete** — hooks, webhooks, metrics, and mirror automation are all absent.
 
-The immediate priority should be adding **SQLite persistence** and **HTTP server integration** to make candy-serve a viable production option. The **TUI implementation** should be the long-term goal, leveraging `candy-core` and other SugarCraft TUI libraries.
+The immediate priority should be adding **SQLite persistence** and **HTTP server integration** to make candy-git-server a viable production option. The **TUI implementation** should be the long-term goal, leveraging `candy-core` and other SugarCraft TUI libraries.
 
 The **LFS implementation** is close to complete — only the upload/download endpoints are missing, which is a well-defined scope following the `git-lfs-transfer` spec.
 
-**Integration with `candy-wish`** (when available) would unlock the embedded SSH server capability, making candy-serve a self-contained solution rather than a library requiring external SSH infrastructure.
+**Integration with `candy-wish`** (when available) would unlock the embedded SSH server capability, making candy-git-server a self-contained solution rather than a library requiring external SSH infrastructure.
 
-Overall, candy-serve is a **foundation with significant upside**. The architectural decisions (immutable domain models, clean separation of concerns, i18n support) are sound. The gaps are well-understood and have clear remediation paths based on the external reference implementations analyzed in this report.
+Overall, candy-git-server is a **foundation with significant upside**. The architectural decisions (immutable domain models, clean separation of concerns, i18n support) are sound. The gaps are well-understood and have clear remediation paths based on the external reference implementations analyzed in this report.

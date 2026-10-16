@@ -1,6 +1,6 @@
-# CandyServe Research: Git Server TUI Tools
+# CandyGitServer Research: Git Server TUI Tools
 
-**Project:** candy-serve (PHP port of charmbracelet/soft-serve)
+**Project:** candy-git-server (PHP port of charmbracelet/soft-serve)
 **Upstream:** https://github.com/charmbracelet/soft-serve
 **Research Date:** 2026-05-13
 **Status:** 🟢 v1 ready (public API + tests + docs + demo) per MATCHUPS.md
@@ -20,7 +20,7 @@ Candy-serve is a solid foundation port of soft-serve with SSH Git protocol handl
 | Tool | Language | SSH TUI | HTTP Git | Git Daemon | LFS | Access Control | Markdown Rendering | Complexity |
 |------|----------|---------|----------|------------|-----|----------------|-------------------|------------|
 | **soft-serve** | Go | ✅ Full | ✅ | ✅ | ✅ | SSH keys + per-repo | ✅ BubbleTea | Medium |
-| **candy-serve** | PHP | ❌ **Missing** | ❌ | ❌ | ✅ Basic | ✅ SSH keys | ❌ (CandyShine exists) | Low |
+| **candy-git-server** | PHP | ❌ **Missing** | ❌ | ❌ | ✅ Basic | ✅ SSH keys | ❌ (CandyShine exists) | Low |
 | **gitea** | Go | ✅ Web UI | ✅ | ❌ | ✅ | Web UI + SSH | ✅ | High |
 | **gitolite** | Perl | ❌ CLI only | ❌ | ❌ | ❌ | SSH-based | ❌ | Medium |
 | **cgit** | C | ❌ Web only | ❌ | ❌ | ❌ | None | ✅ | Low |
@@ -58,7 +58,7 @@ Candy-serve is a solid foundation port of soft-serve with SSH Git protocol handl
 - `Repo::tags()` ✅ returns tag list via `git tag`
 - `Repo::readFile()` ✅ reads file at commit+path via `git show`
 - `Repo::readme()` ✅ tries common README names
-- No TUI — only CLI commands in `bin/soft-serve`
+- No TUI — only CLI commands in `bin/candy-git-server`
 
 **Gap:** Interactive TUI for browsing repos, tree view, file view with syntax highlighting
 
@@ -148,7 +148,7 @@ canRead(), canWrite(), canAdmin(), canCreateRepos(), allowAnonymousRead()
 
 ### 3.1 HIGH PRIORITY — Interactive SSH TUI
 
-This is the **core missing feature**. Without it, candy-serve is just a Git-over-SSH plumbing layer, not a true soft-serve port.
+This is the **core missing feature**. Without it, candy-git-server is just a Git-over-SSH plumbing layer, not a true soft-serve port.
 
 **What soft-serve's TUI does:**
 
@@ -207,7 +207,7 @@ SSH Connection → SSHServer → [TUI Session Manager] → BubbleTea-style TUI
 
 ### 3.4 LOW PRIORITY — Real Daemon Mode
 
-**Current state:** `bin/soft-serve serve` prints info but doesn't daemonize
+**Current state:** `bin/candy-git-server serve` prints info but doesn't daemonize
 
 **What needs implementing:**
 
@@ -257,7 +257,7 @@ SSH Connection → SSHServer → [TUI Session Manager] → BubbleTea-style TUI
 The TUI should be a separate entry point callable via SSH forced command:
 
 ```php
-// bin/soft-serve tui [repo-name]
+// bin/candy-git-server tui [repo-name]
 // or via SSH: ssh user@host soft-serve
 ```
 
@@ -336,15 +336,15 @@ src/
 - [jesseduffield/lazygit](https://github.com/jesseduffield/lazygit) — Go Git TUI (35k stars)
 - [git-town](https://git-town.com) — Git workflow automation CLI
 
-### Existing CandyServe Code
+### Existing CandyGitServer Code
 
-- `candy-serve/src/SSH/SSHServer.php` — SSH connection handling
-- `candy-serve/src/Repo.php` — Repo model with git operations
-- `candy-serve/src/User.php` — User model with SSH keys
-- `candy-serve/src/AccessControl.php` — Permission model
-- `candy-serve/src/Git/UploadPack.php` — Clone/fetch handler
-- `candy-serve/src/Git/ReceivePack.php` — Push handler
-- `candy-serve/src/LFS/LFSHandler.php` — LFS batch API
+- `candy-git-server/src/SSH/SSHServer.php` — SSH connection handling
+- `candy-git-server/src/Repo.php` — Repo model with git operations
+- `candy-git-server/src/User.php` — User model with SSH keys
+- `candy-git-server/src/AccessControl.php` — Permission model
+- `candy-git-server/src/Git/UploadPack.php` — Clone/fetch handler
+- `candy-git-server/src/Git/ReceivePack.php` — Push handler
+- `candy-git-server/src/LFS/LFSHandler.php` — LFS batch API
 
 ### Existing Monorepo Libraries to Leverage
 

@@ -1,4 +1,4 @@
-# candy-query Research: SQLite Browser TUIs
+# candy-sql Research: SQLite Browser TUIs
 
 **Date:** 2026-05-13
 **Upstream:** jorgerojas26/lazysql (3,672 stars, Go/tview)
@@ -26,7 +26,7 @@
 | **gobang** | 3,267 | ratatui | ✓ | Multi-DB (MySQL, PG, SQLite) |
 | **dbiewlite** | — | ratatui | ✓ | WASM, DuckDB, parquet |
 
-### 1.3 PHP Implementation (candy-query)
+### 1.3 PHP Implementation (candy-sql)
 
 | Feature | Current State |
 |---------|---------------|
@@ -44,7 +44,7 @@
 
 ### 2.1 Schema Browsing
 
-| Feature | lazysql | termdbms | tursotui | candy-query |
+| Feature | lazysql | termdbms | tursotui | candy-sql |
 |---------|---------|----------|----------|-------------|
 | Tree view (tables/views/indexes) | ✓ | Limited | ✓ | ✗ |
 | Column types | ✓ | ✓ | ✓ | ✗ |
@@ -53,13 +53,13 @@
 | DDL viewing | ✓ | ✗ | ✓ | ✗ |
 | Search/filter | ✓ | ✓ | ✓ | ✗ |
 
-**candy-query gap:** No schema tree, no column metadata, no relationships.
+**candy-sql gap:** No schema tree, no column metadata, no relationships.
 
 **Specific improvement:** Add `PRAGMA table_info` and `PRAGMA foreign_key_list` queries to show column types and FKs in the rows pane header. Implement tree navigation for tables/views/indexes/triggers.
 
 ### 2.2 Query Execution
 
-| Feature | lazysql | termdbms | tursotui | candy-query |
+| Feature | lazysql | termdbms | tursotui | candy-sql |
 |---------|---------|----------|----------|-------------|
 | SQL editor | ✓ | ✓ | ✓ | ✓ |
 | Ctrl+Enter execute | ✓ | ✗ | ✓ | ✓ |
@@ -69,13 +69,13 @@
 | Query history | ✓ | ✓ | ✓ | ✓ |
 | Saved queries/snippets | ✓ | ✓ | ✓ | ✗ |
 
-**candy-query gap:** No saved queries/snippets. No explain plan.
+**candy-sql gap:** No saved queries/snippets. No explain plan.
 
 **Specific improvement:** Add snippet/favorites to query history. Implement `EXPLAIN QUERY PLAN` display.
 
 ### 2.3 Result Rendering
 
-| Feature | lazysql | termdbms | tursotui | candy-query |
+| Feature | lazysql | termdbms | tursotui | candy-sql |
 |---------|---------|----------|----------|-------------|
 | Virtual scrolling | ✓ | Limited | ✓ | ✗ |
 | Horizontal scroll | ✓ | ✓ | ✓ | ✗ |
@@ -85,13 +85,13 @@
 | Copy cell | ✓ | ✓ | ✓ | ✗ |
 | Pagination | ✓ | ✓ | ✓ | ✗ |
 
-**candy-query gap:** Fixed 100-row limit, no pagination, no horizontal scroll, no NULL/JSON formatting.
+**candy-sql gap:** Fixed 100-row limit, no pagination, no horizontal scroll, no NULL/JSON formatting.
 
 **Specific improvement:** Implement OFFSET/LIMIT pagination with page navigation. Use `is_null` check and `json_decode` for pretty-printing.
 
 ### 2.4 Data Editing
 
-| Feature | lazysql | termdbms | tursotui | candy-query |
+| Feature | lazysql | termdbms | tursotui | candy-sql |
 |---------|---------|----------|----------|-------------|
 | Cell edit | ✓ | ✓ | ✓ | ✗ |
 | Row insert | ✓ | ✓ | ✓ | ✗ |
@@ -100,7 +100,7 @@
 | CSV import | ✓ | ✓ | ✗ | ✓ |
 | CSV export | ✓ | ✓ | ✓ | ✓ |
 
-**candy-query gap:** No data editing at all. CSV import/export exists in Database class but not wired to UI.
+**candy-sql gap:** No data editing at all. CSV import/export exists in Database class but not wired to UI.
 
 **Specific improvement:** Add cell-level editing mode. Wire CSV import/export to keyboard shortcuts.
 
@@ -177,7 +177,7 @@ loop {
 
 **Takeaway:** Async/await via Tokio. crossterm for events. Explicit layout chunks. Fuzzy search with ratatui-search.
 
-### 3.4 candy-query (PHP/Charmbracelet ports)
+### 3.4 candy-sql (PHP/Charmbracelet ports)
 
 ```php
 // Current: BubbleTea-inspired Model
@@ -256,7 +256,7 @@ final class App implements Model
 
 **Implementation:**
 
-1. Persist `queryFavorites` to JSON file in `~/.config/candy-query/`
+1. Persist `queryFavorites` to JSON file in `~/.config/candy-sql/`
 2. Add `S` key to open snippet browser overlay
 3. Named snippets with Enter to load
 

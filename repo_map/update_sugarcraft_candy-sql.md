@@ -1,6 +1,6 @@
 # Overview
 
-candy-query is a terminal SQLite browser built on the SugarCraft stack (PHP 8.3+, PSR-4, immutable/fluent patterns, `readonly` classes). It ports the core workflow of `jorgerojas26/lazysql` (Go, multi-driver SQL browser) to PHP. At v1, it is SQLite-only with 9 source files, 7 test files with 60+ test methods, 2 VHS demos, and 16 locales. The architecture cleanly separates Database (PDO wrapper), SchemaBrowser (PRAGMA introspection), ResultTable (horizontal-scrolling renderer), App (SugarCraft Model), and Renderer (ANSI view). **Biggest opportunity**: Multi-driver interface, inline row editing TUI, query result sorting, and schema tree sidebar. **Biggest missing**: Pagination controls, tabs for multiple tables, connection management, query snippet picker UI.
+candy-sql is a terminal SQLite browser built on the SugarCraft stack (PHP 8.3+, PSR-4, immutable/fluent patterns, `readonly` classes). It ports the core workflow of `jorgerojas26/lazysql` (Go, multi-driver SQL browser) to PHP. At v1, it is SQLite-only with 9 source files, 7 test files with 60+ test methods, 2 VHS demos, and 16 locales. The architecture cleanly separates Database (PDO wrapper), SchemaBrowser (PRAGMA introspection), ResultTable (horizontal-scrolling renderer), App (SugarCraft Model), and Renderer (ANSI view). **Biggest opportunity**: Multi-driver interface, inline row editing TUI, query result sorting, and schema tree sidebar. **Biggest missing**: Pagination controls, tabs for multiple tables, connection management, query snippet picker UI.
 
 ---
 
@@ -9,7 +9,7 @@ candy-query is a terminal SQLite browser built on the SugarCraft stack (PHP 8.3+
 ## Current Architecture
 
 ```
-candy-query/src/
+candy-sql/src/
 ├── App.php              # SugarCraft Model — 3-pane state machine (415 lines)
 ├── Database.php        # PDO/SQLite wrapper + CSV/SQL export (234 lines)
 ├── SchemaBrowser.php    # PRAGMA introspection → typed value objects (229 lines)
@@ -171,7 +171,7 @@ candy-query/src/
 - **Description**: Query history lives only in App state for current session.
 - **Why it matters**: Losing history on exit is disruptive — users expect persistence.
 - **Source**: Could reuse `SnippetStore` pattern — file-backed JSON with `flush()`
-- **Implementation idea**: Use same pattern as `SnippetStore`; save history to `~/.config/candy-query/history.json`; load on `App::start()`
+- **Implementation idea**: Use same pattern as `SnippetStore`; save history to `~/.config/candy-sql/history.json`; load on `App::start()`
 - **Estimated complexity**: Low — similar to SnippetStore implementation
 - **Expected impact**: UX polish
 
@@ -181,7 +181,7 @@ candy-query/src/
 - **Description**: Opens one SQLite file at a time via CLI argument. No way to manage connections from within TUI.
 - **Why it matters**: Production use requires connecting to different databases. Even SQLite-only could have an in-app file picker.
 - **Source**: lazysql saves/loads/edits connections via config; gum file picker
-- **Implementation idea**: Add connection config stored in `~/.config/candy-query/connections.json`; `Ctrl+N` opens connection picker; `o` key opens file dialog (via gum-style file picker or candy-file)
+- **Implementation idea**: Add connection config stored in `~/.config/candy-sql/connections.json`; `Ctrl+N` opens connection picker; `o` key opens file dialog (via gum-style file picker or candy-file)
 - **Estimated complexity**: Medium — connection config, picker UI, file dialog
 - **Expected impact**: Usability for switching contexts
 
@@ -279,7 +279,7 @@ candy-query/src/
 
 - **Current**: `ResultTable::scrollRight()` returns new instance, recomputes `visibleColCount()` via `floor($this->visibleWidth / cellWidth())`. `cellWidth()` uses average column width.
 - **External approach**: bubble-table's `WithMaxTotalWidth` + horizontal scroll is simpler; frozen columns via `WithHorizontalFreezeColumnCount`.
-- **Why external is better**: candy-query's average-based `cellWidth()` can under/overshoot visible count on heterogeneous column widths.
+- **Why external is better**: candy-sql's average-based `cellWidth()` can under/overshoot visible count on heterogeneous column widths.
 - **Tradeoffs**: Simpler to use fixed cell width; heterogeneous widths need per-column computation.
 - **Applicability**: Medium — `visibleColCount()` could use sum of first N column widths instead of average.
 
@@ -333,7 +333,7 @@ $app = AppBuilder::new()->withDatabase($db)->withReadOnly(true)->withPageSize(50
 
 ## SnippetStore File Location
 
-`/tmp/candy-query-snippets.json` should be `~/.config/candy-query/snippets.json` (respecting XDG on Linux). Use `getenv('HOME') . '/.config/candy-query/'` or the `~` expansion pattern.
+`/tmp/candy-sql-snippets.json` should be `~/.config/candy-sql/snippets.json` (respecting XDG on Linux). Use `getenv('HOME') . '/.config/candy-sql/'` or the `~` expansion pattern.
 
 ---
 
@@ -418,13 +418,13 @@ Use `infection/infection` to verify tests actually catch bugs (i.e., mutating `o
 
 Following ratatui's third-party widget ecosystem pattern, declare `sugarcraft/database-*` packages as official driver extensions. A `composer require sugarcraft/database-mysql` installs the MySQL driver, and `App::start()` auto-discovers it.
 
-## candy-query as a Teaching Example
+## candy-sql as a Teaching Example
 
 The codebase is clean enough to serve as the canonical SugarCraft example app. Create `examples/` demonstrating each component in isolation: `Database` standalone, `SchemaBrowser` standalone, `ResultTable` standalone.
 
 ## Share ResultTable with sugar-bits
 
-`ResultTable` in candy-query is a specialized result set renderer. Consider extracting a general-purpose `Table` component to `sugar-bits` that `ResultTable` composes, so other SugarCraft apps can use the scrolling table.
+`ResultTable` in candy-sql is a specialized result set renderer. Consider extracting a general-purpose `Table` component to `sugar-bits` that `ResultTable` composes, so other SugarCraft apps can use the scrolling table.
 
 ## Export sugar-query as a Reusable Component
 
@@ -440,19 +440,19 @@ lazysql's Go architecture uses separate driver packages (`pgx` for Postgres, `go
 
 ## bubbletea-overlay: Viewable Interface (PR #19, Dec 2025)
 
-`rmhubbert/bubbletea-overlay` relaxed from requiring `tea.Model` to requiring only `View() string`. This lesson applies directly: candy-query's overlay/snippet picker should accept `Renderable { render(): string }` rather than requiring `Model`. Full discussion in `docs/repo_map/pr_rmhubbert_bubbletea-overlay.md`.
+`rmhubbert/bubbletea-overlay` relaxed from requiring `tea.Model` to requiring only `View() string`. This lesson applies directly: candy-sql's overlay/snippet picker should accept `Renderable { render(): string }` rather than requiring `Model`. Full discussion in `docs/repo_map/pr_rmhubbert_bubbletea-overlay.md`.
 
 ## ratatui #1004: Table Performance with Large Datasets
 
-Critical issue: 15k items causes 1-2s render lag. Root causes: O(N) conversion to vec at construction, `text().height()` called for all items, all items create Spans even when off-screen. **Solution**: dirty-flag rendering (50x CPU improvement), virtual scrolling (only render visible items + buffer). For candy-query: `ResultTable` holds full result set but only renders first 25 rows — already has a form of virtualization but could memoize per-offset column widths.
+Critical issue: 15k items causes 1-2s render lag. Root causes: O(N) conversion to vec at construction, `text().height()` called for all items, all items create Spans even when off-screen. **Solution**: dirty-flag rendering (50x CPU improvement), virtual scrolling (only render visible items + buffer). For candy-sql: `ResultTable` holds full result set but only renders first 25 rows — already has a form of virtualization but could memoize per-offset column widths.
 
 ## textualize #6381: GC Stuttering with MarkdownViewer
 
-MarkdownViewer creates hundreds of `MarkdownBlock` child widgets, each holding 3+ reference cycles through Styles objects, causing Python gen2 GC pauses of 50-200ms. **Lesson for candy-query**: The `Style` objects in candy-sprinkles should not hold strong references to parent App/Model objects. Use weak references or clear parent references on render completion.
+MarkdownViewer creates hundreds of `MarkdownBlock` child widgets, each holding 3+ reference cycles through Styles objects, causing Python gen2 GC pauses of 50-200ms. **Lesson for candy-sql**: The `Style` objects in candy-sprinkles should not hold strong references to parent App/Model objects. Use weak references or clear parent references on render completion.
 
 ## bubble-table: Fuzzy Filtering (bubbles List + sahilm/fuzzy)
 
-The `sahilm/fuzzy` library provides `Find()` returning ranked matches with character indices for highlighted filtering. bubble-table uses this in `List` and `gum filter` uses it. For candy-query, fuzzy search in `SnippetStore` would be a direct benefit. The PHP port or equivalent algorithm is needed.
+The `sahilm/fuzzy` library provides `Find()` returning ranked matches with character indices for highlighted filtering. bubble-table uses this in `List` and `gum filter` uses it. For candy-sql, fuzzy search in `SnippetStore` would be a direct benefit. The PHP port or equivalent algorithm is needed.
 
 ## ratatui #1855: Layout Constraint Solver Hanging
 
@@ -467,7 +467,7 @@ Cassowary constraint solver hangs with 100% CPU on certain constraint combinatio
 1. Extract `DatabaseInterface` from `Database` — enables MySQL/Postgres future ports without restructuring
 2. Add pagination controls (`<`/`>` keys in Rows pane) — connects existing `ResultPager`
 3. Add column sorting (`K`/`J` keys in Rows pane) — rebuilds query with `ORDER BY`
-4. Add query history persistence to `~/.config/candy-query/history.json` — use same pattern as `SnippetStore`
+4. Add query history persistence to `~/.config/candy-sql/history.json` — use same pattern as `SnippetStore`
 
 ## Medium-term Improvements (1–3 months)
 
@@ -521,7 +521,7 @@ Cassowary constraint solver hangs with 100% CPU on certain constraint combinatio
 
 # Final Strategic Assessment
 
-candy-query at v1 is a solid, well-tested SQLite browser that demonstrates the SugarCraft stack's strengths: immutable state, clean separation of concerns, PSR-4 structure, and comprehensive test coverage. The architecture's most critical gap is the absence of a `DatabaseInterface` — this is the single most important architectural improvement, because without it the entire app is SQLite-locked and the README's promise of "MySQL/Postgres is a one-class job" requires a risky refactor.
+candy-sql at v1 is a solid, well-tested SQLite browser that demonstrates the SugarCraft stack's strengths: immutable state, clean separation of concerns, PSR-4 structure, and comprehensive test coverage. The architecture's most critical gap is the absence of a `DatabaseInterface` — this is the single most important architectural improvement, because without it the entire app is SQLite-locked and the README's promise of "MySQL/Postgres is a one-class job" requires a risky refactor.
 
 The feature gap relative to upstream lazysql is substantial but prioritized correctly. The immediate wins (pagination, sorting, history persistence) are low-complexity, high-impact additions that require no architectural change. The medium-term items (CellEditor wiring, schema sidebar, snippet picker) require thoughtful UI design but are well-scoped.
 

@@ -1,8 +1,8 @@
-# SugarCraft/candy-query — Innovation & Comparison Report
+# SugarCraft/candy-sql — Innovation & Comparison Report
 
 ## Overview
 
-**candy-query** is a terminal SQLite browser built on the SugarCraft stack, porting the Go ecosystem `jorgerojas26/lazysql` to PHP. It is `final` classes, `declare(strict_types=1)`, PSR-4, PHP 8.3+, and requires only `ext-pdo_sqlite`. The architecture is deliberately narrow at v1 — SQLite-only — with a clear interface path to MySQL/Postgres once a second driver lands.
+**candy-sql** is a terminal SQLite browser built on the SugarCraft stack, porting the Go ecosystem `jorgerojas26/lazysql` to PHP. It is `final` classes, `declare(strict_types=1)`, PSR-4, PHP 8.3+, and requires only `ext-pdo_sqlite`. The architecture is deliberately narrow at v1 — SQLite-only — with a clear interface path to MySQL/Postgres once a second driver lands.
 
 **Key statistics:**
 
@@ -11,7 +11,7 @@
 - **2 example scripts** (play.php, query-history.tape)
 - **16 locales** (en + 15 translated)
 - **2 VHS demos** (.vhs/play.gif, .vhs/query-history.gif)
-- **1 bin entry point** (`bin/candy-query`)
+- **1 bin entry point** (`bin/candy-sql`)
 
 **Status:** 🟢 v1 ready — SQLite browser with full test coverage, schema introspection, query history/favorites, CSV/SQL export, and EXPLAIN QUERY PLAN visualization.
 
@@ -24,8 +24,8 @@
 ### Package Structure
 
 ```
-candy-query/
-├── bin/candy-query                  # CLI entry point (31 lines)
+candy-sql/
+├── bin/candy-sql                  # CLI entry point (31 lines)
 ├── src/
 │   ├── App.php                      # SugarCraft Model — 3-pane TUI (415 lines)
 │   ├── Database.php                 # PDO/SQLite wrapper + CSV/SQL export (234 lines)
@@ -73,7 +73,7 @@ The `App` class is a SugarCraft `Model` implementing the canonical `init()`/`upd
 
 **Focus cycling** via `Tab` — `Pane::next()` enum method (lines 18-25 of `Pane.php`).
 
-**Query history** (upstream lazysql has this via a modal; candy-query keeps it in-buffer):
+**Query history** (upstream lazysql has this via a modal; candy-sql keeps it in-buffer):
 - `Up/Down` arrows navigate history when in Query pane
 - `Ctrl+F` favorites the current query buffer
 - `Ctrl+Shift+F` removes from favorites
@@ -83,9 +83,9 @@ The `App` class is a SugarCraft `Model` implementing the canonical `init()`/`upd
 
 ### Dependency Usage of SugarCraft Components
 
-candy-query depends only on `candy-core` and `candy-sprinkles`:
+candy-sql depends only on `candy-core` and `candy-sprinkles`:
 
-| Component | Usage in candy-query |
+| Component | Usage in candy-sql |
 |-----------|---------------------|
 | `SugarCraft\Core\Model` | `App` implements `Model` interface |
 | `SugarCraft\Core\Msg\KeyMsg` | All keyboard input routed through `KeyMsg` |
@@ -320,7 +320,7 @@ $stmt->bindValue(':rowid', $rowId);
 
 ### Table Listing
 
-candy-query lists tables via `Database::tables()` which queries `sqlite_master`:
+candy-sql lists tables via `Database::tables()` which queries `sqlite_master`:
 ```sql
 SELECT name FROM sqlite_master
 WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'
@@ -329,11 +329,11 @@ ORDER BY name
 
 lazysql (upstream) uses a tree view with expand/collapse per table showing columns, indexes, foreign keys, and constraints as sub-nodes. It supports refreshing the tree (`R` key).
 
-**candy-query approach:** Tables pane shows flat alphabetical list. Enter on a table name loads its first 100 rows into the rows pane. Schema details (columns, indexes, FKs) are exposed through the separate `SchemaBrowser` class but not rendered in the TUI at v1 — the README shows the API usage but the App itself only shows row previews.
+**candy-sql approach:** Tables pane shows flat alphabetical list. Enter on a table name loads its first 100 rows into the rows pane. Schema details (columns, indexes, FKs) are exposed through the separate `SchemaBrowser` class but not rendered in the TUI at v1 — the README shows the API usage but the App itself only shows row previews.
 
 ### Row Browsing
 
-**candy-query:** Loads up to 100 rows via `Database::rows()` on table selection. Rows pane shows fixed-width columns (12 chars each), truncates at 11 + `…`. Shows first 13 rows with cursor on current row (reverse style). No pagination controls in the TUI itself at v1.
+**candy-sql:** Loads up to 100 rows via `Database::rows()` on table selection. Rows pane shows fixed-width columns (12 chars each), truncates at 11 + `…`. Shows first 13 rows with cursor on current row (reverse style). No pagination controls in the TUI itself at v1.
 
 **lazysql:** Full table view with:
 - Pagination (`<`/`>` for prev/next page, configurable `DefaultPageSize` up to 300)
@@ -348,7 +348,7 @@ lazysql (upstream) uses a tree view with expand/collapse per table showing colum
 
 ### Schema Introspection
 
-**candy-query SchemaBrowser** exposes three PRAGMA queries as typed objects:
+**candy-sql SchemaBrowser** exposes three PRAGMA queries as typed objects:
 - `PRAGMA table_info` → `SchemaColumn` (cid, name, type, notNull, defaultValue, primaryKey)
 - `PRAGMA index_list` + `PRAGMA index_info` → `SchemaIndex` (name, unique, columns)
 - `PRAGMA foreign_key_list` → `SchemaForeignKey` (id, column, foreignTable, foreignColumn, onUpdate, onDelete)
@@ -365,7 +365,7 @@ lazysql (upstream) uses a tree view with expand/collapse per table showing colum
 
 ### Execution Model
 
-candy-query uses **PDO prepared statements** for all query execution:
+candy-sql uses **PDO prepared statements** for all query execution:
 ```php
 // Database.php, lines 67–75
 public function query(string $sql): array
@@ -382,12 +382,12 @@ public function query(string $sql): array
 **Key differences from lazysql:**
 
 - lazysql uses database-driver-specific Go libraries (pgx for Postgres, go-sql-driver for MySQL, etc.)
-- candy-query uses PDO which provides a uniform interface but with less driver-specific optimization
-- No query parameterization in candy-query — all values are embedded in the SQL string directly via prepared statement binding
+- candy-sql uses PDO which provides a uniform interface but with less driver-specific optimization
+- No query parameterization in candy-sql — all values are embedded in the SQL string directly via prepared statement binding
 
 ### Query History
 
-candy-query maintains query history as an in-memory array passed through App state:
+candy-sql maintains query history as an in-memory array passed through App state:
 - Up arrow navigates to older queries (toward index 0 from -1 = current buffer)
 - Down arrow navigates to newer queries
 - `Ctrl+F` adds current buffer to `queryFavorites`
@@ -398,16 +398,16 @@ candy-query maintains query history as an in-memory array passed through App sta
 
 ### Snippet Store
 
-candy-query has `SnippetStore` for persistent named snippets:
+candy-sql has `SnippetStore` for persistent named snippets:
 - `add(name, sql, description)` / `delete(name)` / `find(name)` / `search(term)`
-- `flush()` persists to `/tmp/candy-query-snippets.json`
+- `flush()` persists to `/tmp/candy-sql-snippets.json`
 - Search is case-insensitive substring on both name and SQL
 
 **Not wired into the TUI at v1** — the class exists and is tested but the App doesn't expose a snippet picker UI.
 
 ### EXPLAIN QUERY PLAN
 
-candy-query has `ExplainView` which:
+candy-sql has `ExplainView` which:
 - Runs `EXPLAIN QUERY PLAN {sql}` via `Database`
 - Parses depth from `|--` / `` `-- `` tree prefixes
 - Classifies operations by keyword into 6 colour-coded tags
@@ -421,7 +421,7 @@ candy-query has `ExplainView` which:
 
 ### Features Present in Both
 
-| Feature | candy-query | lazysql |
+| Feature | candy-sql | lazysql |
 |---------|-------------|---------|
 | Table listing | ✅ flat list | ✅ tree view |
 | Row preview | ✅ 100 rows | ✅ paginated (up to 300) |
@@ -438,12 +438,12 @@ candy-query has `ExplainView` which:
 
 ### Features Only in lazysql
 
-- **Multi-driver support**: Postgres, MySQL, SQLite, MSSQL (candy-query is SQLite-only at v1)
-- **Connection management**: Save/edit/delete database connections (candy-query opens one file at a time)
-- **Tabs**: Multiple tables open simultaneously (candy-query is single-pane)
+- **Multi-driver support**: Postgres, MySQL, SQLite, MSSQL (candy-sql is SQLite-only at v1)
+- **Connection management**: Save/edit/delete database connections (candy-sql opens one file at a time)
+- **Tabs**: Multiple tables open simultaneously (candy-sql is single-pane)
 - **Sidebar with schema tree**: Columns, indexes, FKs, constraints visible in sidebar
 - **Table filtering**: `WHERE`-clause filter input
-- **Row editing**: Inline cell editing, INSERT, DELETE (candy-query has `CellEditor` class but no TUI integration)
+- **Row editing**: Inline cell editing, INSERT, DELETE (candy-sql has `CellEditor` class but no TUI integration)
 - **JSON viewer**: Formatted JSON display for JSON values
 - **Sorting**: Ascending/descending sort on columns
 - **Pagination controls**: Previous/next page keybindings
@@ -454,7 +454,7 @@ candy-query has `ExplainView` which:
 - **Environment variables**: In connection URLs
 - **Read-only mode**: Block mutation queries
 
-### Features Only in candy-query
+### Features Only in candy-sql
 
 - **EXPLAIN QUERY PLAN viewer**: Colour-coded ANSI tree render
 - **SQL dump export**: Full database as SQL script
@@ -465,7 +465,7 @@ candy-query has `ExplainView` which:
 
 ### Architectural Differences
 
-| Aspect | candy-query (PHP) | lazysql (Go) |
+| Aspect | candy-sql (PHP) | lazysql (Go) |
 |--------|-------------------|--------------|
 | Runtime | SugarCraft/Core `Model` + `Program` | tview `Application` |
 | State | Immutable `readonly` properties | Mutable struct fields |
@@ -550,52 +550,52 @@ No other SQL browser TUI ports exist in the repo_map. Notable SQL-related tools 
 
 ### Core Source Files
 
-- `/home/sites/sugarcraft/candy-query/src/App.php` — 415 lines, SugarCraft Model
-- `/home/sites/sugarcraft/candy-query/src/Database.php` — 234 lines, PDO wrapper + export
-- `/home/sites/sugarcraft/candy-query/src/SchemaBrowser.php` — 229 lines, PRAGMA introspection
-- `/home/sites/sugarcraft/candy-query/src/ResultTable.php` — 461 lines, scrolling result renderer
-- `/home/sites/sugarcraft/candy-query/src/ResultPager.php` — 150 lines, cursor pagination
-- `/home/sites/sugarcraft/candy-query/src/Renderer.php` — 124 lines, 3-pane ANSI renderer
-- `/home/sites/sugarcraft/candy-query/src/CellEditor.php` — 104 lines, cell-level UPDATE
-- `/home/sites/sugarcraft/candy-query/src/SnippetStore.php` — 186 lines, JSON snippet persistence
-- `/home/sites/sugarcraft/candy-query/src/ExplainView.php` — 229 lines, query plan visualizer
-- `/home/sites/sugarcraft/candy-query/src/Pane.php` — 26 lines, focus enum
-- `/home/sites/sugarcraft/candy-query/src/Lang.php` — 22 lines, i18n facade
+- `/home/sites/sugarcraft/candy-sql/src/App.php` — 415 lines, SugarCraft Model
+- `/home/sites/sugarcraft/candy-sql/src/Database.php` — 234 lines, PDO wrapper + export
+- `/home/sites/sugarcraft/candy-sql/src/SchemaBrowser.php` — 229 lines, PRAGMA introspection
+- `/home/sites/sugarcraft/candy-sql/src/ResultTable.php` — 461 lines, scrolling result renderer
+- `/home/sites/sugarcraft/candy-sql/src/ResultPager.php` — 150 lines, cursor pagination
+- `/home/sites/sugarcraft/candy-sql/src/Renderer.php` — 124 lines, 3-pane ANSI renderer
+- `/home/sites/sugarcraft/candy-sql/src/CellEditor.php` — 104 lines, cell-level UPDATE
+- `/home/sites/sugarcraft/candy-sql/src/SnippetStore.php` — 186 lines, JSON snippet persistence
+- `/home/sites/sugarcraft/candy-sql/src/ExplainView.php` — 229 lines, query plan visualizer
+- `/home/sites/sugarcraft/candy-sql/src/Pane.php` — 26 lines, focus enum
+- `/home/sites/sugarcraft/candy-sql/src/Lang.php` — 22 lines, i18n facade
 
 ### Tests
 
-- `/home/sites/sugarcraft/candy-query/tests/AppTest.php` — 16 methods (pane cycling, query editing, history, favorites)
-- `/home/sites/sugarcraft/candy-query/tests/DatabaseTest.php` — 14 methods (CRUD, CSV/SQL export/import)
-- `/home/sites/sugarcraft/candy-query/tests/SchemaBrowserTest.php` — 8 methods (PRAGMA parsing)
-- `/home/sites/sugarcraft/candy-query/tests/ResultTableTest.php` — 21 methods (scrolling, NULL, JSON, rendering)
-- `/home/sites/sugarcraft/candy-query/tests/ResultPagerTest.php` — 12 methods (pagination, bounds)
-- `/home/sites/sugarcraft/candy-query/tests/CellEditorTest.php` — 7 methods (cell/row updates)
-- `/home/sites/sugarcraft/candy-query/tests/SnippetStoreTest.php` — 14 methods (CRUD, search, persistence)
-- `/home/sites/sugarcraft/candy-query/tests/ExplainViewTest.php` — 10 methods (tag classification, depth)
+- `/home/sites/sugarcraft/candy-sql/tests/AppTest.php` — 16 methods (pane cycling, query editing, history, favorites)
+- `/home/sites/sugarcraft/candy-sql/tests/DatabaseTest.php` — 14 methods (CRUD, CSV/SQL export/import)
+- `/home/sites/sugarcraft/candy-sql/tests/SchemaBrowserTest.php` — 8 methods (PRAGMA parsing)
+- `/home/sites/sugarcraft/candy-sql/tests/ResultTableTest.php` — 21 methods (scrolling, NULL, JSON, rendering)
+- `/home/sites/sugarcraft/candy-sql/tests/ResultPagerTest.php` — 12 methods (pagination, bounds)
+- `/home/sites/sugarcraft/candy-sql/tests/CellEditorTest.php` — 7 methods (cell/row updates)
+- `/home/sites/sugarcraft/candy-sql/tests/SnippetStoreTest.php` — 14 methods (CRUD, search, persistence)
+- `/home/sites/sugarcraft/candy-sql/tests/ExplainViewTest.php` — 10 methods (tag classification, depth)
 
 ### Examples & Demos
 
-- `/home/sites/sugarcraft/candy-query/examples/play.php` — In-memory demo (31 lines)
-- `/home/sites/sugarcraft/candy-query/.vhs/play.tape` / `play.gif` — Query execution demo
-- `/home/sites/sugarcraft/candy-query/.vhs/query-history.tape` / `query-history.gif` — History cycling demo
+- `/home/sites/sugarcraft/candy-sql/examples/play.php` — In-memory demo (31 lines)
+- `/home/sites/sugarcraft/candy-sql/.vhs/play.tape` / `play.gif` — Query execution demo
+- `/home/sites/sugarcraft/candy-sql/.vhs/query-history.tape` / `query-history.gif` — History cycling demo
 
 ### Configuration
 
-- `/home/sites/sugarcraft/candy-query/composer.json` — Requires candy-core, candy-sprinkles; path repos
-- `/home/sites/sugarcraft/candy-query/phpunit.xml` — Bootstrap vendor/autoload.php, colors=true
-- `/home/sites/sugarcraft/candy-query/bin/candy-query` — CLI entry point (31 lines)
+- `/home/sites/sugarcraft/candy-sql/composer.json` — Requires candy-core, candy-sprinkles; path repos
+- `/home/sites/sugarcraft/candy-sql/phpunit.xml` — Bootstrap vendor/autoload.php, colors=true
+- `/home/sites/sugarcraft/candy-sql/bin/candy-sql` — CLI entry point (31 lines)
 
 ### Documentation
 
-- `/home/sites/sugarcraft/candy-query/README.md` — 160 lines, architecture table, usage examples
-- `/home/sites/sugarcraft/candy-query/CALIBER_LEARNINGS.md` — 4 accumulated patterns
-- `/home/sites/sugarcraft/candy-query/lang/en.php` + 15 locales — i18n strings
+- `/home/sites/sugarcraft/candy-sql/README.md` — 160 lines, architecture table, usage examples
+- `/home/sites/sugarcraft/candy-sql/CALIBER_LEARNINGS.md` — 4 accumulated patterns
+- `/home/sites/sugarcraft/candy-sql/lang/en.php` + 15 locales — i18n strings
 
 ---
 
 ## Analysis
 
-**candy-query** is a well-structured, focused SQLite browser that ports the core lazysql workflow (browse tables, preview rows, run SQL) to PHP with the SugarCraft stack. Its architecture demonstrates several mature patterns: immutable state throughout, typed schema value objects from raw PRAGMA arrays, horizontal-scrolling result rendering, and a clean separation between the database layer and the TUI model.
+**candy-sql** is a well-structured, focused SQLite browser that ports the core lazysql workflow (browse tables, preview rows, run SQL) to PHP with the SugarCraft stack. Its architecture demonstrates several mature patterns: immutable state throughout, typed schema value objects from raw PRAGMA arrays, horizontal-scrolling result rendering, and a clean separation between the database layer and the TUI model.
 
 **Strengths:**
 
@@ -615,7 +615,7 @@ No other SQL browser TUI ports exist in the repo_map. Notable SQL-related tools 
 - No query snippet picker UI
 - No row filtering or column sorting
 
-**Strategic position:** candy-query at v1 is a solid foundation for a SQLite-focused workflow tool. The `Database` → `SchemaBrowser` split correctly separates data access from TUI concerns. The explicit TODO in the README ("promoting to an interface is a one-class job once the second driver lands") signals a clear extension path. The EXPLAIN QUERY PLAN renderer is a genuinely useful feature not found in the upstream Go project.
+**Strategic position:** candy-sql at v1 is a solid foundation for a SQLite-focused workflow tool. The `Database` → `SchemaBrowser` split correctly separates data access from TUI concerns. The explicit TODO in the README ("promoting to an interface is a one-class job once the second driver lands") signals a clear extension path. The EXPLAIN QUERY PLAN renderer is a genuinely useful feature not found in the upstream Go project.
 
 ---
 

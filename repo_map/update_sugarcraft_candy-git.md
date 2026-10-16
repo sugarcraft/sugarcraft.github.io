@@ -1,6 +1,6 @@
 # Overview
 
-**sugar-stash** is the SugarCraft monorepo's most complete application — a three-pane git TUI port of `jesseduffield/lazygit` built on the SugarCraft stack (candy-core + candy-sprinkles). It shells out to the system `git` binary, preserving user aliases, hooks, and signing config, while implementing an Elm-architecture state machine with comprehensive git operations (stage/unstage/commit/amend/branch/merge/stash/rebase/worktrees/cherry-pick).
+**candy-git** is the SugarCraft monorepo's most complete application — a three-pane git TUI port of `jesseduffield/lazygit` built on the SugarCraft stack (candy-core + candy-sprinkles). It shells out to the system `git` binary, preserving user aliases, hooks, and signing config, while implementing an Elm-architecture state machine with comprehensive git operations (stage/unstage/commit/amend/branch/merge/stash/rebase/worktrees/cherry-pick).
 
 **Biggest opportunity areas:**
 
@@ -119,7 +119,7 @@
 **Title:** Colored branch topology in log pane  
 **Description:** Replace flat `git log` output with `git log --graph --oneline --decorate --all` rendering showing branch/merge history as ASCII art tree  
 **Why it matters:** Git users rely heavily on visual branch topology to understand history, especially in complex multi-branch repos. This is lazygit's signature feature.  
-**Source:** `docs/repo_map/sugarcraft_sugar-stash.md` (feature parity matrix)  
+**Source:** `docs/repo_map/sugarcraft_candy-git.md` (feature parity matrix)  
 **Implementation ideas:**
 
 - Parse `git log --graph --oneline --decorate --all --format="%h%d%s"` 
@@ -171,7 +171,7 @@
 **Title:** Remote sync commands  
 **Description:** Add push, pull, and fetch operations bound to keys  
 **Why it matters:** Core git workflow for collaborating with remotes is missing.  
-**Source:** `docs/repo_map/sugarcraft_sugar-stash.md` (feature parity gap)  
+**Source:** `docs/repo_map/sugarcraft_candy-git.md` (feature parity gap)  
 **Implementation ideas:**
 
 - Add `push()`, `pull()`, `fetch()` to `GitDriver` interface
@@ -192,7 +192,7 @@
 **Title:** Smooth transitions between states  
 **Description:** Add harmonica-style spring animations for cursor movement, pane switching, overlay appearance  
 **Why it matters:** SugarCraft has `honey-bounce` (harmonica port) available. Animations make the TUI feel polished and responsive.  
-**Source:** `docs/repo_map/charmbracelet_harmonica.md`, `docs/repo_map/sugarcraft_sugar-stash.md` (animation gap)  
+**Source:** `docs/repo_map/charmbracelet_harmonica.md`, `docs/repo_map/sugarcraft_candy-git.md` (animation gap)  
 **Implementation ideas:**
 
 - Animate cursor movement (smooth scroll to new position)
@@ -225,7 +225,7 @@
 **Title:** Side-by-side diff view and syntax highlighting  
 **Description:** Enhance diff viewer with line-level understanding and optional side-by-side layout  
 **Why it matters:** Unified diff is readable but side-by-side is easier for large changes.  
-**Source:** `docs/repo_map/sugarcraft_sugar-stash.md` (diff viewer description)  
+**Source:** `docs/repo_map/sugarcraft_candy-git.md` (diff viewer description)  
 **Implementation ideas:**
 
 - Parse diff output into structured `DiffLine` objects with change type (+/-/context)
@@ -245,7 +245,7 @@
 **Title:** `git bisect` automation  
 **Description:** UI workflow for binary search through commits to find buggy one  
 **Why it matters:** Powerful but underutilized git feature, implemented in lazygit  
-**Source:** `docs/repo_map/sugarcraft_sugar-stash.md` (feature parity gap)  
+**Source:** `docs/repo_map/sugarcraft_candy-git.md` (feature parity gap)  
 **Estimated complexity:** Medium — requires bisect start/skip/reset workflow  
 **Expected impact:** Medium — advanced users only
 
@@ -292,7 +292,7 @@
 **Title:** User-defined commands bound to keys  
 **Description:** Extensible keybinding system for custom git workflows  
 **Why it matters:** Power user feature in lazygit  
-**Source:** `docs/repo_map/sugarcraft_sugar-stash.md` (feature parity gap)  
+**Source:** `docs/repo_map/sugarcraft_candy-git.md` (feature parity gap)  
 **Estimated complexity:** High — requires configuration system + command execution  
 **Expected impact:** Medium — power users only
 
@@ -324,20 +324,20 @@
 
 ### Git Integration: proc_open() vs. libgit2
 
-**Current (sugar-stash):** Shells out to `git` binary via `proc_open()` with piped stdout/stderr. Each operation spawns a new process.
+**Current (candy-git):** Shells out to `git` binary via `proc_open()` with piped stdout/stderr. Each operation spawns a new process.
 
 **External (lazygit):** Uses libgit2 bindings for direct in-memory git operations without process spawning.
 
 **Tradeoffs:**
 
-- sugar-stash approach: Respects user git aliases, hooks, signing config automatically; simpler implementation; slower for high-frequency ops; no in-memory state
+- candy-git approach: Respects user git aliases, hooks, signing config automatically; simpler implementation; slower for high-frequency ops; no in-memory state
 - lazygit approach: Faster high-frequency ops; full git state in memory; must re-implement alias/hook handling; complex C bindings
 
-**Applicability:** The proc_open() approach is pragmatic and correct for sugar-stash's use case. Consider caching git output for the lifetime of a render cycle to avoid redundant spawns on rapid keypresses.
+**Applicability:** The proc_open() approach is pragmatic and correct for candy-git's use case. Consider caching git output for the lifetime of a render cycle to avoid redundant spawns on rapid keypresses.
 
 ### Fuzzy Matching: Substring vs. Fuzzy
 
-**Current (sugar-stash):** No fuzzy search implemented.
+**Current (candy-git):** No fuzzy search implemented.
 
 **External (gum filter):** Uses `sahilm/fuzzy` library with real-time matching and matched range highlighting.
 
@@ -345,7 +345,7 @@
 
 ### Rendering: Full Redraw vs. Delta
 
-**Current (sugar-stash):** `Renderer::render()` produces complete output on every call.
+**Current (candy-git):** `Renderer::render()` produces complete output on every call.
 
 **External (bubbletea):** Cell-based renderer with delta updates, only redraws changed lines, synchronized output mode (ANSI 2026).
 
@@ -394,7 +394,7 @@
 1. **Usage Examples:** Add `examples/` directory with:
    - `examples/custom-keybindings.php` — modifying default keymap
    - `examples/gitdriver-fixture.php` — testing with FixtureGit
-   - `examples/minimal.php` — bare-minimum sugar-stash usage
+   - `examples/minimal.php` — bare-minimum candy-git usage
 
 2. **Architecture Deep-Dive:** Document the GitDriver interface pattern and how it enables testability. This pattern could be a model for other SugarCraft apps.
 
@@ -409,7 +409,7 @@
 
 # UX / TUI Improvements
 
-1. **Success Messages:** Currently sugar-stash shows transient success messages (e.g., "hunk staged"). Consider:
+1. **Success Messages:** Currently candy-git shows transient success messages (e.g., "hunk staged"). Consider:
    - Auto-dismiss after 2 seconds with fade animation
    - Stack multiple messages if rapid actions occur
 
@@ -466,15 +466,15 @@
 
 # Notable PRs / Issues / Discussions
 
-1. **bubbletea ANSI 2026 Synchronized Output:** `charmbracelet/bubbletea` added synchronized output mode (ANSI 2026) for flicker-free rendering. Source: `docs/repo_map/charmbracelet_bubbletea.md` (lines 185-201). This is applicable to sugar-stash via candy-core's renderer.
+1. **bubbletea ANSI 2026 Synchronized Output:** `charmbracelet/bubbletea` added synchronized output mode (ANSI 2026) for flicker-free rendering. Source: `docs/repo_map/charmbracelet_bubbletea.md` (lines 185-201). This is applicable to candy-git via candy-core's renderer.
 
 2. **lipgloss Layer Compositing:** `charmbracelet/lipgloss` layer system (`Layer`/`Compositor`/`Canvas`) enables overlay UIs and mouse hit-testing. Source: `docs/repo_map/charmbracelet_lipgloss.md` (lines 58-62, 217-218). SugarCraft's candy-sprinkles could adopt this pattern.
 
-3. **gum Fuzzy Filter:** `charmbracelet/gum` filter uses `sahilm/fuzzy` with matched ranges for highlighting. Source: `docs/repo_map/charmbracelet_gum.md` (line 60). PHP port of this library would benefit sugar-stash and other SugarCraft libs.
+3. **gum Fuzzy Filter:** `charmbracelet/gum` filter uses `sahilm/fuzzy` with matched ranges for highlighting. Source: `docs/repo_map/charmbracelet_gum.md` (line 60). PHP port of this library would benefit candy-git and other SugarCraft libs.
 
-4. **bubblezone Zero-Width Markers:** `lrstanley/bubblezone` uses zero-width ANSI markers (`\x1B[<number>z`) for mouse zone detection. Source: `docs/repo_map/lrstanley_bubblezone.md` (lines 11, 56-57). This pattern is directly applicable to sugar-stash for mouse support.
+4. **bubblezone Zero-Width Markers:** `lrstanley/bubblezone` uses zero-width ANSI markers (`\x1B[<number>z`) for mouse zone detection. Source: `docs/repo_map/lrstanley_bubblezone.md` (lines 11, 56-57). This pattern is directly applicable to candy-git for mouse support.
 
-5. **teatest Fixture Testing:** `charmbracelet/x/teatest` provides fixture-based TUI testing. Source: `docs/repo_map/charmbracelet_x.md` (line 34). This could inform sugar-stash's test patterns.
+5. **teatest Fixture Testing:** `charmbracelet/x/teatest` provides fixture-based TUI testing. Source: `docs/repo_map/charmbracelet_x.md` (line 34). This could inform candy-git's test patterns.
 
 ---
 
@@ -537,7 +537,7 @@
 
 # Final Strategic Assessment
 
-**sugar-stash** is a well-architected, fully functional git TUI that implements ~60% of lazygit's features with 10x less code. The Elm-architecture port to PHP via candy-core is clean and demonstrates the SugarCraft stack's capability for building real-world applications. The pluggable `GitDriver` interface pattern is exemplary and could serve as a model for other SugarCraft apps requiring backend abstraction.
+**candy-git** is a well-architected, fully functional git TUI that implements ~60% of lazygit's features with 10x less code. The Elm-architecture port to PHP via candy-core is clean and demonstrates the SugarCraft stack's capability for building real-world applications. The pluggable `GitDriver` interface pattern is exemplary and could serve as a model for other SugarCraft apps requiring backend abstraction.
 
 **Key strategic priorities:**
 
@@ -551,6 +551,6 @@
 
 5. **Consider ecosystem leverage** — `honey-bounce` (spring animations), `candy-mouse` (mouse zones), and fuzzy search libraries could all be integrated to improve the TUI without significant new development.
 
-**Competitive position:** sugar-stash competes directly with lazygit (Go) and offers a PHP-native alternative that integrates well with PHP tooling and workflows. The TypeScript/JS ecosystem has no direct equivalent, making sugar-stash a unique offering for PHP developers who prefer git TUI applications.
+**Competitive position:** candy-git competes directly with lazygit (Go) and offers a PHP-native alternative that integrates well with PHP tooling and workflows. The TypeScript/JS ecosystem has no direct equivalent, making candy-git a unique offering for PHP developers who prefer git TUI applications.
 
-**Long-term vision:** sugar-stash could become the foundation for a broader PHP-based git tooling ecosystem, with potential for GitHub/GitLab integration, editor plugins (VS Code, PhpStorm), and CI/CD pipeline visualization.
+**Long-term vision:** candy-git could become the foundation for a broader PHP-based git tooling ecosystem, with potential for GitHub/GitLab integration, editor plugins (VS Code, PhpStorm), and CI/CD pipeline visualization.

@@ -1,4 +1,4 @@
-# Step 05.07 — sugar-stash i18n via Lang::t()
+# Step 05.07 — candy-git i18n via Lang::t()
 
 **Source:** `leftover_updates_later.md` §2 i18n
 **Branch:** `ai/stash-i18n`
@@ -12,20 +12,20 @@ bar, branch-list labels.
 
 **Create:**
 
-- `sugar-stash/lang/en.php`.
-- `sugar-stash/src/Lang.php`.
+- `candy-git/lang/en.php`.
+- `candy-git/src/Lang.php`.
 
 **Modify:**
 
-- Files under `sugar-stash/src/`.
+- Files under `candy-git/src/`.
 
 **Tests:**
 
-- `sugar-stash/tests/LangCoverageTest.php`.
+- `candy-git/tests/LangCoverageTest.php`.
 
 ## Acceptance
 
-- `cd sugar-stash && vendor/bin/phpunit` green.
+- `cd candy-git && vendor/bin/phpunit` green.
 
 ---
 

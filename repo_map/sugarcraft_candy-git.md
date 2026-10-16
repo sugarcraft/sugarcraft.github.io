@@ -1,8 +1,8 @@
-# SugarCraft/sugar-stash
+# SugarCraft/candy-git
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/sugar-stash
+- **URL:** https://github.com/sugarcraft/candy-git
 
 - **Language:** PHP 8.3+
 
@@ -16,7 +16,7 @@
 
 ### Core Design: GitDriver Interface Pattern
 
-sugar-stash employs a **pluggable git backend** architecture with a clean interface/implementation split:
+candy-git employs a **pluggable git backend** architecture with a clean interface/implementation split:
 
 ```
 GitDriver (interface)
@@ -155,7 +155,7 @@ public function __construct(
 
 ### Inline Text Collection Pattern
 
-For multi-character inputs (commit message, branch name, merge target, cherry-pick ref), sugar-stash uses a **gated input state** pattern:
+For multi-character inputs (commit message, branch name, merge target, cherry-pick ref), candy-git uses a **gated input state** pattern:
 
 1. Boolean flag gates all normal key handling (`collectingCommit`, `collectingBranchName`, etc.)
 
@@ -240,7 +240,7 @@ if ($this->collectingCommit) {
 
 ### Feature Parity Matrix
 
-| Feature | lazygit (Go) | sugar-stash (PHP) | Status |
+| Feature | lazygit (Go) | candy-git (PHP) | Status |
 |---------|-------------|-------------------|--------|
 | Three-pane layout (status/branches/log) | ✅ | ✅ | Complete |
 | Stage/unstage single file | ✅ | ✅ | Complete |
@@ -283,7 +283,7 @@ if ($this->collectingCommit) {
 
 - ~60+ files, 30k+ lines of Go
 
-**sugar-stash (PHP):**
+**candy-git (PHP):**
 
 - Shells out to `git` binary for every operation (preserves aliases, hooks, config)
 
@@ -295,11 +295,11 @@ if ($this->collectingCommit) {
 
 ### Key Implementation Differences
 
-1. **Git integration:** lazygit uses libgit2; sugar-stash uses `proc_open()` to spawn `git -C <cwd>`. This means sugar-stash respects user git aliases and hooks automatically, but is slower for high-frequency operations.
+1. **Git integration:** lazygit uses libgit2; candy-git uses `proc_open()` to spawn `git -C <cwd>`. This means candy-git respects user git aliases and hooks automatically, but is slower for high-frequency operations.
 
-2. **Diff rendering:** lazygit uses a dedicated diff panel with side-by-side view; sugar-stash renders unified diff in an overlay with syntax highlighting.
+2. **Diff rendering:** lazygit uses a dedicated diff panel with side-by-side view; candy-git renders unified diff in an overlay with syntax highlighting.
 
-3. **Interactive rebase:** lazygit has full `git rebase -i` todo file manipulation; sugar-stash builds a todo list from `git log` output and cycles through actions (pick/reword/edit/squash/drop) but does not generate the full rebase script.
+3. **Interactive rebase:** lazygit has full `git rebase -i` todo file manipulation; candy-git builds a todo list from `git log` output and cycles through actions (pick/reword/edit/squash/drop) but does not generate the full rebase script.
 
 4. **Undo/redo:** Both maintain operation history; lazygit's is more sophisticated with nested transaction support.
 
@@ -309,7 +309,7 @@ if ($this->collectingCommit) {
 
 ### lazygit Alternatives
 
-| Tool | Language | Stars | Comparison to sugar-stash |
+| Tool | Language | Stars | Comparison to candy-git |
 |------|----------|--------|---------------------------|
 | [lazygit](https://github.com/jesseduffield/lazygit) | Go | 76k | Primary upstream — full libgit2 bindings, all features complete |
 | [lazysql](https://github.com/jorgerojas26/lazysql) | Go | 4k | Inspired by lazygit but for SQL databases |
@@ -317,16 +317,16 @@ if ($this->collectingCommit) {
 
 ### SugarCraft Internal Comparison
 
-sugar-stash is the most **complete application** in the SugarCraft monorepo:
+candy-git is the most **complete application** in the SugarCraft monorepo:
 
-| Aspect | sugar-stash | Other SugarCraft libs |
+| Aspect | candy-git | Other SugarCraft libs |
 |--------|-------------|----------------------|
 | Architecture | Full app with multiple overlays | Components/libraries |
 | State management | Complex state machine with undo/redo | Single-purpose components |
 | Git integration | Shells out to `git` | N/A |
 | Test coverage | Extensive behavior tests via `FixtureGit` | Varies |
 | i18n | Full i18n via `Lang::t()` facade | Varies |
-| Entry point | `bin/sugar-stash` CLI | Usually composable libraries |
+| Entry point | `bin/candy-git` CLI | Usually composable libraries |
 
 ---
 
@@ -348,7 +348,7 @@ sugar-stash is the most **complete application** in the SugarCraft monorepo:
 | `src/StashEntry.php` | ~40 | Stash entry value object |
 | `src/WorktreeEntry.php` | ~40 | Worktree entry value object |
 | `src/HistoryEntry.php` | ~80 | Op/inverseOp pairs |
-| `bin/sugar-stash` | 29 | CLI entry point |
+| `bin/candy-git` | 29 | CLI entry point |
 | `examples/play.php` | 48 | In-memory fixture demo |
 
 **Total: ~2800 lines of PHP** (excluding vendor/test bootstrap)
@@ -430,7 +430,7 @@ sugar-stash is the most **complete application** in the SugarCraft monorepo:
 
 5. **VHS demo** — `.vhs/play.tape` and `.vhs/stage.tape` for CI rendering to GIF
 
-6. **CLI binary** — `bin/sugar-stash` with proper autoload resolution
+6. **CLI binary** — `bin/candy-git` with proper autoload resolution
 
 7. **Preserves git config** — Shells out to system `git`, respecting user aliases and hooks
 
@@ -472,7 +472,7 @@ sugar-stash is the most **complete application** in the SugarCraft monorepo:
 
 ## Analysis
 
-**sugar-stash** is a well-architected PHP port of jesseduffield/lazygit that demonstrates the power of the SugarCraft stack for building complete applications. The decision to shell out to `git` rather than using libgit2 bindings is a pragmatic choice that preserves user configuration while keeping the implementation simple.
+**candy-git** is a well-architected PHP port of jesseduffield/lazygit that demonstrates the power of the SugarCraft stack for building complete applications. The decision to shell out to `git` rather than using libgit2 bindings is a pragmatic choice that preserves user configuration while keeping the implementation simple.
 
 **Architecture highlights:**
 
@@ -486,7 +486,7 @@ sugar-stash is the most **complete application** in the SugarCraft monorepo:
 
 **Comparison to upstream lazygit:**
 
-- sugar-stash implements ~60% of lazygit's features but with 10x less code
+- candy-git implements ~60% of lazygit's features but with 10x less code
 
 - The most critical git workflows (stage, commit, branch, stash, rebase) are all functional
 
@@ -494,7 +494,7 @@ sugar-stash is the most **complete application** in the SugarCraft monorepo:
 
 **Strategic position:**
 
-- sugar-stash demonstrates that SugarCraft can build real-world applications
+- candy-git demonstrates that SugarCraft can build real-world applications
 
 - The pluggable `GitDriver` architecture could support alternative backends (e.g., GitHub CLI, libgit2)
 

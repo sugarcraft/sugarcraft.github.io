@@ -1,16 +1,16 @@
 <p class="lede" style="margin-top: 28px;">Three-pane git TUI on the SugarCraft stack — status / branches / log laid out side-by-side, single-key stage / unstage, refresh. Shells out to <code>git</code> for every mutation so users keep their existing aliases, hooks, and signing config.</p>
 
     <h3 style="margin-top: 32px;">Install</h3>
-    <pre class="code"><code class="language-shell">composer require sugarcraft/sugar-stash</code></pre>
+    <pre class="code"><code class="language-shell">composer require sugarcraft/candy-git</code></pre>
 
     <h3 style="margin-top: 32px;">Quickstart</h3>
     <pre class="code"><code class="language-shell"># Run from any git working tree:
-sugar-stash</code></pre>
+candy-git</code></pre>
     <pre class="code"><code class="language-php">// Or wire your own driver in PHP:
 use SugarCraft\Core\Program;
 use SugarCraft\Core\ProgramOptions;
-use SugarCraft\Stash\App;
-use SugarCraft\Stash\Git;
+use SugarCraft\Git\App;
+use SugarCraft\Git\Git;
 
 $git = new Git(getcwd());
 (new Program(App::start($git), new ProgramOptions(useAltScreen: true)))-&gt;run();</code></pre>
@@ -27,12 +27,12 @@ $git = new Git(getcwd());
     </div>
 
     <h3 style="margin-top: 32px;">Internationalization</h3>
-    <p>User-facing strings use <code>SugarCraft\Stash\Lang::t()</code>. All keys are in <code>lang/en.php</code> under the <code>stash</code> namespace.</p>
+    <p>User-facing strings use <code>SugarCraft\Git\Lang::t()</code>. All keys are in <code>lang/en.php</code> under the <code>stash</code> namespace.</p>
     <table class="api-table">
 <tr><th>Key</th><th>Default</th><th>Parameters</th></tr>
 <tr><td>git.spawn_failed</td><td>git: failed to spawn</td><td>—</td></tr>
 <tr><td>git.error</td><td>git: {stderr}</td><td>{stderr}</td></tr>
-<tr><td>cli.not_a_repo</td><td>sugar-stash: not a git repository (no .git in {cwd})</td><td>{cwd}</td></tr>
+<tr><td>cli.not_a_repo</td><td>candy-git: not a git repository (no .git in {cwd})</td><td>{cwd}</td></tr>
 <tr><td>ui.error_prefix</td><td>error: </td><td>—</td></tr>
 <tr><td>status.clean</td><td>clean working tree</td><td>—</td></tr>
 <tr><td>branches.empty</td><td>(no branches)</td><td>—</td></tr>
@@ -43,9 +43,9 @@ $git = new Git(getcwd());
 
     <h3 style="margin-top: 40px;">Source &amp; demos</h3>
     <ul>
-      <li><a href="https://github.com/sugarcraft/sugar-stash">Source on GitHub</a></li>
-      <li><a href="https://github.com/sugarcraft/sugar-stash/blob/master/README.md">Full README</a></li>
-      <li><a href="https://github.com/sugarcraft/sugar-stash/tree/main/examples">Runnable examples</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-git">Source on GitHub</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-git/blob/master/README.md">Full README</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-git/tree/main/examples">Runnable examples</a></li>
       <li>Originally inspired by <a href="https://github.com/jesseduffield/lazygit">lazygit</a> (Go); SugarCraft is developed as a native PHP project.</li>
     </ul>
 
@@ -71,12 +71,12 @@ $git = new Git(getcwd());
         <p class="lede">VHS-recorded GIFs of every example shipped with the app. Regenerated automatically on every push that touches the source.</p>
         <div class="demo-grid">
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-stash/.vhs/play.gif" alt="Play">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-git/.vhs/play.gif" alt="Play">
                 <h3>Play</h3>
                 <span class="demo-caption">Three-pane TUI — switch panes, move cursor, stage / unstage.</span>
             </div>
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-stash/.vhs/stage.gif" alt="Stage">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-git/.vhs/stage.gif" alt="Stage">
                 <h3>Staging workflow</h3>
                 <span class="demo-caption">s key stages and unstages files — watch the status update.</span>
             </div>

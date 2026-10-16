@@ -1,14 +1,14 @@
-# SugarStash Git TUI Research Plan
+# CandyGit Git TUI Research Plan
 
 **Date:** 2026-05-13
-**Project:** sugar-stash (PHP git TUI, lazygit port)
+**Project:** candy-git (PHP git TUI, lazygit port)
 **Sources:** lazygit, gitui, gitu, pygitzen, octotui, libgit2
 
 ---
 
 ## Executive Summary
 
-SugarStash currently implements a minimal three-pane git TUI (status/branches/log) with basic staging via `git add`/`git restore --staged`. This research identifies **20+ improvements** across file staging, diff viewing, commit handling, branch management, and keyboard shortcuts, drawing from lazygit (upstream), gitui (Rust), gitu (Rust), and Python alternatives.
+CandyGit currently implements a minimal three-pane git TUI (status/branches/log) with basic staging via `git add`/`git restore --staged`. This research identifies **20+ improvements** across file staging, diff viewing, commit handling, branch management, and keyboard shortcuts, drawing from lazygit (upstream), gitui (Rust), gitu (Rust), and Python alternatives.
 
 **Recommended Priority Order:**
 
@@ -21,9 +21,9 @@ SugarStash currently implements a minimal three-pane git TUI (status/branches/lo
 
 ## 1. Current Implementation Analysis
 
-**Source:** `/home/sites/sugarcraft/sugar-stash/src/`
+**Source:** `/home/sites/sugarcraft/candy-git/src/`
 
-### What SugarStash Has
+### What CandyGit Has
 
 - ✅ Three-pane layout: Status (left), Branches (top-right), Log (bottom-right)
 - ✅ Tab cycling between panes
@@ -34,7 +34,7 @@ SugarStash currently implements a minimal three-pane git TUI (status/branches/lo
 - ✅ Branch summary with ahead/behind indicator
 - ✅ Fixture-based test pattern via `GitDriver` interface
 
-### What SugarStash Is Missing
+### What CandyGit Is Missing
 
 - ❌ Commit creation
 - ❌ Diff viewing
@@ -50,7 +50,7 @@ SugarStash currently implements a minimal three-pane git TUI (status/branches/lo
 
 ## 2. File Staging/Unstaging
 
-### Current State (sugar-stash)
+### Current State (candy-git)
 
 - **Single file only** via `git add <path>` and `git restore --staged -- <path>`
 - No hunk or line-level staging
@@ -114,7 +114,7 @@ reset_hunk(&repo_path, "src/main.rs", hunk.header_hash, None)?;  // discard
 
 **Source:** [Context7: gitui staging](https://context7.com/gitui-org/gitui/llms.txt)
 
-### Implementation Approaches for SugarStash
+### Implementation Approaches for CandyGit
 
 **Option A: Parse `git diff --cached` / `git diff` output**
 
@@ -149,7 +149,7 @@ reset_hunk(&repo_path, "src/main.rs", hunk.header_hash, None)?;  // discard
 
 ## 3. Diff Viewing
 
-### Current State (sugar-stash)
+### Current State (candy-git)
 
 - ❌ No diff viewing at all
 - Status pane only shows file paths with index/work status indicators
@@ -188,7 +188,7 @@ pygitzen shows commits panel with auto-updating patch panel:
 
 **Source:** [pygitzen GitHub](https://github.com/SunnyTamang/pygitzen)
 
-### Implementation for SugarStash
+### Implementation for CandyGit
 
 **Git commands for diff retrieval:**
 ```bash
@@ -230,7 +230,7 @@ $hunks = $this->parseDiffHunks($output);
 
 ## 4. Commit Handling
 
-### Current State (sugar-stash)
+### Current State (candy-git)
 
 - ❌ No commit creation
 - ❌ No commit amending
@@ -272,7 +272,7 @@ let new_commit_id = amend(&repo_path, commit_id, "amended message")?;
 
 **Source:** [Context7: gitui commit](https://context7.com/gitui-org/gitui/llms.txt)
 
-### SugarStash Implementation
+### CandyGit Implementation
 
 **Git commands:**
 ```php
@@ -314,7 +314,7 @@ $this->run(['commit']);
 
 ## 5. Branch Management
 
-### Current State (sugar-stash)
+### Current State (candy-git)
 
 - ✅ Shows branch list with current branch highlighted
 - ❌ No branch checkout
@@ -352,7 +352,7 @@ branch_compare_upstream(&repo_path, "main")?;  // Returns ahead/behind
 
 **Source:** [Context7: gitui branch](https://context7.com/gitui-org/gitui/llms.txt)
 
-### SugarStash Git Commands
+### CandyGit Git Commands
 
 ```php
 // Checkout branch
@@ -393,7 +393,7 @@ $this->run(['rev-list', '--left-right', '--count',
 
 ## 6. Keyboard Shortcuts
 
-### Current State (sugar-stash)
+### Current State (candy-git)
 
 | Key | Action |
 |-----|--------|
@@ -433,7 +433,7 @@ Lazygit shows `?` popup with keys specific to current pane and context:
 - Branches pane: checkout, create, delete, merge
 - Commits pane: squash, fixup, drop, reword
 
-**SugarStash pattern:**
+**CandyGit pattern:**
 ```php
 public function view(): string
 {
@@ -487,7 +487,7 @@ move_down: Some(( code: Char('j'), modifiers: "")),
 
 Uses git reflog internally. Records every mutation action.
 
-**SugarStash implementation approach:**
+**CandyGit implementation approach:**
 ```php
 private array $undoStack = [];
 private array $redoStack = [];
@@ -524,7 +524,7 @@ Allows binding shell commands to keys with context (selected branch, file, commi
 
 ### Model-View-Update (Elm Architecture)
 
-SugarStash follows this pattern correctly:
+CandyGit follows this pattern correctly:
 - **Model:** `App` class with immutable state
 - **View:** `Renderer::render()` produces terminal output
 - **Update:** `App::update(Msg $msg)` returns `[Model, ?Cmd]`
@@ -533,7 +533,7 @@ Lazygit uses similar pattern in Go with gocui library.
 
 ### Command Pattern for Effects
 
-SugarStash uses `Cmd` for side effects (quit, refresh):
+CandyGit uses `Cmd` for side effects (quit, refresh):
 ```php
 public function update(Msg $msg): array {
     if ($msg->type === KeyType::Escape) {
@@ -569,7 +569,7 @@ async fn refresh(&mut self) -> Result<(), AsyncgitError> {
 }
 ```
 
-**SugarStash consideration:** ReactPHP could enable async git operations if needed for large repos.
+**CandyGit consideration:** ReactPHP could enable async git operations if needed for large repos.
 
 ---
 
@@ -577,7 +577,7 @@ async fn refresh(&mut self) -> Result<(), AsyncgitError> {
 
 ### Current Pattern (Good)
 
-SugarStash uses fixture-based `GitDriver` implementation for tests:
+CandyGit uses fixture-based `GitDriver` implementation for tests:
 ```php
 final class FixtureGit implements GitDriver {
     public array $stages = [];
@@ -603,7 +603,7 @@ Lazygit tests use snapshot testing for view rendering:
 assert.Equal(t, "\x1b[1mbold text\x1b[0m", view())
 ```
 
-SugarStash `RendererTest` could add snapshot tests once diff viewing is added.
+CandyGit `RendererTest` could add snapshot tests once diff viewing is added.
 
 ---
 
@@ -755,7 +755,7 @@ final class DiffLine {
 
 ## Appendix A: Keybinding Comparison Table
 
-| Action | SugarStash | Lazygit | GitUI | Gitu |
+| Action | CandyGit | Lazygit | GitUI | Gitu |
 |--------|------------|---------|-------|------|
 | Stage file | `s` | `Space` | `Space` | `s` |
 | Stage all | - | `a` | `a` | `S-a` |

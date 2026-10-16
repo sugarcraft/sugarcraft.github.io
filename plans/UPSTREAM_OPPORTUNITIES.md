@@ -33,7 +33,7 @@ SugarCraft ports. Use this to prioritize the next port wave.
 
 | Upstream | Title | Applicability | Recommendation |
 |---|---|---|---|
-| [#163](https://github.com/charmbracelet/bubbletea/issues/163) (17c) | Displaying images | ⚪ | Covered by `candy-mosaic` plan |
+| [#163](https://github.com/charmbracelet/bubbletea/issues/163) (17c) | Displaying images | ⚪ | Covered by `sugar-image` plan |
 | [#1590](https://github.com/charmbracelet/bubbletea/issues/1590) (13c) | If tea program quits too early, garbage chars are printed | 🔴 | **Effort**: 1-2h **Benefit**: Fixes confusing terminal state on early exit **Downside**: May be renderer-specific |
 | [#573](https://github.com/charmbracelet/bubbletea/issues/573) (13c) | Altscreen: rendering artifacts when resizing window | 🟡 | Likely renderer internal — may need review |
 | [#1225](https://github.com/charmbracelet/bubbletea/issues/1225) (12c) | lipgloss styles rendered incorrectly when `.Width()` applied | ⚪ | Lipgloss issue — candy-sprinkles may have similar behavior |
@@ -55,18 +55,18 @@ SugarCraft ports. Use this to prioritize the next port wave.
 
 | Upstream | Title | Applicability | Recommendation |
 |---|---|---|---|
-| [#220](https://github.com/charmbracelet/lipglose/issues/220) (15c) | OSC 8 (hyperlink) support | 🟡 | candy-shine 已经处理 OSC 8; 检查是否有遗漏 |
+| [#220](https://github.com/charmbracelet/lipglose/issues/220) (15c) | OSC 8 (hyperlink) support | 🟡 | sugar-markdown 已经处理 OSC 8; 检查是否有遗漏 |
 | [#166](https://github.com/charmbracelet/lipgloss/issues/166) (6c) | feat: flexbox | 🔴 | **Effort**: 4-6h **Benefit**: CSS-like flex layout for TUIs **Downside**: Significant API addition |
 | [#40](https://github.com/charmbracelet/lipgloss/issues/40) (16c) | Rendering Issues with zh_CN.UTF-8 | 🟡 | 可能影响任何使用 Unicode 的组件 |
 | [#81](https://github.com/charmbracelet/lipgloss/issues/81) (6c) | New API: fast colors | 🔴 | **Effort**: 1-2h **Benefit**: Faster color rendering for high-frequency updates **Downside**: Minimal |
 
 ---
 
-## charmbracelet/harmonica → honey-bounce
+## charmbracelet/harmonica → sugar-spring
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in honey-bounce | Notes |
+| Upstream | Title | Status in sugar-spring | Notes |
 |---|---|:--:|---|
 | [#9](https://github.com/charmbracelet/harmonica/pull/9) (2021-11-02) | Expose Velocity and Acceleration on Projectiles | ✅ | Already present in `Projectile` class |
 | [#8](https://github.com/charmbracelet/harmonica/pull/8) (2021-10-27) | Generalize package to include projectiles | ✅ | Already implemented |
@@ -148,11 +148,11 @@ No high-comment open issues found. Repo is very quiet.
 
 ---
 
-## charmbracelet/glamour → candy-shine
+## charmbracelet/glamour → sugar-markdown
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-shine | Notes |
+| Upstream | Title | Status in sugar-markdown | Notes |
 |---|---|:--:|---|
 | [#499](https://github.com/charmbracelet/glamour/pull/499) (2026-01-23) | fix(ansi): handle multi-byte UTF-8 in margin writers | 🟡 | UTF-8 处理 — 确认 PHP 实现正确 |
 | [#496](https://github.com/charmbracelet/glamour/pull/496) (2026-01-23) | fix: hide mailto: prefix in rendered email links | 🟡 | 可能需要添加到 Markdown 渲染 |
@@ -170,17 +170,17 @@ No high-comment open issues found. Repo is very quiet.
 
 ---
 
-## charmbracelet/fang → candy-kit
+## charmbracelet/fang → sugar-cli
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-kit | Notes |
+| Upstream | Title | Status in sugar-cli | Notes |
 |---|---|:--:|---|
 | [#86](https://github.com/charmbracelet/fang/pull/86) (2026-03-11) | fix: don't strip newlines in error messages | ✅ | Already handled in `Output` helper |
 | [#84](https://github.com/charmbracelet/fang/pull/84) (2026-03-09) | docs: add upgrade guide for v2 + release notes | ⚪ | v2 docs |
 | [#87](https://github.com/charmbracelet/fang/pull/87) (2026-03-07) | docs: minor housekeeping | ⚪ | Docs only |
 | [#48](https://github.com/charmbracelet/fang/pull/48) (2025-06-27) | feat: WithNotifySignal | 🟡 | Signal notification — check if useful for CLI apps |
-| [#28](https://github.com/charmbracelet/fang/pull/28) (2025-06-18) | feat: support having a custom error handler | 🟡 | Custom error handler pattern — may enhance candy-kit |
+| [#28](https://github.com/charmbracelet/fang/pull/28) (2025-06-18) | feat: support having a custom error handler | 🟡 | Custom error handler pattern — may enhance sugar-cli |
 | [#42](https://github.com/charmbracelet/fang/pull/42) (2025-06-23) | feat: support grouped commands and fix flag style | 🟡 | Grouped commands — already in CLI design? |
 | [#71](https://github.com/charmbracelet/fang/pull/71) (2025-09-19) | fix: preserve multiline formatting in flag descriptions | ✅ | Already preserved in HelpText |
 
@@ -375,7 +375,7 @@ No high-comment open issues.
    - **Effort**: 3-4h **Benefit**: High — Progress is a missing component in sugar-widgets
    - **Downside**: New API surface, snapshot tests needed
 
-3. **glamour wikilinks support** → candy-shine
+3. **glamour wikilinks support** → sugar-markdown
    - **Effort**: 2-3h **Benefit**: Medium — common markdown extension
    - **Downside**: Parse tree modification
 

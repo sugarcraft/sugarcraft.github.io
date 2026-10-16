@@ -1,7 +1,7 @@
 # SugarCraft Stage 1 Synthesis — 10 Package Update Files
 
 Sources: candy-core, candy-scriptui, sugar-forms, candy-sprinkles, sugar-widgets,
-sugar-forms, honey-bounce, candy-palette, candy-shine, candy-pty
+sugar-forms, sugar-spring, sugar-colorprofile, sugar-markdown, candy-pty
 
 ---
 
@@ -21,19 +21,19 @@ All rendering passes through string-based diffing.紫外线 (ultraviolet) and ra
 
 ### C. Cassowary Constraint Solver Absent or Incomplete (candy-core / candy-sprinkles / sugar-forms / sugar-widgets)
 
-candy-sprinkles has a one-pass greedy layout solver — cannot express "column A is always at least 2× column B". candy-core has no layout system at all (models manually pad strings). ratatui and ultraviolet both use Cassowary (same algorithm as Apple Auto Layout). php-tui uses `php-tui/cassowary`. honey-bounce has spring physics but the Cassowary constraint solver that enables truly responsive layouts is missing from all layout-sensitive packages.
+candy-sprinkles has a one-pass greedy layout solver — cannot express "column A is always at least 2× column B". candy-core has no layout system at all (models manually pad strings). ratatui and ultraviolet both use Cassowary (same algorithm as Apple Auto Layout). php-tui uses `php-tui/cassowary`. sugar-spring has spring physics but the Cassowary constraint solver that enables truly responsive layouts is missing from all layout-sensitive packages.
 
 **Impact**: Responsive dashboards that adapt to terminal resize require manual string padding. Declarative constraint specification is impossible.
 
 ### D. Snapshot Tests for ANSI Render Output Are Almost Entirely Absent
 
-sugar-forms, sugar-forms, sugar-widgets, candy-shine — none have golden file assertions on ANSI SGR bytes. Every `view()` method renders complex multi-line ANSI output; regressions in color codes, cursor positioning, or layout are silent. Upstream repos (bubbletea, huh, ratatui, pterm) all use golden/snapshot tests. pterm has 28,952 tests with exact byte assertions.
+sugar-forms, sugar-forms, sugar-widgets, sugar-markdown — none have golden file assertions on ANSI SGR bytes. Every `view()` method renders complex multi-line ANSI output; regressions in color codes, cursor positioning, or layout are silent. Upstream repos (bubbletea, huh, ratatui, pterm) all use golden/snapshot tests. pterm has 28,952 tests with exact byte assertions.
 
 **Impact**: Without snapshot tests, any rendering regression is invisible until runtime. Confidence in refactoring is near-zero across all form and component libraries.
 
-### E. Cascading Style Inheritance + BlockStack Are Missing (candy-shine)
+### E. Cascading Style Inheritance + BlockStack Are Missing (sugar-markdown)
 
-glamour maintains a `BlockStack` that computes available width dynamically as blocks nest (`WordWrap - Indent - Margin*2`). candy-shine handles nesting directly in `renderList()` and `renderBlockQuote()` but cannot propagate accumulated indent to deeper nested structures. Style inheritance uses null-slot fallthrough instead of glamour's recursive `cascadeStyle()` merge. Deeply nested blocks (blockquote > list > blockquote > paragraph) are not architecturally supported.
+glamour maintains a `BlockStack` that computes available width dynamically as blocks nest (`WordWrap - Indent - Margin*2`). sugar-markdown handles nesting directly in `renderList()` and `renderBlockQuote()` but cannot propagate accumulated indent to deeper nested structures. Style inheritance uses null-slot fallthrough instead of glamour's recursive `cascadeStyle()` merge. Deeply nested blocks (blockquote > list > blockquote > paragraph) are not architecturally supported.
 
 **Impact**: Nested markdown rendering produces incorrect indentation for real-world documents. Glamour parity requires BlockStack + cascading style merge.
 
@@ -51,7 +51,7 @@ candy-core has ReactPHP integration but `exec()` blocks during external command 
 
 ### C. No Consistent Buffer/Cell Abstraction for Rendering
 
-Packages that do rendering (candy-core renderer, candy-sprinkles Canvas, candy-shine Renderer, sugar-widgets components, sugar-forms primitives) each maintain their own string-composition approach. No package has a shared `Buffer`/`Cell` value object hierarchy. This means: (1) cell-level diffing cannot be shared across packages, (2) canvas layering and animation are all implemented independently, (3) a future cell-based renderer would need to be implemented per-package rather than centrally. **The weakness**: rendering infrastructure is not layered — every package reinventing terminal output.
+Packages that do rendering (candy-core renderer, candy-sprinkles Canvas, sugar-markdown Renderer, sugar-widgets components, sugar-forms primitives) each maintain their own string-composition approach. No package has a shared `Buffer`/`Cell` value object hierarchy. This means: (1) cell-level diffing cannot be shared across packages, (2) canvas layering and animation are all implemented independently, (3) a future cell-based renderer would need to be implemented per-package rather than centrally. **The weakness**: rendering infrastructure is not layered — every package reinventing terminal output.
 
 ---
 
@@ -113,18 +113,18 @@ The `SubStyleParser` for per-element styles already exists in candy-scriptui —
 - **Vim mode for TextInput** — not in upstream
 - **ValidateOn timing control** — not in upstream
 - **Zone-based mouse for Tabs** — not in upstream
-- **Spring physics animation** via honey-bounce integration — not in upstream
+- **Spring physics animation** via sugar-spring integration — not in upstream
 - **Note**: bubbles wins on LineInfo soft-wrap tracking, fuzzy filtering quality (sahilm/fuzzy), and half-block color blending
 
-### honey-bounce > harmonica (Partial Superiority)
+### sugar-spring > harmonica (Partial Superiority)
 - **REDUCE_MOTION accessibility support** — **zero in upstream**
 - **Immutable Projectile::update()** — upstream mutates in place
 - **UIKit-inspired spring presets** (Gentle, Wobbly, Stiff, Slow, Molasses) — not in upstream
 - **Easing/CubicBezier library** (15 easing curves + 24 CSS cubic-beziers) — not in upstream
 - **SpringChain/SpringCollection** for multi-spring orchestration — not in upstream
-- **Note**: harmonica has the canonical Ryan Juckett algorithm; honey-bounce's extensions are SugarCraft-only
+- **Note**: harmonica has the canonical Ryan Juckett algorithm; sugar-spring's extensions are SugarCraft-only
 
-### candy-palette > colorprofile (Partial Superiority)
+### sugar-colorprofile > colorprofile (Partial Superiority)
 - **12-step detection hierarchy** with infocmp Phase 2 upgrade — more comprehensive than upstream
 - **Standards compliance**: fully implements NO_COLOR, CLICOLOR, CLICOLOR_FORCE, COLORTERM, terminfo
 - **Good test coverage**: 6 test files with data providers and env preservation
@@ -138,7 +138,7 @@ The `SubStyleParser` for per-element styles already exists in candy-scriptui —
 
 ## Stage 2 Findings (packages 11-19)
 
-Sources: sugar-mouse, sugar-charts, sugar-table, candy-wish, candy-mosaic, candy-mdview, candy-log, candy-vt, candy-vcr
+Sources: sugar-mouse, sugar-charts, sugar-table, candy-wish, sugar-image, candy-mdview, candy-log, candy-vt, candy-vcr
 
 ### 1. Top 3 Most Critical Feature Gaps
 
@@ -157,7 +157,7 @@ Upstream issue #10: drag operations produce duplicate `MouseDown` events as curs
 sugar-charts, sugar-table, candy-mdview, candy-vt, and candy-vcr all explicitly cite the absence of byte-level SGR output assertions. Only Sixel in sugar-charts has comprehensive snapshot tests. Without golden files, any regression in color codes, cursor positioning, or layout is invisible until runtime. Upstream repos (bubbletea, huh, ratatui, pterm with 28,952 tests) all use golden files. This is the single highest-confidence improvement available across Stage 2 packages.
 
 #### B. Terminal Capability Detection Failures Cause Panics, Not Graceful Fallback
-candy-mosaic, candy-mdview, and candy-wish all struggle with terminal probing failures (Windows, SSH, old terminals, stdout locked). ratatui-image issues #69, #68, #72, #64 all stem from probing failures producing unhelpful errors. No Stage 2 package has implemented a robust `auto()` fallback pattern that always returns a usable renderer with sensible defaults. This is a consistent pattern across the entire image/terminal rendering layer.
+sugar-image, candy-mdview, and candy-wish all struggle with terminal probing failures (Windows, SSH, old terminals, stdout locked). ratatui-image issues #69, #68, #72, #64 all stem from probing failures producing unhelpful errors. No Stage 2 package has implemented a robust `auto()` fallback pattern that always returns a usable renderer with sensible defaults. This is a consistent pattern across the entire image/terminal rendering layer.
 
 ### 3. Top 3 Most Commonly Cited External Repos
 
@@ -165,14 +165,14 @@ candy-mosaic, candy-mdview, and candy-wish all struggle with terminal probing fa
 Also: glamour (block stack, cascading style inheritance, two-phase rendering), lipgloss (style system, color blending, word wrap fixes), bubbles (viewport, textarea memoization). glow and its dependencies define the markdown/TUI rendering architecture.
 
 #### 2. `ratatui/ratatui` + `ratatui/ratatui-image` — Tied for buffer/layout (Critical)
-ratatui cited for sugar-charts (Gauge widget, buffer diffing), candy-mosaic (sliced rendering, background color query, graceful fallback), candy-vt (buffer diffing, widget trait pattern), and general architecture. ratatui-image is the reference for sliced/partial rendering and never-fail initialization.
+ratatui cited for sugar-charts (Gauge widget, buffer diffing), sugar-image (sliced rendering, background color query, graceful fallback), candy-vt (buffer diffing, widget trait pattern), and general architecture. ratatui-image is the reference for sliced/partial rendering and never-fail initialization.
 
 #### 3. `blacktop/go-termimg` — Terminal image rendering (High)
-Referenced by candy-mosaic for: parallel base64 encoding (~33% speedup via sync.Pool), larger LRU cache (100 entries vs 4), request coalescing in async pipeline, Unicode placeholder mode for Kitty scrolling. Also ratatui-image for sliced/partial rendering patterns and graceful fallback architecture.
+Referenced by sugar-image for: parallel base64 encoding (~33% speedup via sync.Pool), larger LRU cache (100 entries vs 4), request coalescing in async pipeline, Unicode placeholder mode for Kitty scrolling. Also ratatui-image for sliced/partial rendering patterns and graceful fallback architecture.
 
 ### 4. Top 2 Immediate-Win Roadmap Items
 
-#### A. `Mosaic::auto()` Graceful Fallback + `Mosaic::diagnose()` — candy-mosaic (P0, Days)
+#### A. `Mosaic::auto()` Graceful Fallback + `Mosaic::diagnose()` — sugar-image (P0, Days)
 ratatui-image issues #69, #68, #72 all stem from terminal probing failures. Add `Mosaic::auto()` that tries probing and falls back to HalfBlock (safe universal fallback) on any exception. Add `Mosaic::diagnose()` that produces a structured report of detected capabilities and probing failures. Low effort, eliminates user-facing failures on Windows, SSH, and old terminals.
 
 #### B. Wire MarkLine into LineChart + Add Snapshot Tests — sugar-charts (P0, Days)

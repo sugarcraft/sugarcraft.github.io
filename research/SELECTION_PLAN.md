@@ -86,22 +86,22 @@
 - **Effort**: 30 minutes
 - **Research**: `libraries/candy-log-research.md`
 
-### candy-palette
+### sugar-colorprofile
 
 ### [ ] CLICOLOR / CLICOLOR_FORCE support
 
 - **Effort**: 2-4 hours
-- **Research**: `libraries/candy-palette-research.md`
+- **Research**: `libraries/sugar-colorprofile-research.md`
 
 ### [ ] Fix tmux/screen COLORTERM ignoring
 
 - **Effort**: 2-4 hours
-- **Research**: `libraries/candy-palette-research.md`
+- **Research**: `libraries/sugar-colorprofile-research.md`
 
 ### [ ] TERM=dumb special case handling
 
 - **Effort**: 1-2 hours
-- **Research**: `libraries/candy-palette-research.md`
+- **Research**: `libraries/sugar-colorprofile-research.md`
 
 ### sugar-toast
 
@@ -132,12 +132,12 @@
 - **Effort**: 1-2 hours
 - **Research**: `libraries/candy-ansi-inspect-research.md`
 
-### candy-mosaic
+### sugar-image
 
 ### [ ] Fix WezTerm detection (TERM_PROGRAM=WezTerm)
 
 - **Effort**: 30 minutes
-- **Research**: `libraries/candy-mosaic-research.md`
+- **Research**: `libraries/sugar-image-research.md`
 
 ### candy-vt
 
@@ -168,12 +168,12 @@
 - **Effort**: 1 hour
 - **Research**: `libraries/candy-kv-research.md`
 
-### candy-flip
+### sugar-animation
 
 ### [ ] Replace temp-file I/O with `imagecreatefromstring()`
 
 - **Effort**: 1-2 hours
-- **Research**: `libraries/candy-flip-research.md`
+- **Research**: `libraries/sugar-animation-research.md`
 
 ### sugar-navstack
 
@@ -407,19 +407,19 @@
 - **Effort**: 3-4 hours
 - **Research**: `libraries/candy-tetris-research.md`
 
-### honey-bounce
+### sugar-spring
 
 ### [ ] SpringConfig presets (gentle, wobbly, stiff, slow)
 
 - **Priority**: P1 - High
 - **Effort**: 2 days
-- **Research**: `libraries/honey-bounce-research.md`
+- **Research**: `libraries/sugar-spring-research.md`
 
 ### [ ] CubicBezier easing
 
 - **Priority**: P1 - High
 - **Effort**: 1.5 days
-- **Research**: `libraries/honey-bounce-research.md`
+- **Research**: `libraries/sugar-spring-research.md`
 
 ---
 
@@ -433,7 +433,7 @@ All 45 research documents available at:
 | Library | File Size |
 |---------|-----------|
 | candy-core | 17KB |
-| candy-flip | 16KB |
+| sugar-animation | 16KB |
 | candy-codeshot | 23KB |
 | sugar-quickpick | 21KB |
 | sugar-treelist | 15KB |
@@ -441,8 +441,8 @@ All 45 research documents available at:
 | candy-metrics | 20KB |
 | candy-minesweeper | 15KB |
 | candy-starter | 18KB |
-| candy-mosaic | 24KB |
-| candy-palette | 15KB |
+| sugar-image | 24KB |
+| sugar-colorprofile | 15KB |
 | candy-pty | 24KB |
 | candy-sql | 11KB |
 | candy-git-server | 12KB |
@@ -453,7 +453,7 @@ All 45 research documents available at:
 | candy-vt | 26KB |
 | candy-wish | 24KB |
 | sugar-mouse | 14KB |
-| honey-bounce | 25KB |
+| sugar-spring | 25KB |
 | candy-flappy | 11KB |
 | sugar-widgets | 26KB |
 | sugar-panels | 16KB |

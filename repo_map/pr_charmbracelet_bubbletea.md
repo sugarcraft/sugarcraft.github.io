@@ -29,12 +29,12 @@ From the first-stage analysis, SugarCraft maps to Bubble Tea ecosystem as:
 |---|---|---|
 | `bubbletea` | `candy-core` | Core runtime, Model/Program/Update |
 | `lipgloss` | `candy-sprinkles` | Declarative styling |
-| `harmonica` | `honey-bounce` | Spring animations |
+| `harmonica` | `sugar-spring` | Spring animations |
 | `bubblezone` | `sugar-mouse` | Mouse zone tracking |
 | `bubbles` | `sugar-widgets` | 14 prebuilt components |
 | `huh` | `sugar-forms` | Interactive forms |
-| `glamour` | `candy-shine` | Markdown rendering |
-| `colorprofile` | `candy-palette` | Color detection |
+| `glamour` | `sugar-markdown` | Markdown rendering |
+| `colorprofile` | `sugar-colorprofile` | Color detection |
 
 ---
 
@@ -516,7 +516,7 @@ The v2 Cursed Renderer is a complete rewrite modeled on ncurses:
 
 Reduces tearing and cursor flickering by atomically updating the terminal. Enabled by default in v2.
 
-**SugarCraft Status:** Terminal mode 2026 support should be part of candy-palette or candy-vt.
+**SugarCraft Status:** Terminal mode 2026 support should be part of sugar-colorprofile or candy-vt.
 
 ---
 

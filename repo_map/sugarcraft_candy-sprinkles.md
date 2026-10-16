@@ -365,7 +365,7 @@ Bundles `ColorProfile` + `hasDarkBackground` flag:
 
 5. **No Text/Line/Span hierarchy** — ratatui and php-tui have `Text → Line → Span` for multi-styled inline text. candy-sprinkles has `Markup::parse()` returning `list<Cell>` but no equivalent first-class type.
 
-6. **No built-in syntax highlighting** — Glamour handles markdown/code in the Charm ecosystem; SugarCraft maps `candy-shine` to Glamour but the integration point is unclear.
+6. **No built-in syntax highlighting** — Glamour handles markdown/code in the Charm ecosystem; SugarCraft maps `sugar-markdown` to Glamour but the integration point is unclear.
 
 7. **No StyleRunes equivalent** — lipgloss has `StyleRunes(str, indices, matched, unmatched)` for sub-string styling; not yet ported.
 
@@ -779,7 +779,7 @@ func MapRangeToRange(fromMin, fromMax, toMin, toMax, current float32) int {
     return int(toMin + ((toMax-toMin)/(fromMax-fromMin))*(current-fromMin))
 }
 ```
-Used for: bar chart values → terminal positions, RGB color fades, keyboard navigation offsets. A foundational utility that should be in sugar-core or honey-bounce.
+Used for: bar chart values → terminal positions, RGB color fades, keyboard navigation offsets. A foundational utility that should be in sugar-core or sugar-spring.
 
 **Location:** `pterm/internal/map_range_to_range.go`
 

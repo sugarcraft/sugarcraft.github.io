@@ -110,7 +110,7 @@ macOS-specific items and Windows ConPTY are explicitly low priority.
 
 1. `step-01-theme-in-candy-sprinkles.md`
 2. `step-02-styleparser-in-candy-sprinkles.md`
-3. `step-03-candy-palette-probe.md`
+3. `step-03-sugar-colorprofile-probe.md`
 4. `step-04-module-aligns-model.md`
 
 ### Phase 03 — Sugar-dash (`phase-03-sugar-dashboard/`)
@@ -278,7 +278,7 @@ Each writes a plan file only — no implementation.
 1. `step-01-candy-mail-identity.md`
 2. `step-02-candy-git-server-tui.md`
 3. `step-03-candy-vt-graphics.md`
-4. `step-04-candy-flip-mosaic-split.md`
+4. `step-04-sugar-animation-mosaic-split.md`
 
 ### Phase 12 — Deferred (`phase-12-deferred/`) — pause indefinitely per user
 

@@ -29,7 +29,7 @@ Reference: `docs/repo_map_update.md` doesn't enumerate every lib; the analysis o
 ## Coder brief
 
 1. **Delegate everything to an Explore subagent** — the supervisor pattern: keep coder context lean. Brief:
-   > "List every directory at /home/sites/sugarcraft matching `candy-*`, `sugar-*`, `honey-*`, `super-*`. For each, exclude those already migrated in steps 9-29 (covered list: candy-core, candy-sprinkles, candy-shine, candy-vt, candy-mosaic, candy-palette, sugar-widgets, sugar-forms, sugar-forms, sugar-charts, sugar-table, candy-scriptui, candy-ansi-inspect, sugar-quickpick, candy-codeshot, sugar-readline, sugar-overlay, sugar-navstack, sugar-treelist, super-candy, candy-sql, sugar-panels, sugar-dashboard, sugar-crush, sugar-flexbox, candy-vcr, candy-mdview, candy-wish — confirm against the actual ai/* branch list in git for accuracy). For each remaining lib, briefly scan `src/` and identify which of these 8 shared packages could be adopted with reasonable effort: candy-ansi (any byte-loop ANSI parsing?), candy-buffer (any cell-grid rendering / string composition?), candy-layout (any constraint sizing?), sugar-mouse (any mouse hit-testing?), candy-input (any input decoding?), sugar-fuzzy (any filter/search?), candy-async (any ReactPHP / async?), candy-testing (any view() output that lacks snapshot tests?). Output a structured per-lib report — markdown table per lib with package | benefit | effort (S/M/L)."
+   > "List every directory at /home/sites/sugarcraft matching `candy-*`, `sugar-*`, `honey-*`, `super-*`. For each, exclude those already migrated in steps 9-29 (covered list: candy-core, candy-sprinkles, sugar-markdown, candy-vt, sugar-image, sugar-colorprofile, sugar-widgets, sugar-forms, sugar-forms, sugar-charts, sugar-table, candy-scriptui, candy-ansi-inspect, sugar-quickpick, candy-codeshot, sugar-readline, sugar-overlay, sugar-navstack, sugar-treelist, super-candy, candy-sql, sugar-panels, sugar-dashboard, sugar-crush, sugar-flexbox, candy-vcr, candy-mdview, candy-wish — confirm against the actual ai/* branch list in git for accuracy). For each remaining lib, briefly scan `src/` and identify which of these 8 shared packages could be adopted with reasonable effort: candy-ansi (any byte-loop ANSI parsing?), candy-buffer (any cell-grid rendering / string composition?), candy-layout (any constraint sizing?), sugar-mouse (any mouse hit-testing?), candy-input (any input decoding?), sugar-fuzzy (any filter/search?), candy-async (any ReactPHP / async?), candy-testing (any view() output that lacks snapshot tests?). Output a structured per-lib report — markdown table per lib with package | benefit | effort (S/M/L)."
 2. **Block on Explore findings.**
 3. **Write `docs/repo_map_update_followups.md`** structured as:
    ```markdown
@@ -43,7 +43,7 @@ Reference: `docs/repo_map_update.md` doesn't enumerate every lib; the analysis o
    - Step 33 (candy-kv, candy-ssh-launcher, candy-git): ...
    - Step 34 (sugar-datepicker, sugar-toast): ...
    - Step 35 (candy-codetime, candy-mail, candy-git-server): ...
-   - Step 36 (candy-flip, candy-kit, honey-bounce, candy-flappy): ...
+   - Step 36 (sugar-animation, sugar-cli, sugar-spring, candy-flappy): ...
    - Step 37 (catch-all): any remaining lib not above
 
    ## Per-lib opportunities

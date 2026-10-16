@@ -178,7 +178,7 @@ The TST implementation in `index.c` maps to tree-based data structures. The bitm
 - Bit array utilities
 - Linked list implementation
 
-### sugar-forms / candy-shine (TUI elements)
+### sugar-forms / sugar-markdown (TUI elements)
 
 `smenu` is itself a TUI selection widget. SugarCraft has no direct equivalent yet for terminal-based selection menus. A port would be a significant undertaking requiring:
 - Terminal capability detection
@@ -192,7 +192,7 @@ The TST implementation in `index.c` maps to tree-based data structures. The bitm
 - Scrollable window rendering
 - Search with real-time highlighting
 
-### honey-bounce (Animation/motion)
+### sugar-spring (Animation/motion)
 
 The scrolling behavior and cursor movement in `smenu` could inform animation timing, but there's no direct SugarCraft equivalent.
 

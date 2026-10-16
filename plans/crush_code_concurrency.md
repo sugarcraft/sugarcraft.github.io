@@ -209,7 +209,7 @@ by phase: 2→3, 3→4, 4→1, 6→6, 7→4, 8→9 = **27**. ✅
 | **P3.2** | swap `Tui\Pane`'s hand-rolled `next()` for `candy-focus\FocusRing` (Shift-Tab for free) | `src/Tui/Pane.php`, `src/Tui/KeyboardHandler.php:343`, `composer.json` | **S** | **`sugarcraft/candy-focus` is NOT a dependency — see §2.4. Supervisor must add it first.** | S | — | — | — | <!-- @rename-keep -->
 | **P3.3** | `sugar-veil` `withClickOutsideDismiss()` on the palette / session-picker / permission overlays | `src/Chat.php:3478 handleMouse()`, `src/Renderer.php:1150` (the `Veil::new()` site) | **U** | nothing (`sugarcraft/sugar-veil` already required; `Veil::clickOutsideDismiss()` already exists at `sugar-veil/src/Veil.php:161`) | M | — | ✅ | —  <!-- @rename-keep historical provenance --> |
 | **P3.4** | adopt `candy-sprinkles\Table` for `/sessions`, `/agents`, MCP list, LSP diagnostics output | `src/Chat.php` (the `implode("\n", $lines)` sites at ~5410, 5842, 6025, 7810, 7885, 7919, 8037) | **U** | LSP-diagnostics slice needs P2.7; the other three do not — **land it incrementally, as the item itself says** | M | — | ✅ | — |
-| **P3.5** | (a) cell-width-aware padding in `SplitLayout.php:238` / `AgentViewPane.php:112`; (b) restyle `Cli\Help::screen()` with `candy-kit` | (a) `src/Tui/SplitLayout.php`, `src/Tui/AgentViewPane.php` → **S**; (b) `src/Cli/Help.php` → **W** | **split S+W** | (b) **`sugarcraft/candy-kit` is NOT a dependency — §2.4** | S | (b) — | — | — |
+| **P3.5** | (a) cell-width-aware padding in `SplitLayout.php:238` / `AgentViewPane.php:112`; (b) restyle `Cli\Help::screen()` with `candy-kit` | (a) `src/Tui/SplitLayout.php`, `src/Tui/AgentViewPane.php` → **S**; (b) `src/Cli/Help.php` → **W** | **split S+W** | (b) **`sugarcraft/candy-kit` is NOT a dependency — §2.4** | S | (b) — | — | — | <!-- @rename-keep historical provenance -->
 | **P4.6** | subcommands, `--config`, exit codes, `--output-format` validation | see §2.2 | **W** | **IN FLIGHT** | M | ✅ | — | ✅ |
 | **P6.1** | `WorktreeConfig`'s project-config path is `__DIR__`-relative, should be `$root`-relative | `src/Agents/WorktreeConfig.php:106` | **C** | nothing | S | — | — | — |
 | **P6.2** | layered settings: `.sugar-crush/settings.json` + `.local.json` + `~/.sugar-crush/settings.json`, merged | new `src/Config/*`, `src/Cli/Bootstrap.php` (it owns every config read: `readUserConfig`, `writeUserConfig`, `userConfigPath`, `configDirPath`, `trustedConfigDirPath`, `permissionConfig`, `permissionRules`) | **W** | nothing, and **it is the prerequisite for P6.3/P6.4/P6.5/P6.6** | L | ✅ | — | ✅ |
@@ -368,11 +368,11 @@ entire remaining queue** and should be W's next item after the in-flight bundles
 
 ### 3.4 Sibling-lib edits are the conflict that lane isolation does NOT catch by construction
 
-sugar-crush-scoped lane ownership says nothing about `candy-core/`, `candy-vt/`, `candy-shine/`,
+sugar-crush-scoped lane ownership says nothing about `candy-core/`, `candy-vt/`, `candy-shine/`, <!-- @rename-keep historical provenance -->
 `candy-vcr/`. Those get edited: commit `6c1e51c8` is titled *"sugar-crush + candy-core"* and `fe7ce954`
 is *"sugar-crush + candy-core + candy-vt"* — two of the last five commits touched siblings. And the
 hardening backlog has four sibling-lib items: **E15** (`candy-vcr/src/Tape/Lexer.php`), **E46**
-(`candy-core/src/Util/Width.php`), **E49** (`candy-shine/src/Renderer.php`), **E50**
+(`candy-core/src/Util/Width.php`), **E49** (`candy-shine/src/Renderer.php`), **E50** <!-- @rename-keep historical provenance -->
 (`candy-core/src/SgrState.php`).
 
 In a full-repo lane each lane edits *its own copy* of `candy-core`, so nothing breaks until push — and
@@ -702,7 +702,7 @@ Three independent reasons, any one of which is fatal for this use:
 1270646  php8.3 -S 127.0.0.1:41393  /tmp/mosaic-ssrf-…/router.php
 ```
 
-Measured 2026-08-19: four `php -S` servers left behind by **candy-mosaic's** SSRF tests, 3h18m old,
+Measured 2026-08-19: four `php -S` servers left behind by **candy-mosaic's** SSRF tests, 3h18m old, <!-- @rename-keep historical provenance -->
 0.0% CPU each. They are not sugar-crush's and sugar-crush's suite does not start them.
 
 **Why they belong in a concurrency document.** They are the standing proof that the "never run a global

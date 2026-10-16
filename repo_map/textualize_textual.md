@@ -273,9 +273,9 @@ Textual is a **sister project** to the Charmbracelet ecosystem (bubbletea, lipgl
 | Widget library (Button, Input, Tree, etc.) | `sugar-widgets/` | Prebuilt UI components |
 | TCSS Stylesheet, CSS properties | `candy-sprinkles/` | Declarative styling + layout |
 | `Layout`, `VerticalLayout`, `HorizontalLayout`, `GridLayout` | `candy-sprinkles/` + `sugar-panels/` | Layout algorithms |
-| `Color`, HSL/HSV/Lab color spaces | `candy-palette/` | Color manipulation |
-| `Content`, `Text`, `Span`, `Style` | `candy-shine/` | Rich text rendering |
-| `markdown`, `MarkdownViewer` widgets | `candy-shine/` | Markdown rendering |
+| `Color`, HSL/HSV/Lab color spaces | `sugar-colorprofile/` | Color manipulation |
+| `Content`, `Text`, `Span`, `Style` | `sugar-markdown/` | Rich text rendering |
+| `markdown`, `MarkdownViewer` widgets | `sugar-markdown/` | Markdown rendering |
 | `Tree`, `DirectoryTree` widgets | `sugar-treelist/` | Tree listing component |
 | `Select`, `OptionList`, `SelectionList` | `sugar-forms/` | Selection widgets |
 | `Input`, `TextArea`, `MaskedInput` | `sugar-forms/` | Form input components |
@@ -288,7 +288,7 @@ Textual is a **sister project** to the Charmbracelet ecosystem (bubbletea, lipgl
 | `_xterm_parser` | `candy-vt/` | Terminal escape sequence parsing |
 | `timer.Timer` | `candy-core/` | Timer functionality |
 | `worker.Worker`, `WorkerManager` | `candy-core/` | Background workers |
-| `command.CommandPalette`, `Provider` | `candy-kit/` | Command palette system |
+| `command.CommandPalette`, `Provider` | `sugar-cli/` | Command palette system |
 | `binding.Binding` | `candy-scriptui/` | Key binding configuration |
 | `Pilot` (testing) | `candy-vcr/` | Testing infrastructure |
 | `Logger` + `log()` | `candy-log/` | Logging system |

@@ -68,9 +68,9 @@ To implement an item:
 |---------|--------------|-------------------|
 | **candy-mdview** | [research/libraries/candy-mdview-research.md](libraries/candy-mdview-research.md) | 1. Pygments highlighting, 2. Enhanced themes, 3. File watching |
 | **candy-codeshot** | [research/libraries/candy-codeshot-research.md](libraries/candy-codeshot-research.md) | 1. Bg colors, 2. Lang detection, 3. VS Code themes |
-| **candy-mosaic** | [research/libraries/candy-mosaic-research.md](libraries/candy-mosaic-research.md) | 1. WezTerm fix, 2. Image deletion, 3. Quarter-block |
+| **sugar-image** | [research/libraries/sugar-image-research.md](libraries/sugar-image-research.md) | 1. WezTerm fix, 2. Image deletion, 3. Quarter-block |
 | **sugar-mouse** | [research/libraries/sugar-mouse-research.md](libraries/sugar-mouse-research.md) | 1. Hover tracking, 2. Drag detection, 3. Click count |
-| **candy-palette** | [research/libraries/candy-palette-research.md](libraries/candy-palette-research.md) | 1. CLICOLOR, 2. Terminfo Tc, 3. tmux handling |
+| **sugar-colorprofile** | [research/libraries/sugar-colorprofile-research.md](libraries/sugar-colorprofile-research.md) | 1. CLICOLOR, 2. Terminfo Tc, 3. tmux handling |
 | **candy-metrics** | [research/libraries/candy-metrics-research.md](libraries/candy-metrics-research.md) | 1. Histogram buckets, 2. Metric describe, 3. UpDownCounter |
 
 ### Games & Fun
@@ -79,9 +79,9 @@ To implement an item:
 |---------|--------------|-------------------|
 | **candy-tetris** | [research/libraries/candy-tetris-research.md](libraries/candy-tetris-research.md) | 1. Full SRS, 2. T-Spin detection, 3. B2B bonus |
 | **candy-minesweeper** | [research/libraries/candy-minesweeper-research.md](libraries/candy-minesweeper-research.md) | 1. Chord clicks, 2. Win detection, 3. Timer precision |
-| **honey-bounce** | [research/libraries/honey-bounce-research.md](libraries/honey-bounce-research.md) | 1. SpringConfig presets, 2. CubicBezier, 3. SpringChain |
+| **sugar-spring** | [research/libraries/sugar-spring-research.md](libraries/sugar-spring-research.md) | 1. SpringConfig presets, 2. CubicBezier, 3. SpringChain |
 | **candy-flappy** | [research/libraries/candy-flappy-research.md](libraries/candy-flappy-research.md) | 1. Bird rotation, 2. Collision tests, 3. Variable gap |
-| **candy-flip** | [research/libraries/candy-flip-research.md](libraries/candy-flip-research.md) | 1. imagecreatefromstring, 2. Frame timing, 3. Floyd-Steinberg |
+| **sugar-animation** | [research/libraries/sugar-animation-research.md](libraries/sugar-animation-research.md) | 1. imagecreatefromstring, 2. Frame timing, 3. Floyd-Steinberg |
 
 ### Utilities
 
@@ -106,7 +106,7 @@ To implement an item:
 |---|---------|---------|--------|---------------|
 | 1 | candy-log | NO_COLOR env support | 1-2h | [link](libraries/candy-log-research.md) |
 | 2 | candy-log | PadLevelText | 1h | [link](libraries/candy-log-research.md) |
-| 3 | candy-palette | CLICOLOR env support | 2-4h | [link](libraries/candy-palette-research.md) |
+| 3 | sugar-colorprofile | CLICOLOR env support | 2-4h | [link](libraries/sugar-colorprofile-research.md) |
 | 4 | sugar-toast | ESC dismiss | 1h | [link](libraries/sugar-toast-research.md) |
 | 5 | sugar-toast | Stack offset fix | 1h | [link](libraries/sugar-toast-research.md) |
 | 6 | candy-ansi-inspect | SGR underline styles | 1h | [link](libraries/candy-ansi-inspect-research.md) |
@@ -116,13 +116,13 @@ To implement an item:
 | 10 | sugar-navstack | Separator escaping | 1h | [link](libraries/sugar-navstack-research.md) |
 | 11 | candy-codeshot | Background colors | 2h | [link](libraries/candy-codeshot-research.md) |
 | 12 | candy-codeshot | Ligature flag | 1h | [link](libraries/candy-codeshot-research.md) |
-| 13 | candy-mosaic | WezTerm detection fix | 0.5h | [link](libraries/candy-mosaic-research.md) |
+| 13 | sugar-image | WezTerm detection fix | 0.5h | [link](libraries/sugar-image-research.md) |
 | 14 | candy-vt | DECSTBM margins | 2-3h | [link](libraries/candy-vt-research.md) |
 | 15 | candy-vt | Auto-wrap DECAWM | 2h | [link](libraries/candy-vt-research.md) |
 | 16 | candy-kv | CSV/JSON export | 1-2h | [link](libraries/candy-kv-research.md) |
 | 17 | candy-kv | Levenshtein suggestions | 1h | [link](libraries/candy-kv-research.md) |
-| 18 | candy-flip | imagecreatefromstring | 1-2h | [link](libraries/candy-flip-research.md) |
-| 19 | candy-flip | Per-frame timing | 3-4h | [link](libraries/candy-flip-research.md) |
+| 18 | sugar-animation | imagecreatefromstring | 1-2h | [link](libraries/sugar-animation-research.md) |
+| 19 | sugar-animation | Per-frame timing | 3-4h | [link](libraries/sugar-animation-research.md) |
 | 20 | sugar-mines | Chord clicks | 2-3h | [link](libraries/candy-minesweeper-research.md) |
 
 ---
@@ -154,7 +154,7 @@ To implement an item:
 - **candy-vt**: Scrollback buffer, subparam parsing, cursor shapes
 - **candy-pty**: openpty FFI, waitpid FFI, raw mode
 - **sugar-mouse**: Hover tracking, drag detection, click count
-- **candy-palette**: CLICOLOR, terminfo Tc, color space handling
+- **sugar-colorprofile**: CLICOLOR, terminfo Tc, color space handling
 
 ### App-Level
 
@@ -167,7 +167,7 @@ To implement an item:
 
 - **candy-tetris**: Full SRS, T-Spin detection, B2B bonus
 - **candy-minesweeper**: Chord clicks, improved win detection
-- **honey-bounce**: SpringConfig presets, CubicBezier, SpringChain
+- **sugar-spring**: SpringConfig presets, CubicBezier, SpringChain
 - **candy-flappy**: Bird rotation, collision tests
 
 ---

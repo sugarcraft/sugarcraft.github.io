@@ -260,13 +260,13 @@ func shouldQuerySynchronizedOutput(environ uv.Environ) bool {
 |---|---|---|
 | `bubbletea` | `candy-core` | The TUI runtime — Model interface, Program, Update loop, renderer |
 | `lipgloss` | `candy-sprinkles` | Declarative styling, colors, layout |
-| `harmonica` | `honey-bounce` | Spring animations for smooth motion |
+| `harmonica` | `sugar-spring` | Spring animations for smooth motion |
 | `bubblezone` | `sugar-mouse` | Mouse zone tracking for clickable regions |
 | `bubbles` | `sugar-widgets` | 14 prebuilt components (TextInput, List, Table, etc.) |
 | `ntcharts` | `sugar-charts` | Terminal charting library |
 | `huh` | `sugar-forms` | Interactive form library |
-| `glamour` | `candy-shine` | Markdown rendering |
-| `colorprofile` | `candy-palette` | Terminal color detection |
+| `glamour` | `sugar-markdown` | Markdown rendering |
+| `colorprofile` | `sugar-colorprofile` | Terminal color detection |
 | `exec` (internal) | `candy-pty` | Process spawning (PTY) |
 | `x/vt` | `candy-vt` | Virtual terminal emulation |
 | `x/vcr` | `candy-vcr` | Session recording/replay |
@@ -292,7 +292,7 @@ func shouldQuerySynchronizedOutput(environ uv.Environ) bool {
 | Cursor control | `View::cursor` |
 | Window title | `View::windowTitle` |
 | Progress bar | `View::progressBar` |
-| Color profile | `SugarCraft\Palette\ColorProfile` |
+| Color profile | `SugarCraft\ColorProfile\ColorProfile` |
 
 ## Analysis
 

@@ -40,9 +40,9 @@ From the first-stage analysis, SugarCraft ports map to textual components as fol
 | Widget library (Button, Input, Tree, etc.) | `sugar-widgets/` | ✅ Mapped |
 | TCSS Stylesheet, CSS properties | `candy-sprinkles/` | ✅ Mapped |
 | Layout, VerticalLayout, HorizontalLayout, GridLayout | `candy-sprinkles/` + `sugar-panels/` | ✅ Mapped |
-| Color, HSL/HSV/Lab color spaces | `candy-palette/` | ✅ Mapped |
-| Content, Text, Span, Style | `candy-shine/` | ✅ Mapped |
-| markdown, MarkdownViewer | `candy-shine/` | ✅ Mapped |
+| Color, HSL/HSV/Lab color spaces | `sugar-colorprofile/` | ✅ Mapped |
+| Content, Text, Span, Style | `sugar-markdown/` | ✅ Mapped |
+| markdown, MarkdownViewer | `sugar-markdown/` | ✅ Mapped |
 | Tree, DirectoryTree | `sugar-treelist/` | ✅ Mapped |
 | Select, OptionList, SelectionList | `sugar-forms/` | ✅ Mapped |
 | Input, TextArea, MaskedInput | `sugar-forms/` | ✅ Mapped |
@@ -54,7 +54,7 @@ From the first-stage analysis, SugarCraft ports map to textual components as fol
 | Toast, Notification | `sugar-toast/` | ✅ Mapped |
 | _xterm_parser | `candy-vt/` | ✅ Mapped |
 | timer.Timer, worker.Worker | `candy-core/` | ✅ Mapped |
-| command.CommandPalette, Provider | `candy-kit/` | ✅ Mapped |
+| command.CommandPalette, Provider | `sugar-cli/` | ✅ Mapped |
 | binding.Binding | `candy-scriptui/` | ✅ Mapped |
 | Pilot (testing) | `candy-vcr/` | ✅ Mapped |
 | Logger + log() | `candy-log/` | ✅ Mapped |
@@ -758,7 +758,7 @@ TEXTUAL_DEBUG=1 textual run --dev ./app.py
 ### E. Command Palette Architecture
 
 - This is textual's best extensibility pattern
-- **Opportunity**: SugarCraft's `candy-kit` could provide similar provider-based system
+- **Opportunity**: SugarCraft's `sugar-cli` could provide similar provider-based system
 - **Benefit**: Community can add commands without core changes
 
 ### F. Snapshot Testing Infrastructure
@@ -770,7 +770,7 @@ TEXTUAL_DEBUG=1 textual run --dev ./app.py
 ### G. Content Immutable Caching
 
 - Content class is immutable, enabling aggressive caching
-- **Opportunity**: SugarCraft's `candy-shine` text rendering could use similar pattern
+- **Opportunity**: SugarCraft's `sugar-markdown` text rendering could use similar pattern
 - **Benefit**: Layout results can be cached until content changes
 
 ### H. Lazy Language Loading
@@ -931,7 +931,7 @@ TEXTUAL_DEBUG=1 textual run --dev ./app.py
 ### C. Command Palette Pattern
 
 - Textual's command palette is well-regarded
-- **Opportunity**: SugarCraft's `candy-kit` could replicate and extend
+- **Opportunity**: SugarCraft's `sugar-cli` could replicate and extend
 - **Benefit**: Provides familiar UX pattern for users migrating from Textual
 
 ### D. Async Pattern Documentation
@@ -1024,7 +1024,7 @@ TEXTUAL_DEBUG=1 textual run --dev ./app.py
 ### Short-term (Do Next)
 
 4. **Implement Command Palette Architecture**
-   - Provider-based pluggable system for `candy-kit`
+   - Provider-based pluggable system for `sugar-cli`
    - **Rationale**: Textual's most praised extensibility pattern
    - **Effort**: Medium | **Impact**: MEDIUM
 

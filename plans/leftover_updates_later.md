@@ -27,7 +27,7 @@ The audit categories:
 2. **Cross-cutting: i18n via `Lang::t()`** — the canonical pattern from
    `candy-ssh-launcher/src/Lang.php`. Several libs still miss it.
 3. **Cross-cutting: ColorProfile + env detection** — should live in
-   `candy-palette`, not be re-rolled in each lib.
+   `sugar-colorprofile`, not be re-rolled in each lib.
 4. **Per-library leftover features** — verified gaps per research doc.
 5. **Sugar-dashboard detailed plan** — finish the Phase-0 reorg, fix the
    broken `ExternalModule`, wire a real interactive dashboard, kill the
@@ -137,7 +137,7 @@ sugar-navstack research P4 calls for "Click-region rendering". `sugar-mouse` is 
 
 ### SSOT-06 — `posix_isatty` direct calls
 
-Found in `candy-mosaic/src/Detect.php:236-237`. Canonical: `\SugarCraft\Pty\Contract\Termios::isAtty()` (also in `plans/leftover_updates.md` as CC-LO-06).
+Found in `sugar-image/src/Detect.php:236-237`. Canonical: `\SugarCraft\Pty\Contract\Termios::isAtty()` (also in `plans/leftover_updates.md` as CC-LO-06).
 
 **Action:** see `plans/leftover_updates.md` CC-LO-06.
 
@@ -147,15 +147,15 @@ Found in `candy-mosaic/src/Detect.php:236-237`. Canonical: `\SugarCraft\Pty\Cont
 
 **Action:** see `plans/leftover_updates.md` CC-LO-07.
 
-### SSOT-08 — ColorProfile + env detection consolidate in candy-palette
+### SSOT-08 — ColorProfile + env detection consolidate in sugar-colorprofile
 
-`candy-log` research items M5/M6 (`NO_COLOR`/`FORCE_COLOR` detection + downsampling) and `candy-palette` itself need `CLICOLOR_FORCE`/`CLICOLOR`/`COLORTERM` precedence, tmux/screen detection, `WT_SESSION`, `GOOGLE_CLOUD_SHELL`, terminfo `Tc`/`RGB` parsing. All these env probes belong in **one** place: `candy-palette`.
+`candy-log` research items M5/M6 (`NO_COLOR`/`FORCE_COLOR` detection + downsampling) and `sugar-colorprofile` itself need `CLICOLOR_FORCE`/`CLICOLOR`/`COLORTERM` precedence, tmux/screen detection, `WT_SESSION`, `GOOGLE_CLOUD_SHELL`, terminfo `Tc`/`RGB` parsing. All these env probes belong in **one** place: `sugar-colorprofile`.
 
 **Actions:**
 
-- SSOT-08a — Pull all env-var probes into `candy-palette/src/Probe.php` (new class). Single API: `Probe::colorProfile(): ColorProfile`.
-- SSOT-08b — `candy-log`, `candy-mosaic`, `candy-codeshot` (themes), `candy-vt` (truecolor accept) all consume it.
-- SSOT-08c — Implement the missing candy-palette items (H1–H5, M1–M3, terminfo Phase 2) inside `Probe`. Tests cover each env-var precedence rule.
+- SSOT-08a — Pull all env-var probes into `sugar-colorprofile/src/Probe.php` (new class). Single API: `Probe::colorProfile(): ColorProfile`.
+- SSOT-08b — `candy-log`, `sugar-image`, `candy-codeshot` (themes), `candy-vt` (truecolor accept) all consume it.
+- SSOT-08c — Implement the missing sugar-colorprofile items (H1–H5, M1–M3, terminfo Phase 2) inside `Probe`. Tests cover each env-var precedence rule.
 
 ### SSOT-09 — `Module\Module` contract aligns with candy-core `Model`
 
@@ -259,7 +259,7 @@ because research adds three items the PTY plan did not call out:)
 - `ClickCounter` for double/triple-click (Priority 3).
 - `Manager::setMotionTracking(bool)` (Priority 4).
 
-### candy-mosaic
+### sugar-image
 
 - **Quarter-block Unicode renderer** (P0 #3).
 - **`Renderer::delete()`** API (P0 #2).
@@ -268,7 +268,7 @@ because research adds three items the PTY plan did not call out:)
 - Transparent background for `HalfBlockRenderer` (P1 #6).
 - 256-color Sixel fallback (P1 #7).
 - WezTerm detection bug — currently classified as both Kitty *and* iTerm2 candidate; restrict.
-- Animation/GIF support (P2 #8) — overlap with candy-flip; pick one home (see SSOT note below).
+- Animation/GIF support (P2 #8) — overlap with sugar-animation; pick one home (see SSOT note below).
 
 ### candy-git-server
 
@@ -357,7 +357,7 @@ because research adds three items the PTY plan did not call out:)
 - Line highlighting (§4.3.2).
 - Interactive TUI customization (§4.3.3) — depends on sugar-forms features.
 
-### candy-flip
+### sugar-animation
 
 - Replace temp-file frame extraction with `imagecreatefromstring()` (P1).
 - Per-frame timing from Graphic Control Extension (P2).
@@ -366,7 +366,7 @@ because research adds three items the PTY plan did not call out:)
 - Local color tables (P5).
 - Transparency / disposal-method handling (P6).
 - Adaptive cell size from `tput cols lines` (P7) — must use `\SugarCraft\Pty\SizeIoctl::query(STDOUT)`, not shell-out.
-- Kitty/WezTerm graphics-protocol output path (P10) — overlap with candy-mosaic; pick one home. **Recommendation:** Kitty/WezTerm rendering belongs in candy-mosaic; candy-flip emits frame bytes only.
+- Kitty/WezTerm graphics-protocol output path (P10) — overlap with sugar-image; pick one home. **Recommendation:** Kitty/WezTerm rendering belongs in sugar-image; sugar-animation emits frame bytes only.
 - Frame cache (P12).
 
 ### sugar-quickpick
@@ -408,11 +408,11 @@ handled by the monorepo.) Skip until someone uses it as a template.
 
 ### candy-log
 
-- `NO_COLOR` / `FORCE_COLOR` env detection — consume `candy-palette/Probe`.
+- `NO_COLOR` / `FORCE_COLOR` env detection — consume `sugar-colorprofile/Probe`.
 - `PadLevelText` for level-label alignment.
 - Level numeric values aligned with upstream (-4/0/4/8/12).
 - Per-field key styles `Styles::Keys[key]`.
-- ColorProfile downsampling — via `candy-palette/Probe`.
+- ColorProfile downsampling — via `sugar-colorprofile/Probe`.
 - CallerFormatter, slog/PSR-3 handler bridge, hook system, configurable `PartsOrder`.
 
 ### candy-metrics
@@ -423,7 +423,7 @@ handled by the monorepo.) Skip until someone uses it as a template.
 - UpDownCounter, Async Counter, Async Gauge instrument kinds.
 - Native histograms (low priority).
 
-### candy-palette
+### sugar-colorprofile
 
 (See SSOT-08 — most of the work happens here.) Specifically the
 research's H1-H5, M1-M3, and Phase-2 terminfo `infocmp` items.
@@ -438,7 +438,7 @@ research's H1-H5, M1-M3, and Phase-2 terminfo `infocmp` items.
 - Horizontal scrolling (P6).
 - JSON/NULL formatting (P7).
 
-### honey-bounce
+### sugar-spring
 
 - `SpringPreset` enum (Gentle/Wobbly/Stiff/Slow/Molasses) (§4.1 P1).
 - `SpringConfig` translating tension/friction/mass → angularFreq/dampingRatio (P1).
@@ -455,7 +455,7 @@ research's H1-H5, M1-M3, and Phase-2 terminfo `infocmp` items.
 
 - Copy / move / rename ops (HIGH).
 - Bulk rename, progress UI (MEDIUM).
-- Preview pane (MEDIUM) — image preview delegates to candy-mosaic.
+- Preview pane (MEDIUM) — image preview delegates to sugar-image.
 - Async file ops (LOW; needs ReactPHP).
 
 ### candy-git
@@ -889,10 +889,10 @@ until a real profiler trace flags the cost.
   its own; merits a `plans/candy-git-server-tui.md` milestone doc.
 - **candy-vt P3 graphics protocols** — Kitty image, Sixel decode. Each
   is months of work. Defer post-1.0 unless a specific app needs it.
-- **candy-flip vs candy-mosaic image-output split** — animation rendering
-  (P10) overlaps both libs. Recommendation: candy-flip emits frame
-  bytes; candy-mosaic owns Kitty/iTerm2/WezTerm protocol output and
-  consumes candy-flip's frames.
+- **sugar-animation vs sugar-image image-output split** — animation rendering
+  (P10) overlaps both libs. Recommendation: sugar-animation emits frame
+  bytes; sugar-image owns Kitty/iTerm2/WezTerm protocol output and
+  consumes sugar-animation's frames.
 
 ---
 
@@ -906,7 +906,7 @@ CLAUDE.md gotcha).
 
 1. SSOT-01a — Move Theme into candy-sprinkles (new class).
 2. SSOT-01g — Move StyleParser into candy-sprinkles.
-3. SSOT-08a/b/c — `candy-palette::Probe` consolidation.
+3. SSOT-08a/b/c — `sugar-colorprofile::Probe` consolidation.
 4. SSOT-09 — `Module\Module` aligns with `Model` (depends on SSOT-01a
    being available so Modules can use Theme).
 5. Dash-03 (sugar-dashboard imports the new canonical primitives).
@@ -924,7 +924,7 @@ are 1 PR each.
 - candy-prompt validators + fuzzy autocomplete.
 - candy-vt P0 items (DECSTBM, DECAWM, subparams).
 - sugar-mouse hover/drag/click-counter.
-- candy-mosaic quarter-block renderer + delete API.
+- sugar-image quarter-block renderer + delete API.
 - … (each lib's bullet list above is its own backlog.)
 
 **Group D — i18n pass (parallel one-per-lib):**

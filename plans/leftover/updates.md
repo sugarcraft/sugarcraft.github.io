@@ -46,7 +46,7 @@ this before spawning the next subagent.)
 
   This is NOT a chart duplication problem. Per CALIBER_LEARNINGS entry 38 [pattern:dual-foundation-ssot]: "The 5 retained types are intentionally distinct from same-named canonical types in candy-sprinkles/candy-core/candy-vt due to different upstream lineage." The same applies here. **The step should be closed as "not actionable"** — there is nothing to delete and no dependency to add. sugar-dash chart components serve dashboard-specific visualization needs; sugar-charts serves canonical chart primitives. The boundary is already correct.   Supervisor decision needed: should this step be dropped from the rollout, or should I attempt a different interpretation (e.g., adding sugar-charts as a dep even without deleting anything)? <!-- @rename-keep -->
 
-- **step 07.15** (candy-mosaic animation support): ~~BLOCKED~~ **RESOLVED via PR#660 (step 11.04)** — strategic plan `plans/candy-flip-mosaic-split.md` shipped 2026-05-19. Decision: Animation lives in `candy-mosaic`; `Animation` ctor takes `list<ImageSource>` + per-frame delays (frame-source-agnostic); candy-mosaic does **not** require candy-flip — drop the `"sugarcraft/candy-flip": "@dev"` bullet from step 07.15's Modify list. Future GIF→Mosaic bridge (if any) lives in candy-flip, not in mosaic. See plan §3 for the answer table, §4 for API contract.
+- **step 07.15** (candy-mosaic animation support): ~~BLOCKED~~ **RESOLVED via PR#660 (step 11.04)** — strategic plan `plans/sugar-animation-mosaic-split.md` shipped 2026-05-19. Decision: Animation lives in `candy-mosaic`; `Animation` ctor takes `list<ImageSource>` + per-frame delays (frame-source-agnostic); candy-mosaic does **not** require sugar-animation — drop the `"sugarcraft/sugar-animation": "@dev"` bullet from step 07.15's Modify list. Future GIF→Mosaic bridge (if any) lives in sugar-animation, not in mosaic. See plan §3 for the answer table, §4 for API contract. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -116,7 +116,7 @@ tests-ci for step 01.10 · PR#509 · add testFilteredHostEnvWithEmptyStringSkips
 step 01.12 · PR#513 · candy-pty: SIGHUP delivery fix (FD_CLOEXEC on master fd + libc close after fclose) + SignalForwarderReactLoop/SIGHUPForwarding/NoControllingTerminal integration tests; resolved blocker (was two narrow bugs, not a PHP architectural gap)
 tests-ci for step 01.12 · clean
  docs for step 01.12 · PR#515 · improve PHPDoc on PosixMasterPty::close() + PosixPtySystem::open(); log fd-dup-close-after-fclose and fd-cloexec-on-master in CALIBER
-step 01.13 · PR#516 · candy-mosaic + candy-core: TtyDetect static helper (TermiosFactory::open->isAtty) + WezTerm detection fix (Kitty only, not both Kitty+iTerm2) + tests
+step 01.13 · PR#516 · candy-mosaic + candy-core: TtyDetect static helper (TermiosFactory::open->isAtty) + WezTerm detection fix (Kitty only, not both Kitty+iTerm2) + tests <!-- @rename-keep historical provenance -->
 review for step 01.13 · clean · PR#516
 docs for step 01.13 · clean
 step 01.14 · PR#517 · candy-core: Editor + Open use PosixProcess (leftover-rollout step 01.14)
@@ -126,7 +126,7 @@ docs for step 02.01 · PR#520 · document Theme in README/end-user docs/PHPDoc/C
 step 02.02 · PR#521 · candy-sprinkles: StyleParser SSOT port from sugar-dash (inline [text](fg:red) syntax) <!-- @rename-keep -->
 review for step 02.02 · clean · PR#521
 docs for step 02.02 · clean
-step 02.03 · PR#522 · candy-palette: Probe class (colorProfile/isNoColor/isForceColor/reducedMotion) + ColorProfile enum (NoTTY/Ascii/Ansi/Ansi256/TrueColor)
+step 02.03 · PR#522 · sugar-colorprofile: Probe class (colorProfile/isNoColor/isForceColor/reducedMotion) + ColorProfile enum (NoTTY/Ascii/Ansi/Ansi256/TrueColor)
 review for step 02.03 · clean · PR#522
 docs for step 02.03 · PR#523 · document Probe + ColorProfile in README + add CALIBER_LEARNINGS.md
 step 02.04 · PR#524 · sugar-dash: Module aligned with Core Model (update returns [Module,?Cmd]) + LegacyModuleAdapter for compat <!-- @rename-keep -->
@@ -308,12 +308,12 @@ docs for step 07.07 · PR#633 · document BCE/sync-output/combining in README + 
   step 07.10 · PR#638 · candy-zone: ClickCounter (DoubleClickMsg/TripleClickMsg) + Manager::setMotionTracking (leftover-rollout step 07.10) @rename-keep legacy wire token / historical log
   review for step 07.10 · clean · PR#638
   docs for step 07.10 · PR#639 · document ClickCounter/DoubleClickMsg/TripleClickMsg/setMotionTracking in README + end-user HTML + CALIBER
-  step 07.11 · PR#640 · candy-mosaic: QuarterBlockRenderer (░▒▓█ 2×2 pixel rendering) + PixelGrid::fromGdQuarter() + 12 tests (leftover-rollout step 07.11)
-  step 07.12 · PR#642 · candy-mosaic: Renderer::delete() API (Kitty APC delete / iTerm2 Pop / empty for text fallbacks) + Ansi::iterm2Delete() helper + WezTerm detection verified (leftover-rollout step 07.12)
+  step 07.11 · PR#640 · candy-mosaic: QuarterBlockRenderer (░▒▓█ 2×2 pixel rendering) + PixelGrid::fromGdQuarter() + 12 tests (leftover-rollout step 07.11) <!-- @rename-keep historical provenance -->
+  step 07.12 · PR#642 · candy-mosaic: Renderer::delete() API (Kitty APC delete / iTerm2 Pop / empty for text fallbacks) + Ansi::iterm2Delete() helper + WezTerm detection verified (leftover-rollout step 07.12) <!-- @rename-keep historical provenance -->
   docs for step 07.12 · clean · PR#643 · document Renderer::delete() in README (per-renderer table) + end-user HTML API table + CALIBER pattern entry
-step 07.14 · PR#647 · candy-mosaic: transparent HalfBlock bg (alpha→null, skip SGR) + 256-color Sixel maxColors param (leftover-rollout step 07.14)
+step 07.14 · PR#647 · candy-mosaic: transparent HalfBlock bg (alpha→null, skip SGR) + 256-color Sixel maxColors param (leftover-rollout step 07.14) <!-- @rename-keep historical provenance -->
 review for step 07.14 · clean · PR#647
-step 07.13 · PR#644 · candy-mosaic: useVirtual flag (a=p) + gzcompress payload when compress=1 + 10 new tests (leftover-rollout step 07.13)
+step 07.13 · PR#644 · candy-mosaic: useVirtual flag (a=p) + gzcompress payload when compress=1 + 10 new tests (leftover-rollout step 07.13) <!-- @rename-keep historical provenance -->
 tests-ci for step 07.14 · clean
 docs for step 07.14 · PR#648 · document HalfBlockRenderer transparent-pixel docblock + SixelRenderer::maxColors() docblock + end-user HTML feature grid + API table entries
 fix for step 07.13 · PR#645 · resolved 1 finding (remove orphaned docblock)
@@ -330,13 +330,13 @@ step 11.03 · PR#658 · plans: candy-vt-graphics P3 strategic memo (Kitty/iTerm2
 review for step 11.03 · clean · PR#658
 tests-ci for step 11.03 · clean
 docs for step 11.03 · clean
-step 11.04 · PR#660 · plans: candy-flip / candy-mosaic image-output split memo (Option C — neither lib depends on the other; Animation lives in candy-mosaic with ImageSource[] ctor; resolves step 07.15 blocker — drop the candy-flip require from 07.15's Modify list)
+step 11.04 · PR#660 · plans: sugar-animation / candy-mosaic image-output split memo (Option C — neither lib depends on the other; Animation lives in candy-mosaic with ImageSource[] ctor; resolves step 07.15 blocker — drop the sugar-animation require from 07.15's Modify list) <!-- @rename-keep historical provenance -->
 fix for step 11.04 · PR#662 · resolved 5 findings (§1.2 totals 21/3236→22/3426; MosaicBuilder row merged into Mosaic.php note; §6.1+§6.4 phantom sugar-dash/sugar-charts consumers reframed to "no current consumers"; §4.1 withFrame() body filled in with clone-mutate pattern + sketch pointer; §3 divergence note explaining Option A→C deviation from step file framing) <!-- @rename-keep -->
 tests-ci for step 11.04 · clean
 docs for step 11.04 · clean
-step 07.15 · PR#666 · candy-mosaic: add Animation (ImageSource[] + delays, immutable + fluent) + AnimationDriver (Model + Cmd::tick frame timing + delete+render cycle) + KittyRenderer::renderFrame() + FrameTickMsg + tests (leftover-rollout step 07.15)
+step 07.15 · PR#666 · candy-mosaic: add Animation (ImageSource[] + delays, immutable + fluent) + AnimationDriver (Model + Cmd::tick frame timing + delete+render cycle) + KittyRenderer::renderFrame() + FrameTickMsg + tests (leftover-rollout step 07.15) <!-- @rename-keep historical provenance -->
 fix for step 07.15 · PR#667 · resolved 2 CALIBER findings
-docs for step 07.15 · PR#668 · document Animation/AnimationDriver/renderFrame() in README (Animation section + Architecture) + end-user HTML (feature grid + API table) + dev guide (new docs/dev/candy-mosaic.md) + PHPDoc on 6 methods
+docs for step 07.15 · PR#668 · document Animation/AnimationDriver/renderFrame() in README (Animation section + Architecture) + end-user HTML (feature grid + API table) + dev guide (new docs/dev/candy-mosaic.md) + PHPDoc on 6 methods <!-- @rename-keep historical provenance -->
 step 07.16 · PR#669 · candy-pty: add openpty() FFI binding for Darwin (primary) with quartet fallback; libutil.so.1 path on Linux for future extension; OpenptyTest coverage
 fix for step 07.16 · PR#670 · resolved 2 findings (CALIBER openpty-darwin-first + openpty-libutil-linux pattern entries; README API table + Platform behaviour section surfaces openpty() Darwin-first path)
 docs for step 07.16 · PR#671 · document openpty FFI in end-user HTML (Pty::open() feature description) + admin HTML (platform behaviour section) + dev HTML (internal PTY allocation section) + Libc::libutil() @return PHPDoc fix
@@ -412,15 +412,15 @@ docs for step 07.17 · PR#673 · document waitpid FFI fast-path in README + CALI
    step 08.14 · PR#707 · candy-codeshot: VS Code/chroma JSON theme loaders + font embed + line highlight (leftover-rollout step 08.14)
    review for step 08.14 · clean · PR#707
    docs for step 08.14 · direct-to-master · document VsCodeThemeLoader/ChromaThemeLoader/withFont/withHighlight in README/end-user HTML/CALIBER_LEARNINGS.md
-    step 09.01 · PR#708 · candy-flip: imagecreatefromstring() + per-frame GCE timing (leftover-rollout step 09.01)
+    step 09.01 · PR#708 · candy-flip: imagecreatefromstring() + per-frame GCE timing (leftover-rollout step 09.01) <!-- @rename-keep -->
     review for step 09.01 · clean · PR#708
     tests-ci for step 09.01 · clean
     docs for step 09.01 · PR#709 · document imagecreatefromstring() decode in README + new CALIBER_LEARNINGS.md (leftover-rollout step 09.01)
-    step 09.02 · PR#710 · candy-flip: area downsample + Floyd-Steinberg dithering + per-frame local color tables + GCE transparency/disposal
+    step 09.02 · PR#710 · candy-flip: area downsample + Floyd-Steinberg dithering + per-frame local color tables + GCE transparency/disposal <!-- @rename-keep -->
     fix for step 09.02 · PR#711 · resolved 1 finding
     tests-ci for step 09.02 · clean
     docs for step 09.02 · PR#713 · document Downsampler/FloydSteinberg in README + end-user HTML (leftover-rollout step 09.02)
-    step 09.03 · PR#714 · candy-flip: adaptive cell size via SizeIoctl + frame cache (leftover-rollout step 09.03)
+    step 09.03 · PR#714 · candy-flip: adaptive cell size via SizeIoctl + frame cache (leftover-rollout step 09.03) <!-- @rename-keep -->
     review for step 09.03 · clean · PR#714
     tests-ci for step 09.03 · clean
     docs for step 09.03 · PR#715 · document withAdaptiveSize() and FrameCache in README + end-user HTML + CALIBER_LEARNINGS
@@ -461,7 +461,7 @@ docs for step 07.17 · PR#673 · document waitpid FFI fast-path in README + CALI
 
 ## Open review findings — 02.03
 
-- [x] candy-palette/README.md: new Probe class + ColorProfile enum not yet documented (docs sub-step needed, matching pattern from 02.01 docs PR#520 / 02.02 docs entry) — resolved PR#523
+- [x] sugar-colorprofile/README.md: new Probe class + ColorProfile enum not yet documented (docs sub-step needed, matching pattern from 02.01 docs PR#520 / 02.02 docs entry) — resolved PR#523
 
 ## Open review findings — 01.08
 
@@ -510,11 +510,11 @@ docs for step 09.07 · PR#724 · document O(1) win, serialize/unserialize, Custo
     review for step 09.16 · clean · PR#742
     tests-ci for step 09.16 · clean
     docs for step 09.16 · PR#743 · document SnippetStore/ExplainView/ResultTable in README (architecture table + 3 feature sections) + end-user HTML (feature grid + API table rows) + CALIBER_LEARNINGS.md (file-backed-json-store, horizontal-scroll-table patterns)
-    step 09.17 · PR#744 · honey-bounce: SpringPreset enum (Gentle/Wobbly/Stiff/Slow/Molasses) + SpringConfig (tension/friction/mass → angularFreq/dampingRatio) + CubicBezier easing (CSS-standard Newton-Raphson algorithm) + Spring::fromPreset() factory (leftover-rollout step 09.17)
-    step 09.18 · PR#747 · honey-bounce: SpringChain (sequenced springs, settle triggers next) + reduced-motion support via Probe::reducedMotion() (leftover-rollout step 09.18)
+    step 09.17 · PR#744 · honey-bounce: SpringPreset enum (Gentle/Wobbly/Stiff/Slow/Molasses) + SpringConfig (tension/friction/mass → angularFreq/dampingRatio) + CubicBezier easing (CSS-standard Newton-Raphson algorithm) + Spring::fromPreset() factory (leftover-rollout step 09.17) <!-- @rename-keep historical provenance -->
+    step 09.18 · PR#747 · honey-bounce: SpringChain (sequenced springs, settle triggers next) + reduced-motion support via Probe::reducedMotion() (leftover-rollout step 09.18) <!-- @rename-keep historical provenance -->
     review for step 09.18 · clean · PR#747
     tests-ci for step 09.18 · clean
-    docs for step 09.17 · PR#746 · document SpringPreset/SpringConfig/CubicBezier in README + create docs/lib/honey-bounce.md end-user guide + create honey-bounce/CALIBER_LEARNINGS.md (3 patterns)
+    docs for step 09.17 · PR#746 · document SpringPreset/SpringConfig/CubicBezier in README + create docs/lib/honey-bounce.md end-user guide + create honey-bounce/CALIBER_LEARNINGS.md (3 patterns) <!-- @rename-keep historical provenance -->
     review for step 09.17 · clean · PR#744
     fix for step 09.17 · duplicate docblock in CubicBezier::evaluate() · PR#745
     tests-ci for step 09.17 · clean

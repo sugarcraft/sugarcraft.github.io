@@ -1,6 +1,6 @@
-# Step 09.18 — honey-bounce SpringChain + reduced-motion
+# Step 09.18 — sugar-spring SpringChain + reduced-motion
 
-**Source:** `leftover_updates_later.md` honey-bounce §4.3 P2 + §1.2
+**Source:** `leftover_updates_later.md` sugar-spring §4.3 P2 + §1.2
 **Branch:** `ai/bounce-springchain-reducedmotion`
 
 ## Deliverable
@@ -8,28 +8,28 @@
 - `SpringChain` — sequence multiple springs in order; one's settle
   triggers the next.
 - Reduced-motion support — consume
-  `\SugarCraft\Palette\Probe::reducedMotion()` from step 02.03; if
+  `\SugarCraft\ColorProfile\Probe::reducedMotion()` from step 02.03; if
   enabled, skip all animation (snap to final value instantly).
 
 ## Files
 
 **Create:**
 
-- `honey-bounce/src/SpringChain.php`.
+- `sugar-spring/src/SpringChain.php`.
 
 **Modify:**
 
-- `honey-bounce/src/Spring.php` — respect Probe::reducedMotion().
-- `honey-bounce/composer.json` — add `sugarcraft/candy-palette`.
+- `sugar-spring/src/Spring.php` — respect Probe::reducedMotion().
+- `sugar-spring/composer.json` — add `sugarcraft/sugar-colorprofile`.
 
 ## Tests
 
-- `honey-bounce/tests/SpringChainTest.php`.
-- `honey-bounce/tests/ReducedMotionTest.php`.
+- `sugar-spring/tests/SpringChainTest.php`.
+- `sugar-spring/tests/ReducedMotionTest.php`.
 
 ## Acceptance
 
-- `cd honey-bounce && vendor/bin/phpunit` green.
+- `cd sugar-spring && vendor/bin/phpunit` green.
 
 ---
 

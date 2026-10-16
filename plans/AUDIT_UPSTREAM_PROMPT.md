@@ -149,17 +149,17 @@ that are tiny but together justify a PR.
 
 - charmbracelet/bubbletea → candy-core
 - charmbracelet/lipgloss → candy-sprinkles
-- charmbracelet/harmonica → honey-bounce
+- charmbracelet/harmonica → sugar-spring
 - lrstanley/bubblezone → sugar-mouse
 - charmbracelet/bubbles → sugar-widgets
 - NimbleMarkets/ntcharts → sugar-charts
 - charmbracelet/huh → sugar-forms
-- charmbracelet/glamour → candy-shine
-- charmbracelet/fang → candy-kit
+- charmbracelet/glamour → sugar-markdown
+- charmbracelet/fang → sugar-cli
 - charmbracelet/wish → candy-wish
 - charmbracelet/promwish → candy-metrics
 - charmbracelet/log → candy-log
-- charmbracelet/colorprofile → candy-palette
+- charmbracelet/colorprofile → sugar-colorprofile
 - treilik/bubblelister → sugar-treelist
 - treilik/bubbleboxer → sugar-panels
 - rmhubbert/bubbletea-overlay → sugar-overlay
@@ -188,7 +188,7 @@ that are tiny but together justify a PR.
 - jorgerojas26/lazysql → candy-sql
 - Rtarun3606k/TakaTime → candy-codetime
 - maxpaulus43/go-sweep → candy-minesweeper
-- namzug16/gifterm → candy-flip
+- namzug16/gifterm → sugar-animation
 - kbrgl/flapioca → candy-flappy
 
 Verify against current MATCHUPS.md — the list above may have grown.

@@ -64,7 +64,7 @@
 ### ❓ UNCLEAR / NOT VERIFIED (40+)
 
 - sugar-toast: placeAnsiStringAt
-- candy-kit: Stage microtime
+- sugar-cli: Stage microtime
 - candy-ssh-launcher: Config non-scalar cast
 - sugar-mouse: Scan duplicate zone
 - candy-git-server: SEC issues
@@ -209,7 +209,7 @@
 - Hooks system (HookManager + built-ins ProtectFilesHook/BashEscapeDenyHook/ConfirmRemoveHook/AuditHook)
 - Provider abstraction (6 providers)
 - Plan/Build mode
-- Syntax highlighting via candy-shine
+- Syntax highlighting via sugar-markdown
 - Custom themes
 - Subagents
 - LSP integration

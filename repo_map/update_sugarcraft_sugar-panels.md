@@ -16,7 +16,7 @@
 
 sugar-panels is a **pure layout renderer** — a recursive tree-based box-drawing layout engine that takes a tree of immutable `Node` objects and produces an ANSI string for a fixed viewport. It ports [treilik/bubbleboxer](https://github.com/treilik/bubbleboxer) from Go, adapting it from a `tea.Model` wrapper into a standalone PHP layout engine.
 
-**Ecosystem Positioning**: sugar-panels is a foundational layout primitive at the same level as `candy-shine`'s table rendering — both are output producers that render to strings. It sits between the low-level cell-grid foundation (candy-core) and the full widget layer (sugar-widgets). Unlike the upstream bubbleboxer (which wraps tea.Model instances), sugar-panels is a pure string renderer focused purely on H/V panel composition with box-drawing borders.
+**Ecosystem Positioning**: sugar-panels is a foundational layout primitive at the same level as `sugar-markdown`'s table rendering — both are output producers that render to strings. It sits between the low-level cell-grid foundation (candy-core) and the full widget layer (sugar-widgets). Unlike the upstream bubbleboxer (which wraps tea.Model instances), sugar-panels is a pure string renderer focused purely on H/V panel composition with box-drawing borders.
 
 **Biggest Opportunity Areas**:
 
@@ -213,7 +213,7 @@ None — sugar-panels is a pure renderer, not a component framework. Extension w
 
 **Implementation ideas**:
 
-1. Port the Cassowary algorithm (via `honey-bounce` or new `candy-constraint` lib)
+1. Port the Cassowary algorithm (via `sugar-spring` or new `candy-constraint` lib)
 2. Add `withConstraint()` methods to Node for Min/Max/Percent/Ratio constraints
 3. Before rendering, run solver to compute actual dimensions from constraints
 4. Keep tree-based layout as fallback for simple cases
@@ -649,7 +649,7 @@ $boxer->render('Hello World', 40, 10); // auto-wrap as leaf
 ## Medium-Term (1-3 months)
 
 5. **Buffer diffing layer** — Wrap `render()` with a diffing renderer that only emits changed cells
-6. **Constraint-based layout** — Port Cassowary solver (via honey-bounce or new lib) with Min/Max/Percent/Ratio constraints on Node
+6. **Constraint-based layout** — Port Cassowary solver (via sugar-spring or new lib) with Min/Max/Percent/Ratio constraints on Node
 7. **Mixed border styles** — Add `withInnerBorderStyle()` for compound border panels
 8. **Snapshot tests** — Add pixel-accurate SGR byte tests for known layouts
 

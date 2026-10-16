@@ -21,11 +21,11 @@ From `repo_map/php-tui_php-tui.md`:
 |--------------|------------------|
 | `candy-core` | Display, Backend, Buffer, Cell, Area, Widget/WidgetRenderer interfaces, Viewport |
 | `candy-sprinkles` | Style, Color, Modifier, Text/Line/Span, Borders, BlockWidget |
-| `honey-bounce` | Layout, Constraint, CassowaryConstraintSolver |
+| `sugar-spring` | Layout, Constraint, CassowaryConstraintSolver |
 | `sugar-widgets` | ParagraphWidget, ParagraphRenderer |
 | `sugar-charts` | ChartWidget, BarChartWidget, SparklineWidget, TableWidget |
 | `sugar-forms` | ListWidget, TabsWidget, ScrollbarWidget |
-| `candy-shine` | GaugeWidget, CanvasWidget, image rendering |
+| `sugar-markdown` | GaugeWidget, CanvasWidget, image rendering |
 
 ---
 

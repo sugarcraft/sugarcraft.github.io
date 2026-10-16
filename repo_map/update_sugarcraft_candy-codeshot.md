@@ -212,7 +212,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 
 - Create `SyntaxHighlighterInterface` with adapters for available highlighters (Geshi, highlight.js via FFI, Python bridge to pygments)
 
-- Reuse `candy-shine`'s regex tokeniser pattern (extends `SyntaxHighlighter`) for PHP/JS/HTML/SQL
+- Reuse `sugar-markdown`'s regex tokeniser pattern (extends `SyntaxHighlighter`) for PHP/JS/HTML/SQL
 
 - Focus on 5-10 most-used languages (PHP, JS, Python, Go, Bash, SQL, JSON)
 **Estimated complexity**: High — lexer design is non-trivial
@@ -535,7 +535,7 @@ Add Levenshtein distance for theme names — `tokyonight` → suggests `tokyo-ni
 
 ## 3. Terminal Background Detection
 
-Use `candy-palette`'s `HasDarkBackground()` to auto-select dark/light theme
+Use `sugar-colorprofile`'s `HasDarkBackground()` to auto-select dark/light theme
 **Source**: `docs/repo_map/charmbracelet_lipgloss.md` — `HasDarkBackground()` pattern
 
 ## 4. Progress Feedback

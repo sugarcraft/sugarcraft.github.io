@@ -1,8 +1,8 @@
-# SugarCraft Sugar-Glow — Update Report
+# SugarCraft Candy-mdview — Update Report
 
 ## Overview
 
-`sugar-glow` is a PHP port of `charmbracelet/glow`, a Markdown CLI viewer that composes candy-shine (ANSI rendering) and sugar-bits Viewport (scrolling). It provides dual-mode output: direct stdout rendering and a fullscreen pager via `GlowModel` + `Viewport`. The package is 🟢 v1 ready with 15 locales, 11 themes, streaming pager, and file watching via mtime polling.
+`candy-mdview` is a PHP port of `charmbracelet/glow`, a Markdown CLI viewer that composes candy-shine (ANSI rendering) and sugar-bits Viewport (scrolling). It provides dual-mode output: direct stdout rendering and a fullscreen pager via `MdViewModel` + `Viewport`. The package is 🟢 v1 ready with 15 locales, 11 themes, streaming pager, and file watching via mtime polling.
 
 **Biggest opportunity areas:** GitHub/GitLab README fetching (glow's signature feature), file stash browser with fuzzy filtering, proper Chroma-style lexer for syntax highlighting, native file watching (fsnotify-equivalent), and clipboard integration.
 
@@ -23,7 +23,7 @@ Renderer::render($markdown)
         ├── ->withWordWrap($width)
         └── ->withHyperlinks($enabled)
     ↓ (ANSI-escaped string)
-[stdout | GlowModel::fromContent()]
+[stdout | MdViewModel::fromContent()]
 ```
 
 ### Current Features
@@ -32,7 +32,7 @@ Renderer::render($markdown)
 |---|---|
 | Markdown parsing | League\CommonMark via `sugar-bits` |
 | ANSI styling | `SugarCraft\Shine\Renderer` with 11 built-in themes |
-| Pager mode | `GlowModel` + `Viewport` (ReactPHP-based) |
+| Pager mode | `MdViewModel` + `Viewport` (ReactPHP-based) |
 | Word wrap | `Renderer::withWordWrap()` |
 | OSC 8 hyperlinks | `Renderer::withHyperlinks()` |
 | Syntax highlighting | `ChromaJsonHighlighter` (regex tokenizer) |
@@ -50,7 +50,7 @@ Renderer::render($markdown)
 
 - **League\CommonMark** parses markdown to AST
 - **candy-shine Renderer** applies ANSI styles and word-wrap
-- **GlowModel** provides Bubble Tea-style state machine for pager mode
+- **MdViewModel** provides Bubble Tea-style state machine for pager mode
 
 ### Strengths
 
@@ -172,7 +172,7 @@ Renderer::render($markdown)
 - **Implementation ideas:**
   - Add `--line-numbers` flag to `RenderCommand`
   - Track line boundaries during rendering
-  - Render gutter with line numbers in `GlowModel::view()`
+  - Render gutter with line numbers in `MdViewModel::view()`
 - **Estimated complexity:** Low — render-time addition
 - **Expected impact:** Medium — common user expectation
 
@@ -194,7 +194,7 @@ Renderer::render($markdown)
 - **Source:** `charmbracelet_glow.md` — `tryLoadConfigFromDefaultPlaces()` with Viper/YAML
 - **Implementation ideas:**
   - Use `symfony/yaml` for parsing
-  - Support XDG paths: `~/.config/sugar-glow/config.json`
+  - Support XDG paths: `~/.config/candy-mdview/config.json`
   - Precedence: CLI flags > env vars > config file > defaults
 - **Estimated complexity:** Low — configuration loading only
 - **Expected impact:** Medium — improves usability
@@ -307,7 +307,7 @@ Renderer::render($markdown)
 
 ### Current Approach: mtime Polling
 
-`sugar-glow`'s `FileWatcher` uses `filemtime()` polling in a tight loop:
+`candy-mdview`'s `FileWatcher` uses `filemtime()` polling in a tight loop:
 
 ```php
 // FileWatcher.php:42-63
@@ -366,23 +366,23 @@ OS-native watchers register with the kernel and receive push notifications. mtim
 
 `charmbracelet/glamour` uses a block stack during AST traversal to compute dynamic indentation and margin without global state. Each block pushes on enter and pops on exit. This is referenced in `docs/repo_map/charmbracelet_glamour.md` and `pr_charmbracelet_glamour.md`.
 
-Sugar-glow currently delegates to `candy-shine` for rendering but lacks the element-level control glamour provides.
+Candy-mdview currently delegates to `candy-shine` for rendering but lacks the element-level control glamour provides.
 
 ### 2. Two-Phase Rendering (Entering/Exiting)
 
 Glamour's rendering uses Entering (set up state, push onto block stack) and Exiting (tear down, pop from block stack) phases. This enables correct nested element rendering.
 
-Sugar-glow's GlowModel has a simple `update()` / `view()` pattern but doesn't have element-level rendering phases.
+Candy-mdview's MdViewModel has a simple `update()` / `view()` pattern but doesn't have element-level rendering phases.
 
 ### 3. Cascading Style Inheritance
 
 Glamour's `cascadeStyle()` recursively merges parent and child `StyleBlock` structs, with child values overriding parent. This is a custom merge, not CSS delegation.
 
-Sugar-glow's `GlamourTheme` provides `resolve()` but doesn't implement cascading inheritance.
+Candy-mdview's `GlamourTheme` provides `resolve()` but doesn't implement cascading inheritance.
 
 ### 4. Render Result Caching
 
-Per `pr_charmbracelet_glamour.md` issue #2223, Charm Crush had severe performance issues from recreating renderers on every call. Sugar-glow should cache render results keyed by (markdown content, theme, width) tuples.
+Per `pr_charmbracelet_glamour.md` issue #2223, Charm Crush had severe performance issues from recreating renderers on every call. Candy-mdview should cache render results keyed by (markdown content, theme, width) tuples.
 
 ---
 
@@ -472,11 +472,11 @@ $loop->addPeriodicTimer(0.5, function () use ($watcher) {
 
 ### 4. Pager Integration Guide
 
-How to use `GlowModel` as a standalone component:
+How to use `MdViewModel` as a standalone component:
 
 ```php
 $content = file_get_contents('README.md');
-$model = GlowModel::fromContent($content, 80, 24);
+$model = MdViewModel::fromContent($content, 80, 24);
 $program = new Program($model);
 // Run with Program::run()
 ```
@@ -513,7 +513,7 @@ q          Quit
 Add '/' keybinding to search within rendered markdown (per `pr_charmbracelet_bubbles.md` issue #157):
 
 ```php
-// GlowModel update() handles:
+// MdViewModel update() handles:
 // '/' -> activate search mode, capture query
 // 'n' -> next match
 // 'N' -> previous match
@@ -571,7 +571,7 @@ Per `pr_charmbracelet_bubbles.md` issue #603, test that truncation works correct
 
 ### 1. GitHub Actions Integration
 
-Auto-render markdown files in CI with sugar-glow, check documentation builds cleanly.
+Auto-render markdown files in CI with candy-mdview, check documentation builds cleanly.
 
 ### 2. Laravel/PHP Integration
 
@@ -579,7 +579,7 @@ Provide a service provider for Laravel apps to render markdown in CLIs or termin
 
 ### 3. Composer Script Integration
 
-Add sugar-glow as a dev dependency to render CHANGELOG.md in terminal after install.
+Add candy-mdview as a dev dependency to render CHANGELOG.md in terminal after install.
 
 ### 4. PHP-CS-Fixer Integration
 
@@ -695,7 +695,7 @@ Auto-style detection caused Lip Gloss and Glamour to fight over stdout, causing 
 13. **LinkStyler Interface** — Customizable link rendering abstraction
 14. **GitHub-Style Blockquote Alerts** — Pre-process `> [!note]` syntax
 15. **iTerm2 Inline Images** — Image rendering protocol support
-16. **Web Assembly Port** — Run sugar-glow in browser via WASM
+16. **Web Assembly Port** — Run candy-mdview in browser via WASM
 
 ---
 
@@ -723,24 +723,24 @@ Auto-style detection caused Lip Gloss and Glamour to fight over stdout, causing 
 
 ## Final Strategic Assessment
 
-Sugar-glow provides a solid foundation for Markdown rendering in PHP TUIs, with clean separation of concerns and comprehensive test coverage. However, it is currently a **partial port** of its upstream `charmbracelet/glow` — the most valuable features (GitHub/GitLab README fetching, file browsing, fuzzy filtering) are entirely absent.
+Candy-mdview provides a solid foundation for Markdown rendering in PHP TUIs, with clean separation of concerns and comprehensive test coverage. However, it is currently a **partial port** of its upstream `charmbracelet/glow` — the most valuable features (GitHub/GitLab README fetching, file browsing, fuzzy filtering) are entirely absent.
 
-The single highest-priority gap is **remote README fetching**. This is glow's defining feature and the primary reason users choose it over simple markdown renderers. Implementing this is straightforward HTTP integration and would immediately differentiate sugar-glow from other PHP markdown renderers.
+The single highest-priority gap is **remote README fetching**. This is glow's defining feature and the primary reason users choose it over simple markdown renderers. Implementing this is straightforward HTTP integration and would immediately differentiate candy-mdview from other PHP markdown renderers.
 
 The **regex-based highlighter** is a proof-of-concept that needs replacement. For production use, either the Chroma lexer should be wrapped via FFI, or a proper lexer implementation should be created. This is a medium-term investment.
 
 The **file watching approach** (mtime polling) works cross-platform but has fundamental limitations. A native file watching abstraction with platform-specific backends (inotify on Linux, kqueue on BSD/macOS) would provide better performance and responsiveness.
 
-Architecture-wise, the rendering pipeline correctly separates markdown parsing (League\CommonMark) from styling (candy-shine), mirroring the upstream `goldmark` + `glamour` + `lipgloss` composition. The Elm-style `GlowModel` with `update()` / `view()` and immutable state is correctly implemented.
+Architecture-wise, the rendering pipeline correctly separates markdown parsing (League\CommonMark) from styling (candy-shine), mirroring the upstream `goldmark` + `glamour` + `lipgloss` composition. The Elm-style `MdViewModel` with `update()` / `view()` and immutable state is correctly implemented.
 
 The **Block Stack pattern** and **Two-Phase rendering** from glamour (`docs/repo_map/charmbracelet_glamour.md`) are not yet implemented. These are essential for proper nested element rendering and will become critical when implementing table rendering with footer links.
 
-For the PHP ecosystem, sugar-glow fills an important niche as the only production-quality markdown TUI renderer. The immediate focus should be on:
+For the PHP ecosystem, candy-mdview fills an important niche as the only production-quality markdown TUI renderer. The immediate focus should be on:
 
-1. Completing the GitHub/GitLab integration (enabling "sugar-glow github://owner/repo" workflows)
+1. Completing the GitHub/GitLab integration (enabling "candy-mdview github://owner/repo" workflows)
 2. Adding the missing TUI pager features (line numbers, clipboard, help overlay)
 3. Implementing configuration persistence
 
-The package's position in the SugarCraft ecosystem is as a **leaf library** consuming core infrastructure (candy-core, candy-shine, sugar-bits). This means enhancements to core libraries automatically benefit sugar-glow, but sugar-glow-specific features (like GitHub fetching) require independent implementation.
+The package's position in the SugarCraft ecosystem is as a **leaf library** consuming core infrastructure (candy-core, candy-shine, sugar-bits). This means enhancements to core libraries automatically benefit candy-mdview, but candy-mdview-specific features (like GitHub fetching) require independent implementation.
 
-**Overall verdict:** Sugar-glow is production-ready for its current feature set (single-file markdown rendering/paging) but requires significant investment to close the gap with upstream glow. The highest-ROI next step is adding GitHub/GitLab integration.
+**Overall verdict:** Candy-mdview is production-ready for its current feature set (single-file markdown rendering/paging) but requires significant investment to close the gap with upstream glow. The highest-ROI next step is adding GitHub/GitLab integration.

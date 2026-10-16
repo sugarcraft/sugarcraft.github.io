@@ -1,4 +1,4 @@
-# sugar-glow Library Research: Markdown/Terminal Rendering
+# candy-mdview Library Research: Markdown/Terminal Rendering
 
 **Date:** 2026-05-13
 **Upstream:** charmbracelet/glow
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Sugar-glow's rendering stack (candy-shine + league/commonmark) is functional but has significant gaps compared to modern implementations:
+Candy-mdview's rendering stack (candy-shine + league/commonmark) is functional but has significant gaps compared to modern implementations:
 - **Syntax highlighting** is regex-based and limited to 7 languages
 - **Streaming rendering** is not supported
 - **Theme system** uses PHP constructor properties vs. JSON configuration
@@ -18,9 +18,9 @@ This document details findings from Go, Rust, Python, and JavaScript ecosystems 
 
 ---
 
-## 1. Current Implementation (sugar-glow)
+## 1. Current Implementation (candy-mdview)
 
-**Source:** `/home/sites/sugarcraft/sugar-glow/src/` + `/home/sites/sugarcraft/candy-shine/src/`
+**Source:** `/home/sites/sugarcraft/candy-mdview/src/` + `/home/sites/sugarcraft/candy-shine/src/`
 
 ### Architecture
 
@@ -366,7 +366,7 @@ var options = {
 |---------|----------|
 | glow | Bubble Tea viewport + fsnotify file watching |
 | glow (CLI) | External `less -r` |
-| **sugar-glow** | candy-core Viewport (no file watching) |
+| **candy-mdview** | candy-core Viewport (no file watching) |
 | marked-terminal | External pager via shell |
 
 ### Link Handling
@@ -482,7 +482,7 @@ for chunk in markdown_chunks {
 
 **Implementation:**
 ```php
-// In GlowModel.php - add file watching
+// In MdViewModel.php - add file watching
 private ?\React\Filesystem\Watcher $watcher = null;
 
 public function watchFile(string $path): void
@@ -592,7 +592,7 @@ Add themes from other ecosystems:
 
 ## 10. Conclusion
 
-Sugar-glow's core architecture (league/commonmark → custom walker) is sound and matches the upstream glow's goldmark → glamour → ANSI approach. The main gap is **syntax highlighting quality** — the regex-based approach is insufficient for a general-purpose markdown viewer.
+Candy-mdview's core architecture (league/commonmark → custom walker) is sound and matches the upstream glow's goldmark → glamour → ANSI approach. The main gap is **syntax highlighting quality** — the regex-based approach is insufficient for a general-purpose markdown viewer.
 
 **Recommended immediate action:** Integrate Pygments for syntax highlighting while preserving the existing theme system. This provides maximum impact with moderate effort.
 

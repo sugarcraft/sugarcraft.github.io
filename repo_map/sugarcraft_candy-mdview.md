@@ -1,14 +1,14 @@
-# SugarCraft SugarGlow
+# SugarCraft CandyMdview
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/sugar-glow
+- **URL:** https://github.com/sugarcraft/candy-mdview
 
-- **Subdir:** `sugar-glow/`
+- **Subdir:** `candy-mdview/`
 
-- **Composer pkg:** `sugarcraft/sugar-glow`
+- **Composer pkg:** `sugarcraft/candy-mdview`
 
-- **Namespace:** `SugarCraft\Glow`
+- **Namespace:** `SugarCraft\MdView`
 
 - **Status:** 🟢 v1 ready
 
@@ -16,7 +16,7 @@
 
 - **PHP:** ^8.3
 
-- **Entry point:** `bin/sugarglow`
+- **Entry point:** `bin/candy-mdview`
 
 - **i18n:** 15 locales (en, fr, de, es, pt, pt-br, zh-cn, zh-tw, ja, ru, it, ko, pl, nl, tr, cs, ar)
 
@@ -24,7 +24,7 @@
 
 - **Markdown Rendering:** Composes `candy-shine` (Renderer/Theme) for ANSI-escaped styled output
 
-- **Dual-Mode CLI:** Direct stdout rendering (default) or fullscreen pager via `GlowModel` + `Viewport`
+- **Dual-Mode CLI:** Direct stdout rendering (default) or fullscreen pager via `MdViewModel` + `Viewport`
 
 - **8 Built-in Themes:** ansi, plain, dark, light, notty, dracula, tokyo-night, pink
 
@@ -36,7 +36,7 @@
 
 - **OSC 8 Hyperlinks:** Enabled by default; `--no-hyperlinks` renders links as `text (url)`
 
-- **Pager Mode:** `-p` / `--pager` opens a `GlowModel` backed Viewport with standard reader keys
+- **Pager Mode:** `-p` / `--pager` opens a `MdViewModel` backed Viewport with standard reader keys
 
 - **Pager Keys:** ↑/↓/j/k (scroll), PgUp/PgDn/b/f (page), Ctrl+U/D (half-page), Home/g/End/G (bounds), q/Esc/Ctrl+C (exit)
 
@@ -57,8 +57,8 @@
 ## Source Tree
 
 ```
-sugar-glow/
-├── bin/sugarglow                  # CLI entry point (20 lines)
+candy-mdview/
+├── bin/candy-mdview                  # CLI entry point (20 lines)
 ├── composer.json                  # deps: candy-core, candy-shine, sugar-bits, symfony/console
 ├── phpunit.xml                    # colors=true, failOnWarning=true, cacheDirectory=.phpunit.cache
 ├── README.md                      # CLI usage, library API, VHS demo links
@@ -66,7 +66,7 @@ sugar-glow/
 ├── src/
 │   ├── Application.php             # Symfony Console app, registers RenderCommand as default
 │   ├── RenderCommand.php          # Main command: loadInput, pickTheme, execute (render/pager)
-│   ├── GlowModel.php               # Bubble Tea-style Model: Viewport-backed pager state machine
+│   ├── MdViewModel.php               # Bubble Tea-style Model: Viewport-backed pager state machine
 │   ├── Pager.php                   # Streaming chunk reader (IteratorAggregate)
 │   ├── FileWatcher.php             # mtime-polling Generator watch loop
 │   ├── GlamourTheme.php           # JSON theme loader (block_prefix/suffix, indent_token, margin, chroma)
@@ -87,7 +87,7 @@ sugar-glow/
 ├── tests/
 │   ├── ApplicationTest.php         # Symfony app registration, name/version
 │   ├── RenderCommandTest.php       # pickTheme (11 themes), loadInput, execute (8 scenarios)
-│   ├── GlowModelTest.php            # Viewport init, q/Esc/Ctrl+C exit, Down scroll, post-exit ignore
+│   ├── MdViewModelTest.php            # Viewport init, q/Esc/Ctrl+C exit, Down scroll, post-exit ignore
 │   ├── PagerTest.php               # Empty/single/chunked streaming, IteratorAggregate contract
 │   ├── FileWatcherTest.php         # hasChangedSince (non-existent/modified/deleted), constructor
 │   ├── GlamourThemeTest.php        # fromJson/fromFile (valid/invalid/missing), resolve()
@@ -115,22 +115,22 @@ Renderer::render($markdown)
         ├── ->withWordWrap($width)
         └── ->withHyperlinks($enabled)
     ↓ (ANSI-escaped string)
-[stdout | GlowModel::fromContent()]
+[stdout | MdViewModel::fromContent()]
 ```
 
 The rendering pipeline uses `SugarCraft\Shine\Renderer` which wraps the League CommonMark parser with candy-shine's ANSI styling engine. The `Renderer` applies word-wrap and hyperlink styling based on configuration.
 
-### GlowModel (Pager State Machine)
+### MdViewModel (Pager State Machine)
 
-`GlowModel` implements the `Model` contract (init/update/view/subscriptions) and wraps a `Viewport` for scroll management. It handles:
+`MdViewModel` implements the `Model` contract (init/update/view/subscriptions) and wraps a `Viewport` for scroll management. It handles:
 - **Exit signals:** q (char), Esc, Ctrl+C → returns `Cmd::quit()`
 
 - **Viewport delegation:** All scroll/mouse messages forwarded to `Viewport`
 
-- **Immutable:** `update()` returns `[new GlowModel(...), ?Cmd]`
+- **Immutable:** `update()` returns `[new MdViewModel(...), ?Cmd]`
 
 ```php
-// GlowModel.php:22-26
+// MdViewModel.php:22-26
 public static function fromContent(string $content, int $width = 80, int $height = 24): self
 {
     $vp = Viewport::new($width, max(1, $height))->setContent($content);
@@ -207,10 +207,10 @@ Uses `filemtime()` polling — no extension required. Resolution is filesystem-d
 
 ## Comparison with Upstream (charmbracelet/glow)
 
-| Feature | charmbracelet/glow (Go) | sugar-glow (PHP) |
+| Feature | charmbracelet/glow (Go) | candy-mdview (PHP) |
 |--------|----------------------|-----------------|
 | **Markdown rendering** | glamour (goldmark-based) | Renderer via candy-shine (League CommonMark) |
-| **TUI framework** | Bubble Tea (bubbletea) | Custom GlowModel + Program (ReactPHP-based) |
+| **TUI framework** | Bubble Tea (bubbletea) | Custom MdViewModel + Program (ReactPHP-based) |
 | **Pager** | bubbles/viewport | SugarCraft\Bits\Viewport |
 | **File discovery** | gitcha (git-aware recursive search) | Not implemented |
 | **Fuzzy filtering** | sahilm/fuzzy (real-time) | Not implemented |
@@ -234,7 +234,7 @@ Uses `filemtime()` polling — no extension required. Resolution is filesystem-d
 
 1. **No GitHub/GitLab README fetching** — The most distinctive glow feature (fetching remote READMEs) is missing. This would require HTTP client integration and URL parsing for `github://` and `gitlab://` protocol prefixes.
 
-2. **No file stash/browser** — glow's TUI has a full file browser with fuzzy filtering, spinner, and paginator. Sugar-glow only has single-file rendering/pager mode.
+2. **No file stash/browser** — glow's TUI has a full file browser with fuzzy filtering, spinner, and paginator. Candy-mdview only has single-file rendering/pager mode.
 
 3. **No fuzzy search** — sahilm/fuzzy is not ported; file filtering is not available.
 
@@ -250,7 +250,7 @@ Uses `filemtime()` polling — no extension required. Resolution is filesystem-d
 
 9. **mtime polling vs fsnotify** — FileWatcher uses `filemtime()` polling which has 1-second granularity and cannot detect rapid changes. Upstream uses OS-native fsnotify.
 
-10. **No $PAGER integration** — Glow respects $PAGER environment variable; sugar-glow only has built-in pager mode.
+10. **No $PAGER integration** — Glow respects $PAGER environment variable; candy-mdview only has built-in pager mode.
 
 ## Comparison with Related Packages
 
@@ -258,7 +258,7 @@ Uses `filemtime()` polling — no extension required. Resolution is filesystem-d
 
 Glamour is the markdown rendering engine used by glow. Key differences:
 
-| Aspect | glamour | sugar-glow |
+| Aspect | glamour | candy-mdview |
 |--------|---------|------------|
 | **Parser** | goldmark (Go) | League\CommonMark (PHP) |
 | **Style system** | JSON stylesheets with cascading | JSON via Theme + GlamourTheme |
@@ -270,25 +270,25 @@ Glamour is the markdown rendering engine used by glow. Key differences:
 
 ### gum (charmbracelet/gum)
 
-Gum provides shell helpers including a pager subcommand. gum's pager (`gum pager --file`) is a simpler scroll viewer without markdown rendering. Sugar-glow's pager integrates with the full markdown rendering pipeline.
+Gum provides shell helpers including a pager subcommand. gum's pager (`gum pager --file`) is a simpler scroll viewer without markdown rendering. Candy-mdview's pager integrates with the full markdown rendering pipeline.
 
 ### Bubble Tea (charmbracelet/bubbletea)
 
-The TUI framework underlying glow. Sugar-glow implements a simplified MVC pattern (Model/update/view/subscriptions) that mirrors Bubble Tea's tea.Model interface but using ReactPHP for async event handling rather than Go channels.
+The TUI framework underlying glow. Candy-mdview implements a simplified MVC pattern (Model/update/view/subscriptions) that mirrors Bubble Tea's tea.Model interface but using ReactPHP for async event handling rather than Go channels.
 
 ## Notable Patterns
 
 ### Immutable Model with Fluent Viewport Updates
 
-`GlowModel` maintains immutable state while delegating scroll state to the `Viewport`:
+`MdViewModel` maintains immutable state while delegating scroll state to the `Viewport`:
 
 ```php
-// GlowModel.php:53-54
+// MdViewModel.php:53-54
 [$next, $cmd] = $this->viewport->update($msg);
 return [new self($next, false), $cmd];
 ```
 
-The `Viewport` itself is mutable during its `update()` call, then wrapped in a new `GlowModel` instance.
+The `Viewport` itself is mutable during its `update()` call, then wrapped in a new `MdViewModel` instance.
 
 ### Generator-based File Watching
 
@@ -322,7 +322,7 @@ This is critical for correct visual rendering since `strlen()` counts code units
 |----------|----------|
 | ApplicationTest | Symfony app registration, name/version, default command |
 | RenderCommandTest | pickTheme (11 themes + case/underscore variants), loadInput, execute (8 scenarios) |
-| GlowModelTest | Viewport init, q/Esc/Ctrl+C exit, Down scroll, post-exit ignore |
+| MdViewModelTest | Viewport init, q/Esc/Ctrl+C exit, Down scroll, post-exit ignore |
 | PagerTest | Empty/single/chunked streaming, IteratorAggregate contract |
 | FileWatcherTest | hasChangedSince (non-existent/modified/deleted), constructor path storage |
 | GlamourThemeTest | fromJson/fromFile (valid/invalid/missing), resolve() (known/unknown/empty) |
@@ -332,9 +332,9 @@ This is critical for correct visual rendering since `strlen()` counts code units
 
 ## Strengths
 
-1. **Clean separation of concerns** — Rendering (candy-shine), TUI (GlowModel+Viewport), CLI (Symfony) are cleanly layered
+1. **Clean separation of concerns** — Rendering (candy-shine), TUI (MdViewModel+Viewport), CLI (Symfony) are cleanly layered
 
-2. **Immutable model pattern** — GlowModel follows the functional update pattern correctly
+2. **Immutable model pattern** — MdViewModel follows the functional update pattern correctly
 
 3. **Cross-platform file watching** — mtime polling works everywhere without extensions
 
@@ -375,7 +375,7 @@ This is critical for correct visual rendering since `strlen()` counts code units
 
 ## SugarCraft Library Role
 
-`sugar-glow` is a **leaf library** that consumes the core TUI infrastructure:
+`candy-mdview` is a **leaf library** that consumes the core TUI infrastructure:
 
 ```
 candy-core (Viewport, Model, Cmd, Program, Tty, Width, Ansi)
@@ -384,7 +384,7 @@ sugar-bits (MarkdownRenderer via League\CommonMark)
     ↓
 candy-shine (Renderer, Theme)
     ↓
-sugar-glow (RenderCommand, GlowModel, FileWatcher, GlamourTheme)
+candy-mdview (RenderCommand, MdViewModel, FileWatcher, GlamourTheme)
 ```
 
 Dependencies:

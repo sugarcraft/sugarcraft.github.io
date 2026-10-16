@@ -1,14 +1,14 @@
-# Ecosystem Comparison Update Report: sugar-tick
+# Ecosystem Comparison Update Report: candy-codetime
 
-**Package:** `sugarcraft/sugar-tick`
+**Package:** `sugarcraft/candy-codetime`
 **Analysis Date:** 2026-05-28
-**Source:** `docs/repo_map/sugarcraft_sugar-tick.md`, `docs/research/libraries/sugar-tick-research.md`, ecosystem intelligence
+**Source:** `docs/repo_map/sugarcraft_candy-codetime.md`, `docs/research/libraries/candy-codetime-research.md`, ecosystem intelligence
 
 ---
 
 # Overview
 
-Sugar-tick is a privacy-first coding-time tracker that ports the Go-based TakaTime to PHP, substituting MongoDB dependency with local JSONL files. It occupies a unique niche in SugarCraft as the only productivity/product analytics library and the sole application (vs. component library).
+Candy-codetime is a privacy-first coding-time tracker that ports the Go-based TakaTime to PHP, substituting MongoDB dependency with local JSONL files. It occupies a unique niche in SugarCraft as the only productivity/product analytics library and the sole application (vs. component library).
 
 **Biggest opportunities:**
 
@@ -33,7 +33,7 @@ Sugar-tick is a privacy-first coding-time tracker that ports the Go-based TakaTi
 ## Current Architecture
 
 ```
-sugar-tick/
+candy-codetime/
 ├── src/
 │   ├── Heartbeat.php         # Value object: time, project, language, file, duration, tags[]
 │   ├── Milestone.php          # Named time-points (e.g., "shipped v1.0")
@@ -52,7 +52,7 @@ sugar-tick/
 │   │   └── SqliteBackend.php  # Optional SQLite with indexed queries
 │   ├── Theme.php              # Dark/light theming via candy-sprinkles
 │   └── Lang.php               # i18n facade (16 locales)
-└── bin/sugar-tick             # CLI: push <project> <language> <file> [duration]
+└── bin/candy-codetime             # CLI: push <project> <language> <file> [duration]
 ```
 
 ## Key Strengths
@@ -83,7 +83,7 @@ sugar-tick/
 |------|-----------|---------------------------|---------|
 | `docs/repo_map/pr_charmbracelet_bubbletea.md` | Critical | TEA pattern (Dashboard), Cmd::tick() for animations, testing patterns | P0 |
 | `docs/repo_map/pr_textualize_textual.md` | High | Reactive state, calendar view, productivity analytics, worker/timer patterns | P1 |
-| `docs/research/libraries/sugar-tick-research.md` | Critical | Full ecosystem survey: tock, tmpo, Timewarrior, oclock, trackWork, hours | P0 |
+| `docs/research/libraries/candy-codetime-research.md` | Critical | Full ecosystem survey: tock, tmpo, Timewarrior, oclock, trackWork, hours | P0 |
 | `docs/repo_map/pr_treilik_bubblelister.md` | Medium | List filtering, highlighting patterns | P2 |
 | `docs/repo_map/pr_daltonsw_bubbleup.md` | Medium | Animation timing, 100ms tick intervals for LAB color lerp | P2 |
 | `docs/repo_map/ECOSYSTEM_INTELLIGENCE_SUMMARY.md` | High | Cross-cutting patterns: layout, async, fuzzy filtering, plugin architecture | P1 |
@@ -98,7 +98,7 @@ sugar-tick/
 
 - **Description:** Dashboard only shows sparkline timeline; no calendar navigation
 - **Why it matters:** Users cannot browse historical data interactively; tock's calendar view is repeatedly requested feature
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — tock calendar, trackWork timeline
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — tock calendar, trackWork timeline
 - **Implementation ideas:**
   - Add `CalendarView` model with month navigation
   - Use sugar-charts for daily bars in calendar grid
@@ -110,7 +110,7 @@ sugar-tick/
 
 - **Description:** GapsReport detects gaps but cannot fill them; cannot adjust past heartbeats
 - **Why it matters:** Users make mistakes (wrong project, forgot to track); oclock implements retroactive switching
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — oclock's retroactive task switching
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — oclock's retroactive task switching
 - **Implementation ideas:**
   - Add `HeartbeatEditor` with `update()` / `delete()` methods
   - JSONL: append correction record, filter during load
@@ -122,7 +122,7 @@ sugar-tick/
 
 - **Description:** Multiple editors writing to same .jsonl could cause interleaved lines
 - **Why it matters:** OS-level FILE_APPEND is atomic but partial JSON lines from concurrent writes corrupt file
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — rtw "concurrent writes unsafe"
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — rtw "concurrent writes unsafe"
 - **Implementation ideas:**
   - File-based locking via flock() before write
   - Or: Single-writer daemon (like TakaTime's taka-upload)
@@ -136,7 +136,7 @@ sugar-tick/
 
 - **Description:** Stats::timeline() uses nested loop (n heartbeats, m days)
 - **Why it matters:** Degrades for long date ranges (>30 days)
-- **Source:** `docs/repo_map/sugarcraft_sugar-tick.md` — "acceptable for 7-day windows"
+- **Source:** `docs/repo_map/sugarcraft_candy-codetime.md` — "acceptable for 7-day windows"
 - **Implementation ideas:**
   - Pre-sort heartbeats, use single-pass bucketing
   - Or: Use SQLite backend with indexed time column
@@ -148,7 +148,7 @@ sugar-tick/
 
 - **Description:** Flat project namespace; no parent/child relationships
 - **Why it matters:** Real projects have sub-projects (e.g., "myapp-api", "myapp-web")
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — tock project + task + tags
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — tock project + task + tags
 - **Implementation ideas:**
   - Add `parentProject` field to Heartbeat
   - Or: Project aliases mapping file
@@ -160,7 +160,7 @@ sugar-tick/
 
 - **Description:** No week-over-week comparison, no patterns analysis
 - **Why it matters:** Users want to see productivity trends; tock analyze command
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — tock analyze, rtimelogger surplus/deficit
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — tock analyze, rtimelogger surplus/deficit
 - **Implementation ideas:**
   - Add `ProductivityReport` class: compare current week to previous
   - Calculate: total hours, per-project distribution change, streak days
@@ -174,7 +174,7 @@ sugar-tick/
 
 - **Description:** No encryption; sensitive project names visible in plaintext
 - **Why it matters:** Corporate environments may require at-rest encryption; trackWork approach
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — trackWork AES-256-GCM + Argon2id
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — trackWork AES-256-GCM + Argon2id
 - **Implementation ideas:**
   - Use libsodium (ext-sodium) for encryption
   - Derive key from user passphrase via Argon2id
@@ -186,7 +186,7 @@ sugar-tick/
 
 - **Description:** No automated profile stats generation
 - **Why it matters:** TakaTime's taka-report generates GitHub README stats
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — TakaTime GitHub Actions
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — TakaTime GitHub Actions
 - **Implementation ideas:**
   - Add `GithubActionReport` class: generates Markdown summary
   - Output format matches GitHub README stats syntax
@@ -198,7 +198,7 @@ sugar-tick/
 
 - **Description:** No integration with GitHub issues, Jira, etc.
 - **Why it matters:** Link coding time to specific issues; bugwarrior model
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — bugwarrior service model
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — bugwarrior service model
 - **Implementation ideas:**
   - Add `IssueTrackerBackend` interface
   - Implement GitHub issues fetching
@@ -210,7 +210,7 @@ sugar-tick/
 
 - **Description:** AutoBackup exists but not integrated into main CLI
 - **Why it matters:** Users must run manually or via cron
-- **Source:** `docs/repo_map/sugarcraft_sugar-tick.md` — "AutoBackup exists but is not integrated"
+- **Source:** `docs/repo_map/sugarcraft_candy-codetime.md` — "AutoBackup exists but is not integrated"
 - **Implementation ideas:**
   - Add `--backup` flag to push command
   - Or: Automatic backup after N heartbeats
@@ -224,7 +224,7 @@ sugar-tick/
 
 - **Description:** Tags stored but not displayed/filterable in dashboard
 - **Why it matters:** Timewarrior's tag model is proven; users expect tag filtering
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — Timewarrior tags
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — Timewarrior tags
 - **Implementation ideas:**
   - Add tag filter input to dashboard
   - Show tags in heartbeat list view
@@ -236,7 +236,7 @@ sugar-tick/
 
 - **Description:** No billing/rate tracking like tmpo
 - **Why it matters:** Freelancers want to track billable hours
-- **Source:** `docs/research/libraries/sugar-tick-research.md` — tmpo hourly rates
+- **Source:** `docs/research/libraries/candy-codetime-research.md` — tmpo hourly rates
 - **Implementation ideas:**
   - Add `hourlyRate` field to project config
   - Calculate earnings in Stats
@@ -280,7 +280,7 @@ foreach ($this->beats as $b) {
 - SQLite requires additional storage path
 - Pre-computed index requires memory for large datasets
 
-**Applicability to sugar-tick:**
+**Applicability to candy-codetime:**
 
 - High — add `Stats::timelineOptimized()` using sorted beats
 - Medium — SQLite backend already supports indexed queries
@@ -290,10 +290,10 @@ foreach ($this->beats as $b) {
 # Architecture Improvements
 
 1. **Event-sourcing pattern** — Append heartbeat events, derive state; enables perfect retroactive edits
-   - Source: `docs/research/libraries/sugar-tick-research.md` — oclock event-sourcing
+   - Source: `docs/research/libraries/candy-codetime-research.md` — oclock event-sourcing
 
 2. **Storage backend interface** — Abstract `StoreInterface` to enable JSONL/SQLite/encrypted switching
-   - Source: `docs/research/libraries/sugar-tick-research.md` — tock multi-backend
+   - Source: `docs/research/libraries/candy-codetime-research.md` — tock multi-backend
 
 3. **Separate read/write models** — Dashboard is read-only; writes go through command handler
    - Source: `docs/repo_map/pr_charmbracelet_bubbletea.md` — tea.Cmd pattern
@@ -306,13 +306,13 @@ foreach ($this->beats as $b) {
 # API / Developer Experience Improvements
 
 1. **Fluent Heartbeat building** — `Heartbeat::forProject($name)->withTags(['bug'])->withDuration(120)`
-   - Source: `docs/repo_map/sugarcraft_sugar-tick.md` — "Immutable Heartbeat Value Object"
+   - Source: `docs/repo_map/sugarcraft_candy-codetime.md` — "Immutable Heartbeat Value Object"
 
 2. **Stats query builder** — `Stats::forRange($from, $to)->groupByProject()->top(10)`
-   - Source: `docs/research/libraries/sugar-tick-research.md` — tock/tmpo query patterns
+   - Source: `docs/research/libraries/candy-codetime-research.md` — tock/tmpo query patterns
 
 3. **Store abstraction** — `Store::open('jsonl')` vs `Store::open('sqlite')`
-   - Source: `docs/research/libraries/sugar-tick-research.md` — tock multi-backend
+   - Source: `docs/research/libraries/candy-codetime-research.md` — tock multi-backend
 
 4. **Dashboard as library** — Allow embedding Dashboard in larger apps
    - Source: `docs/repo_map/ECOSYSTEM_INTELLIGENCE_SUMMARY.md` — "Library-First Architecture"
@@ -322,26 +322,26 @@ foreach ($this->beats as $b) {
 # Documentation / Cookbook Opportunities
 
 1. **Editor plugin templates** — Vim, Neovim, VS Code heartbeat push examples
-   - Source: `docs/research/libraries/sugar-tick-research.md` — TakaTime neovim plugin
+   - Source: `docs/research/libraries/candy-codetime-research.md` — TakaTime neovim plugin
 
 2. **Cron integration guide** — Automated daily summaries via cron
-   - Source: `docs/repo_map/sugar-tick.md` — "old-school cron jobs can ship files to cold storage"
+   - Source: `docs/repo_map/candy-codetime.md` — "old-school cron jobs can ship files to cold storage"
 
 3. **Multi-machine sync** — Syncing JSONL files via rsync, Dropbox, etc.
-   - Source: `docs/repo_map/sugar-tick.md` — "human-readable plaintext"
+   - Source: `docs/repo_map/candy-codetime.md` — "human-readable plaintext"
 
 4. **Privacy hardening guide** — Optional encryption, .sugartrackignore best practices
-   - Source: `docs/research/libraries/sugar-tick-research.md` — trackWork encryption approach
+   - Source: `docs/research/libraries/candy-codetime-research.md` — trackWork encryption approach
 
 ---
 
 # UX / TUI Improvements
 
 1. **Calendar navigation** — ←/→ shifts months, Enter selects day
-   - Source: `docs/research/libraries/sugar-tick-research.md` — tock calendar view
+   - Source: `docs/research/libraries/candy-codetime-research.md` — tock calendar view
 
 2. **Interactive heartbeat editing** — Press 'e' on selected heartbeat to edit
-   - Source: `docs/research/libraries/sugar-tick-research.md` — oclock retroactive switch
+   - Source: `docs/research/libraries/candy-codetime-research.md` — oclock retroactive switch
 
 3. **Live dashboard updates** — Auto-reload when JSONL file changes (filesystem watcher)
    - Source: `docs/repo_map/pr_textualize_textual.md` — reactive state updates
@@ -350,7 +350,7 @@ foreach ($this->beats as $b) {
    - Source: `docs/repo_map/pr_treilik_bubblelister.md` — fuzzy filtering
 
 5. **Better gaps visualization** — Highlight gaps directly in timeline view
-   - Source: `docs/research/libraries/sugar-tick-research.md` — Timewarrior gaps
+   - Source: `docs/research/libraries/candy-codetime-research.md` — Timewarrior gaps
 
 ---
 
@@ -363,7 +363,7 @@ foreach ($this->beats as $b) {
    - Source: `docs/repo_map/ECOSYSTEM_INTELLIGENCE_SUMMARY.md` — "No Test Coverage" lesson
 
 3. **Concurrent write stress test** — Simulate multiple processes appending simultaneously
-   - Source: `docs/research/libraries/sugar-tick-research.md` — rtw "concurrent writes unsafe"
+   - Source: `docs/research/libraries/candy-codetime-research.md` — rtw "concurrent writes unsafe"
 
 4. **Performance regression suite** — Time Stats::timeline() on 10k+ heartbeats
    - Source: `docs/repo_map/pr_textualize_textual.md` — OptionList performance regression
@@ -373,7 +373,7 @@ foreach ($this->beats as $b) {
 # Ecosystem / Integration Opportunities
 
 1. **sugar-charts integration** — Use BarChart for weekly summaries, heatmap for calendar
-   - Source: `sugar-tick` already uses Sparkline — expand to full chart suite
+   - Source: `candy-codetime` already uses Sparkline — expand to full chart suite
 
 2. **candy-core Tick subscription** — Subscribe to filesystem changes for live updates
    - Source: `docs/repo_map/pr_charmbracelet_bubbletea.md` — tick subscriptions
@@ -382,10 +382,10 @@ foreach ($this->beats as $b) {
    - Source: `docs/repo_map/pr_charmbracelet_colorprofile.md` — OSC 2026/2027 queries
 
 4. **Editor integrations** — Publish editor plugin SDK/guidelines
-   - Source: `docs/research/libraries/sugar-tick-research.md` — TakaTime neovim plugin
+   - Source: `docs/research/libraries/candy-codetime-research.md` — TakaTime neovim plugin
 
-5. **GitHub Actions workflow** — Publish `sugarcraft/action-sugar-tick` for automated stats
-   - Source: `docs/research/libraries/sugar-tick-research.md` — TakaTime GitHub Actions
+5. **GitHub Actions workflow** — Publish `sugarcraft/action-candy-codetime` for automated stats
+   - Source: `docs/research/libraries/candy-codetime-research.md` — TakaTime GitHub Actions
 
 ---
 
@@ -440,7 +440,7 @@ foreach ($this->beats as $b) {
 
 ## Experimental (3+ months)
 
-12. **Web dashboard** — Render sugar-tick data in browser (textual-web pattern)
+12. **Web dashboard** — Render candy-codetime data in browser (textual-web pattern)
 13. **Collaborative features** — Shared team dashboards via JSONL sync
 14. **ML-based insights** — Predict productivity patterns
 
@@ -466,9 +466,9 @@ foreach ($this->beats as $b) {
 
 # Final Strategic Assessment
 
-Sugar-tick represents a well-executed privacy-first time tracker that successfully differentiates from its Go upstream (TakaTime) by eliminating MongoDB dependency. Its JSONL append-only design enables true editor-agnosticism — any tool can push heartbeats without coordination. The implementation demonstrates solid software engineering: immutable value objects, pure aggregator functions, and clean separation between storage backends.
+Candy-codetime represents a well-executed privacy-first time tracker that successfully differentiates from its Go upstream (TakaTime) by eliminating MongoDB dependency. Its JSONL append-only design enables true editor-agnosticism — any tool can push heartbeats without coordination. The implementation demonstrates solid software engineering: immutable value objects, pure aggregator functions, and clean separation between storage backends.
 
-**Competitive positioning:** Sugar-tick occupies a defensible niche as the only PHP-native, privacy-first, TUI-based coding time tracker. The TakaTime upstream requires MongoDB; Timewarrior lacks a TUI; tmpo/hours are Go-only. This leaves a clear market segment: PHP developers who want local-only, editor-agnostic time tracking with a polished Bubble Tea-style interface.
+**Competitive positioning:** Candy-codetime occupies a defensible niche as the only PHP-native, privacy-first, TUI-based coding time tracker. The TakaTime upstream requires MongoDB; Timewarrior lacks a TUI; tmpo/hours are Go-only. This leaves a clear market segment: PHP developers who want local-only, editor-agnostic time tracking with a polished Bubble Tea-style interface.
 
 **Critical risks:**
 
@@ -483,8 +483,8 @@ Sugar-tick represents a well-executed privacy-first time tracker that successful
 3. **Build editor plugin ecosystem** — Provide SDK/templates for Vim, Neovim, VS Code; editor integration is the growth lever
 4. **Document privacy guarantees** — Make the "no network, no cloud, no telemetry" story prominent
 
-**Verdict:** Sugar-tick is a solid v1 implementation with clear product-market fit. The immediate priorities are hardening (concurrent safety, performance) before adding features (calendar, editing). If editor plugin ecosystem develops, this could become the de facto time tracker for the PHP community.
+**Verdict:** Candy-codetime is a solid v1 implementation with clear product-market fit. The immediate priorities are hardening (concurrent safety, performance) before adding features (calendar, editing). If editor plugin ecosystem develops, this could become the de facto time tracker for the PHP community.
 
 ---
 
-*Report generated from analysis of: `docs/repo_map/sugarcraft_sugar-tick.md`, `docs/research/libraries/sugar-tick-research.md`, `docs/repo_map/ECOSYSTEM_INTELLIGENCE_SUMMARY.md`, `docs/repo_map/pr_charmbracelet_bubbletea.md`, `docs/repo_map/pr_textualize_textual.md`, `docs/repo_map/pr_treilik_bubblelister.md`, `docs/repo_map/pr_daltonsw_bubbleup.md`.*
+*Report generated from analysis of: `docs/repo_map/sugarcraft_candy-codetime.md`, `docs/research/libraries/candy-codetime-research.md`, `docs/repo_map/ECOSYSTEM_INTELLIGENCE_SUMMARY.md`, `docs/repo_map/pr_charmbracelet_bubbletea.md`, `docs/repo_map/pr_textualize_textual.md`, `docs/repo_map/pr_treilik_bubblelister.md`, `docs/repo_map/pr_daltonsw_bubbleup.md`.*

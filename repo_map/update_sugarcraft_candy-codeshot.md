@@ -1,6 +1,6 @@
 # Overview
 
-**candy-freeze** (`sugarcraft/candy-freeze`) is a v1-ready PHP port of `charmbracelet/freeze` that converts code or terminal output (ANSI SGR sequences) into SVG or PNG screenshots. It occupies a unique niche in SugarCraft: an *output-edge* library that produces static image files rather than interactive TUIs, making it complementary to (not overlapping with) the core TUI rendering pipeline.
+**candy-codeshot** (`sugarcraft/candy-codeshot`) is a v1-ready PHP port of `charmbracelet/freeze` that converts code or terminal output (ANSI SGR sequences) into SVG or PNG screenshots. It occupies a unique niche in SugarCraft: an *output-edge* library that produces static image files rather than interactive TUIs, making it complementary to (not overlapping with) the core TUI rendering pipeline.
 
 **Biggest opportunity areas**:
 
@@ -49,7 +49,7 @@ SvgRenderer / PngRenderer
   └─ Window chrome (traffic lights / title bar)
 ```
 
-**Key design decision**: Unlike `charmbracelet/freeze` which uses **Chroma** Go library to tokenize source code, candy-freeze requires input already carrying ANSI SGR codes. This is a deliberate trade-off — porting a full lexer to PHP would be massive. The `ChromaThemeLoader` and `VsCodeThemeLoader` are present only for window chrome/gutter theming, not for live syntax highlighting.
+**Key design decision**: Unlike `charmbracelet/freeze` which uses **Chroma** Go library to tokenize source code, candy-codeshot requires input already carrying ANSI SGR codes. This is a deliberate trade-off — porting a full lexer to PHP would be massive. The `ChromaThemeLoader` and `VsCodeThemeLoader` are present only for window chrome/gutter theming, not for live syntax highlighting.
 
 ## Current Features
 
@@ -204,7 +204,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 ### 1. No Syntax Highlighter
 
 **Title**: Embed a PHP syntax highlighter for live code coloring
-**Description**: Unlike upstream freeze which includes Chroma with 100+ lexers, candy-freeze requires input pre-colored with ANSI SGR codes. This fundamentally limits the tool to terminal output capture and tools like pygments/highlight.
+**Description**: Unlike upstream freeze which includes Chroma with 100+ lexers, candy-codeshot requires input pre-colored with ANSI SGR codes. This fundamentally limits the tool to terminal output capture and tools like pygments/highlight.
 **Why it matters**: The primary use case (code screenshots) is inaccessible without a separate preprocessing step. Users must run code through pygments or similar to generate ANSI-colored input.
 **Source repo**: `charmbracelet/freeze` uses `charmbracelet/chroma` for lexing
 **Source PR/issue**: freeze issue #70 (multi-language highlighting) + upstream's Chroma integration
@@ -239,7 +239,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 ### 3. Interactive TUI Configuration Mode
 
 **Title**: Add `--interactive` TUI mode using candy-sprinkles
-**Description**: Upstream freeze has a full interactive configuration via `huh` (Bubble Tea form library). candy-freeze is CLI-only with all options as flags.
+**Description**: Upstream freeze has a full interactive configuration via `huh` (Bubble Tea form library). candy-codeshot is CLI-only with all options as flags.
 **Why it matters**: Interactive configuration with live preview is significantly more user-friendly than memorizing flag combinations.
 **Source repo**: `charmbracelet/freeze` (interactive.go using huh)
 **Source PR/issue**: freeze issues #174, #135 (interactive mode missing features)
@@ -249,19 +249,19 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 
 - Show live SVG preview as settings change
 
-- Persist final config to `$XDG_CONFIG_HOME/candy-freeze/user.json`
+- Persist final config to `$XDG_CONFIG_HOME/candy-codeshot/user.json`
 **Estimated complexity**: Medium — requires candy-sprinkles integration
 **Expected impact**: Major UX improvement; feature parity with upstream
 
 ### 4. User Config Persistence
 
-**Title**: Persist last-used settings to `~/.config/candy-freeze/user.json`
-**Description**: Upstream freeze saves settings to `~/.config/freeze/user.json` and auto-loads them. candy-freeze is stateless per invocation.
+**Title**: Persist last-used settings to `~/.config/candy-codeshot/user.json`
+**Description**: Upstream freeze saves settings to `~/.config/freeze/user.json` and auto-loads them. candy-codeshot is stateless per invocation.
 **Why it matters**: Users who customize settings want them remembered across invocations.
 **Source repo**: `charmbracelet/freeze` (config.go, XDG config loading)
 **Implementation ideas**:
 
-- On `--interactive` save, write `$XDG_CONFIG_HOME/candy-freeze/user.json`
+- On `--interactive` save, write `$XDG_CONFIG_HOME/candy-codeshot/user.json`
 
 - Auto-load on startup if exists and no explicit flags passed
 
@@ -288,7 +288,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 ### 6. WebP Output
 
 **Title**: Add `WebpRenderer` using `imagewebp()` (ext-gd)
-**Description**: Upstream freeze supports WebP via rsvg-convert. candy-freeze only supports SVG and PNG.
+**Description**: Upstream freeze supports WebP via rsvg-convert. candy-codeshot only supports SVG and PNG.
 **Why it matters**: WebP offers better compression than PNG with transparency support.
 **Source repo**: `charmbracelet/freeze` (issue #207, WebP request)
 **Implementation ideas**:
@@ -306,7 +306,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 ### 7. Tab Completion
 
 **Title**: Add `--generate-completion` flag for bash/zsh/fish
-**Description**: Freeze has a WiP PR (#215) for shell tab-completion. candy-freeze lacks this.
+**Description**: Freeze has a WiP PR (#215) for shell tab-completion. candy-codeshot lacks this.
 **Why it matters**: CLI usability for power users.
 **Source repo**: `charmbracelet/freeze` (pr #215, issue #134)
 **Implementation ideas**:
@@ -322,7 +322,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 ### 8. CJK/Non-ASCII Font Support in PNG
 
 **Title**: TTF-based rendering in PNG for proper CJK character support
-**Description**: Issue #93 in freeze shows CJK characters garbled in PNG. candy-freeze uses GD bitmap fonts which have no CJK support.
+**Description**: Issue #93 in freeze shows CJK characters garbled in PNG. candy-codeshot uses GD bitmap fonts which have no CJK support.
 **Why it matters**: International users need CJK rendering.
 **Source repo**: `charmbracelet/freeze` (issue #93, #80, #83)
 **Implementation ideas**:
@@ -338,7 +338,7 @@ None currently. Theme loading could be formalized as a `ThemeLoaderInterface` fo
 ### 9. Window Title from Filename
 
 **Title**: Auto-detect input filename and use as window chrome title
-**Description**: PR #107 in freeze implements this; candy-freeze has no equivalent.
+**Description**: PR #107 in freeze implements this; candy-codeshot has no equivalent.
 **Why it matters**: Makes screenshots more contextual without manual `--title` flag.
 **Source repo**: `charmbracelet/freeze` (pr #107)
 **Implementation ideas**:
@@ -458,7 +458,7 @@ Currently `SvgRenderer` does ANSI parsing + SVG generation. Consider:
 
 Currently CLI only outputs SVG; PNG is library-only:
 ```php
-candyfreeze input.php --format png -o out.png
+candy-codeshot input.php --format png -o out.png
 ```
 
 ## 2. Add `--version` flag
@@ -469,8 +469,8 @@ Standard for CLI integration (Neovim plugins, etc. check version)
 ## 3. Add `--copy` flag (clipboard)
 
 ```php
-candyfreeze input.php | xclip -selection clipboard  # current workaround
-candyfreeze input.php --copy  # proposed
+candy-codeshot input.php | xclip -selection clipboard  # current workaround
+candy-codeshot input.php --copy  # proposed
 ```
 On Linux: `xclip`/`xsel`; macOS: `pbcopy`; Windows: `clip`
 **Source**: `docs/repo_map/pr_charmbracelet_freeze.md` — issue #213
@@ -555,7 +555,7 @@ The `WindowStyleTest.php` tests SVG structure but could use golden files for ful
 
 Add testscript-style integration tests for the CLI:
 ```bash
-candyfreeze --theme dracula --line-numbers < input.php > output.svg
+candy-codeshot --theme dracula --line-numbers < input.php > output.svg
 diff output.svg expected.svg
 ```
 **Source**: `docs/repo_map/pr_charmbracelet_freeze.md` — "we could use testscripts for these integration tests"
@@ -580,7 +580,7 @@ Provide official Docker image for consistent CI execution
 
 ## 2. Editor Integrations
 
-- VS Code extension that calls `candyfreeze` on current file
+- VS Code extension that calls `candy-codeshot` on current file
 
 - Neovim plugin (like freeze-code.nvim)
 
@@ -612,7 +612,7 @@ Port the VHS `.tape` format as a SugarCraft library for scripted terminal demos
 
 **Summary**: resvg-go WASM causes crashes on Ubuntu 22.04/24.04, PopOS, Fedora 42, NixOS, WSL2
 **Lesson**: Prefer pure-PHP or pure-extension rasterization over WASM. GD is boring but stable.
-**Relevance**: candy-freeze already uses GD — this validates the choice.
+**Relevance**: candy-codeshot already uses GD — this validates the choice.
 
 ## freeze Issue #250: --execute fails on Windows
 
@@ -624,7 +624,7 @@ Port the VHS `.tape` format as a SugarCraft library for scripted terminal demos
 
 **Summary**: PNG path hardcodes JetBrains Mono; custom fonts ignored in PNG path
 **Lesson**: Font loading must happen before text rendering, not during initialization
-**Relevance**: Same issue affects candy-freeze's GD path
+**Relevance**: Same issue affects candy-codeshot's GD path
 
 ## freeze PR #248: Fix broken shellwords dependency
 
@@ -647,7 +647,7 @@ Port the VHS `.tape` format as a SugarCraft library for scripted terminal demos
 ## glamour Block Stack Pattern
 
 **Summary**: Maintains stack of block elements during AST traversal for dynamic indent/margin computation
-**Lesson**: Could be applied to candy-freeze for more sophisticated window chrome/layout handling
+**Lesson**: Could be applied to candy-codeshot for more sophisticated window chrome/layout handling
 **Relevance**: Reference only — not directly applicable to freeze's rendering model
 
 ---
@@ -668,7 +668,7 @@ Port the VHS `.tape` format as a SugarCraft library for scripted terminal demos
 
 ## Medium-Term Improvements (1-2 weeks each)
 
-6. **Add user config persistence** — `$XDG_CONFIG_HOME/candy-freeze/user.json`
+6. **Add user config persistence** — `$XDG_CONFIG_HOME/candy-codeshot/user.json`
 
 7. **Build interactive TUI** — `--interactive` using candy-sprinkles with live preview
 
@@ -720,9 +720,9 @@ Port the VHS `.tape` format as a SugarCraft library for scripted terminal demos
 
 # Final Strategic Assessment
 
-**candy-freeze** is a well-executed 🟢 v1-ready port that successfully delivers SVG-first code screenshots without requiring any graphics extensions. Its primary strength is stability — by using pure PHP string concatenation for SVG and GD for PNG, it avoids the WASM/FFI instability that plagues upstream freeze's PNG conversion path.
+**candy-codeshot** is a well-executed 🟢 v1-ready port that successfully delivers SVG-first code screenshots without requiring any graphics extensions. Its primary strength is stability — by using pure PHP string concatenation for SVG and GD for PNG, it avoids the WASM/FFI instability that plagues upstream freeze's PNG conversion path.
 
-However, the package has a fundamental architectural limitation: **no embedded syntax highlighter**. Unlike freeze which includes Chroma for live code tokenization, candy-freeze requires pre-colored ANSI input. This is a deliberate trade-off documented in the architecture, but it significantly limits the tool's accessibility for the primary use case (code screenshots). Users must run code through pygments or similar as a preprocessing step.
+However, the package has a fundamental architectural limitation: **no embedded syntax highlighter**. Unlike freeze which includes Chroma for live code tokenization, candy-codeshot requires pre-colored ANSI input. This is a deliberate trade-off documented in the architecture, but it significantly limits the tool's accessibility for the primary use case (code screenshots). Users must run code through pygments or similar as a preprocessing step.
 
 The most impactful improvements would be:
 
@@ -738,7 +738,7 @@ The package's position at the "output edge" of the rendering pipeline means it d
 
 **Defensive notes from upstream issues**:
 
-- WASM dependencies are fragile — avoid them (candy-freeze already does)
+- WASM dependencies are fragile — avoid them (candy-codeshot already does)
 
 - Shell command parsing is notoriously hard — use `/bin/bash -c` if implementing PTY capture
 

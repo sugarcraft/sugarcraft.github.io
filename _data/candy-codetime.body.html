@@ -1,17 +1,20 @@
 <p class="lede" style="margin-top: 28px;">Tracks edit-time per project / language to a local JSONL file (no cloud, no MongoDB) and renders a SugarCharts-driven dashboard. Editor plug-ins push heartbeats via the <code>tick push</code> CLI subcommand; the dashboard reads them.</p>
 
     <h3 style="margin-top: 32px;">Install</h3>
-    <pre class="code"><code class="language-shell">composer require sugarcraft/sugar-tick</code></pre>
+    <pre class="code"><code class="language-shell">composer require sugarcraft/candy-codetime</code></pre>
 
     <h3 style="margin-top: 32px;">Quickstart</h3>
     <pre class="code"><code class="language-shell"># Editor plug-in / cron / git hook pushes a heartbeat:
-sugar-tick push sugarcraft php src/App.php 60
+candy-codetime push sugarcraft php src/App.php 60
 
 # Open the dashboard:
-sugar-tick
+candy-codetime
 
 # Override the data dir:
-SUGARTICK_DIR=/var/data/tick sugar-tick</code></pre>
+CANDY_CODETIME_DIR=/var/data/tick candy-codetime</code></pre>
+<p>Formerly shipped as <code>sugar-tick</code>: the old <code>SUGARTICK_DIR</code> // @rename-keep
+env var and the <code>~/.local/share/sugar-tick</code> data directory are still // @rename-keep
+honoured once and migrated automatically on first launch.</p> <!-- @rename-keep -->
 
     <h3 style="margin-top: 32px;">What's in the box</h3>
     <div class="feature-grid">
@@ -25,9 +28,9 @@ SUGARTICK_DIR=/var/data/tick sugar-tick</code></pre>
 
     <h3 style="margin-top: 40px;">Source &amp; demos</h3>
     <ul>
-      <li><a href="https://github.com/sugarcraft/sugar-tick">Source on GitHub</a></li>
-      <li><a href="https://github.com/sugarcraft/sugar-tick/blob/master/README.md">Full README</a></li>
-      <li><a href="https://github.com/sugarcraft/sugar-tick/tree/main/examples">Runnable examples</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-codetime">Source on GitHub</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-codetime/blob/master/README.md">Full README</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-codetime/tree/main/examples">Runnable examples</a></li>
       <li>Originally inspired by <a href="https://github.com/Rtarun3606k/TakaTime">TakaTime</a> (Go); SugarCraft is developed as a native PHP project.</li>
     </ul>
 
@@ -50,12 +53,12 @@ SUGARTICK_DIR=/var/data/tick sugar-tick</code></pre>
         <p class="lede">VHS-recorded GIFs of every example shipped with the app. Regenerated automatically on every push that touches the source.</p>
         <div class="demo-grid">
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-tick/.vhs/dashboard.gif" alt="Dashboard">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-codetime/.vhs/dashboard.gif" alt="Dashboard">
                 <h3>Dashboard</h3>
                 <span class="demo-caption">Seven-day window with project + language ranking and timeline sparkline.</span>
             </div>
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-tick/.vhs/push.gif" alt="Push">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-codetime/.vhs/push.gif" alt="Push">
                 <h3>Push</h3>
                 <span class="demo-caption">One-shot CLI command that appends heartbeat JSONL entries to the daily log file.</span>
             </div>

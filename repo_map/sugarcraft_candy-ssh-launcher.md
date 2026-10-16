@@ -1,8 +1,8 @@
-# SugarCraft/sugar-wishlist
+# SugarCraft/candy-ssh-launcher
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/sugar-wishlist
+- **URL:** https://github.com/sugarcraft/candy-ssh-launcher
 
 - **Language:** PHP 8.3+
 
@@ -10,9 +10,9 @@
 
 - **License:** MIT
 
-- **Composer:** `sugarcraft/sugar-wishlist`
+- **Composer:** `sugarcraft/candy-ssh-launcher`
 
-- **Namespace:** `SugarCraft\Wishlist`
+- **Namespace:** `SugarCraft\SshLauncher`
 
 - **Upstream:** `charmbracelet/wishlist` (Go, ~700 stars)
 
@@ -31,7 +31,7 @@
 
   - **SSH-server TUI mode**: (architecture in place; full server mode deferred to future phase)
 
-- **Multi-format configuration**: Supports YAML (`wishlist.yml`), JSON (`wishlist.json`), and raw OpenSSH `~/.ssh/config`
+- **Multi-format configuration**: Supports YAML (`wishlist.yml`), JSON (`wishlist.json`), and raw OpenSSH `~/.ssh/config` <!-- @rename-keep -->
 
 - **ProxyJump support**: Connects through bastion hosts via `-J` flag
 
@@ -67,14 +67,14 @@
 ### Execution Flow
 
 ```
-bin/wishlist
+bin/candy-ssh-launcher
   └── Config::load($cfgPath)          ← parse YAML/JSON OR
   └── Config::importFromSshConfig()    ← parse ~/.ssh/config
   └── new Picker()->pick($endpoints)  ← render TUI, read keys, filter
   └── new Launcher()->dispatch($ep)    ← pcntl_exec /usr/bin/ssh [args]
 ```
 
-The critical line is `pcntl_exec($argv[0], array_slice($argv, 1))` in `Launcher::dispatch()`. This **replaces** the PHP process with `ssh`. File descriptors, environment, and the controlling TTY all flow through unchanged — the user sees a normal `ssh` session (host-key prompts, agent forwarding, MOTD, exit status). sugar-wishlist never proxies bytes.
+The critical line is `pcntl_exec($argv[0], array_slice($argv, 1))` in `Launcher::dispatch()`. This **replaces** the PHP process with `ssh`. File descriptors, environment, and the controlling TTY all flow through unchanged — the user sees a normal `ssh` session (host-key prompts, agent forwarding, MOTD, exit status). candy-ssh-launcher never proxies bytes.
 
 ### Config Parsing Architecture
 
@@ -173,7 +173,7 @@ Uses `pcntl_exec()` to replace the PHP process. The `$executor` callable allows 
 
 ## Discovery System
 
-sugar-wishlist does **not** implement dynamic service discovery (Zeroconf/DNS SRV/Tailscale) in v1. The upstream `charmbracelet/wishlist` includes these features but they have been deferred in the SugarCraft port.
+candy-ssh-launcher does **not** implement dynamic service discovery (Zeroconf/DNS SRV/Tailscale) in v1. The upstream `charmbracelet/wishlist` includes these features but they have been deferred in the SugarCraft port.
 
 **Upstream discovery features** (not yet ported):
 - `_ssh._tcp` Zeroconf/mDNS/Bonjour browsing via `grandcat/zeroconf`
@@ -190,7 +190,7 @@ If these are added, they would live in a future `sugar-discovery` leaf library.
 
 ### How it uses candy-wish
 
-sugar-wishlist is a **consumer** of `candy-wish` (the SugarCraft port of `charmbracelet/wish`). However, v1 of sugar-wishlist does NOT run an SSH server — it runs as a local CLI tool that launches `ssh` as a subprocess via `pcntl_exec`.
+candy-ssh-launcher is a **consumer** of `candy-wish` (the SugarCraft port of `charmbracelet/wish`). However, v1 of candy-ssh-launcher does NOT run an SSH server — it runs as a local CLI tool that launches `ssh` as a subprocess via `pcntl_exec`.
 
 The `candy-wish` dependency exists for potential future SSH-server TUI mode (`ssh user@host` to connect and see the wishlist picker over SSH). In v1, the `candy-pty` dependency is used only for `RawMode` support in the picker.
 
@@ -205,7 +205,7 @@ The key architectural decision: **do not proxy SSH bytes**. Instead, `pcntl_exec
 
 - Exit status propagates correctly
 
-This is architecturally cleaner than a PHP-based SSH proxy, but means sugar-wishlist cannot introspect or log the SSH session itself.
+This is architecturally cleaner than a PHP-based SSH proxy, but means candy-ssh-launcher cannot introspect or log the SSH session itself.
 
 ---
 
@@ -229,9 +229,9 @@ This is architecturally cleaner than a PHP-based SSH proxy, but means sugar-wish
 
 ## Comparison with Upstream
 
-### What sugar-wishlist preserves from charmbracelet/wishlist
+### What candy-ssh-launcher preserves from charmbracelet/wishlist
 
-| Upstream Feature | sugar-wishlist Status |
+| Upstream Feature | candy-ssh-launcher Status |
 |-----------------|----------------------|
 | YAML config loading | ✅ Implemented (hand-rolled flat-list parser) |
 | JSON config loading | ✅ Implemented (`json_decode`) |
@@ -255,20 +255,20 @@ This is architecturally cleaner than a PHP-based SSH proxy, but means sugar-wish
 | **Tailscale discovery** | Same as above; also requires OAuth2 client credentials handling |
 | **Dynamic endpoint refresh** (broadcast relay) | No SSH server mode means no need for in-flight endpoint updates |
 | **STDIN multiplexing** | Not needed for local CLI mode |
-| **Host key auto-accept** | Uses native ssh binary behavior; sugar-wishlist never touches host keys |
+| **Host key auto-accept** | Uses native ssh binary behavior; candy-ssh-launcher never touches host keys |
 | **Lipgloss styling** | Uses `SugarCraft\Core\Util\Ansi` directly (PHP terminal rendering, not lipgloss port) |
 | **Prometheus metrics** | Not applicable without SSH server mode |
 | **Authorized users allowlist** | Not applicable without SSH server mode |
 
 ### Key architectural differences from upstream
 
-1. **Process model**: Upstream `charmbracelet/wishlist` uses `golang.org/x/crypto/ssh` for in-process SSH connections. sugar-wishlist uses `pcntl_exec` to hand off to the system `ssh` binary. This is a philosophical difference — upstream gets full programmatic SSH control; sugar-wishlist gets zero-knowledge simplicity and 100% fidelity with manual `ssh` usage.
+1. **Process model**: Upstream `charmbracelet/wishlist` uses `golang.org/x/crypto/ssh` for in-process SSH connections. candy-ssh-launcher uses `pcntl_exec` to hand off to the system `ssh` binary. This is a philosophical difference — upstream gets full programmatic SSH control; candy-ssh-launcher gets zero-knowledge simplicity and 100% fidelity with manual `ssh` usage.
 
-2. **TUI framework**: Upstream uses `charmbracelet/bubbletea` with `bubbles/list`. sugar-wishlist uses a hand-rolled single-purpose picker (40 lines of ANSI rendering) to avoid pulling in the full SugarBits component library for a one-shot use case.
+2. **TUI framework**: Upstream uses `charmbracelet/bubbletea` with `bubbles/list`. candy-ssh-launcher uses a hand-rolled single-purpose picker (40 lines of ANSI rendering) to avoid pulling in the full SugarBits component library for a one-shot use case.
 
-3. **No intermediate network layer**: Upstream maintains live SSH connections. sugar-wishlist simply selects an endpoint and execs — no persistent state, no connection pooling.
+3. **No intermediate network layer**: Upstream maintains live SSH connections. candy-ssh-launcher simply selects an endpoint and execs — no persistent state, no connection pooling.
 
-4. **i18n**: sugar-wishlist has 16 locales; upstream has no i18n at all (intentionally — it's a developer tool with English-only output).
+4. **i18n**: candy-ssh-launcher has 16 locales; upstream has no i18n at all (intentionally — it's a developer tool with English-only output).
 
 ---
 
@@ -298,7 +298,7 @@ This is architecturally cleaner than a PHP-based SSH proxy, but means sugar-wish
 
 2. **No dynamic discovery** — Zeroconf, DNS SRV, and Tailscale are all deferred. For users with dynamic infrastructure (Docker, Kubernetes, Tailscale), a static config file is a step backward from upstream.
 
-3. **Single identity file** — `toSshArgv()` only uses `$identityFiles[0]` when building the argv. SSH supports multiple `-i` flags; sugar-wishlist only passes the first. (The `Endpoint` model stores the full list, but `toSshArgv()` only emits one.)
+3. **Single identity file** — `toSshArgv()` only uses `$identityFiles[0]` when building the argv. SSH supports multiple `-i` flags; candy-ssh-launcher only passes the first. (The `Endpoint` model stores the full list, but `toSshArgv()` only emits one.)
 
 4. **No config file watching** — Config is loaded once at startup. Upstream can refresh and broadcast endpoint updates to connected clients.
 
@@ -318,11 +318,11 @@ This is architecturally cleaner than a PHP-based SSH proxy, but means sugar-wish
 
 ### `charmbracelet/wishlist` (primary upstream — 700 stars)
 
-Full-featured Go SSH directory with local CLI mode + SSH server mode. sugar-wishlist v1 ports the local CLI mode only. The upstream also provides Zeroconf/DNS SRV/Tailscale discovery, which are deferred. See full analysis at `repo_map/charmbracelet_wishlist.md`.
+Full-featured Go SSH directory with local CLI mode + SSH server mode. candy-ssh-launcher v1 ports the local CLI mode only. The upstream also provides Zeroconf/DNS SRV/Tailscale discovery, which are deferred. See full analysis at `repo_map/charmbracelet_wishlist.md`.
 
 ### `charmbracelet/wish` (SSH middleware framework — 5,233 stars)
 
-The SSH server framework that upstream wishlist builds on. sugar-wishlist does not use `candy-wish` in v1 (local CLI mode doesn't need an SSH server). The `candy-wish` port exists independently. See full analysis at `repo_map/charmbracelet_wish.md`.
+The SSH server framework that upstream wishlist builds on. candy-ssh-launcher does not use `candy-wish` in v1 (local CLI mode doesn't need an SSH server). The `candy-wish` port exists independently. See full analysis at `repo_map/charmbracelet_wish.md`.
 
 ### `charmbracelet/charm` (cloud infrastructure — 2.4k stars)
 
@@ -330,13 +330,13 @@ Provides SSH-based authentication, encrypted KV store, and cloud filesystem. Not
 
 ### `candy-wish` (SugarCraft port of charmbracelet/wish)
 
-SSH server middleware framework. sugar-wishlist declares it as a dependency (via `candy-core`, `candy-pty`) but does not invoke its SSH server capabilities in v1. The dependency exists for future SSH-server TUI mode.
+SSH server middleware framework. candy-ssh-launcher declares it as a dependency (via `candy-core`, `candy-pty`) but does not invoke its SSH server capabilities in v1. The dependency exists for future SSH-server TUI mode.
 
 ---
 
 ## Analysis
 
-**sugar-wishlist** is a clean, well-scoped v1 port of the local-CLI portion of `charmbracelet/wishlist`. Its most important architectural decision — using `pcntl_exec` + system `ssh` rather than a PHP SSH library — is the right call for a tool in this category. It means PHP never touches the SSH protocol, so all SSH semantics (host-key verification, agent forwarding,PTY allocation, escape sequences) work exactly as they would for a manual `ssh` invocation.
+**candy-ssh-launcher** is a clean, well-scoped v1 port of the local-CLI portion of `charmbracelet/wishlist`. Its most important architectural decision — using `pcntl_exec` + system `ssh` rather than a PHP SSH library — is the right call for a tool in this category. It means PHP never touches the SSH protocol, so all SSH semantics (host-key verification, agent forwarding,PTY allocation, escape sequences) work exactly as they would for a manual `ssh` invocation.
 
 The SSH config parser (`SshConfigParser`) is the most substantial piece of infrastructure — it properly handles OpenSSH's first-match-wins semantics, global `Host *` defaults, and `~` path expansion. This could be extracted into a standalone `candy-sshconfig` leaf library if other projects need SSH config parsing.
 
@@ -346,4 +346,4 @@ The main gap vs upstream is the lack of SSH-server mode and dynamic service disc
 
 The 69-test / 176-assertion suite provides strong coverage of all public APIs, with particular attention to edge cases in config parsing (empty files, missing fields, type coercion, comment stripping) and SSH argv construction (port 22 default, identity file precedence, ProxyJump ordering).
 
-For v1, sugar-wishlist is a solid, focused implementation that does exactly what it says: provides an interactive picker for SSH endpoints backed by YAML/JSON/OpenSSH config, then hands off cleanly to the system SSH binary.
+For v1, candy-ssh-launcher is a solid, focused implementation that does exactly what it says: provides an interactive picker for SSH endpoints backed by YAML/JSON/OpenSSH config, then hands off cleanly to the system SSH binary.

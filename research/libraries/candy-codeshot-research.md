@@ -1,17 +1,17 @@
-# candy-freeze Research: Code Screenshot Tools Comparison
+# candy-codeshot Research: Code Screenshot Tools Comparison
 
 **Date:** 2026-05-13
 **Status:** Research Complete
-**Library:** candy-freeze (PHP 8.3+)
+**Library:** candy-codeshot (PHP 8.3+)
 **Upstream:** charmbracelet/freeze
 
 ---
 
 ## Executive Summary
 
-candy-freeze currently renders ANSI-colored text to SVG/PNG but lacks true syntax highlighting. This research compares approaches across Go, Rust, Python, and TypeScript to identify improvements for language-aware syntax highlighting, theme support, font rendering, and export formats.
+candy-codeshot currently renders ANSI-colored text to SVG/PNG but lacks true syntax highlighting. This research compares approaches across Go, Rust, Python, and TypeScript to identify improvements for language-aware syntax highlighting, theme support, font rendering, and export formats.
 
-**Current Gap:** candy-freeze parses ANSI SGR codes but has no language detection or grammar-based highlighting. It relies entirely on external tools (e.g., `cat -A` or `ls -la`) to produce pre-highlighted ANSI output.
+**Current Gap:** candy-codeshot parses ANSI SGR codes but has no language detection or grammar-based highlighting. It relies entirely on external tools (e.g., `cat -A` or `ls -la`) to produce pre-highlighted ANSI output.
 
 ---
 
@@ -43,7 +43,7 @@ tokens := highlighter.Tokenize(string(code), lang, theme)
 // Then renders to SVG with lipgloss for styling
 ```
 
-**Why it matters:** freeze is the reference implementation. candy-freeze should track its feature set.
+**Why it matters:** freeze is the reference implementation. candy-codeshot should track its feature set.
 
 ---
 
@@ -298,7 +298,7 @@ const buffer = await codeToImage('console.log("hello")', {
 
 ---
 
-## 3. candy-freeze Current Implementation Analysis
+## 3. candy-codeshot Current Implementation Analysis
 
 ### 3.1 Current Strengths ✅
 
@@ -421,7 +421,7 @@ final class VsCodeTheme
     public static function fromJson(string $path): self { /* ... */ }
 
     /**
-     * Convert to candy-freeze Theme format.
+     * Convert to candy-codeshot Theme format.
 
      */
     public function toTheme(): Theme { /* ... */ }
@@ -564,7 +564,7 @@ This could be built using `candy-forms` (the SugarCraft port of bubbletea).
 
 | Task | Effort | Files | Impact |
 |------|--------|-------|--------|
-| Interactive CLI TUI | 1w | `bin/candyfreeze`, uses `candy-forms` | Medium |
+| Interactive CLI TUI | 1w | `bin/candy-codeshot`, uses `candy-forms` | Medium |
 | Syntax-aware highlighting (integration layer) | 2w+ | External lib or FFI | High |
 
 ---
@@ -781,13 +781,13 @@ private const EXTENSION_MAP = [
 
 ## Appendix B: Theme Color Conversion Example
 
-VS Code / chroma theme to candy-freeze Theme conversion:
+VS Code / chroma theme to candy-codeshot Theme conversion:
 
 ```php
 final class ThemeConverter
 {
     /**
-     * Convert a VS Code JSON theme to candy-freeze Theme.
+     * Convert a VS Code JSON theme to candy-codeshot Theme.
      *
      * @param array $vsCodeTheme Parsed JSON from VS Code theme file
 
@@ -796,7 +796,7 @@ final class ThemeConverter
     {
         $colors = $vsCodeTheme['colors'] ?? [];
 
-        // Map VS Code colors to candy-freeze colors
+        // Map VS Code colors to candy-codeshot colors
         $background = $colors['editor.background'] ?? '#1e1e1e';
         $foreground = $colors['editor.foreground'] ?? '#d4d4d4';
         $lineNumber = $colors['editorLineNumber.foreground'] ?? '#858585';

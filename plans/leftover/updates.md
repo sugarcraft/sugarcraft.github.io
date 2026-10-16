@@ -67,7 +67,7 @@ the step that surfaced it.)
 ## Cross-phase observations
 
 (Patterns or surprises that span phases — e.g. "every i18n step needs
-to add a path-repo entry for sugar-wishlist". Put one-liners here so
+to add a path-repo entry for candy-ssh-launcher". Put one-liners here so
 later steps don't rediscover.)
 
 - Posix\* classes are `final` per project convention — any plan that says "extend Posix\Foo" must use composition instead. Reviewed during step 01.06.
@@ -399,17 +399,17 @@ docs for step 07.17 · PR#673 · document waitpid FFI fast-path in README + CALI
   step 08.12 · PR#704 · candy-sprinkles: BorderGradientBlend N-color (1-5) + Style::patch() + rapidBlink(SGR 6) (leftover-rollout step 08.12)
   review for step 08.12 · clean · PR#704
   tests-ci for step 08.12 · clean
-  step 08.13 · PR#705 · candy-freeze: Segment::$bg + SvgRenderer::withLigatures() + LanguageDetector (shebang/extension/content; 44 filter tests; leftover-rollout step 08.13)
+  step 08.13 · PR#705 · candy-codeshot: Segment::$bg + SvgRenderer::withLigatures() + LanguageDetector (shebang/extension/content; 44 filter tests; leftover-rollout step 08.13)
   review for step 08.13 · clean · PR#705
   tests-ci for step 08.13 · clean
-  step 08.14 · PR#707 · candy-freeze: VsCode/ChromaThemeLoader + SvgRenderer withFont() (base64 TTF embed) + withHighlight() (line bg rect) + 30 new tests (leftover-rollout step 08.14)
+  step 08.14 · PR#707 · candy-codeshot: VsCode/ChromaThemeLoader + SvgRenderer withFont() (base64 TTF embed) + withHighlight() (line bg rect) + 30 new tests (leftover-rollout step 08.14)
   review for step 08.14 · clean · PR#707
   tests-ci for step 08.14 · clean
   docs for step 08.12 · direct-to-master · document BorderGradientBlend/Style::patch/rapidBlink
-  step 08.13 · PR#705 · candy-freeze: Segment bg field + AnsiParser background SGR + SvgRenderer per-segment rect + withLigatures + LanguageDetector (leftover-rollout step 08.13)
+  step 08.13 · PR#705 · candy-codeshot: Segment bg field + AnsiParser background SGR + SvgRenderer per-segment rect + withLigatures + LanguageDetector (leftover-rollout step 08.13)
    review for step 08.13 · clean · PR#705
    docs for step 08.13 · PR#706 · document Segment::$bg/withBg + SvgRenderer::withLigatures + LanguageDetector in README/end-user HTML/CALIBER_LEARNINGS.md
-   step 08.14 · PR#707 · candy-freeze: VS Code/chroma JSON theme loaders + font embed + line highlight (leftover-rollout step 08.14)
+   step 08.14 · PR#707 · candy-codeshot: VS Code/chroma JSON theme loaders + font embed + line highlight (leftover-rollout step 08.14)
    review for step 08.14 · clean · PR#707
    docs for step 08.14 · direct-to-master · document VsCodeThemeLoader/ChromaThemeLoader/withFont/withHighlight in README/end-user HTML/CALIBER_LEARNINGS.md
     step 09.01 · PR#708 · candy-flip: imagecreatefromstring() + per-frame GCE timing (leftover-rollout step 09.01)
@@ -554,18 +554,18 @@ docs for step 09.07 · PR#724 · document O(1) win, serialize/unserialize, Custo
     step 10.14 · PR#781 · sugar-readline: vi mode + emacs mode key-binding modes (ModeInterface/ViMode/EmacsMode + withMode/handleKeyDirect on TextPrompt)
     step 10.15 · PR#782 · sugar-readline: autosuggest from history (fish-style gray dim completion) + undo/redo (UndoManager + Key::Undo/Key::Redo) + Highlight stub (awaiting candy-mdview step 10.24)
     step 10.17 · PR#784 · candy-ansi-inspect: reportAsJson + StreamingInspector
-    step 10.18 · PR#785 · sugar-tick: CSV/JSON export + tags + sugartrackignore + gaps
-    step 10.19 · PR#786 · sugar-tick: SQLite backend + milestones + iCal export + auto-backups + theme
+    step 10.18 · PR#785 · candy-codetime: CSV/JSON export + tags + sugartrackignore + gaps
+    step 10.19 · PR#786 · candy-codetime: SQLite backend + milestones + iCal export + auto-backups + theme
     step 10.20 · PR#787 · sugar-datepicker: date range select + keyboard nav + EventStore
     step 10.21 · PR#788 · sugar-crumbs: pushDirectory + view + filter
     step 10.22 · PR#789 · sugar-crumbs: Closable + URL derivation + escape + semantic HTML
     step 10.23 · PR#790 · sugar-boxer: alignment + margin tests (methods already existed)
     step 10.24 · PR#791 · candy-mdview: syntax highlighting + streaming pager
     docs for step 10.26 · PR#795 · refresh docs/lib/candy-mdview.html (lede: eight→eleven themes; Theme picker feature lists all 11 options; note solarized/monokai/github JSON loading)
-    step 10.27 · PR#796 · sugar-wishlist: proxy_jump + identity_files array + description rendering
+    step 10.27 · PR#796 · candy-ssh-launcher: proxy_jump + identity_files array + description rendering
     review for step 10.27 · clean · PR#796
     docs for step 10.27 · PR#798 · README: add proxy_jump/proxyJump/proxyJump documentation; CALIBER_LEARNINGS: add [pattern:plural-identity-files]
-    step 10.28 · PR#797 · sugar-wishlist: SSH config import (SshConfigParser + importFromSshConfig + Host* global defaults)
+    step 10.28 · PR#797 · candy-ssh-launcher: SSH config import (SshConfigParser + importFromSshConfig + Host* global defaults)
     review for step 10.28 · clean · PR#797
     docs for step 10.28 · PR#798 · README: add import-from-ssh-config section + SSH config mapping table; CALIBER_LEARNINGS: add SSH config parsing patterns
     step 10.29 · PR#799 · sugar-crush: session persistence (Session.php + withCwd/withSelected/withFilter/withSort/withActivePane)

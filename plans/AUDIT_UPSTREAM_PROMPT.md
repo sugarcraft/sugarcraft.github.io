@@ -174,10 +174,10 @@ that are tiny but together justify a PR.
 ### Apps
 
 - charmbracelet/gum → candy-scriptui
-- charmbracelet/freeze → candy-freeze
+- charmbracelet/freeze → candy-codeshot
 - charmbracelet/glow → candy-mdview
 - charmbracelet/sequin → candy-ansi-inspect
-- charmbracelet/wishlist → sugar-wishlist
+- charmbracelet/wishlist → candy-ssh-launcher
 - charmbracelet/skate → candy-kv
 - charmbracelet/pop → candy-mail
 - charmbracelet/soft-serve → candy-git-server
@@ -186,7 +186,7 @@ that are tiny but together justify a PR.
 - yorukot/superfile → super-candy
 - jesseduffield/lazygit → candy-git
 - jorgerojas26/lazysql → candy-sql
-- Rtarun3606k/TakaTime → sugar-tick
+- Rtarun3606k/TakaTime → candy-codetime
 - maxpaulus43/go-sweep → candy-minesweeper
 - namzug16/gifterm → candy-flip
 - kbrgl/flapioca → candy-flappy

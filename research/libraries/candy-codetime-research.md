@@ -1,7 +1,7 @@
-# sugar-tick Time Tracking Tools Research
+# candy-codetime Time Tracking Tools Research
 
 **Date:** 2026-05-13
-**Project:** sugar-tick (SugarCraft TakaTime port)
+**Project:** candy-codetime (SugarCraft TakaTime port)
 **Upstream:** Rtarun3606k/TakaTime
 **Context:** PHP 8.3+ monorepo, privacy-first coding time tracker
 
@@ -9,11 +9,11 @@
 
 ## Executive Summary
 
-Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.local/share/sugar-tick/`), tracks project/language/file/duration, and renders a Bubble Tea TUI dashboard. This research surveys Go, Rust, and Python time trackers to identify concrete improvements for data storage, project organization, reports, and privacy features.
+Candy-codetime currently stores heartbeats as JSONL (one file per day under `~/.local/share/candy-codetime/`), tracks project/language/file/duration, and renders a Bubble Tea TUI dashboard. This research surveys Go, Rust, and Python time trackers to identify concrete improvements for data storage, project organization, reports, and privacy features.
 
 **Key findings:**
 
-- TakaTime (upstream) uses MongoDB — a significant infrastructure dependency sugar-tick avoids
+- TakaTime (upstream) uses MongoDB — a significant infrastructure dependency candy-codetime avoids
 - Most modern CLI trackers (tmpo, oclock, hours) use SQLite for richer queries
 - Timewarrior's tag-based model is more flexible than project-only hierarchies
 - Privacy features vary widely: from local-only (rtw, tmpo) to cloud-dependent (TakaTime, WakaTime)
@@ -52,7 +52,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Data never leaves user's infrastructure
 - Interactive setup via `:TakaInit` — connection string not hardcoded
 
-**Key Insight for sugar-tick:** TakaTime's MongoDB dependency is a dealbreaker for many users. Sugar-tick's JSONL approach is more portable but less queryable.
+**Key Insight for candy-codetime:** TakaTime's MongoDB dependency is a dealbreaker for many users. Candy-codetime's JSONL approach is more portable but less queryable.
 
 ---
 
@@ -82,7 +82,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - 100% local storage — no network calls
 - XDG base directory compliant (`$XDG_DATA_HOME/tmpo`)
 
-**Key Insight for sugar-tick:** SQLite would enable date-range queries without loading all files. Milestone concept could extend sugar-tick's project model.
+**Key Insight for candy-codetime:** SQLite would enable date-range queries without loading all files. Milestone concept could extend candy-codetime's project model.
 
 ---
 
@@ -115,7 +115,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - All storage backends are local
 - No network connectivity by design
 
-**Key Insight for sugar-tick:** Tock's multi-backend approach is over-engineered for sugar-tick, but the calendar view and productivity analysis would be high-value additions.
+**Key Insight for candy-codetime:** Tock's multi-backend approach is over-engineered for candy-codetime, but the calendar view and productivity analysis would be high-value additions.
 
 ---
 
@@ -145,7 +145,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Fully local — no cloud
 - XDG base directory compliant
 
-**Key Insight for sugar-tick:** Simpler than TakaTime, closer to sugar-tick's model. Could serve as reference for report generation patterns.
+**Key Insight for candy-codetime:** Simpler than TakaTime, closer to candy-codetime's model. Could serve as reference for report generation patterns.
 
 ---
 
@@ -177,7 +177,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Fully local, no network
 - Themes stored as JSON files
 
-**Key Insight for sugar-tick:** Hours' TUI is the most polished of the Go trackers. The theme system is elegant and could inspire sugar-tick's dashboard customization.
+**Key Insight for candy-codetime:** Hours' TUI is the most polished of the Go trackers. The theme system is elegant and could inspire candy-codetime's dashboard customization.
 
 ---
 
@@ -209,7 +209,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - 100% local JSON files
 - No network, no telemetry
 
-**Key Insight for sugar-tick:** rtw's JSON dual-file approach (active vs finished) is interesting. However, JSON files lack the query capability of SQLite.
+**Key Insight for candy-codetime:** rtw's JSON dual-file approach (active vs finished) is interesting. However, JSON files lack the query capability of SQLite.
 
 ---
 
@@ -239,7 +239,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Fully local SQLite
 - No network by default
 
-**Key Insight for sugar-tick:** The event-sourcing model would enable perfect retroactive corrections and rich history queries. The daemon architecture adds complexity but enables real-time dashboard updates without polling.
+**Key Insight for candy-codetime:** The event-sourcing model would enable perfect retroactive corrections and rich history queries. The daemon architecture adds complexity but enables real-time dashboard updates without polling.
 
 ---
 
@@ -272,7 +272,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Fully local
 - Automatic database backups
 
-**Key Insight for sugar-tick:** The surplus/deficit calculation and expected-exit features are work-tracking focused, not coding-time focused. However, the automatic backup system is worth adopting.
+**Key Insight for candy-codetime:** The surplus/deficit calculation and expected-exit features are work-tracking focused, not coding-time focused. However, the automatic backup system is worth adopting.
 
 ---
 
@@ -303,7 +303,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Local SQLite only
 - Passphrase-based encryption
 
-**Key Insight for sugar-tick:** The encrypted secrets pattern is relevant if sugar-tick ever adds API integrations (e.g., syncing with GitHub). The timeline visualization is a polished UX reference.
+**Key Insight for candy-codetime:** The encrypted secrets pattern is relevant if candy-codetime ever adds API integrations (e.g., syncing with GitHub). The timeline visualization is a polished UX reference.
 
 ---
 
@@ -344,7 +344,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - No network, no telemetry
 - XDG compliant
 
-**Key Insight for sugar-tick:** Timewarrior's tag-based model is more flexible than project-only. The interval modification commands (especially `gaps` to find untracked time) are valuable. Sugar-tick's heartbeat model could benefit from tag support.
+**Key Insight for candy-codetime:** Timewarrior's tag-based model is more flexible than project-only. The interval modification commands (especially `gaps` to find untracked time) are valuable. Candy-codetime's heartbeat model could benefit from tag support.
 
 ---
 
@@ -375,7 +375,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 - Issue tracker credentials stored locally
 - Keyring support for credential management
 
-**Key Insight for sugar-tick:** Bugwarrior doesn't track time itself — it's a bridge tool. However, if sugar-tick added issue tracker integration (GitHub issues → coding time), bugwarrior's service model is the reference architecture.
+**Key Insight for candy-codetime:** Bugwarrior doesn't track time itself — it's a bridge tool. However, if candy-codetime added issue tracker integration (GitHub issues → coding time), bugwarrior's service model is the reference architecture.
 
 ---
 
@@ -385,7 +385,7 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 
 | Tool | Storage | Queryable | Portable | Concurrent-Safe |
 |------|---------|-----------|----------|-----------------|
-| sugar-tick | JSONL (one file/day) | No (full scan) | Yes | Append-only safe |
+| candy-codetime | JSONL (one file/day) | No (full scan) | Yes | Append-only safe |
 | TakaTime | MongoDB | Yes | No | Yes |
 | tmpo | SQLite | Yes | Yes | Yes (SQLite) |
 | tock | File/SQLite/TimeWarrior | Backend-dependent | Yes | Backend-dependent |
@@ -396,12 +396,12 @@ Sugar-tick currently stores heartbeats as JSONL (one file per day under `~/.loca
 | rtimelogger | SQLite | Yes | Yes | Yes |
 | Timewarrior | Monthly `.data` files | Partial | Yes | Yes (append-only) |
 
-**Recommendation for sugar-tick:** Consider SQLite as an optional storage backend alongside JSONL. This would enable:
+**Recommendation for candy-codetime:** Consider SQLite as an optional storage backend alongside JSONL. This would enable:
 - Date-range queries without full scans
 - Aggregation queries (total by project, language, day)
 - Indexed lookups for dashboard rendering
 
-Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the same `Heartbeat` model.
+Implementation: Add `SugarCraft\CodeTime\SqliteStore` alongside `Store`, sharing the same `Heartbeat` model.
 
 ---
 
@@ -409,7 +409,7 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 
 | Tool | Model | Hierarchical | Tags | Auto-Detect |
 |------|-------|--------------|------|-------------|
-| sugar-tick | Flat (project + language) | No | No | No |
+| candy-codetime | Flat (project + language) | No | No | No |
 | TakaTime | Project + language + file | No | Yes (+TAG) | Yes |
 | tmpo | Project + milestones | Milestones | No | Git detection |
 | tock | Project + task + tags | No | Yes | No |
@@ -419,7 +419,7 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 | Timewarrior | Tags only | No | Yes | No |
 | bugwarrior | Issues → Tasks | No | Yes | GitHub API |
 
-**Recommendations for sugar-tick:**
+**Recommendations for candy-codetime:**
 
 1. **Add tags** — Timewarrior's tag model is proven and flexible. Add `tags: list<string>` to `Heartbeat`.
 2. **Add milestones** — tmpo's milestone concept (sprints, releases) could map to user-defined coding goals.
@@ -431,7 +431,7 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 
 | Tool | Built-in Reports | Export | Interactive | Special |
 |------|-----------------|--------|-------------|---------|
-| sugar-tick | Per-project/language totals, timeline | None | TUI dashboard | Sparkline chart |
+| candy-codetime | Per-project/language totals, timeline | None | TUI dashboard | Sparkline chart |
 | TakaTime | GitHub README, dashboard | Unknown | Yes | Profile stats |
 | tmpo | Stats, weekly | CSV, JSON | No | Hourly rates |
 | tock | Report, analyze | CSV, JSON, iCal | Calendar view | Productivity analysis |
@@ -441,9 +441,9 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 | Timewarrior | Summary, week, month | JSON | No | Gaps detection |
 | bugwarrior | — (sync only) | — | No | Issue aggregation |
 
-**Recommendations for sugar-tick:**
+**Recommendations for candy-codetime:**
 
-1. **Add CSV/JSON export** — Trivial to implement, high user value. `sugar-tick export --format csv --from 2026-01-01 --to 2026-01-31`
+1. **Add CSV/JSON export** — Trivial to implement, high user value. `candy-codetime export --format csv --from 2026-01-01 --to 2026-01-31`
 2. **Add "gaps" detection** — Find periods with no heartbeats (like Timewarrior)
 3. **Add iCal export** — Enables calendar integration (like tock)
 4. **Add productivity analysis** — Compare coding time patterns across weeks
@@ -454,7 +454,7 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 
 | Tool | Local Storage | No Telemetry | Encryption | Self-Hosted |
 |------|--------------|--------------|------------|-------------|
-| sugar-tick | JSONL | Yes | No | Yes |
+| candy-codetime | JSONL | Yes | No | Yes |
 | TakaTime | MongoDB | Yes | No | Requires MongoDB |
 | tmpo | SQLite | Yes | No | Yes |
 | tock | File/SQLite | Yes | No | Yes |
@@ -466,15 +466,15 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 | Timewarrior | Monthly files | Yes | No | Yes |
 | WakaTime | Cloud | No | No | No |
 
-**Recommendations for sugar-tick:**
+**Recommendations for candy-codetime:**
 
-1. **Document privacy guarantees** — Sugar-tick's JSONL is the most portable and verifiable privacy model. Make this prominent in README.
+1. **Document privacy guarantees** — Candy-codetime's JSONL is the most portable and verifiable privacy model. Make this prominent in README.
 2. **Add optional encryption** — Use sodium (libsodium-php) to encrypt heartbeats at rest with a user passphrase, similar to trackWork's AES-256-GCM approach.
 3. **Add .sugartrackignore** — Like `.gitignore` for privacy-sensitive projects/files.
 
 ---
 
-## 5. Prioritized Recommendations for sugar-tick
+## 5. Prioritized Recommendations for candy-codetime
 
 ### High Priority (Low Effort, High Impact)
 
@@ -526,7 +526,7 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 ```
 2.1 Design SQLite schema (heartbeats table with indexes)
 2.2 Implement SqliteStore alongside JsonlStore
-2.3 Add SUGARTICK_BACKEND env var for store selection
+2.3 Add CANDY_CODETIME_BACKEND env var for store selection
 2.4 Add auto-backup on write for SQLite
 ```
 
@@ -572,7 +572,7 @@ Implementation: Add `SugarCraft\Tick\SqliteStore` alongside `Store`, sharing the
 }
 ```
 
-### Sugar-tick Heartbeat (Current JSONL)
+### Candy-codetime Heartbeat (Current JSONL)
 
 ```json
 {"time":1704067200,"project":"my-project","language":"go","file":"/path/to/file.go","duration":60}

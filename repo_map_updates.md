@@ -48,14 +48,14 @@ Roadmap for step-23 (candy-forms/candy-forms/candy-core migrate to candy-async):
 
 ## Active Items
 
-_All items in this section have been resolved by the completion of steps 20–40 (PRs #899–#920 merged). Step-15 (candy-forms) was confirmed complete (PRs #870, #895) — all 7 namespace imports map to candy-* packages; 709 tests pass; no sugar-* dependencies remain. Step-37 catch-all confirmed no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, candy-mouse, candy-mold). See the Resolved Items section below for the full archive._
+_All items in this section have been resolved by the completion of steps 20–40 (PRs #899–#920 merged). Step-15 (candy-forms) was confirmed complete (PRs #870, #895) — all 7 namespace imports map to candy-* packages; 709 tests pass; no sugar-* dependencies remain. Step-37 catch-all confirmed no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, candy-mouse, candy-starter). See the Resolved Items section below for the full archive._
 
 ## Resolved Items
 
-- [RESOLVED | 2026-06-01 | step-41 | scribe] All Active Items drained — steps 20–40 complete (PRs #899–#920 merged). Step-15 (candy-forms) confirmed complete — PRs #870, #895 wired candy-forms onto shared foundations; step-37 verified no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, candy-mouse, candy-mold).
+- [RESOLVED | 2026-06-01 | step-41 | scribe] All Active Items drained — steps 20–40 complete (PRs #899–#920 merged). Step-15 (candy-forms) confirmed complete — PRs #870, #895 wired candy-forms onto shared foundations; step-37 verified no further actionable libs. 4 items deferred to followups (candy-metrics, candy-log, candy-mouse, candy-starter).
 
-- [RESOLVED | 2026-06-01 | step-35 | coder] sugar-tick + candy-mail + candy-git-server: adopt candy-async — MERGED PR #915:
-  - sugar-tick: added CancellationToken support to Store::append()
+- [RESOLVED | 2026-06-01 | step-35 | coder] candy-codetime + candy-mail + candy-git-server: adopt candy-async — MERGED PR #915:
+  - candy-codetime: added CancellationToken support to Store::append()
   - candy-mail: added CancellationToken support to SmtpTransport::send()
   - candy-git-server: added Subscriptions for graceful shutdown in GitDaemon
   - Branch ai/async-adopters merged to master; Commit SHA: 30ea7afa
@@ -141,12 +141,12 @@ _All items in this section have been resolved by the completion of steps 20–40
   - Tests: candy-mdview 68 pass (143 assertions), candy-wish 144 pass (352 assertions)
   - TerminalProbe already in candy-mdview dependency tree (via candy-shine -> candy-mdview path-repos); NOT in candy-wish dependency tree before this step
 
-- [2026-05-31 | step-33 | coder] candy-kv + sugar-wishlist + candy-git: adopt candy-fuzzy:
+- [2026-05-31 | step-33 | coder] candy-kv + candy-ssh-launcher + candy-git: adopt candy-fuzzy:
   - Added `sugarcraft/candy-fuzzy: dev-master` + path-repo to all three libs' composer.json
-  - sugar-wishlist: replaced `Picker::filterMatches()` `str_contains`-style filter with `SmithWatermanMatcher::matchAll()` — scored ranking + match-highlight indices wired into renderer via `highlightLine()` (ANSI bold+cyan on matched grapheme clusters)
+  - candy-ssh-launcher: replaced `Picker::filterMatches()` `str_contains`-style filter with `SmithWatermanMatcher::matchAll()` — scored ranking + match-highlight indices wired into renderer via `highlightLine()` (ANSI bold+cyan on matched grapheme clusters)
   - candy-kv: no interactive filter UI present — only glob-to-SQLLIKE pattern filtering in `Database::buildGlobQuery()`. Added candy-fuzzy dependency as infrastructure for future fuzzy key search (Levenshtein `suggestSimilar()` remains typo-suggestion only).
   - candy-git: no interactive filter UI present — StashManager has cursor navigation but no type-to-search. Added candy-fuzzy dependency as infrastructure for future fuzzy stash search.
-  - Tests: sugar-wishlist 70 pass (180 assertions), candy-kv 66 pass (122 assertions), candy-git 116 pass (333 assertions, 2 skipped)
+  - Tests: candy-ssh-launcher 70 pass (180 assertions), candy-kv 66 pass (122 assertions), candy-git 116 pass (333 assertions, 2 skipped)
   - Path-repo closure: clean (55 libs scanned)
   - Branch: ai/filter-consumers
   - Note: `highlightLine()` re-matches displayLine against filter needle to get indices aligned with the rendered text; applies ANSI bold+cyan (sgr 1,36) on matched grapheme clusters
@@ -163,7 +163,7 @@ _All items in this section have been resolved by the completion of steps 20–40
 - [2026-06-01 | step-37 | shipper] NO-OP — step-37 catch-all: deferral sweep complete, no remaining actionable libs — MERGED PR #917:
   - Branch ai/sweep-catchall merged to master
   - 1 file changed, 8 insertions(+) in docs/repo_map_update_followups.md (DEFERRED notes only, no source code changes)
-  - All 4 remaining libs from step-30 audit have DEFERRED status in followups (candy-pty, candy-mouse, candy-metrics, candy-log, candy-mold)
+  - All 4 remaining libs from step-30 audit have DEFERRED status in followups (candy-pty, candy-mouse, candy-metrics, candy-log, candy-starter)
   - No source code changes; PR is documentation-only marker for end of actionable migration work
   - Commit SHA: 237fad86
 

@@ -1,10 +1,10 @@
 <p class="lede" style="margin-top: 28px;">Turn code or terminal output into an SVG screenshot. No ext-gd / Imagick — output is plain text suitable for git diffs and CI artifacts. ANSI SGR (16 / 256 / 24-bit truecolor + bold / italic / underline) becomes <code>&lt;tspan&gt;</code> in the SVG.</p>
 
     <h3 style="margin-top: 32px;">Install</h3>
-    <pre class="code"><code class="language-shell">composer require sugarcraft/candy-freeze</code></pre>
+    <pre class="code"><code class="language-shell">composer require sugarcraft/candy-codeshot</code></pre>
 
     <h3 style="margin-top: 32px;">Quickstart</h3>
-    <pre class="code"><code class="language-php">use SugarCraft\Freeze\SvgRenderer;
+    <pre class="code"><code class="language-php">use SugarCraft\CodeShot\SvgRenderer;
 
 $svg = SvgRenderer::dracula()
     -&gt;withLineNumbers(true)
@@ -28,14 +28,14 @@ $svg = SvgRenderer::dark()
       <div class="feature"><strong>Per-segment background</strong><span>ANSI background colours render as &lt;rect&gt; fills behind text.</span></div>
       <div class="feature"><strong>Ligatures</strong><span>Enable font-variant-ligatures for code ligature rendering (→, &gt;=, !==, etc.).</span></div>
       <div class="feature"><strong>Language detection</strong><span>Heuristic detection from shebang, filename extension, and content signatures.</span></div>
-      <div class="feature"><strong>CLI + library</strong><span><code>candyfreeze input.php -o out.svg</code>, or <code>SvgRenderer::dracula()->render($code)</code>.</span></div>
+      <div class="feature"><strong>CLI + library</strong><span><code>candy-codeshot input.php -o out.svg</code>, or <code>SvgRenderer::dracula()->render($code)</code>.</span></div>
     </div>
 
     <h3 style="margin-top: 40px;">Source &amp; demos</h3>
     <ul>
-      <li><a href="https://github.com/sugarcraft/candy-freeze">Source on GitHub</a></li>
-      <li><a href="https://github.com/sugarcraft/candy-freeze/blob/master/README.md">Full README</a></li>
-      <li><a href="https://github.com/sugarcraft/candy-freeze/tree/main/examples">Runnable examples</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-codeshot">Source on GitHub</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-codeshot/blob/master/README.md">Full README</a></li>
+      <li><a href="https://github.com/sugarcraft/candy-codeshot/tree/main/examples">Runnable examples</a></li>
       <li>Originally inspired by <a href="https://github.com/charmbracelet/freeze">freeze</a> (Go); SugarCraft is developed as a native PHP project.</li>
     </ul>
 
@@ -64,12 +64,12 @@ $svg = SvgRenderer::dark()
         <p class="lede">VHS-recorded GIFs of every example shipped with the library. Regenerated automatically on every push that touches the source.</p>
         <div class="demo-grid">
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-freeze/.vhs/screenshot.gif" alt="Screenshot">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-codeshot/.vhs/screenshot.gif" alt="Screenshot">
                 <h3>Screenshot</h3>
                 <span class="demo-caption">Code → SVG with traffic-light chrome + line numbers.</span>
             </div>
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-freeze/.vhs/ansi-input.gif" alt="ANSI input">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/candy-codeshot/.vhs/ansi-input.gif" alt="ANSI input">
                 <h3>ANSI input</h3>
                 <span class="demo-caption">SGR foreground colors parsed and rendered as colored SVG spans.</span>
             </div>

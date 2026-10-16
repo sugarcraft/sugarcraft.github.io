@@ -24,7 +24,7 @@ Each row shows the package's subdir; the Composer name is always
 `sugarcraft/<subdir>` and the namespace follows the naming rulebook
 (`candy-sprinkles/` → `sugarcraft/candy-sprinkles` → `SugarCraft\Sprinkles\`).
 Two namespaces intentionally don't read off their slug — `candy-core/`
-ships as `SugarCraft\Core\`, and `candy-mold/` ships as `App\` — both are
+ships as `SugarCraft\Core\`, and `candy-starter/` ships as `App\` — both are
 called out in the table below.
 
 ---
@@ -78,12 +78,12 @@ called out in the table below.
 
 | App | Status | Notes |
 |---|:---:|---|
-| **CandyMold** (`candy-mold/`) | 🟢 ready | `composer create-project` skeleton — counter Model + bin + tests. Namespace is `App\` (exception to the naming rule). |
+| **CandyStarter** (`candy-starter/`) | 🟢 ready | `composer create-project` skeleton — counter Model + bin + tests. Namespace is `App\` (exception to the naming rule). |
 | **CandyScriptui** (`candy-scriptui/`) | 🟡 in progress | Composer-installable CLI of 13 one-shot subcommands. |
-| **CandyFreeze** (`candy-freeze/`) | 🟢 ready | Code → SVG screenshot (no GD / Imagick required). |
+| **CandyCodeshot** (`candy-codeshot/`) | 🟢 ready | Code → SVG screenshot (no GD / Imagick required). |
 | **CandyMdview** (`candy-mdview/`) | 🟢 ready | Markdown CLI viewer / pager (consumes CandyShine). |
 | **CandyAnsiInspect** (`candy-ansi-inspect/`) | 🟢 ready | ANSI escape-sequence inspector. |
-| **SugarWishlist** (`sugar-wishlist/`) | 🟢 ready | SSH endpoint launcher (YAML / JSON shortcuts directory). |
+| **CandySshLauncher** (`candy-ssh-launcher/`) | 🟢 ready | SSH endpoint launcher (YAML / JSON shortcuts directory). |
 | **CandyKv** (`candy-kv/`) | 🟢 ready | Personal key/value store — one SQLite database per store file, glob listing, TTL, JSON/YAML import/export. |
 | **CandyMail** (`candy-mail/`) | 🟢 ready | Email sending — SMTP + Resend API transports, attachments, HTML + plain-text multipart, fluent interface. |
 | **CandyGitServer** (`candy-git-server/`) | 🟢 ready | Self-hostable Git server over SSH (authorized keys), Git daemon, and HTTP — users, repos, access control, optional LFS. |
@@ -93,7 +93,7 @@ called out in the table below.
 | **CandyFiles** (`candy-files/`) | 🟢 ready | Dual-pane file manager. |
 | **CandyGit** (`candy-git/`) | 🟢 ready | Three-pane git TUI — shells out to `git`. |
 | **CandySql** (`candy-sql/`) | 🟢 ready | SQLite/MySQL/PostgreSQL client TUI — schema introspection, query editor, EXPLAIN plans, server status, alerting, query history. |
-| **SugarTick** (`sugar-tick/`) | 🟢 ready | Privacy-first coding-time tracker — JSONL on disk. |
+| **CandyCodetime** (`candy-codetime/`) | 🟢 ready | Privacy-first coding-time tracker — JSONL on disk. |
 | **CandyMinesweeper** (`candy-minesweeper/`) | 🟢 ready | Minesweeper — first-click safety / flood-fill. |
 | **CandyGifView** (`candy-gifview/`) | 🟢 ready | Terminal GIF + .ansi-art viewer CLI (ext-gd via candy-flip) — port of gifterm. |
 | **SugarReel** (`sugar-reel/`) | 🟢 ready | Terminal video player (mp4 → ascii/ansi/half-block/sixel/kitty) — ffmpeg pipe + pure-PHP GIF fallback, delta repaint, seek, speed, audio companion. |
@@ -157,7 +157,7 @@ reference projects supplied the ideas, not the code.
 | CandyFiles (candy-files/) | [superfile](https://github.com/yorukot/superfile) |
 | CandyGifView (candy-gifview/) | [gifterm](https://github.com/namzug16/gifterm) |
 | CandyFocus (candy-focus/) | [bubbles](https://github.com/charmbracelet/bubbles) (focus behavior) |
-| CandyFreeze (candy-freeze/) | [freeze](https://github.com/charmbracelet/freeze) |
+| CandyCodeshot (candy-codeshot/) | [freeze](https://github.com/charmbracelet/freeze) |
 | CandyFuzzy (candy-fuzzy/) | [fuzzy](https://github.com/sahilm/fuzzy) (+ internal algorithms) |
 | CandyHermit (candy-hermit/) | [theHermit](https://github.com/Genekkion/theHermit) |
 | CandyInput (candy-input/) | none — first-party |
@@ -167,7 +167,7 @@ reference projects supplied the ideas, not the code.
 | CandyLog (candy-log/) | [log](https://github.com/charmbracelet/log) |
 | CandyMetrics (candy-metrics/) | [promwish](https://github.com/charmbracelet/promwish) |
 | CandyMinesweeper (candy-minesweeper/) | [go-sweep](https://github.com/maxpaulus43/go-sweep) |
-| CandyMold (candy-mold/) | none — first-party |
+| CandyStarter (candy-starter/) | none — first-party |
 | CandyMouse (candy-mouse/) | [bubblezone](https://github.com/lrstanley/bubblezone) |
 | CandyMosaic (candy-mosaic/) | [x/mosaic](https://github.com/charmbracelet/x/tree/main/mosaic) |
 | CandyPalette (candy-palette/) | [colorprofile](https://github.com/charmbracelet/colorprofile) |
@@ -207,10 +207,10 @@ reference projects supplied the ideas, not the code.
 | CandyGit (candy-git/) | [lazygit](https://github.com/jesseduffield/lazygit) |
 | SugarStickers (sugar-stickers/) | [stickers](https://github.com/76creates/stickers) |
 | SugarTable (sugar-table/) | [bubble-table](https://github.com/Evertras/bubble-table) |
-| SugarTick (sugar-tick/) | [TakaTime](https://github.com/Rtarun3606k/TakaTime) |
+| CandyCodetime (candy-codetime/) | [TakaTime](https://github.com/Rtarun3606k/TakaTime) |
 | SugarToast (sugar-toast/) | [bubbleup](https://github.com/DaltonSW/bubbleup) |
 | SugarVeil (sugar-veil/) | [bubbletea-overlay](https://github.com/rmhubbert/bubbletea-overlay) |
-| SugarWishlist (sugar-wishlist/) | [wishlist](https://github.com/charmbracelet/wishlist) |
+| CandySshLauncher (candy-ssh-launcher/) | [wishlist](https://github.com/charmbracelet/wishlist) |
 
 The table above lists every package in the two status tables — 41
 libraries and 21 apps, 62 rows total. Several projects outside Charm's

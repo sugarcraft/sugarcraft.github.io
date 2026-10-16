@@ -1,4 +1,4 @@
-# SSH Endpoint Launcher Research: sugar-wishlist Improvements
+# SSH Endpoint Launcher Research: candy-ssh-launcher Improvements
 
 **Date:** 2026-05-13
 **Upstream:** charmbracelet/wishlist (Go)
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current implementation covers basic functionality (endpoint picker + `pcntl_exec` dispatch) but is missing features present in comparable tools across Go, Rust, and Python ecosystems.
+candy-ssh-launcher is a SSH endpoint launcher with YAML/JSON shortcuts. The current implementation covers basic functionality (endpoint picker + `pcntl_exec` dispatch) but is missing features present in comparable tools across Go, Rust, and Python ecosystems.
 
 **Key gaps identified:**
 
@@ -23,7 +23,7 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 
 ## 1. Current Implementation Analysis
 
-**Source:** `/home/sites/sugarcraft/sugar-wishlist/src/`
+**Source:** `/home/sites/sugarcraft/candy-ssh-launcher/src/`
 
 ### 1.1 Config.php (L1-199)
 
@@ -62,9 +62,9 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 | **russh (Rust)** | TOML | Sessions + procedures config |
 | **purple (Rust)** | SSH config | Round-trip fidelity, cloud sync |
 | **ssm (Go)** | SSH config + Include | Directory-based config.d |
-| **sugar-wishlist** | JSON, YAML | Custom flat-list YAML parser |
+| **candy-ssh-launcher** | JSON, YAML | Custom flat-list YAML parser |
 
-**Observation:** Most tools leverage existing SSH config knowledge. sugar-wishlist's JSON/YAML approach is simpler but requires users to maintain separate config from ~/.ssh/config.
+**Observation:** Most tools leverage existing SSH config knowledge. candy-ssh-launcher's JSON/YAML approach is simpler but requires users to maintain separate config from ~/.ssh/config.
 
 ### 2.2 Host Matching Patterns
 
@@ -74,7 +74,7 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 | **ssh2-config-rs** | Full SSH config pattern matching (Host, Match blocks) |
 | **purple** | Tags via `# Tags:` comments in SSH config |
 | **russh** | Session names with tags for grouping |
-| **sugar-wishlist** | None - exact name matching only |
+| **candy-ssh-launcher** | None - exact name matching only |
 
 **Key Feature:** wishlist's **hints system** allows transforming discovered hosts with glob matches. This is powerful for applying defaults to host groups.
 
@@ -85,7 +85,7 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 | **wishlist** | `identity_files` array (tries first available) |
 | **skm (Go)** | Named key management with prompt UI, SSH agent integration |
 | **sshs** | Reads from SSH config |
-| **sugar-wishlist** | Single `identity_file` field |
+| **candy-ssh-launcher** | Single `identity_file` field |
 
 **Observation:** wishlist supports multiple identity files with fallback - a good pattern to adopt.
 
@@ -98,9 +98,9 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 | **russh** | `jump: "session_name"` references another session |
 | **sshm-rs** | Full port forwarding (local, remote, dynamic) |
 | **purple** | Visual tunnel management |
-| **sugar-wishlist** | **NONE** - significant gap |
+| **candy-ssh-launcher** | **NONE** - significant gap |
 
-**Critical Gap:** No `ProxyJump` or `ProxyCommand` support in sugar-wishlist.
+**Critical Gap:** No `ProxyJump` or `ProxyCommand` support in candy-ssh-launcher.
 
 ### 2.5 Port Forwarding Options
 
@@ -110,9 +110,9 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 | **sshm-rs** | Local, remote, dynamic port forwarding UI |
 | **purple** | Visual tunnel monitor |
 | **russh** | Procedures (multi-command sequences) |
-| **sugar-wishlist** | Only basic connect |
+| **candy-ssh-launcher** | Only basic connect |
 
-**Observation:** sugar-wishlist focuses on interactive shell; advanced port forwarding is niche but valuable for advanced users.
+**Observation:** candy-ssh-launcher focuses on interactive shell; advanced port forwarding is niche but valuable for advanced users.
 
 ### 2.6 Additional Features in Comparable Tools
 
@@ -133,7 +133,7 @@ sugar-wishlist is a SSH endpoint launcher with YAML/JSON shortcuts. The current 
 
 ---
 
-## 3. Specific Improvements for sugar-wishlist
+## 3. Specific Improvements for candy-ssh-launcher
 
 ### 3.1 High Priority (Low Effort, High Value)
 
@@ -181,7 +181,7 @@ private function draw(array $matches): void
 }
 ```
 
-**Source:** sugar-wishlist `Picker.php:L122-136` (current draw method)
+**Source:** candy-ssh-launcher `Picker.php:L122-136` (current draw method)
 
 **Effort:** 1 hour
 
@@ -434,7 +434,7 @@ foreach ($this->setEnv as $env) {
 ### Recommended YAML Format (Backward Compatible)
 
 ```yaml
-# wishlist.yml - sugar-wishlist config
+# wishlist.yml - candy-ssh-launcher config
 
 #
 # Basic endpoint
@@ -581,7 +581,7 @@ All improvements can be implemented with vanilla PHP:
 
 ## Appendix A: Endpoint Field Comparison
 
-| Field | wishlist | sugar-wishlist | Status |
+| Field | wishlist | candy-ssh-launcher | Status |
 |-------|----------|----------------|--------|
 | name | ✅ | ✅ | OK |
 | host | ✅ | ✅ | OK |

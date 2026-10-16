@@ -1,8 +1,8 @@
-# sugarcraft/sugar-tick
+# sugarcraft/candy-codetime
 
 ## Metadata
 
-- **URL:** https://github.com/sugarcraft/sugar-tick (monorepo) / upstream: https://github.com/Rtarun3606k/TakaTime
+- **URL:** https://github.com/sugarcraft/candy-codetime (monorepo) / upstream: https://github.com/Rtarun3606k/TakaTime
 
 - **Language:** PHP 8.3+
 
@@ -24,7 +24,7 @@
 
 ### JSONL Persistence (Primary Store)
 
-- **Store class** (`src/Store.php`) — append-only JSONL, one file per day under `$XDG_DATA_HOME/sugar-tick/`
+- **Store class** (`src/Store.php`) — append-only JSONL, one file per day under `$XDG_DATA_HOME/candy-codetime/`
 
 - `append(Heartbeat)` — `file_put_contents($file, $line, FILE_APPEND)` with auto-mkdir
 
@@ -62,7 +62,7 @@
 
 - **Renderer** (`src/Renderer.php`) — pure static view function returning ANSI string
 
-- Three sections: header (`SugarTick [date range] total: Xh Ym`), project+language rankings side-by-side, daily sparkline timeline
+- Three sections: header (`CandyCodetime [date range] total: Xh Ym`), project+language rankings side-by-side, daily sparkline timeline
 
 - Rankings show top 6 projects/languages with duration, truncated to 14 chars
 
@@ -77,9 +77,9 @@
 - **JsonExporter** (`src/Export/JsonExporter.php`) — JSON array of heartbeat objects
 
 - **IcalExporter** (`src/Export/IcalExporter.php`) — RFC 5545 iCalendar VEVENT per heartbeat
-  - `PRODID:-//SugarCraft//sugar-tick//EN`
+  - `PRODID:-//SugarCraft//candy-codetime//EN`
 
-  - `UID: md5($hb->file . $hb->time)@sugar-tick`
+  - `UID: md5($hb->file . $hb->time)@candy-codetime`
 
   - Maps tags → `CATEGORIES:` field
 
@@ -123,7 +123,7 @@
 
 ### CLI Entry Point
 
-- **bin/sugar-tick** — single binary entry point
+- **bin/candy-codetime** — single binary entry point
 
 - `push <project> <language> <file> [duration]` — appends heartbeat, prints confirmation
 
@@ -136,7 +136,7 @@
 ### JSONL Append-Only Design
 
 The store intentionally uses **append-only file writes**. This enables:
-1. Editor plugins can `echo '{"time":...}>>~/.local/share/sugar-tick/2026-05-27.jsonl` without any lock coordination
+1. Editor plugins can `echo '{"time":...}>>~/.local/share/candy-codetime/2026-05-27.jsonl` without any lock coordination
 
 2. Dashboard never blocks or holds locks — it reads at launch and on explicit `r` key
 
@@ -211,7 +211,7 @@ if ($gap >= $this->minGapSeconds) {
 ### File Naming Convention
 
 ```
-~/.local/share/sugar-tick/
+~/.local/share/candy-codetime/
   2026-05-27.jsonl
   2026-05-26.jsonl
   2026-05-25.jsonl
@@ -255,7 +255,7 @@ foreach (explode("\n", (string) file_get_contents($file)) as $line) {
 
 - TakaTime (upstream) requires MongoDB — self-hosted or Atlas cloud
 
-- sugar-tick uses **local files only** — `$XDG_DATA_HOME/sugar-tick/` or `~/.local/share/sugar-tick/`
+- candy-codetime uses **local files only** — `$XDG_DATA_HOME/candy-codetime/` or `~/.local/share/candy-codetime/`
 
 - No network calls, no telemetry, no third-party services
 
@@ -277,13 +277,13 @@ foreach (explode("\n", (string) file_get_contents($file)) as $line) {
 
 ### Encryption Path (Future)
 
-The research doc (`docs/research/libraries/sugar-tick-research.md`) recommends libsodium encryption for future optional at-rest encryption, similar to `trackWork`'s AES-256-GCM approach.
+The research doc (`docs/research/libraries/candy-codetime-research.md`) recommends libsodium encryption for future optional at-rest encryption, similar to `trackWork`'s AES-256-GCM approach.
 
 ---
 
 ## Comparison with Upstream (Rtarun3606k/TakaTime)
 
-| Aspect | TakaTime (Upstream) | sugar-tick (Port) |
+| Aspect | TakaTime (Upstream) | candy-codetime (Port) |
 |--------|---------------------|------------------|
 | **Language** | Go | PHP 8.3+ |
 | **Storage** | MongoDB (self-hosted or Atlas) | JSONL on local disk + optional SQLite |
@@ -302,7 +302,7 @@ The research doc (`docs/research/libraries/sugar-tick-research.md`) recommends l
 
 ### vs. Timewarrior (GothenburgBitFactory/timewarrior)
 
-| Aspect | Timewarrior | sugar-tick |
+| Aspect | Timewarrior | candy-codetime |
 |--------|-------------|------------|
 | **Storage** | Monthly `.data` files (append-only) | Daily `.jsonl` files (append-only) |
 | **Model** | Tag-based intervals (start/end) | Heartbeat samples (time + duration) |
@@ -313,7 +313,7 @@ The research doc (`docs/research/libraries/sugar-tick-research.md`) recommends l
 
 ### vs. tmpo (DylanDevelops/tmpo)
 
-| Aspect | tmpo | sugar-tick |
+| Aspect | tmpo | candy-codetime |
 |--------|------|------------|
 | **Storage** | SQLite | JSONL (primary) + SQLite (optional) |
 | **Projects** | Git detection + `.tmporc` | Manual project naming |
@@ -323,7 +323,7 @@ The research doc (`docs/research/libraries/sugar-tick-research.md`) recommends l
 
 ### vs. tock (kriuchkov/tock)
 
-| Aspect | tock | sugar-tick |
+| Aspect | tock | candy-codetime |
 |--------|------|------------|
 | **Storage** | File / SQLite / TimeWarrior (multiple backends) | JSONL (primary, single backend) |
 | **Reports** | `report`, `analyze`, calendar view | Dashboard + export |
@@ -390,7 +390,7 @@ The research doc (`docs/research/libraries/sugar-tick-research.md`) recommends l
 
 ### Integration Points
 
-| sugar-tick Component | Uses | Notes |
+| candy-codetime Component | Uses | Notes |
 |--------------------|------|-------|
 | `Dashboard` | `SugarCraft\Core\Model` | TEA pattern (init/update/view) |
 | `Dashboard::view()` | `Renderer` | Pure static function |
@@ -436,7 +436,7 @@ The research doc (`docs/research/libraries/sugar-tick-research.md`) recommends l
 
 ## Research & Roadmap Context
 
-The comprehensive research document at `docs/research/libraries/sugar-tick-research.md` surveys:
+The comprehensive research document at `docs/research/libraries/candy-codetime-research.md` surveys:
 - Go: TakaTime, tmpo, tock, timetrace, hours
 
 - Rust: rtw, oclock, rtimelogger, trackWork
@@ -475,9 +475,9 @@ Future roadmap items from research:
 
 ## SugarCraft Mapping
 
-### Direct Mappings (sugar-tick → SugarCraft ecosystem)
+### Direct Mappings (candy-codetime → SugarCraft ecosystem)
 
-| sugar-tick | SugarCraft | Notes |
+| candy-codetime | SugarCraft | Notes |
 |---|---|---|
 | TUI Dashboard | `candy-core` | `Model` interface, `Program` runner |
 | Sparkline chart | `sugar-charts` | `Sparkline` component |
@@ -492,13 +492,13 @@ Future roadmap items from research:
 | TakaTime (upstream) | Go + MongoDB | Different language + infrastructure |
 | Timewarrior | C++ + monthly `.data` files | Tag-based model, different storage |
 | tmpo | Go + SQLite | Similar but Go-centric |
-| tock | Go + multi-backend | Over-engineered for sugar-tick scope |
+| tock | Go + multi-backend | Over-engineered for candy-codetime scope |
 
 ---
 
 ## Analysis
 
-Sugar-tick represents a pragmatic privacy-first approach to coding time tracking. By choosing JSONL over MongoDB (upstream's choice), it eliminates the most significant barrier to adoption: infrastructure dependency. Any tool that can write to a file can push a heartbeat, making the system truly editor-agnostic and portable.
+Candy-codetime represents a pragmatic privacy-first approach to coding time tracking. By choosing JSONL over MongoDB (upstream's choice), it eliminates the most significant barrier to adoption: infrastructure dependency. Any tool that can write to a file can push a heartbeat, making the system truly editor-agnostic and portable.
 
 The architecture demonstrates several sound patterns: the **append-only file design** enables coordination-free writes from multiple sources, the **immutable model** ensures testability and predictability, and the **pure aggregator Stats class** separates computation from I/O. The integration with `sugar-charts` via `Sparkline` shows how the SugarCraft ecosystem components compose cleanly.
 
@@ -506,4 +506,4 @@ The research document reveals the project was planned against a thorough survey 
 
 The primary limitation is the **O(n*m) timeline lookup** in `Stats::timeline()` and the lack of **concurrent write safety** at the application level (though `FILE_APPEND` is atomic at the OS level, interleaved partial writes from truly concurrent sources could corrupt JSON lines). The SQLite backend addresses the query capability gap but adds a second storage path to maintain.
 
-Overall, sugar-tick achieves its goal of a privacy-first, zero-dependency, SugarCraft-native coding time tracker that can serve as the foundation for more sophisticated productivity analysis tools built on the same data model.
+Overall, candy-codetime achieves its goal of a privacy-first, zero-dependency, SugarCraft-native coding time tracker that can serve as the foundation for more sophisticated productivity analysis tools built on the same data model.

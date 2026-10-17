@@ -1,8 +1,8 @@
-# SugarCraft/candy-core — Innovation & Comparison Report
+# SugarCraft/sugar-core — Innovation & Comparison Report
 
 ## Overview
 
-**candy-core** is the foundational TUI runtime library of the SugarCraft monorepo — a PHP port of the Go [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea) ecosystem. It implements The Elm Architecture (TEA): **Model** (immutable state), **Update** (pure state transitions via Messages), and **View** (declarative string rendering). The runtime orchestrates input parsing, the ReactPHP event loop, subscription reconciliation, command dispatching, and frame rendering.
+**sugar-core** is the foundational TUI runtime library of the SugarCraft monorepo — a PHP port of the Go [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea) ecosystem. It implements The Elm Architecture (TEA): **Model** (immutable state), **Update** (pure state transitions via Messages), and **View** (declarative string rendering). The runtime orchestrates input parsing, the ReactPHP event loop, subscription reconciliation, command dispatching, and frame rendering.
 
 **Key statistics:**
 
@@ -336,14 +336,14 @@ Model::update() returns [Model, ?Cmd]
 
 3. **Closure serialization limitation** — `WorkerPool` can only serialize stateless closures or string-eval code. Bound objects and internal class refs don't survive. This is a fundamental PHP limitation.
 
-4. **Frame diff is string-based, not cell-based** — Ratatui and ultraviolet use a `Buffer`/`Cell` grid model where each cell has style + content. candy-core's diff operates on the rendered string output, not the logical cell state. This means:
+4. **Frame diff is string-based, not cell-based** — Ratatui and ultraviolet use a `Buffer`/`Cell` grid model where each cell has style + content. sugar-core's diff operates on the rendered string output, not the logical cell state. This means:
    - Cannot render partial updates at the cell level
    - View side-effects (cursor position changes) can't be diffed together with content
    - The "cursed renderer" is token-aware string diffing, not true cell diffing
 
 5. **No layout system** — `Renderer` just paints the string returned by `view()`. Unlike Ratatui's constraint-based `Layout` or bubbleboxer's tree composition, there is no built-in layout algorithm. Consumers must compose strings manually.
 
-6. **No widget/component library in core** — Bubble Tea v2 ships with `bubbles` (spinner, textinput, viewport, etc.). candy-core is runtime-only; all components are separate leaf libs.
+6. **No widget/component library in core** — Bubble Tea v2 ships with `bubbles` (spinner, textinput, viewport, etc.). sugar-core is runtime-only; all components are separate leaf libs.
 
 7. **No streaming/reactive output** — The renderer redraws the full view on every dirty frame. No incremental rendering for large terminal buffers.
 
@@ -468,9 +468,9 @@ The README notes that `gum input`/`gum confirm`/`gum spin` use inline mode (no a
 
 ### vs. charmbracelet/bubbletea (Go, 23k stars)
 
-**Direct port** — candy-core maps 1:1 with bubbletea's core runtime. Key differences:
+**Direct port** — sugar-core maps 1:1 with bubbletea's core runtime. Key differences:
 
-| Aspect | bubbletea | candy-core |
+| Aspect | bubbletea | sugar-core |
 |---|---|---|
 | Concurrency | Goroutines (`go func() { ... }()`) | ReactPHP callbacks |
 | Msg return from Cmd | Direct `Cmd: func() Msg` | `Closure(): ?Msg` |
@@ -484,9 +484,9 @@ The README notes that `gum input`/`gum confirm`/`gum spin` use inline mode (no a
 
 bubbletea's strengths: battle-tested in production at Microsoft/AWS/NVIDIA/CockroachDB, goroutine-based concurrency is far more efficient than PHP callbacks, comprehensive examples (60+).
 
-candy-core advantages: Works in PHP, which is the language of the surrounding codebase.
+sugar-core advantages: Works in PHP, which is the language of the surrounding codebase.
 
-**Verdict**: candy-core is a faithful port that correctly captures the Elm architecture. The main gap is concurrency (Go's goroutines vs PHP's callback model) and the lack of a cell-based renderer (ultraviolet's Buffer/Cell model vs string diffing).
+**Verdict**: sugar-core is a faithful port that correctly captures the Elm architecture. The main gap is concurrency (Go's goroutines vs PHP's callback model) and the lack of a cell-based renderer (ultraviolet's Buffer/Cell model vs string diffing).
 
 ---
 
@@ -494,7 +494,7 @@ candy-core advantages: Works in PHP, which is the language of the surrounding co
 
 **Ultraviolet is the rendering foundation for Bubble Tea v2:**
 
-| Feature | ultraviolet | candy-core |
+| Feature | ultraviolet | sugar-core |
 |---|---|---|
 | Buffer model | `Buffer` / `Cell` grid with style + content | String-based |
 | Cell diffing | `RenderBuffer.TouchLine()` tracks dirty cells | Token-aware string LCP |
@@ -504,9 +504,9 @@ candy-core advantages: Works in PHP, which is the language of the surrounding co
 | Border primitives | `NormalBorder()`, `RoundedBorder()`, etc. | None |
 | Styled string | `StyledString` with word wrapping | None |
 
-ultraviolet's cell-based buffer (each cell has `rune`, `style`, `link`, `width`) allows true per-cell diffing — only changed cells are repainted. candy-core's cell-diff operates on tokenized strings, not logical cells.
+ultraviolet's cell-based buffer (each cell has `rune`, `style`, `link`, `width`) allows true per-cell diffing — only changed cells are repainted. sugar-core's cell-diff operates on tokenized strings, not logical cells.
 
-**Verdict**: ultraviolet is a more sophisticated renderer. The cell-based model enables finer-grained repaints. candy-core's token-aware string diffing is a reasonable approximation for PHP but not as precise.
+**Verdict**: ultraviolet is a more sophisticated renderer. The cell-based model enables finer-grained repaints. sugar-core's token-aware string diffing is a reasonable approximation for PHP but not as precise.
 
 ---
 
@@ -514,7 +514,7 @@ ultraviolet's cell-based buffer (each cell has `rune`, `style`, `link`, `width`)
 
 **Ratatui provides the rendering foundation:**
 
-| Feature | ratatui | candy-core |
+| Feature | ratatui | sugar-core |
 |---|---|---|
 | Architecture | Immediate-mode with Buffer diffing | Retained-mode string diffing |
 | Widget system | `Widget` / `StatefulWidget` traits | None (string view only) |
@@ -525,7 +525,7 @@ ultraviolet's cell-based buffer (each cell has `rune`, `style`, `link`, `width`)
 
 Ratatui's architecture: every frame the app redraws everything into a `Buffer`, ratatui diffs the buffer against the previous frame, only changed cells are written. This is more efficient than string-based diffing but requires a `Buffer` abstraction.
 
-**Verdict**: ratatui's immediate-mode + buffer-diffing + widget trait pattern is more sophisticated than candy-core's retained string model. However, ratatui delegates event handling to backend libraries (no built-in event handling), while candy-core has the full Elm loop.
+**Verdict**: ratatui's immediate-mode + buffer-diffing + widget trait pattern is more sophisticated than sugar-core's retained string model. However, ratatui delegates event handling to backend libraries (no built-in event handling), while sugar-core has the full Elm loop.
 
 ---
 
@@ -533,7 +533,7 @@ Ratatui's architecture: every frame the app redraws everything into a `Buffer`, 
 
 **Textual is the Python state-of-the-art TUI framework:**
 
-| Feature | textual | candy-core |
+| Feature | textual | sugar-core |
 |---|---|---|
 | Architecture | Elm variant with async message pump | Elm with ReactPHP event loop |
 | Reactivity | `Reactive` descriptors, `watch_*()` | Immutable models + `update()` |
@@ -544,9 +544,9 @@ Ratatui's architecture: every frame the app redraws everything into a `Buffer`, 
 | State | Reactive vars with auto-watchers | Immutable builders |
 | Message | Bubbling hierarchy | Flat dispatch |
 
-Textual's message pump has bubbling (messages bubble up through DOM tree) and propagation (handlers can mark messages handled). candy-core's flat dispatch to `Model::update()` is simpler.
+Textual's message pump has bubbling (messages bubble up through DOM tree) and propagation (handlers can mark messages handled). sugar-core's flat dispatch to `Model::update()` is simpler.
 
-**Verdict**: textual's reactive state + CSS styling + widget library is more feature-rich. However, textual is Python-only. The Elm pattern is portable — candy-core's adaptation is sound.
+**Verdict**: textual's reactive state + CSS styling + widget library is more feature-rich. However, textual is Python-only. The Elm pattern is portable — sugar-core's adaptation is sound.
 
 ---
 
@@ -554,7 +554,7 @@ Textual's message pump has bubbling (messages bubble up through DOM tree) and pr
 
 **Direct PHP TUI competition:**
 
-| Feature | php-tui | candy-core |
+| Feature | php-tui | sugar-core |
 |---|---|---|
 | Architecture | Ratatui-style Buffer/Widget/Backend | Elm-style Model/Update/View |
 | Widgets | 15+ built-in | None in core |
@@ -564,9 +564,9 @@ Textual's message pump has bubbling (messages bubble up through DOM tree) and pr
 | Async | Not built-in (docs mention ReactPHP/Amph) | ReactPHP-based |
 | Extensions | `BdfExtension`, `ImageMagickExtension` | None |
 
-php-tui is a more complete TUI framework (widgets, layout, backend abstraction). candy-core is a leaner Elm runtime without widgets. They serve different use cases: php-tui for rich widget-based apps, candy-core for Elm-architecture apps.
+php-tui is a more complete TUI framework (widgets, layout, backend abstraction). sugar-core is a leaner Elm runtime without widgets. They serve different use cases: php-tui for rich widget-based apps, sugar-core for Elm-architecture apps.
 
-**Verdict**: php-tui is a more complete framework but uses a different programming model (Ratatui's immediate-mode + widget traits). candy-core's Elm model is more familiar to bubbletea developers.
+**Verdict**: php-tui is a more complete framework but uses a different programming model (Ratatui's immediate-mode + widget traits). sugar-core's Elm model is more familiar to bubbletea developers.
 
 ---
 
@@ -574,7 +574,7 @@ php-tui is a more complete TUI framework (widgets, layout, backend abstraction).
 
 **Whisp is an SSH server, not a TUI framework — but architectural overlap:**
 
-| Feature | whisp | candy-core |
+| Feature | whisp | sugar-core |
 |---|---|---|
 | Event loop | `socket_select()` + forking | ReactPHP |
 | PTY management | FFI-based PTY | sugar-pty (separate) |
@@ -590,14 +590,14 @@ Whisp uses a similar event-driven pattern but for network I/O rather than termin
 
 **ANSI cursor management patterns:**
 
-| Feature | php-console-spinner | candy-core |
+| Feature | php-console-spinner | sugar-core |
 |---|---|---|
 | Cursor hide/show | `\e[?25l` / `\e[?25h` | `Ansi::cursorHide()` / `cursorShow()` |
 | Frame timing | `hrtime()` for sub-ms precision | `microtime(true)` for tick scheduling |
 | Rendering | Two-buffer with SequenceStateWriter | Single output stream + diffing |
 | Event loop | ReactPHP or Revolt | ReactPHP |
 
-The cursor management patterns are identical. php-console-spinner's delta-timer using `hrtime(true)` is more precise than `microtime(true)`. The two-buffer erase/overwrite pattern is similar to candy-core's inline rendering.
+The cursor management patterns are identical. php-console-spinner's delta-timer using `hrtime(true)` is more precise than `microtime(true)`. The two-buffer erase/overwrite pattern is similar to sugar-core's inline rendering.
 
 ---
 
@@ -609,7 +609,7 @@ The cursor management patterns are identical. php-console-spinner's delta-timer 
 
    *Implementation*: Add `Cell` value object, `Buffer` class with `Area` dimensions. Replace `Renderer::render(string)` with `render(Buffer)`. Each `Model::view()` would write into a `Buffer` instead of returning a string.
 
-2. **Style diff algorithm** — `Style.Diff(from, to)` emits minimal SGR sequence to transition between styles, avoiding full `reset + new style` when cheaper. `SgrState` in candy-core is a partial implementation; extend it to handle all attributes (underline color,overline) in correct order.
+2. **Style diff algorithm** — `Style.Diff(from, to)` emits minimal SGR sequence to transition between styles, avoiding full `reset + new style` when cheaper. `SgrState` in sugar-core is a partial implementation; extend it to handle all attributes (underline color,overline) in correct order.
 
 3. **Window/View hierarchy** — `NewWindow` / `NewView` for child buffers sharing parent's content. Useful for modal dialogs that don't clobber the underlying frame.
 
@@ -617,11 +617,11 @@ The cursor management patterns are identical. php-console-spinner's delta-timer 
 
 ### From ratatui
 
-1. **Widget trait** — `interface Widget { function render(self, area: Rect, buf: mut Buffer); }`. Implementations: `Paragraph`, `Block`, `List`, `Table`, etc. candy-core has no equivalent.
+1. **Widget trait** — `interface Widget { function render(self, area: Rect, buf: mut Buffer); }`. Implementations: `Paragraph`, `Block`, `List`, `Table`, etc. sugar-core has no equivalent.
 
 2. **StatefulWidget** — Widget with associated state type (`ListState`, `TableState`). Enables persistent scroll position, selection, etc. within the widget.
 
-3. **Layout with Cassowary** — `Layout::default()` → `direction(Direction)` → `constraints([Length(10), Percent(50), Fill()])` → `split(area)`. Returns `Areas`. Currently no layout in candy-core.
+3. **Layout with Cassowary** — `Layout::default()` → `direction(Direction)` → `constraints([Length(10), Percent(50), Fill()])` → `split(area)`. Returns `Areas`. Currently no layout in sugar-core.
 
 4. **Stylize trait** — Fluent style shorthands: `"hello".red().on_blue().bold()` → `Span`. Useful for composing styled text.
 
@@ -639,7 +639,7 @@ The cursor management patterns are identical. php-console-spinner's delta-timer 
 
 ### From php-tui
 
-1. **Backend abstraction** — `Backend` interface with `size()`, `draw()`, `cursorPosition()`, `moveCursor()`. Allows swapping terminal backends. Currently candy-core writes directly to `$output` stream.
+1. **Backend abstraction** — `Backend` interface with `size()`, `draw()`, `cursorPosition()`, `moveCursor()`. Allows swapping terminal backends. Currently sugar-core writes directly to `$output` stream.
 
 2. **Widget renderer visitor pattern** — `WidgetRenderer::render(self, Widget, Buffer, Area)`. Allows composing widget renderers.
 
@@ -651,7 +651,7 @@ The cursor management patterns are identical. php-console-spinner's delta-timer 
 
 2. **SizeFunc custom allocation** — `function(node, available) -> perChildSizes`. Enables weighted layouts beyond even-split.
 
-3. **Safe edit pattern** — `EditLeaf(address, editFunc)` that rolls back on error. candy-core's immutable `with*()` builders provide similar safety.
+3. **Safe edit pattern** — `EditLeaf(address, editFunc)` that rolls back on error. sugar-core's immutable `with*()` builders provide similar safety.
 
 ### From whisp
 
@@ -903,7 +903,7 @@ $program->withExceptionHandler(fn(\Throwable $e) => ...);
 
 3. **CSS-like stylesheet** — `Stylesheet` parser + `Styles` value object with cascading. Very ambitious but would bring web developer familiarity.
 
-4. **Animation engine** — `Animator` class with easing functions and `Transition` objects. `sugar-spring` provides the physics; candy-core could provide the animation driver that calls `view()` at interpolated states.
+4. **Animation engine** — `Animator` class with easing functions and `Transition` objects. `sugar-spring` provides the physics; sugar-core could provide the animation driver that calls `view()` at interpolated states.
 
 5. **Hot reload** — Watch source files and recompile on change. Combined with a `View` that can re-execute without restarting the Program.
 
@@ -924,7 +924,7 @@ From `cell.go:L258-L408`, the `Style.Diff()` function computes minimal SGR trans
 // Background: 48 instead of 38
 ```
 
-candy-core's `SgrState` (`src/SgrState.php`) implements a subset — tracks the last-emitted SGR parameters and computes what's needed to transition. The full algorithm would handle underline color (58), overline (53), and proper 256-color → truecolor downgrade.
+sugar-core's `SgrState` (`src/SgrState.php`) implements a subset — tracks the last-emitted SGR parameters and computes what's needed to transition. The full algorithm would handle underline color (58), overline (53), and proper 256-color → truecolor downgrade.
 
 ### ratatui: Cassowary Layout Solver
 
@@ -935,11 +935,11 @@ Ported from `kasuari` crate (Rust). The algorithm:
 3. Add stay constraints for fixed-size elements
 4. Solve — if conflicts, drop lowest-priority constraints until solved
 
-This enables: "sidebar is 30% width" + "main + sidebar = terminal width" → solve for both. Currently candy-core has no such solver.
+This enables: "sidebar is 30% width" + "main + sidebar = terminal width" → solve for both. Currently sugar-core has no such solver.
 
 ### textual: Spatial Map for Hit Testing
 
-`_spatial_map.SpatialMap` in textual uses an R-tree-like index for O(log n) widget lookup by screen position. For candy-core, this would be useful for mouse event routing — determining which "zone" or component a mouse click landed on. Currently mouse coordinates come in as `MouseMsg` with col/row, but routing to the correct component is the Model's responsibility.
+`_spatial_map.SpatialMap` in textual uses an R-tree-like index for O(log n) widget lookup by screen position. For sugar-core, this would be useful for mouse event routing — determining which "zone" or component a mouse click landed on. Currently mouse coordinates come in as `MouseMsg` with col/row, but routing to the correct component is the Model's responsibility.
 
 ### whisp: FFI PTY Management
 
@@ -956,7 +956,7 @@ type Boxer struct {
 }
 ```
 
-This allows modifying a model without touching the layout tree. candy-core's `Composite` uses a similar pattern with `children` array keyed by string id.
+This allows modifying a model without touching the layout tree. sugar-core's `Composite` uses a similar pattern with `children` array keyed by string id.
 
 ---
 
@@ -1031,4 +1031,4 @@ This allows modifying a model without touching the layout tree. candy-core's `Co
 
 ## Conclusion
 
-candy-core is a well-engineered PHP port of the Elm Architecture for TUIs. It correctly implements the core TEA pattern (Model/Update/View) with comprehensive input handling (keyboard, mouse, focus, paste, resize), a working cell-diff renderer, and ReactPHP-based concurrency. Its main architectural gaps relative to upstream Go implementations (ultraviolet/ratatui) are the lack of a cell-based buffer model (string diffing vs cell diffing) and the absence of a constraint-based layout system. The extension points are clean (filter, subscriptions, termios injection) but could be better documented. With the suggested refinements — particularly the buffer/cell model evolution — candy-core would be a solid foundation for professional PHP TUI applications.
+sugar-core is a well-engineered PHP port of the Elm Architecture for TUIs. It correctly implements the core TEA pattern (Model/Update/View) with comprehensive input handling (keyboard, mouse, focus, paste, resize), a working cell-diff renderer, and ReactPHP-based concurrency. Its main architectural gaps relative to upstream Go implementations (ultraviolet/ratatui) are the lack of a cell-based buffer model (string diffing vs cell diffing) and the absence of a constraint-based layout system. The extension points are clean (filter, subscriptions, termios injection) but could be better documented. With the suggested refinements — particularly the buffer/cell model evolution — sugar-core would be a solid foundation for professional PHP TUI applications.

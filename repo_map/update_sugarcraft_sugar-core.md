@@ -1,6 +1,6 @@
 # Overview
 
-**candy-core** is the foundational TUI runtime library of the SugarCraft monorepo — a PHP port of the Go [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea) ecosystem implementing The Elm Architecture (TEA). It provides the core runtime for terminal applications with comprehensive input handling (keyboard, mouse, focus, paste, resize), a working cell-diff renderer, and ReactPHP-based concurrency.
+**sugar-core** is the foundational TUI runtime library of the SugarCraft monorepo — a PHP port of the Go [charmbracelet/bubbletea](https://github.com/charmbracelet/bubbletea) ecosystem implementing The Elm Architecture (TEA). It provides the core runtime for terminal applications with comprehensive input handling (keyboard, mouse, focus, paste, resize), a working cell-diff renderer, and ReactPHP-based concurrency.
 
 **Biggest opportunity areas:**
 
@@ -201,7 +201,7 @@ Both wrap frames in `Ansi::syncBegin()` / `Ansi::syncEnd()` (DEC 2026 synchroniz
 
 **Title:** True cell-based buffer model for per-cell diffing
 
-**Description:** Currently candy-core's cell-diff operates on tokenized strings, not logical cells. ultraviolet and ratatui use a `Buffer`/`Cell` grid model where each cell has style + content. This enables true per-cell diffing — only changed cells are repainted.
+**Description:** Currently sugar-core's cell-diff operates on tokenized strings, not logical cells. ultraviolet and ratatui use a `Buffer`/`Cell` grid model where each cell has style + content. This enables true per-cell diffing — only changed cells are repainted.
 
 **Why it matters:** Dramatically reduces bandwidth for SSH connections, enables cursor position diffing, allows partial line repaints with accurate cell boundaries.
 
@@ -257,7 +257,7 @@ Both wrap frames in `Ansi::syncBegin()` / `Ansi::syncEnd()` (DEC 2026 synchroniz
 
 **Title:** `Widget` interface for reusable drawing primitives
 
-**Description:** ratatui's `Widget` / `StatefulWidget` traits enable reusable drawing primitives. candy-core has no equivalent in core.
+**Description:** ratatui's `Widget` / `StatefulWidget` traits enable reusable drawing primitives. sugar-core has no equivalent in core.
 
 **Why it matters:** Enables third-party widget extensions without modifying core. `interface Widget { public function render(Buffer $buf, Rect $area): void; }`
 
@@ -281,7 +281,7 @@ Both wrap frames in `Ansi::syncBegin()` / `Ansi::syncEnd()` (DEC 2026 synchroniz
 
 **Title:** Pluggable terminal backend interface
 
-**Description:** php-tui's `Backend` interface allows swapping terminal backends. Currently candy-core writes directly to `$output` stream.
+**Description:** php-tui's `Backend` interface allows swapping terminal backends. Currently sugar-core writes directly to `$output` stream.
 
 **Why it matters:** Enables testing without real terminal, remote display over network, alternative terminal backends.
 
@@ -486,7 +486,7 @@ $program->withExceptionHandler(fn(\Throwable $e) => ...);
 
 **Description:** Sequences are defined in `Ansi` but no actual renderer for Sixel/Kitty graphics.
 
-**Source:** `docs/repo_map/sugarcraft_candy-core.md` — noted in feature inventory
+**Source:** `docs/repo_map/sugarcraft_sugar-core.md` — noted in feature inventory
 
 **Implementation ideas:**
 
@@ -506,7 +506,7 @@ $program->withExceptionHandler(fn(\Throwable $e) => ...);
 
 ### Cell-Based vs String-Based Diffing
 
-**Current (candy-core):** Token-aware string LCP (longest common prefix) for partial line repaint. Tokenizes both lines via `Parser`, walks tokens to find LCP, emits `cursorTo + eraseToLineEnd + active_SGR + suffix`.
+**Current (sugar-core):** Token-aware string LCP (longest common prefix) for partial line repaint. Tokenizes both lines via `Parser`, walks tokens to find LCP, emits `cursorTo + eraseToLineEnd + active_SGR + suffix`.
 
 **External (ultraviolet/ratatui):** True cell-based buffer where each cell has (rune, style, link, width). `RenderBuffer.TouchLine()` marks dirty cells. Renderer computes minimal ANSI sequences for delta.
 
@@ -528,7 +528,7 @@ $program->withExceptionHandler(fn(\Throwable $e) => ...);
 
 - More complex implementation than string diffing
 
-**Applicability:** High — core rendering is fundamental to all candy-core apps
+**Applicability:** High — core rendering is fundamental to all sugar-core apps
 
 ### Cassowary Constraint Solver
 
@@ -699,7 +699,7 @@ $options = ProgramOptions::create()
 
 4. **"Testing TUIs without screenshots"** — Pilot-like pattern for PHP
 
-5. **"Porting bubbletea apps to candy-core"** — migration guide
+5. **"Porting bubbletea apps to sugar-core"** — migration guide
 
 ---
 
@@ -950,7 +950,7 @@ $options = ProgramOptions::create()
 
 # Final Strategic Assessment
 
-candy-core is a well-engineered PHP port of the Elm Architecture for TUIs. It correctly implements the core TEA pattern (Model/Update/View) with comprehensive input handling (keyboard, mouse, focus, paste, resize), a working cell-diff renderer, and ReactPHP-based concurrency. Its main architectural gaps relative to upstream Go implementations (ultraviolet/ratatui) are:
+sugar-core is a well-engineered PHP port of the Elm Architecture for TUIs. It correctly implements the core TEA pattern (Model/Update/View) with comprehensive input handling (keyboard, mouse, focus, paste, resize), a working cell-diff renderer, and ReactPHP-based concurrency. Its main architectural gaps relative to upstream Go implementations (ultraviolet/ratatui) are:
 
 1. **Lack of cell-based buffer model** — string diffing vs cell diffing limits optimization potential
 
@@ -971,8 +971,8 @@ The most impactful immediate improvements are:
 
 - **Layout system** (medium effort, transforms how views are composed)
 
-The medium-term evolution toward a **Buffer/Cell model** would bring candy-core closer to ultraviolet/ratatui's rendering sophistication, enabling true per-cell diffing and cursor position tracking. This is the most significant architectural investment but yields the highest return.
+The medium-term evolution toward a **Buffer/Cell model** would bring sugar-core closer to ultraviolet/ratatui's rendering sophistication, enabling true per-cell diffing and cursor position tracking. This is the most significant architectural investment but yields the highest return.
 
 The extension points (filter, subscriptions, termios injection) are clean but under-documented. Improving documentation and adding higher-level APIs (logger, exception handler, frame timing) would significantly improve the developer experience without risking architectural complexity.
 
-Overall, candy-core is in a healthy state at Phase 3 (v1 parity with Bubble Tea v2 core runtime). The foundation is solid; the next phase should focus on DX improvements, documentation, and selective architectural enhancements (Buffer/Cell model, Layout system) that maintain backward compatibility while enabling future capability growth.
+Overall, sugar-core is in a healthy state at Phase 3 (v1 parity with Bubble Tea v2 core runtime). The foundation is solid; the next phase should focus on DX improvements, documentation, and selective architectural enhancements (Buffer/Cell model, Layout system) that maintain backward compatibility while enabling future capability growth.

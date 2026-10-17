@@ -1,4 +1,4 @@
-# TUI Runtime Architecture Research: candy-core
+# TUI Runtime Architecture Research: sugar-core
 
 **Date:** 2026-05-13
 **Upstream:** charmbracelet/bubbletea (Go)
@@ -6,7 +6,7 @@
 
 ---
 
-## 1. Current candy-core Architecture
+## 1. Current sugar-core Architecture
 
 ### 1.1 Core Components
 
@@ -70,7 +70,7 @@
 | **Textual (Python)** | Async event loop (asyncio) | Workers + async/await | Automatic via reactive |
 | **Dioxus (Rust)** | Virtual DOM + signals | `tokio` async | Fine-grained reactive |
 | **Leptos (Rust)** | Signals + suspense | `tokio` async | Fine-grained reactive |
-| **candy-core (PHP)** | ReactPHP EventLoop | Promise-based | Dirty-flag at 60fps |
+| **sugar-core (PHP)** | ReactPHP EventLoop | Promise-based | Dirty-flag at 60fps |
 
 ### 2.2 Message Passing
 
@@ -79,7 +79,7 @@
 | **Bubble Tea** | `Update(Msg) → (Model, Cmd)` | `BatchMsg`, `SequenceMsg`, `TickMsg` |
 | **Textual** | `on_key`, `on_mount`, message handlers | `Screen`, `Worker` |
 | **Elm** | `update(Msg) → (Model, Cmd)` | Continuous `Sub` (separate from `Cmd`) |
-| **candy-core** | `update(Msg) → [Model, ?Closure]` | `BatchMsg`, `SequenceMsg`, `TickRequest`, `AsyncCmd` |
+| **sugar-core** | `update(Msg) → [Model, ?Closure]` | `BatchMsg`, `SequenceMsg`, `TickRequest`, `AsyncCmd` |
 
 ### 2.3 Component Composition
 
@@ -88,7 +88,7 @@
 | **Bubble Tea** | Model embedding (compose models manually) |
 | **Textual** | Widget hierarchy + CSS + `compose()` |
 | **Dioxus** | Props + signals + context API |
-| **candy-core** | Model interface contract only — no composition framework |
+| **sugar-core** | Model interface contract only — no composition framework |
 
 ### 2.4 Screen Stack Management
 
@@ -97,7 +97,7 @@
 | **Bubble Tea** | Manual via model composition; no native stack |
 | **Textual** | **Native screen stack** — `push_screen()`, `pop_screen()`, `switch_screen()`, `screen_stack` property |
 | **Dioxus** | Router pattern (external) |
-| **candy-core** | None — handled via model composition only |
+| **sugar-core** | None — handled via model composition only |
 
 ### 2.5 Effect Handling
 
@@ -108,7 +108,7 @@
 | **Bubble Tea** | `tea.Batch()`, `tea.Sequence()`, `tea.Every()`, `tea.Exec()` | Via `CancelFunc` |
 | **Elm** | `Cmd.none`, `Cmd.map`, `Task.perform` | Immutable, always runs to completion |
 | **Textual** | `@work` decorator, `run_worker()` | Via `worker.cancel()` |
-| **candy-core** | `Cmd::batch()`, `Cmd::sequence()`, `Cmd::promise()`, `Cmd::every()` | Promise rejection path only |
+| **sugar-core** | `Cmd::batch()`, `Cmd::sequence()`, `Cmd::promise()`, `Cmd::every()` | Promise rejection path only |
 
 #### Subscriptions (continuous effects) — KEY GAP
 
@@ -117,15 +117,15 @@
 | **Bubble Tea** | **No native subscriptions** — use `Every` + return cmd in `Update` | Manual via model state |
 | **Elm** | `subscriptions: Model → Sub Msg` — returns `Sub.none` or active subscriptions | Yes, based on model |
 | **Textual** | Workers with `@work(thread=True)` + groups | Yes, via worker groups |
-| **candy-core** | `Cmd::every()` — but requires re-issuing each tick | Partial (via TickRequest re-subscription) |
+| **sugar-core** | `Cmd::every()` — but requires re-issuing each tick | Partial (via TickRequest re-subscription) |
 
 ---
 
-## 3. Specific Improvements for candy-core
+## 3. Specific Improvements for sugar-core
 
 ### 3.1 HIGH PRIORITY: Elm-Style Subscriptions
 
-**Problem:** candy-core lacks the Elm `subscriptions` pattern. Currently, continuous events like timers must be manually re-subscribed in each `update()` cycle:
+**Problem:** sugar-core lacks the Elm `subscriptions` pattern. Currently, continuous events like timers must be manually re-subscribed in each `update()` cycle:
 
 ```php
 // CURRENT: Manual re-subscription pattern
@@ -386,24 +386,24 @@ if ($this->loading) {
 - **Memos:** `Memo::global()` for derived state
 - **Source:** https://dioxuslabs.github.io/dioxus/
 
-### candy-core (PHP - current)
+### sugar-core (PHP - current)
 
-- **Program:** `/home/sites/sugarcraft/candy-core/src/Program.php`
-- **Model:** `/home/sites/sugarcraft/candy-core/src/Model.php`
-- **Cmd:** `/home/sites/sugarcraft/candy-core/src/Cmd.php`
-- **TickRequest:** `/home/sites/sugarcraft/candy-core/src/TickRequest.php` (closest to subscription)
-- **ProgramOptions:** `/home/sites/sugarcraft/candy-core/src/ProgramOptions.php`
+- **Program:** `/home/sites/sugarcraft/sugar-core/src/Program.php`
+- **Model:** `/home/sites/sugarcraft/sugar-core/src/Model.php`
+- **Cmd:** `/home/sites/sugarcraft/sugar-core/src/Cmd.php`
+- **TickRequest:** `/home/sites/sugarcraft/sugar-core/src/TickRequest.php` (closest to subscription)
+- **ProgramOptions:** `/home/sites/sugarcraft/sugar-core/src/ProgramOptions.php`
 
 ---
 
 ## 7. Conclusion
 
-candy-core is a well-architected Elm-architecture port that closely mirrors Bubble Tea. The main gaps compared to modern TUI frameworks are:
+sugar-core is a well-architected Elm-architecture port that closely mirrors Bubble Tea. The main gaps compared to modern TUI frameworks are:
 
 1. **No native subscriptions** — continuous events must be manually re-subscribed per tick
 2. **No screen stack** — modal/sub-screen composition requires manual model nesting
 3. **No component composition framework** — libraries invent their own patterns
 
-The proposed additions (Subscriptions, ScreenStack, Component base class) would bring candy-core closer to Textual's feature set while maintaining its clean Elm architecture. These are additive changes that won't break existing code.
+The proposed additions (Subscriptions, ScreenStack, Component base class) would bring sugar-core closer to Textual's feature set while maintaining its clean Elm architecture. These are additive changes that won't break existing code.
 
 **Recommended first action:** Implement Elm-style Subscriptions as a POC — it addresses the most common pain point (timer management) and validates the reconciliation pattern before tackling screen stack.

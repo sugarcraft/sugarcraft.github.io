@@ -1,8 +1,8 @@
-# SugarCraft sugar-crush
+# SugarCraft candy-code
 
 ## Metadata
 
-- **Package:** `sugarcraft/sugar-crush`
+- **Package:** `sugarcraft/candy-code`
 
 - **Upstream:** `charmbracelet/crush` (Go, 24,731 stars, archived March 2026)
 
@@ -21,13 +21,13 @@
 ### 1.1 Core Components
 
 ```
-sugar-crush/src/
+candy-code/src/
 ├── Chat.php                     # Main TUI Model (implements Model interface)
 ├── Message.php                  # Immutable conversation turn (role/content/toolCalls)
 ├── Role.php                     # Enum: System | User | Assistant
 ├── Renderer.php                 # Pure view function (SugarMarkdown markdown + borders)
 ├── AssistantMsg.php             # Internal Msg for backend completion delivery
-├── Session.php                  # Persists UI state to ~/.config/sugarcraft-crush/
+├── Session.php                  # Persists UI state to ~/.config/candy-code/
 ├── ToolCall.php                 # VO: name, arguments, optional id (from AI)
 ├── ToolResult.php                # VO: name, result, error, optional id (to AI)
 ├── ToolRegistry.php              # Registry of slash-commands/built-in tools
@@ -53,7 +53,7 @@ The `Session` class implements stateless persistence with graceful degradation:
 
 - **State stored:** `cwd`, `selected` (file paths), `filter`, `sortColumn`, `sortDir`, `activePane`
 
-- **Persistence:** `~/.config/sugarcraft-crush/session.json` via `Session::load()` / `Session::save()`
+- **Persistence:** `~/.config/candy-code/session.json` via `Session::load()` / `Session::save()`
 
 - **Home resolution order:** `$HOME` env → `posix_getpwuid()` → `getcwd() ?: '/tmp'`
 
@@ -242,8 +242,8 @@ public function complete(array $history, callable $onToken = null): Message {
 **File:** `src/ClaudeCodeMcpClient.php`
 
 JSON-RPC 2.0 stdio client for Claude Code integration. RENAMED from
-`src/McpClient.php` / `SugarCraft\Crush\McpClient`: it shared its basename with
-`src/MCP/McpClient.php` (`SugarCraft\Crush\MCP\McpClient`), a different class
+`src/McpClient.php` / `SugarCraft\Code\McpClient`: it shared its basename with
+`src/MCP/McpClient.php` (`SugarCraft\Code\MCP\McpClient`), a different class
 over a different transport — Guzzle HTTP plus stdio and git server shapes,
 against servers named in an injected JSON config. That sibling KEPT the name
 `McpClient`, which is why this one had to change: readers of this tree have
@@ -355,7 +355,7 @@ public static function render(Chat $chat): string {
 
 ### 2.1 vs charmbracelet/crush (Upstream)
 
-| Feature | sugar-crush | crush (Go) |
+| Feature | candy-code | crush (Go) |
 |---------|-------------|-------------|
 | **Status** | Active 🟢 v1 | Archived March 2026 |
 | **TUI Framework** | SugarCraft (Bubble Tea port) | Bubble Tea v2 |
@@ -381,7 +381,7 @@ public static function render(Chat $chat): string {
 
 ### 2.2 vs charmbracelet/fantasy (Provider Abstraction)
 
-| Feature | sugar-crush | fantasy (Go) |
+| Feature | candy-code | fantasy (Go) |
 |---------|-------------|---------------|
 | **Type Safety** | Duck-typed Backend interface | Generic `NewAgentTool[T]()` with reflection |
 | **Tool Schema** | Manual registration | Auto JSON schema from Go structs |
@@ -390,7 +390,7 @@ public static function render(Chat $chat): string {
 | **Parallel Tools** | Sequential (synchronous) | Semaphore-limited concurrency (max 5) |
 | **Tool Repair** | None | Validation + optional repair function |
 
-**What sugar-crush borrowed:**
+**What candy-code borrowed:**
 
 - `LanguageModel` → `Backend` interface (pluggable adapters)
 
@@ -400,7 +400,7 @@ public static function render(Chat $chat): string {
 
 ### 2.3 vs charmbracelet/mods (Sunset Competitor)
 
-| Feature | sugar-crush | mods (Go) |
+| Feature | candy-code | mods (Go) |
 |---------|-------------|-----------|
 | **Status** | Active | Archived March 2026 |
 | **Streaming** | Line-by-line (onToken) | SSE token streaming |
@@ -409,7 +409,7 @@ public static function render(Chat $chat): string {
 | **Provider Support** | Any via wrapper | OpenAI, Anthropic, Google, Cohere, Groq, Ollama |
 | **Slash Commands** | CommandParser | None |
 
-**What sugar-crush does differently:**
+**What candy-code does differently:**
 
 - Ephemeral chat (no SQLite overhead) — history passed to backends each turn
 
@@ -437,8 +437,8 @@ The `CommandBackend` / `StreamingCommandBackend` shell out to a user-provided wr
 ```bash
 # Example wrapper (Anthropic)
 
-export SUGARCRUSH_BACKEND_CMD=~/bin/anthropic-stream.sh
-./bin/sugarcrush
+export CANDY_CODE_BACKEND_CMD=~/bin/anthropic-stream.sh
+./bin/candy-code
 ```
 
 ### 3.2 Immutable + Fluent Architecture
@@ -616,7 +616,7 @@ Requires PHP >= 8.3 (due to readonly properties, first-class callable `Closure::
 ### 7.1 Dependency Graph
 
 ```
-sugar-crush
+candy-code
 ├── sugar-core (TUI runtime, Model/Msg/Cmd)
 ├── sugar-markdown (Markdown rendering via league/commonmark)
 └── sugar-style (Border, Style)
@@ -626,22 +626,22 @@ Dependent packages: None yet
 
 ### 7.2 Mapping to Upstream Repos
 
-| sugar-crush Component | Upstream Crush | SugarCraft Equivalent |
+| candy-code Component | Upstream Crush | SugarCraft Equivalent |
 |----------------------|---------------|---------------------|
-| `Backend` interface | `fantasy.Provider` | `sugar-crush` pattern |
+| `Backend` interface | `fantasy.Provider` | `candy-code` pattern |
 | `Chat` (MVU Model) | `internal/ui/model.go` | `sugar-core` |
-| `ToolCall`/`ToolResult` | `internal/agent/tools/*.go` | `sugar-crush` |
+| `ToolCall`/`ToolResult` | `internal/agent/tools/*.go` | `candy-code` |
 | `ClaudeCodeMcpClient` | `modelcontextprotocol/go-sdk` | Not yet ported |
 | `Session` | SQLite session storage | `sugar-style` (future) |
-| `CommandParser` | Input parsing | `sugar-crush` |
-| `Compactor` | `gum` file compaction | `sugar-crush` |
-| `StreamingDirectoryLister` | `gum` ReadDirIter | `sugar-crush` |
+| `CommandParser` | Input parsing | `candy-code` |
+| `Compactor` | `gum` file compaction | `candy-code` |
+| `StreamingDirectoryLister` | `gum` ReadDirIter | `candy-code` |
 
 ### 7.3 Innovation over Upstream
 
-The sugar-crush implementation introduces several patterns NOT present in upstream crush:
+The candy-code implementation introduces several patterns NOT present in upstream crush:
 
-1. **Immutable + fluent throughout** — crush uses struct mutation; sugar-crush uses readonly properties + with*() builders
+1. **Immutable + fluent throughout** — crush uses struct mutation; candy-code uses readonly properties + with*() builders
 
 2. **PHP-native async** — ReactPHP Promises for non-blocking backend calls
 
@@ -748,4 +748,4 @@ The sugar-crush implementation introduces several patterns NOT present in upstre
 
 ---
 
-*Report compiled from source analysis of sugar-crush v1, upstream charmbracelet/crush, charmbracelet/fantasy, and charmbracelet/mods. Test coverage verified via phpunit.xml configuration.*
+*Report compiled from source analysis of candy-code v1, upstream charmbracelet/crush, charmbracelet/fantasy, and charmbracelet/mods. Test coverage verified via phpunit.xml configuration.*

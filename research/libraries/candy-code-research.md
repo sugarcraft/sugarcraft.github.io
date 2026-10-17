@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-13
 **Upstream:** charmbracelet/crush (Go)
-**Project:** sugar-crush (PHP 8.3+ port)
+**Project:** candy-code (PHP 8.3+ port)
 **Research Scope:** Message handling, stream rendering, context management, code highlighting
 
 ---
@@ -13,19 +13,19 @@ Sugar-crush is a well-architected PHP port of charmbracelet/crush with a clean M
 
 **Key Findings:**
 
-- **Message Handling:** sugar-crush uses immutable `Message` objects with role-based structure (System/User/Assistant) - similar to Go crush
+- **Message Handling:** candy-code uses immutable `Message` objects with role-based structure (System/User/Assistant) - similar to Go crush
 - **Stream Rendering:** Basic token accumulation via `onToken` callback; no live incremental rendering
 - **Context Management:** History passed to backends but no automatic compaction or session persistence
 - **Code Highlighting:** Relies on SugarMarkdown (league/commonmark) without syntax highlighting in code blocks
 
 ---
 
-## 2. Implementation Analysis: sugar-crush Current State
+## 2. Implementation Analysis: candy-code Current State
 
 ### 2.1 Source Structure
 
 ```
-sugar-crush/src/
+candy-code/src/
 ├── Chat.php                  # Main MVU Model - handles history, input, tool execution
 ├── Message.php               # Immutable message with role, content, attachments, toolCalls
 ├── Role.php                  # Enum: System, User, Assistant
@@ -97,7 +97,7 @@ interface Backend {
 | LSP Integration | gopls, typescript-language-server, nil |
 | Session | SQLite-backed with JSONL files |
 
-**Key Features sugar-crush Lacks:**
+**Key Features candy-code Lacks:**
 
 - Real-time streaming display with incremental rendering
 - LSP-based code intelligence
@@ -187,7 +187,7 @@ interface Backend {
 
 ### 3.7 Comparison Table
 
-| Feature | sugar-crush | crush | aichat | rust-code |
+| Feature | candy-code | crush | aichat | rust-code |
 |---------|-------------|-------|--------|-----------|
 | Language | PHP | Go | Rust | Rust |
 | TUI Framework | SugarWidgets | Bubble Tea | Ratatui | Ratatui |
@@ -206,7 +206,7 @@ interface Backend {
 
 ### 4.1 Message Handling
 
-**sugar-crush Current:**
+**candy-code Current:**
 
 - Immutable `Message` with role, content, timestamp, attachments, toolCalls
 - `toWire()` method for backend adapters
@@ -222,7 +222,7 @@ interface Backend {
 
 ### 4.2 Stream Rendering
 
-**sugar-crush Current:**
+**candy-code Current:**
 
 - `StreamingCommandBackend` reads line-by-line from process stdout
 - `onToken` callback accumulates tokens
@@ -252,7 +252,7 @@ interface Backend {
 
 ### 4.3 Context Management
 
-**sugar-crush Current:**
+**candy-code Current:**
 
 - Full history passed to backend on each call
 - No automatic compaction
@@ -272,7 +272,7 @@ interface Backend {
 
 ### 4.4 Code Highlighting
 
-**sugar-crush Current:**
+**candy-code Current:**
 
 - Uses SugarMarkdown (league/commonmark) for markdown
 - No syntax highlighting in code blocks

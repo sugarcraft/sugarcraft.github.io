@@ -1,6 +1,6 @@
 # Overview
 
-**sugar-crush** is SugarCraft's port of `charmbracelet/crush` — a chat-shell TUI for AI coding assistants with pluggable backends, markdown rendering via SugarMarkdown, scrollback viewport, and session persistence. It is 🟢 v1 ready with 158 tests / 444 assertions.
+**candy-code** is SugarCraft's port of `charmbracelet/crush` — a chat-shell TUI for AI coding assistants with pluggable backends, markdown rendering via SugarMarkdown, scrollback viewport, and session persistence. It is 🟢 v1 ready with 158 tests / 444 assertions.
 
 **Biggest opportunity areas:**
 
@@ -25,13 +25,13 @@
 ## Current Architecture
 
 ```
-sugar-crush/src/
+candy-code/src/
 ├── Chat.php                     # Main TUI Model (implements Model interface)
 ├── Message.php                  # Immutable conversation turn (role/content/toolCalls)
 ├── Role.php                     # Enum: System | User | Assistant
 ├── Renderer.php                 # Pure view function (SugarMarkdown markdown + borders)
 ├── AssistantMsg.php             # Internal Msg for backend completion delivery
-├── Session.php                  # Persists UI state to ~/.config/sugarcraft-crush/
+├── Session.php                  # Persists UI state to ~/.config/candy-code/
 ├── ToolCall.php                 # VO: name, arguments, optional id
 ├── ToolResult.php               # VO: name, result, error, optional id
 ├── ToolRegistry.php             # Registry of slash-commands/built-in tools (5 built-ins)
@@ -168,7 +168,7 @@ final class ToolResult {
 - Add `maxSteps` parameter to Chat model
 - Track tool call frequency: `array<string, int>` with sliding window of last 10 calls
 - If same tool called >5 times in window → raise `LoopDetectedMsg`
-- Expose configuration via `$SUGARCRUSH_MAX_STEPS` env var
+- Expose configuration via `$CANDY_CODE_MAX_STEPS` env var
 
 **Estimated complexity:** Medium (4-6h)
 
@@ -252,10 +252,10 @@ final class ToolResult {
 
 **Implementation ideas:**
 
-- Add `ChatHistory` class persisting to `~/.config/sugarcraft-crush/history/<session-id>.jsonl`
+- Add `ChatHistory` class persisting to `~/.config/candy-code/history/<session-id>.jsonl`
 - Each line: JSON-encoded Message with metadata (timestamp, model used)
 - `ChatHistory::load(sessionId)` / `ChatHistory::save(sessionId, messages)`
-- Session listing CLI: `sugarcrush session list/show/last`
+- Session listing CLI: `candy-code session list/show/last`
 
 **Estimated complexity:** Medium (4-6h)
 
@@ -297,7 +297,7 @@ final class ToolResult {
 - Add `HookRunner` class with `before/after` hook arrays
 - Hook signature: `function(ToolCall): ?ToolResult` (return null = proceed)
 - Pattern matching on tool names via regex
-- Support for hook files in `~/.config/sugarcraft-crush/hooks/`
+- Support for hook files in `~/.config/candy-code/hooks/`
 
 **Estimated complexity:** Medium (4-6h)
 
@@ -307,7 +307,7 @@ final class ToolResult {
 
 **Title:** read/write/edit/glob/grep via ToolRegistry
 
-**Description:** Upstream crush had comprehensive built-in tools: view, edit, bash, grep, etc. sugar-crush has only 5 viewport-related tools (filter, sort, goto, select, quit).
+**Description:** Upstream crush had comprehensive built-in tools: view, edit, bash, grep, etc. candy-code has only 5 viewport-related tools (filter, sort, goto, select, quit).
 
 **Why it matters:** A coding assistant needs file manipulation tools. These should be registerable via ToolRegistry.
 
@@ -387,9 +387,9 @@ final class ToolResult {
 **Implementation ideas:**
 
 - Add `ContextLoader` class to discover context files
-- Search: `./CLAUDE.md`, `./.cody/`, `~/.config/sugarcraft-crush/`
+- Search: `./CLAUDE.md`, `./.cody/`, `~/.config/candy-code/`
 - Merge context into system prompt on startup
-- Configurable via `SUGARCRUSH_CONTEXT_FILES` env var
+- Configurable via `CANDY_CODE_CONTEXT_FILES` env var
 
 **Estimated complexity:** Small (2h)
 
@@ -569,7 +569,7 @@ final class HookedTool implements Tool {
 
 ## 4. Design for Remote Operation
 
-**Problem:** sugar-crush is tightly coupled to TUI.
+**Problem:** candy-code is tightly coupled to TUI.
 
 **Solution:** Abstract workspace/state access behind interfaces from the beginning.
 
@@ -853,10 +853,10 @@ public function testToolTimeoutHandling(): void {
 **Problem:** No native PHP MCP implementation.
 
 **Solution:** Implement MCP client and server in PHP. Since realised as
-`SugarCraft\Crush\MCP\McpClient` / `MCP\HttpMcpServer` / `MCP\StdioMcpServer`
+`SugarCraft\Code\MCP\McpClient` / `MCP\HttpMcpServer` / `MCP\StdioMcpServer`
 / `MCP\GitMcpServer` — that client is the one that KEPT the name `McpClient`;
 the Claude-Code stdio client sketched elsewhere in this document is now
-`SugarCraft\Crush\ClaudeCodeMcpClient`:
+`SugarCraft\Code\ClaudeCodeMcpClient`:
 
 ```php
 // Client
@@ -881,7 +881,7 @@ final class McpServer {
 **Solution:** Implement file-based skill discovery:
 
 ```php
-// ~/.config/sugarcraft-crush/skills/
+// ~/.config/candy-code/skills/
 // ├── read-file/SKILL.md
 // └── git-commands/SKILL.md
 ```
@@ -902,12 +902,12 @@ final class McpServer {
 
 ## 4. HTTP/API Interface
 
-**Problem:** sugar-crush is TUI-coupled; no programmatic access.
+**Problem:** candy-code is TUI-coupled; no programmatic access.
 
 **Solution:** Add server mode:
 
 ```bash
-sugarcrush server  # REST API over Unix socket
+candy-code server  # REST API over Unix socket
 curl -X POST http://localhost:8080/chat -d '{"message": "hello"}'
 ```
 
@@ -1086,11 +1086,11 @@ curl -X POST http://localhost:8080/chat -d '{"message": "hello"}'
 
 # Final Strategic Assessment
 
-**sugar-crush** is a well-architected PHP port of charmbracelet/crush that successfully captures the core TUI patterns for AI coding assistants. Its strengths — immutable + fluent architecture, pluggable backends, graceful degradation, comprehensive test suite — provide a solid foundation for further development.
+**candy-code** is a well-architected PHP port of charmbracelet/crush that successfully captures the core TUI patterns for AI coding assistants. Its strengths — immutable + fluent architecture, pluggable backends, graceful degradation, comprehensive test suite — provide a solid foundation for further development.
 
 The most critical gaps are **loop detection** and **permission systems** — both required for safe autonomous tool use. These should be implemented before any public release that enables autonomous operation.
 
-The upstream crush's archival in March 2026 creates a strategic opportunity: PHP developers need an equivalent for AI-assisted coding, and sugar-crush is positioned to fill that gap. However, the full vision requires:
+The upstream crush's archival in March 2026 creates a strategic opportunity: PHP developers need an equivalent for AI-assisted coding, and candy-code is positioned to fill that gap. However, the full vision requires:
 
 1. **AI agent infrastructure** — Beyond simple tool calling, a true agent loop with step management, context compaction, and multi-step reasoning
 2. **MCP ecosystem integration** — stdio, HTTP, and SSE transports to connect to the growing MCP tool ecosystem
@@ -1105,4 +1105,4 @@ The most important lessons from the upstream crush's 18 months of active develop
 - **Concurrency bugs** in agent loops cause silent, catastrophic failures
 - **Server-client architecture** should be designed in from the start
 
-sugar-crush should prioritize immediate reliability improvements (loop detection, streaming UI, chat persistence) before medium-term extensibility features (hooks, MCP transports, provider abstraction). The PHP ecosystem needs a credible AI coding assistant, and sugar-crush is the foundation for that — but it needs to become a true agent before it can fulfill that promise.
+candy-code should prioritize immediate reliability improvements (loop detection, streaming UI, chat persistence) before medium-term extensibility features (hooks, MCP transports, provider abstraction). The PHP ecosystem needs a credible AI coding assistant, and candy-code is the foundation for that — but it needs to become a true agent before it can fulfill that promise.

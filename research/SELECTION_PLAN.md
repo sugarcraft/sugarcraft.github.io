@@ -69,22 +69,22 @@
 
 ## QUICK WINS (Low Effort, High Impact)
 
-### candy-log
+### sugar-log
 
 ### [ ] NO_COLOR / FORCE_COLOR environment support
 
 - **Effort**: 1-2 hours
-- **Research**: `libraries/candy-log-research.md`
+- **Research**: `libraries/sugar-log-research.md`
 
 ### [ ] PadLevelText (align level labels)
 
 - **Effort**: 1 hour
-- **Research**: `libraries/candy-log-research.md`
+- **Research**: `libraries/sugar-log-research.md`
 
 ### [ ] Fix Level Values to match upstream (-4, 0, 4, 8, 12)
 
 - **Effort**: 30 minutes
-- **Research**: `libraries/candy-log-research.md`
+- **Research**: `libraries/sugar-log-research.md`
 
 ### sugar-colorprofile
 
@@ -139,22 +139,22 @@
 - **Effort**: 30 minutes
 - **Research**: `libraries/sugar-image-research.md`
 
-### candy-vt
+### sugar-vterm
 
 ### [ ] Add DECSTBM scroll margins
 
 - **Effort**: 2-3 hours
-- **Research**: `libraries/candy-vt-research.md`
+- **Research**: `libraries/sugar-vterm-research.md`
 
 ### [ ] Add Auto-wrap (DECAWM)
 
 - **Effort**: 2 hours
-- **Research**: `libraries/candy-vt-research.md`
+- **Research**: `libraries/sugar-vterm-research.md`
 
 ### [ ] Add subparameter parsing (CSI 38:2::186:93:0m)
 
 - **Effort**: 2-3 hours
-- **Research**: `libraries/candy-vt-research.md`
+- **Research**: `libraries/sugar-vterm-research.md`
 
 ### candy-kv
 
@@ -237,47 +237,47 @@
 - **Effort**: 3-4 sessions
 - **Research**: `libraries/candy-core-research.md`
 
-### candy-sprinkles
+### sugar-style
 
 ### [ ] Theme class (Rich-style named style registry)
 
 - **Priority**: P1 - High
 - **Effort**: 6-8 hours
-- **Research**: `libraries/candy-sprinkles-research.md`
+- **Research**: `libraries/sugar-style-research.md`
 
 ### [ ] String color parsing (`Color::parse("cyan")`)
 
 - **Priority**: P1 - High
 - **Effort**: 2-3 hours
-- **Research**: `libraries/candy-sprinkles-research.md`
+- **Research**: `libraries/sugar-style-research.md`
 
-### candy-pty
+### sugar-pty
 
 ### [ ] Add `openpty()` FFI binding
 
 - **Priority**: P1 - High
 - **Effort**: 1-2 days
-- **Research**: `libraries/candy-pty-research.md`
+- **Research**: `libraries/sugar-pty-research.md`
 
 ### [ ] Add `waitpid()` FFI binding
 
 - **Priority**: P1 - High
 - **Effort**: 1 day
-- **Research**: `libraries/candy-pty-research.md`
+- **Research**: `libraries/sugar-pty-research.md`
 
-### candy-wish
+### sugar-ssh-server
 
 ### [ ] Context propagation (Context class + update Middleware)
 
 - **Priority**: P1 - High
 - **Effort**: Medium
-- **Research**: `libraries/candy-wish-research.md`
+- **Research**: `libraries/sugar-ssh-server-research.md`
 
 ### [ ] Channel event middleware (ChannelHandler interface)
 
 - **Priority**: P1 - High
 - **Effort**: Medium-High
-- **Research**: `libraries/candy-wish-research.md`
+- **Research**: `libraries/sugar-ssh-server-research.md`
 
 ---
 
@@ -437,21 +437,21 @@ All 45 research documents available at:
 | candy-codeshot | 23KB |
 | sugar-quickpick | 21KB |
 | sugar-treelist | 15KB |
-| candy-log | 17KB |
-| candy-metrics | 20KB |
+| sugar-log | 17KB |
+| sugar-metrics | 20KB |
 | candy-minesweeper | 15KB |
 | candy-starter | 18KB |
 | sugar-image | 24KB |
 | sugar-colorprofile | 15KB |
-| candy-pty | 24KB |
+| sugar-pty | 24KB |
 | candy-sql | 11KB |
 | candy-git-server | 12KB |
 | candy-scriptui | 18KB |
-| candy-sprinkles | 15KB |
+| sugar-style | 15KB |
 | candy-tetris | 18KB |
 | candy-vcr | 23KB |
-| candy-vt | 26KB |
-| candy-wish | 24KB |
+| sugar-vterm | 26KB |
+| sugar-ssh-server | 24KB |
 | sugar-mouse | 14KB |
 | sugar-spring | 25KB |
 | candy-flappy | 11KB |

@@ -259,7 +259,7 @@ func shouldQuerySynchronizedOutput(environ uv.Environ) bool {
 | bubbletea | SugarCraft | Notes |
 |---|---|---|
 | `bubbletea` | `candy-core` | The TUI runtime — Model interface, Program, Update loop, renderer |
-| `lipgloss` | `candy-sprinkles` | Declarative styling, colors, layout |
+| `lipgloss` | `sugar-style` | Declarative styling, colors, layout |
 | `harmonica` | `sugar-spring` | Spring animations for smooth motion |
 | `bubblezone` | `sugar-mouse` | Mouse zone tracking for clickable regions |
 | `bubbles` | `sugar-widgets` | 14 prebuilt components (TextInput, List, Table, etc.) |
@@ -267,8 +267,8 @@ func shouldQuerySynchronizedOutput(environ uv.Environ) bool {
 | `huh` | `sugar-forms` | Interactive form library |
 | `glamour` | `sugar-markdown` | Markdown rendering |
 | `colorprofile` | `sugar-colorprofile` | Terminal color detection |
-| `exec` (internal) | `candy-pty` | Process spawning (PTY) |
-| `x/vt` | `candy-vt` | Virtual terminal emulation |
+| `exec` (internal) | `sugar-pty` | Process spawning (PTY) |
+| `x/vt` | `sugar-vterm` | Virtual terminal emulation |
 | `x/vcr` | `candy-vcr` | Session recording/replay |
 
 ### Many-to-Many Feature Mapping

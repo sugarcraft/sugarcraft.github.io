@@ -15,7 +15,7 @@
 
 SugarCli provides a set of focused, single-responsibility CLI presentation primitives that turn ordinary command-line output into consistent, branded terminal output. It is library-only — drop it into any Composer project without requiring Symfony Console or any other framework.
 
-The package implements 7 components: `Theme`, `StatusLine`, `Banner`, `Section`, `Stage`, `HelpText`, and `Logo`. Each is a `final` class with static factory methods, no instance state beyond configuration, and output that composes cleanly with the rest of the SugarCraft stack via `candy-sprinkles` (styling) and `candy-core` (utilities).
+The package implements 7 components: `Theme`, `StatusLine`, `Banner`, `Section`, `Stage`, `HelpText`, and `Logo`. Each is a `final` class with static factory methods, no instance state beyond configuration, and output that composes cleanly with the rest of the SugarCraft stack via `sugar-style` (styling) and `candy-core` (utilities).
 
 **Primary upstream:** `charmbracelet/fang` — CLI starter kit for Cobra applications, providing styled help/errors, automatic `--version`, manpage generation, shell completions, and themeable output.
 
@@ -25,7 +25,7 @@ The package implements 7 components: `Theme`, `StatusLine`, `Banner`, `Section`,
 
 ### Theme (`Theme.php`)
 
-Palette of `SugarCraft\Sprinkles\Style` objects keyed by status level:
+Palette of `SugarCraft\Style\Style` objects keyed by status level:
 
 ```php
 public function __construct(
@@ -106,7 +106,7 @@ final class Banner
 }
 ```
 
-Uses `SugarCraft\Sprinkles\Border::rounded()` (╭──╮ │ │ ╰──╯) by default. The horizontal padding of 2 cells (`padding(0, 2)`) ensures the title is centered within the border with proper breathing room.
+Uses `SugarCraft\Style\Border::rounded()` (╭──╮ │ │ ╰──╯) by default. The horizontal padding of 2 cells (`padding(0, 2)`) ensures the title is centered within the border with proper breathing room.
 
 ### Section (`Section.php`)
 
@@ -254,11 +254,11 @@ The `sugarcraft()` preset renders a box-drawing character logo:
 ```
 sugar-cli/
 ├── depends on: candy-core (Width utility, Color utilities)
-├── depends on: candy-sprinkles (Style, Border)
+├── depends on: sugar-style (Style, Border)
 └── provides: CLI presentation helpers
 ```
 
-No circular dependencies. sugar-cli is a leaf in the dependency tree (it depends on candy-core and candy-sprinkles but nothing depends on it within the monorepo).
+No circular dependencies. sugar-cli is a leaf in the dependency tree (it depends on candy-core and sugar-style but nothing depends on it within the monorepo).
 
 ### Immutability Pattern
 
@@ -297,7 +297,7 @@ The design decision to style only the glyph (not the message) keeps output scann
 ▸ 4/5 Done
 ```
 
-This is distinguishable from a progress bar (which would use `sugar-widgets` progress components) and from a log (which would use `candy-log`). Stage is specifically for visual sequencing of multi-step operations where the user needs to see which step they're on.
+This is distinguishable from a progress bar (which would use `sugar-widgets` progress components) and from a log (which would use `sugar-log`). Stage is specifically for visual sequencing of multi-step operations where the user needs to see which step they're on.
 
 ### Help Page Pattern
 
@@ -306,7 +306,7 @@ This is distinguishable from a progress bar (which would use `sugar-widgets` pro
 - Optional description paragraph
 - Sectioned flag/command tables with two-column alignment
 
-This is distinct from `sugar-markdown` (markdown rendering) and `candy-log` (time-stamped log entries). HelpText is specifically for the `--help` output of a CLI command.
+This is distinct from `sugar-markdown` (markdown rendering) and `sugar-log` (time-stamped log entries). HelpText is specifically for the `--help` output of a CLI command.
 
 ---
 
@@ -320,7 +320,7 @@ Unlike the upstream `charmbracelet/fang` which uses `lipgloss.LightDarkFunc` for
 
 ### Theme Factory Pattern
 
-Each named theme (`charm()`, `dracula()`, etc.) is a `public static function` returning a fully-populated `Theme` instance. This mirrors the pattern used in `candy-sprinkles`'s `Theme` class (10 named factories) and allows enumeration:
+Each named theme (`charm()`, `dracula()`, etc.) is a `public static function` returning a fully-populated `Theme` instance. This mirrors the pattern used in `sugar-style`'s `Theme` class (10 named factories) and allows enumeration:
 
 ```php
 // Users can iterate or select themes programmatically
@@ -351,7 +351,7 @@ func enableVirtualTerminalProcessing(w io.Writer) {
 
 SugarCli does **not** include platform-specific Windows VT processing because:
 1. It depends on `candy-core` for terminal utilities, which handles this at a lower level
-2. The PHP port of the TTY raw mode handling is in `candy-core` and `candy-pty`
+2. The PHP port of the TTY raw mode handling is in `candy-core` and `sugar-pty`
 3. As a pure presentation library (output only, no input handling), sugar-cli doesn't directly interact with the terminal device
 
 **Implication:** Applications using sugar-cli should ensure Windows VT processing is enabled at the application level (typically via `candy-core`'s terminal initialization) before producing styled output.
@@ -473,25 +473,25 @@ Sections are rendered in the order supplied in the `$sections` associative array
 
 | Feature | gum | sugar-cli | Gap |
 |---------|-----|----------|-----|
-| `gum style` (colors/borders/padding) | ✅ | ❌ (use candy-sprinkles) | Different abstraction level |
-| `gum log` (structured logging) | ✅ | ❌ (use candy-log) | Different abstraction level |
+| `gum style` (colors/borders/padding) | ✅ | ❌ (use sugar-style) | Different abstraction level |
+| `gum log` (structured logging) | ✅ | ❌ (use sugar-log) | Different abstraction level |
 | `gum format` (markdown/code) | ✅ | ❌ (use sugar-markdown) | Different abstraction level |
-| `gum join` (layout composition) | ✅ | ❌ (use candy-sprinkles Layout) | Different abstraction level |
+| `gum join` (layout composition) | ✅ | ❌ (use sugar-style Layout) | Different abstraction level |
 | `gum spin` (spinner + command) | ✅ | ❌ | Different abstraction level |
 | `gum confirm` / `gum choose` | ✅ | ❌ | Interactive TUI, not presentation |
 
-**Verdict:** No direct feature overlap. Gum's `style` command wraps lipgloss, which is mapped to `candy-sprinkles`. Gum's `log` command wraps `charmbracelet/log`, which is mapped to `candy-log`. Candy-kit fills the gap for the static presentation helpers (StatusLine, Banner, etc.) that Gum doesn't have as standalone commands.
+**Verdict:** No direct feature overlap. Gum's `style` command wraps lipgloss, which is mapped to `sugar-style`. Gum's `log` command wraps `charmbracelet/log`, which is mapped to `sugar-log`. Candy-kit fills the gap for the static presentation helpers (StatusLine, Banner, etc.) that Gum doesn't have as standalone commands.
 
 ### charmbracelet/log (colored output)
 
 | Feature | log | sugar-cli | Gap |
 |---------|-----|----------|-----|
-| Leveled logging (debug/info/warn/error) | ✅ | ❌ | candy-log, not sugar-cli |
-| Structured key/value pairs | ✅ | ❌ | candy-log |
-| Text/JSON/Logfmt formatters | ✅ | ❌ | candy-log |
-| Sub-logger with context | ✅ | ❌ | candy-log |
-| slog handler | ✅ | ❌ | candy-log |
-| Timestamp formatting | ✅ | ❌ | candy-log |
+| Leveled logging (debug/info/warn/error) | ✅ | ❌ | sugar-log, not sugar-cli |
+| Structured key/value pairs | ✅ | ❌ | sugar-log |
+| Text/JSON/Logfmt formatters | ✅ | ❌ | sugar-log |
+| Sub-logger with context | ✅ | ❌ | sugar-log |
+| slog handler | ✅ | ❌ | sugar-log |
+| Timestamp formatting | ✅ | ❌ | sugar-log |
 | Styled level prefixes | ✅ | ✅ (via Theme) | Comparable |
 | Global logger | ✅ | ❌ | sugar-cli is stateless helpers |
 
@@ -503,7 +503,7 @@ Sections are rendered in the order supplied in the `$sections` associative array
 
 1. **Light/dark auto-detection** — `Theme` factories don't accept a `isDark` parameter or closure; they produce fixed-palette themes. Users who want terminal-aware themes must implement their own theme selection.
 
-2. **Banner title anchor positioning** — No support for placing the title at different border positions (top-left, top-center, top-right, etc.) like `BorderTitle` supports in candy-sprinkles.
+2. **Banner title anchor positioning** — No support for placing the title at different border positions (top-left, top-center, top-right, etc.) like `BorderTitle` supports in sugar-style.
 
 3. **Logo re-theming** — Once `withColor()` is applied, the Logo stores a rendered string. There is no way to change the color of an already-colored Logo without re-creating it from the original ASCII art.
 

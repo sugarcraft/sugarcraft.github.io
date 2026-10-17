@@ -21,7 +21,7 @@ This is the canonical lib-level README. It must include:
 - A feature table or namespace table showing what the lib provides.
 - Cross-reference to upstream (`Mirrors charmbracelet/<repo>`).
 - A "Compared to" feature parity table when there's a clear external
-  comparison (e.g. candy-pty's "Compared to node-pty / creack / portable-pty").
+  comparison (e.g. sugar-pty's "Compared to node-pty / creack / portable-pty").
 - A link to `.vhs/*.gif` for visual demos.
 - A "Status" badge or row if the lib has one in `MATCHUPS.md`.
 - An `## Architecture` section listing the public namespace tree if
@@ -51,8 +51,8 @@ var, a public class, a flag), every doc page above gets an update.
 
 Audience: someone deploying the lib in production (SSH servers,
 dashboards, recording pipelines, etc.). Only relevant for libs that
-run as services: candy-git-server, candy-wish, candy-vcr, sugar-dashboard,
-sugar-crush, candy-metrics.
+run as services: candy-git-server, sugar-ssh-server, candy-vcr, sugar-dashboard,
+sugar-crush, sugar-metrics.
 
 Headings:
 
@@ -70,8 +70,8 @@ a metrics scraper), create the page.
 ### 4. Developer docs — `docs/dev/<slug>.md` (if applicable)
 
 Audience: someone extending the lib. Only for libs with extension
-points (plugin systems, middleware, custom backends): candy-pty,
-candy-wish, sugar-dashboard, candy-vcr, candy-scriptui, sugar-image,
+points (plugin systems, middleware, custom backends): sugar-pty,
+sugar-ssh-server, sugar-dashboard, candy-vcr, candy-scriptui, sugar-image,
 sugar-animation.
 
 Headings:

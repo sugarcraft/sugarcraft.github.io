@@ -8,22 +8,22 @@
 
 Current pool is generic. SSH servers have a specific churn profile
 (many short-lived sessions, fresh termios snapshot each). Profile
-against a `candy-wish` SSH server fixture with N concurrent connections;
+against a `sugar-ssh-server` SSH server fixture with N concurrent connections;
 tune defaults; expose a `PtyPool::sshProfile(int $maxConcurrent)`
 named-constructor.
 
 ## Files
 
-**Modify:** `candy-pty/src/PtyPool.php`.
+**Modify:** `sugar-pty/src/PtyPool.php`.
 
 ## Tests
 
-- `candy-pty/tests/PtyPoolSshProfileTest.php` — fixture SSH server,
+- `sugar-pty/tests/PtyPoolSshProfileTest.php` — fixture SSH server,
   100 churn rounds, assert no leak.
 
 ## Acceptance
 
-- `cd candy-pty && vendor/bin/phpunit --filter PtyPoolSshProfile` green.
+- `cd sugar-pty && vendor/bin/phpunit --filter PtyPoolSshProfile` green.
 - Documented in README with the measured churn baseline.
 
 ---

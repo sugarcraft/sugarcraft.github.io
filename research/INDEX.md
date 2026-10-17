@@ -23,9 +23,9 @@ To implement an item:
 | Library | Research Doc | Top Priority Items |
 |---------|--------------|-------------------|
 | **candy-core** | [research/libraries/candy-core-research.md](libraries/candy-core-research.md) | 1. Elm-Style Subscriptions, 2. Screen Stack, 3. Component Composition |
-| **candy-sprinkles** | [research/libraries/candy-sprinkles-research.md](libraries/candy-sprinkles-research.md) | 1. Theme class, 2. String color parsing, 3. Layout spacing |
-| **candy-pty** | [research/libraries/candy-pty-research.md](libraries/candy-pty-research.md) | 1. openpty() FFI, 2. waitpid() FFI, 3. Raw mode support |
-| **candy-vt** | [research/libraries/candy-vt-research.md](libraries/candy-vt-research.md) | 1. DECSTBM margins, 2. Auto-wrap, 3. Subparam parsing |
+| **sugar-style** | [research/libraries/candy-sprinkles-research.md](libraries/candy-sprinkles-research.md) | 1. Theme class, 2. String color parsing, 3. Layout spacing | <!-- @rename-keep -->
+| **sugar-pty** | [research/libraries/sugar-pty-research.md](libraries/sugar-pty-research.md) | 1. openpty() FFI, 2. waitpid() FFI, 3. Raw mode support |
+| **sugar-vterm** | [research/libraries/candy-vt-research.md](libraries/candy-vt-research.md) | 1. DECSTBM margins, 2. Auto-wrap, 3. Subparam parsing | <!-- @rename-keep -->
 | **candy-vcr** | [research/libraries/candy-vcr-research.md](libraries/candy-vcr-research.md) | 1. stats CLI, 2. RegexAssertion, 3. Gzip compression |
 
 ### Dashboard & Components
@@ -57,8 +57,8 @@ To implement an item:
 | Library | Research Doc | Top Priority Items |
 |---------|--------------|-------------------|
 | **candy-scriptui** | [research/libraries/candy-scriptui-research.md](libraries/candy-scriptui-research.md) | 1. Auto-discovery, 2. ValueEnum options, 3. FlagSpec trait |
-| **candy-log** | [research/libraries/candy-log-research.md](libraries/candy-log-research.md) | 1. NO_COLOR env, 2. PadLevelText, 3. Level values |
-| **candy-wish** | [research/libraries/candy-wish-research.md](libraries/candy-wish-research.md) | 1. Context propagation, 2. Channel events, 3. Session metadata |
+| **sugar-log** | [research/libraries/candy-log-research.md](libraries/candy-log-research.md) | 1. NO_COLOR env, 2. PadLevelText, 3. Level values | <!-- @rename-keep -->
+| **sugar-ssh-server** | [research/libraries/sugar-ssh-server-research.md](libraries/sugar-ssh-server-research.md) | 1. Context propagation, 2. Channel events, 3. Session metadata |
 | **candy-ssh-launcher** | [research/libraries/candy-ssh-launcher-research.md](libraries/candy-ssh-launcher-research.md) | 1. proxy_jump, 2. SSH config import, 3. Identity files |
 | **sugar-quickpick** | [research/libraries/sugar-quickpick-research.md](libraries/sugar-quickpick-research.md) | 1. Item interface, 2. Filter injection, 3. Persistent history |
 
@@ -71,7 +71,7 @@ To implement an item:
 | **sugar-image** | [research/libraries/sugar-image-research.md](libraries/sugar-image-research.md) | 1. WezTerm fix, 2. Image deletion, 3. Quarter-block |
 | **sugar-mouse** | [research/libraries/sugar-mouse-research.md](libraries/sugar-mouse-research.md) | 1. Hover tracking, 2. Drag detection, 3. Click count |
 | **sugar-colorprofile** | [research/libraries/sugar-colorprofile-research.md](libraries/sugar-colorprofile-research.md) | 1. CLICOLOR, 2. Terminfo Tc, 3. tmux handling |
-| **candy-metrics** | [research/libraries/candy-metrics-research.md](libraries/candy-metrics-research.md) | 1. Histogram buckets, 2. Metric describe, 3. UpDownCounter |
+| **sugar-metrics** | [research/libraries/sugar-metrics-research.md](libraries/sugar-metrics-research.md) | 1. Histogram buckets, 2. Metric describe, 3. UpDownCounter |
 
 ### Games & Fun
 
@@ -104,8 +104,8 @@ To implement an item:
 
 | # | Library | Feature | Effort | Research Link |
 |---|---------|---------|--------|---------------|
-| 1 | candy-log | NO_COLOR env support | 1-2h | [link](libraries/candy-log-research.md) |
-| 2 | candy-log | PadLevelText | 1h | [link](libraries/candy-log-research.md) |
+| 1 | sugar-log | NO_COLOR env support | 1-2h | [link](libraries/sugar-log-research.md) |
+| 2 | sugar-log | PadLevelText | 1h | [link](libraries/sugar-log-research.md) |
 | 3 | sugar-colorprofile | CLICOLOR env support | 2-4h | [link](libraries/sugar-colorprofile-research.md) |
 | 4 | sugar-toast | ESC dismiss | 1h | [link](libraries/sugar-toast-research.md) |
 | 5 | sugar-toast | Stack offset fix | 1h | [link](libraries/sugar-toast-research.md) |
@@ -117,8 +117,8 @@ To implement an item:
 | 11 | candy-codeshot | Background colors | 2h | [link](libraries/candy-codeshot-research.md) |
 | 12 | candy-codeshot | Ligature flag | 1h | [link](libraries/candy-codeshot-research.md) |
 | 13 | sugar-image | WezTerm detection fix | 0.5h | [link](libraries/sugar-image-research.md) |
-| 14 | candy-vt | DECSTBM margins | 2-3h | [link](libraries/candy-vt-research.md) |
-| 15 | candy-vt | Auto-wrap DECAWM | 2h | [link](libraries/candy-vt-research.md) |
+| 14 | sugar-vterm | DECSTBM margins | 2-3h | [link](libraries/sugar-vterm-research.md) |
+| 15 | sugar-vterm | Auto-wrap DECAWM | 2h | [link](libraries/sugar-vterm-research.md) |
 | 16 | candy-kv | CSV/JSON export | 1-2h | [link](libraries/candy-kv-research.md) |
 | 17 | candy-kv | Levenshtein suggestions | 1h | [link](libraries/candy-kv-research.md) |
 | 18 | sugar-animation | imagecreatefromstring | 1-2h | [link](libraries/sugar-animation-research.md) |
@@ -151,8 +151,8 @@ To implement an item:
 
 ### Terminal Capabilities
 
-- **candy-vt**: Scrollback buffer, subparam parsing, cursor shapes
-- **candy-pty**: openpty FFI, waitpid FFI, raw mode
+- **sugar-vterm**: Scrollback buffer, subparam parsing, cursor shapes
+- **sugar-pty**: openpty FFI, waitpid FFI, raw mode
 - **sugar-mouse**: Hover tracking, drag detection, click count
 - **sugar-colorprofile**: CLICOLOR, terminfo Tc, color space handling
 

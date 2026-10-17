@@ -148,7 +148,7 @@ that are tiny but together justify a PR.
 ### Charmbracelet libraries
 
 - charmbracelet/bubbletea → candy-core
-- charmbracelet/lipgloss → candy-sprinkles
+- charmbracelet/lipgloss → sugar-style
 - charmbracelet/harmonica → sugar-spring
 - lrstanley/bubblezone → sugar-mouse
 - charmbracelet/bubbles → sugar-widgets
@@ -156,9 +156,9 @@ that are tiny but together justify a PR.
 - charmbracelet/huh → sugar-forms
 - charmbracelet/glamour → sugar-markdown
 - charmbracelet/fang → sugar-cli
-- charmbracelet/wish → candy-wish
-- charmbracelet/promwish → candy-metrics
-- charmbracelet/log → candy-log
+- charmbracelet/wish → sugar-ssh-server
+- charmbracelet/promwish → sugar-metrics
+- charmbracelet/log → sugar-log
 - charmbracelet/colorprofile → sugar-colorprofile
 - treilik/bubblelister → sugar-treelist
 - treilik/bubbleboxer → sugar-panels

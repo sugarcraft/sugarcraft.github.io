@@ -15,7 +15,7 @@
 - W8: AtomicJsonFile
 - W9: Highlighter interface
 - W11: candy-mdview dead code
-- W12: candy-layout solver
+- W12: candy-layout solver <!-- @rename-keep historical provenance -->
 - W14.1: blob/main→master
 - W14.2: Package count
 - W17: Façade tests
@@ -23,14 +23,14 @@
 
 ### ⚠️ PARTIAL
 
-- W7: unused path-repos — candy-vt still has unused candy-buffer path-repo
+- W7: unused path-repos — sugar-vterm still has unused sugar-cellbuffer path-repo
 - W14.4/5: icons — 60 present but need size verification
 - W15: orphaned features — only candy-kv verified
 - W16: status bar SSOT exists but migration unclear
 
 ### ❌ NOT DONE
 
-- W10: candy-git-server lacks candy-wish dep
+- W10: candy-git-server lacks candy-wish dep <!-- @rename-keep -->
 - W13: immutability violations not comprehensively verified
 
 ### ❓ UNCLEAR / NOT VERIFIED
@@ -43,9 +43,9 @@
 
 ### ✅ DONE (15+)
 
-- candy-ansi: OSC-8/hyperlink routing, CR/LF dispatch, CSI final methods
-- candy-async: OperationCancelledException, dead $operationPromise, retry() loop param, disposeAll throw-guard, retry bounded wall-clock
-- candy-buffer: Region validation
+- sugar-ansi-parser: OSC-8/hyperlink routing, CR/LF dispatch, CSI final methods
+- candy-async: OperationCancelledException, dead $operationPromise, retry() loop param, disposeAll throw-guard, retry bounded wall-clock <!-- @rename-keep historical provenance -->
+- sugar-cellbuffer: Region validation
 - candy-core: AtomicJsonFile/Json::decodeArray/Sanitize SSOT
 - sugar-fuzzy: ScoringProfile port, DoS caps
 - candy-git: rename parsing
@@ -53,13 +53,13 @@
 
 ### ⚠️ PARTIAL (2)
 
-- candy-ansi: CsiHandlerImpl stubs not deleted (W1.3 in progress)
+- sugar-ansi-parser: CsiHandlerImpl stubs not deleted (W1.3 in progress)
 - candy-files: trash dir path construction without mkdir
 
 ### ❌ NOT DONE (2)
 
-- candy-async: debounce/throttle no disposal handle
-- candy-buffer: no resize() method
+- candy-async: debounce/throttle no disposal handle <!-- @rename-keep historical provenance -->
+- sugar-cellbuffer: no resize() method
 
 ### ❓ UNCLEAR / NOT VERIFIED (40+)
 

@@ -353,7 +353,7 @@ Toast::View($background, $viewportWidth, $viewportHeight)
 
 **Implementation Ideas**:
 
-- Use `candy-vt` terminal dimension detection
+- Use `sugar-vterm` terminal dimension detection
 - Default maxWidth to terminal width minus margins
 - Provide `withMaxWidth(null)` for auto-detection
 
@@ -450,8 +450,8 @@ Bubbleup uses 100ms tick intervals with `tickCmd()` → `tickMsg` and increments
 1. **sugar-overlay integration**: SugarToast toasts could render via sugar-overlay's overlay compositor for complex layouts
 2. **sugar-charts integration**: Progress toasts could display sparkline charts instead of simple bars
 3. **candy-scriptui integration**: Toast notifications for shell command completion
-4. **candy-metrics integration**: Performance metric notifications
-5. **candy-log integration**: Log entries as toast notifications in real-time
+4. **sugar-metrics integration**: Performance metric notifications
+5. **sugar-log integration**: Log entries as toast notifications in real-time
 
 ---
 

@@ -28,7 +28,7 @@ From the first-stage analysis, SugarCraft maps to Bubble Tea ecosystem as:
 | bubbletea | SugarCraft | Status |
 |---|---|---|
 | `bubbletea` | `candy-core` | Core runtime, Model/Program/Update |
-| `lipgloss` | `candy-sprinkles` | Declarative styling |
+| `lipgloss` | `sugar-style` | Declarative styling |
 | `harmonica` | `sugar-spring` | Spring animations |
 | `bubblezone` | `sugar-mouse` | Mouse zone tracking |
 | `bubbles` | `sugar-widgets` | 14 prebuilt components |
@@ -184,7 +184,7 @@ func suspendProcess() {
 }
 ```
 
-**Direct Risk to SugarCraft:** YES - Signal handling in candy-pty must properly deregister channels to prevent leaks.
+**Direct Risk to SugarCraft:** YES - Signal handling in sugar-pty must properly deregister channels to prevent leaks.
 
 ### Issue #1520: Carriage Return Rendering Issues
 
@@ -516,7 +516,7 @@ The v2 Cursed Renderer is a complete rewrite modeled on ncurses:
 
 Reduces tearing and cursor flickering by atomically updating the terminal. Enabled by default in v2.
 
-**SugarCraft Status:** Terminal mode 2026 support should be part of sugar-colorprofile or candy-vt.
+**SugarCraft Status:** Terminal mode 2026 support should be part of sugar-colorprofile or sugar-vterm.
 
 ---
 

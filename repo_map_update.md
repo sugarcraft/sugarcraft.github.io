@@ -9,14 +9,14 @@
 _The shared-foundation refactor outlined above ran across 41 PRs (PRs #882–#920 + hotfix #913 + VHS fixes), creating 8 new foundation packages and migrating 15 consumer libs. Step-15 (sugar-forms) was completed via PRs #870 and #895. Below is the final accounting against the analysis sections._
 
 ### §326 Shared Internal Frameworks
-- ✅ candy-ansi (step-01, PR #882)
-- ✅ candy-buffer (step-02, PR #883)
-- ✅ candy-layout (step-03, PR #884)
-- ✅ candy-testing (step-04, PR #885)
+- ✅ sugar-ansi-parser (step-01, PR #882)
+- ✅ sugar-cellbuffer (step-02, PR #883)
+- ✅ sugar-constraints (step-03, PR #884)
+- ✅ sugar-testing (step-04, PR #885)
 - ✅ sugar-mouse (step-05, PR #886)
-- ✅ candy-input (step-06, PR #887)
+- ✅ sugar-input (step-06, PR #887)
 - ✅ sugar-fuzzy (step-07, PR #888)
-- ✅ candy-async (step-08, PR #889)
+- ✅ candy-async (step-08, PR #889) <!-- @rename-keep historical provenance -->
 - ✅ candy-core enhancements (step-09, PR #890)
 
 ### §344 Shared Components/Abstractions — covered by:
@@ -32,39 +32,39 @@ _The shared-foundation refactor outlined above ran across 41 PRs (PRs #882–#92
 - Buffer::diff() delta ANSI (PR #905 step-26)
 
 ### §368 Potential Consolidation Opportunities — covered by:
-- Merge sugar-forms + sugar-forms testing → candy-testing golden-file (PRs #885/#907)
-- Extract shared state machine from candy-vt → candy-ansi Parser (PRs #882/#899)
-- Consolidate layout solvers → candy-layout (PR #884 step-03)
+- Merge sugar-forms + sugar-forms testing → sugar-testing golden-file (PRs #885/#907)
+- Extract shared state machine from sugar-vterm → sugar-ansi-parser Parser (PRs #882/#899)
+- Consolidate layout solvers → sugar-constraints (PR #884 step-03)
 - Unify mouse hit-testing → sugar-mouse (PR #886 step-05)
-- Consolidate buffer rendering → candy-buffer (PR #883 step-02 + PR #905 step-26)
-- Consolidate async patterns → candy-async (PR #889 step-08)
-- Consolidate styling foundations → candy-sprinkles + sugar-markdown (PRs #891/#892)
+- Consolidate buffer rendering → sugar-cellbuffer (PR #883 step-02 + PR #905 step-26)
+- Consolidate async patterns → candy-async (PR #889 step-08) <!-- @rename-keep historical provenance -->
+- Consolidate styling foundations → sugar-style + sugar-markdown (PRs #891/#892)
 
 ### §386 Repeated Reinventions — covered by:
 - Fuzzy matching (candy-scriptui, sugar-forms, sugar-forms, sugar-widgets) → sugar-fuzzy (PR #888 step-07, PR #912 step-33)
-- Byte-loop ANSI parsing (candy-ansi-inspect, sugar-quickpick, candy-codeshot) → candy-ansi (PR #882 step-01, PR #899 step-20)
-- String-based layout → candy-layout (PR #884 step-03)
+- Byte-loop ANSI parsing (candy-ansi-inspect, sugar-quickpick, candy-codeshot) → sugar-ansi-parser (PR #882 step-01, PR #899 step-20)
+- String-based layout → sugar-constraints (PR #884 step-03)
 - Manual mouse coordinate tracking → sugar-mouse (PR #886 step-05, PR #901 step-22)
-- ReactPHP async inconsistency → candy-async (PR #889 step-08, PR #902 step-23)
-- Golden file assertions (zero packages) → candy-testing (PR #885 step-04, PR #907 step-28)
+- ReactPHP async inconsistency → candy-async (PR #889 step-08, PR #902 step-23) <!-- @rename-keep historical provenance -->
+- Golden file assertions (zero packages) → sugar-testing (PR #885 step-04, PR #907 step-28)
 - Vim mode (4 independent implementations) → unified in sugar-forms (PR #903 step-24)
-- Snapshot test pattern → candy-testing (PR #907 step-28)
+- Snapshot test pattern → sugar-testing (PR #907 step-28)
 - Terminal capability probing → sugar-colorprofile + TerminalProbe (PR #893 step-13, PR #908 step-29)
 - God class construction → builder patterns (PR #904 step-25)
 
 ### Ecosystem-wide adoption sweep (Phase 6, steps 31–37)
-- step-31 candy-pty: adopted candy-input + candy-ansi (PR #910)
-- step-32 candy-tetris + candy-minesweeper: adopted candy-buffer + sugar-mouse + candy-testing (PR #911)
+- step-31 sugar-pty: adopted sugar-input + sugar-ansi-parser (PR #910)
+- step-32 candy-tetris + candy-minesweeper: adopted sugar-cellbuffer + sugar-mouse + sugar-testing (PR #911)
 - step-33 candy-kv + candy-ssh-launcher + candy-git: adopted sugar-fuzzy (PR #912, hotfix PR #913)
-- step-34 sugar-datepicker + sugar-toast: adopted candy-buffer + candy-testing (PR #914)
-- step-35 candy-codetime + candy-mail + candy-git-server: adopted candy-async (PR #915)
-- step-36 sugar-animation + sugar-cli + sugar-spring + candy-flappy: adopted candy-testing (PR #916)
+- step-34 sugar-datepicker + sugar-toast: adopted sugar-cellbuffer + sugar-testing (PR #914)
+- step-35 candy-codetime + candy-mail + candy-git-server: adopted candy-async (PR #915) <!-- @rename-keep historical provenance -->
+- step-36 sugar-animation + sugar-cli + sugar-spring + candy-flappy: adopted sugar-testing (PR #916)
 - step-37 catch-all: deferral sweep complete — no remaining actionable libs (PR #917, docs-only)
 
-**15 consumer libs migrated** in Phase 6 (candy-pty, candy-tetris, candy-minesweeper, candy-kv, candy-ssh-launcher, candy-git, sugar-datepicker, sugar-toast, candy-codetime, candy-mail, candy-git-server, sugar-animation, sugar-cli, sugar-spring, candy-flappy).
+**15 consumer libs migrated** in Phase 6 (sugar-pty, candy-tetris, candy-minesweeper, candy-kv, candy-ssh-launcher, candy-git, sugar-datepicker, sugar-toast, candy-codetime, candy-mail, candy-git-server, sugar-animation, sugar-cli, sugar-spring, candy-flappy).
 
 ### Deferred to future plan
-See docs/repo_map_update_followups.md for the full list (4 items: candy-metrics, candy-log, sugar-mouse, candy-starter — all deferred from step-37 catch-all).
+See docs/repo_map_update_followups.md for the full list (4 items: sugar-metrics, sugar-log, sugar-mouse, candy-starter — all deferred from step-37 catch-all).
 
 ---
 
@@ -73,12 +73,12 @@ _Generated by step-39 of the shared-foundation refactor plan._
 
 ### §326 Shared Internal Frameworks
 - candy-core enhancements ✅ step-09
-- candy-layout ✅ step-03
-- candy-buffer ✅ step-02
-- candy-testing ✅ step-04
-- candy-ansi ✅ step-01
+- sugar-constraints ✅ step-03
+- sugar-cellbuffer ✅ step-02
+- sugar-testing ✅ step-04
+- sugar-ansi-parser ✅ step-01
 - sugar-mouse ✅ step-05
-- candy-input ✅ step-06
+- sugar-input ✅ step-06
 
 ### §344 Shared Components/Abstractions
 - Buffer / Cell value objects ✅ step-39
@@ -94,7 +94,7 @@ _Generated by step-39 of the shared-foundation refactor plan._
 
 ### §368 Potential Consolidation Opportunities
 - Merge sugar-forms and sugar-forms testing utilities ✅ step-39
-- Extract shared state machine from candy-vt ✅ step-39
+- Extract shared state machine from sugar-vterm ✅ step-39
 - Consolidate layout solvers ✅ step-39
 - Unify mouse hit-testing ✅ step-39
 - Consolidate buffer rendering ✅ step-39
@@ -117,7 +117,7 @@ _Generated by step-39 of the shared-foundation refactor plan._
 
 ## Global Ecosystem Summary
 
-SugarCraft is a 47-package PHP monorepo porting the Charmbracelet TUI ecosystem (bubbletea, lipgloss, glow, gum, huh, bubbles) and related tools to PHP 8.3+. Packages span foundational layers (`candy-core` TEA runtime, `candy-sprinkles` styling, `sugar-markdown` markdown) through UI components (`sugar-widgets`, `sugar-forms`, `sugar-forms`), data visualization (`sugar-charts`, `sugar-table`), and full applications (`candy-git-server`, `candy-tetris`, `candy-minesweeper`).
+SugarCraft is a 47-package PHP monorepo porting the Charmbracelet TUI ecosystem (bubbletea, lipgloss, glow, gum, huh, bubbles) and related tools to PHP 8.3+. Packages span foundational layers (`candy-core` TEA runtime, `sugar-style` styling, `sugar-markdown` markdown) through UI components (`sugar-widgets`, `sugar-forms`, `sugar-forms`), data visualization (`sugar-charts`, `sugar-table`), and full applications (`candy-git-server`, `candy-tetris`, `candy-minesweeper`).
 
 The ecosystem is functionally mature — many packages already surpass their Go upstreams in specific dimensions — but shares recurring architectural weaknesses that compound across the monorepo.
 
@@ -127,17 +127,17 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 *(Findings mentioned across 3+ packages/stages)*
 
-1. **No snapshot/golden file testing for ANSI rendering output** — The single most-cited gap. sugar-forms, sugar-forms, sugar-widgets, sugar-charts, sugar-table, candy-mdview, candy-vt, candy-vcr, candy-ansi-inspect, sugar-datepicker all explicitly cite zero ANSI byte-level assertions on `view()` output. Upstream repos (bubbletea, huh, ratatui, pterm with 28,952 tests) all use golden files. Without them, any regression in SGR codes, cursor positioning, or layout is invisible until runtime.
+1. **No snapshot/golden file testing for ANSI rendering output** — The single most-cited gap. sugar-forms, sugar-forms, sugar-widgets, sugar-charts, sugar-table, candy-mdview, sugar-vterm, candy-vcr, candy-ansi-inspect, sugar-datepicker all explicitly cite zero ANSI byte-level assertions on `view()` output. Upstream repos (bubbletea, huh, ratatui, pterm with 28,952 tests) all use golden files. Without them, any regression in SGR codes, cursor positioning, or layout is invisible until runtime.
 
 2. **Byte-level string operations break UTF-8/grapheme content** — sugar-quickpick's `highlightMatches()` uses byte indexing; candy-codeshot's 0.6 font aspect ratio fails on CJK/multi-byte content; candy-ansi-inspect's parser has C1 limitations due to PHP's native UTF-8 handling. The ecosystem re-implements byte-loop parsing instead of using a shared state machine.
 
-3. **No Cassowary constraint solver** — candy-sprinkles, candy-core, sugar-forms, sugar-widgets, sugar-panels, sugar-dashboard, candy-git, sugar-flexbox all need constraint-based layout (column A = 30% but never less than 10). Currently each package implements greedy one-pass sizing manually.
+3. **No Cassowary constraint solver** — sugar-style, candy-core, sugar-forms, sugar-widgets, sugar-panels, sugar-dashboard, candy-git, sugar-flexbox all need constraint-based layout (column A = 30% but never less than 10). Currently each package implements greedy one-pass sizing manually.
 
 4. **Greedy constraint solvers / no shared layout engine** — Every layout-sensitive package independently implements manual sizing logic. No shared layout engine exists at the foundation layer.
 
-5. **Terminal capability detection failures cause panics, not graceful fallback** — sugar-image, candy-mdview, candy-wish (Stage 2) all struggle with probing failures on Windows, SSH, old terminals. ratatui-image issues #69, #68, #72, #64 all stem from probing failures producing unhelpful errors. No package has an `auto()` fallback that always returns a usable renderer.
+5. **Terminal capability detection failures cause panics, not graceful fallback** — sugar-image, candy-mdview, candy-wish (Stage 2) all struggle with probing failures on Windows, SSH, old terminals. ratatui-image issues #69, #68, #72, #64 all stem from probing failures producing unhelpful errors. No package has an `auto()` fallback that always returns a usable renderer. <!-- @rename-keep -->
 
-6. **Manual byte-loop parsing vs. state machine architecture** — candy-ansi-inspect (551-line Inspector.php), sugar-quickpick use `strlen()`/`strpos()` at byte level. The canonical state machine from `charmbracelet/x/ansi` is already available in candy-vt but not shared.
+6. **Manual byte-loop parsing vs. state machine architecture** — candy-ansi-inspect (551-line Inspector.php), sugar-quickpick use `strlen()`/`strpos()` at byte level. The canonical state machine from `charmbracelet/x/ansi` is already available in sugar-vterm but not shared.
 
 7. **God Classes with 10-15 constructor parameters** — super-candy's `Manager` (915 lines, 15 params), candy-sql's `App` (12 args). Builder pattern never applied proactively.
 
@@ -151,9 +151,9 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 1. **Fuzzy matching with ranked scoring + highlighted match indices** — candy-scriptui, sugar-forms, sugar-forms, sugar-widgets all cite the same gap: `FuzzyMatcher::match()` returns scored candidates but NOT matched character indices (filter highlighting UI is impossible). The Go upstream `sahilm/fuzzy` via gum filter is cited as reference. PHP has no production-grade fuzzy library.
 
-2. **True cell-based buffer model** — candy-core, sugar-widgets, candy-sprinkles all render through string-based diffing. External repos (ultraviolet, ratatui) use `Buffer`/`Cell` grids where each cell has (rune, style, link, width), enabling per-cell dirty tracking and SGR transition optimization.
+2. **True cell-based buffer model** — candy-core, sugar-widgets, sugar-style all render through string-based diffing. External repos (ultraviolet, ratatui) use `Buffer`/`Cell` grids where each cell has (rune, style, link, width), enabling per-cell dirty tracking and SGR transition optimization.
 
-3. **Snapshot tests for ANSI render output** — Called out explicitly as "almost entirely absent" across sugar-forms, sugar-forms, sugar-widgets, sugar-markdown, sugar-charts, sugar-table, candy-mdview, candy-vt, candy-vcr.
+3. **Snapshot tests for ANSI render output** — Called out explicitly as "almost entirely absent" across sugar-forms, sugar-forms, sugar-widgets, sugar-markdown, sugar-charts, sugar-table, candy-mdview, sugar-vterm, candy-vcr.
 
 4. **Cassowary constraint solver** — Enables responsive layouts that adapt to terminal resize without manual string padding. Declarative constraint specification is impossible today.
 
@@ -163,7 +163,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 7. **Mouse event deduplication helpers in sugar-mouse** — Upstream issue #10: drag operations produce duplicate `MouseDown` events. `ZoneClickTracker` class would be competitive differentiation.
 
-8. **Persistent storage backend** — candy-git-server has zero persistence (in-memory only; upstream soft-serve uses SQLite/PostgreSQL). candy-metrics needs HTTP scrape endpoint.
+8. **Persistent storage backend** — candy-git-server has zero persistence (in-memory only; upstream soft-serve uses SQLite/PostgreSQL). sugar-metrics needs HTTP scrape endpoint.
 
 9. **TUI implementation missing** — candy-git-server has zero TUI (the defining upstream feature). SSH-server mode is #1 requested feature in candy-ssh-launcher.
 
@@ -189,9 +189,9 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 3. **Consistent mouse hit-testing infrastructure** — Mouse support relies on external sugar-mouse Manager wiring rather than bubblezone's self-contained Mark/Scan/Get pattern. No consistent coordinate translation or zone tracking.
 
-4. **Async concurrency model consistency** — sugar-forms/sugar-forms have ReactPHP async suggestions but no cancellation. candy-pty has no async concurrency model. candy-scriptui's `subscriptions()` returns null. The Elm Architecture's `Cmd` pattern is fragmented.
+4. **Async concurrency model consistency** — sugar-forms/sugar-forms have ReactPHP async suggestions but no cancellation. sugar-pty has no async concurrency model. candy-scriptui's `subscriptions()` returns null. The Elm Architecture's `Cmd` pattern is fragmented.
 
-5. **Shared ANSI state machine** — `charmbracelet/x/ansi` Parser is already in candy-vt but not shared. candy-ansi-inspect, sugar-quickpick, candy-codeshot re-implement byte-level parsing instead.
+5. **Shared ANSI state machine** — `charmbracelet/x/ansi` Parser is already in sugar-vterm but not shared. candy-ansi-inspect, sugar-quickpick, candy-codeshot re-implement byte-level parsing instead.
 
 ---
 
@@ -296,7 +296,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 | Rank | Repository | Citations | Role |
 |------|-----------|------------|-------|
 | 1 | `charmbracelet/bubbletea` | 40+ | Canonical TEA runtime upstream; every package either ports from it or references its patterns (Model/Update/View/Msg, Cmd/Batch, subscriptions, synchronized output, mouse/focus/paste handling) |
-| 2 | `charmbracelet/lipgloss` | 25+ | Primary styling upstream for candy-sprinkles; CSS shorthand, adaptive color, CIELAB blending, borders, layer compositing, Canvas cell buffer |
+| 2 | `charmbracelet/lipgloss` | 25+ | Primary styling upstream for sugar-style; CSS shorthand, adaptive color, CIELAB blending, borders, layer compositing, Canvas cell buffer |
 | 3 | `ratatui/ratatui` | 20+ | TUI benchmark; Cassowary constraint solver, buffer diffing, StatefulWidget pattern, immediate-mode rendering, Text/Line/Span hierarchy |
 | 4 | `charmbracelet/gum` | 8+ | Primary CLI tool upstream for candy-scriptui; fuzzy filter, 2D grid choose, external editor integration, per-element style flags |
 | 5 | `charmbracelet/huh` | 7+ | Upstream for sugar-forms/sugar-forms Form/Field architecture; Eval/Cache dynamic binding, per-field keymap override, error summary |
@@ -323,7 +323,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 4. **`charmbracelet/bubbletea` mouse race condition issues** — Referenced by multiple packages for mouse event deduplication approaches.
 
-5. **`textualize/textual` issue #6381** — GC stuttering with weakref DOM; cautionary tale for candy-sprinkles-style object reference management.
+5. **`textualize/textual` issue #6381** — GC stuttering with weakref DOM; cautionary tale for sugar-style-style object reference management.
 
 6. **`charmbracelet/bubbletea` nested model routing bugs** — TEA architecture limitations that SugarCraft should design around.
 
@@ -331,7 +331,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 8. **`ratatui/ratatui` Cassowary constraint solver** — The definitive open-source reference implementation for constraint-based layout.
 
-9. **`charmbracelet/x/ansi` ECMA-48 state machine** — The canonical Go state machine for ANSI parsing, already partially ported in candy-vt.
+9. **`charmbracelet/x/ansi` ECMA-48 state machine** — The canonical Go state machine for ANSI parsing, already partially ported in sugar-vterm.
 
 10. **`go-termimg` parallel base64 encoding** — Practical performance optimization pattern for terminal image rendering.
 
@@ -343,7 +343,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 | # | Opportunity | Primary Packages | Impact | Complexity | Risk | Priority |
 |---|-------------|------------------|--------|-------------|------|----------|
-| 1 | Add snapshot/golden file tests for ANSI output | sugar-forms, sugar-forms, sugar-widgets, sugar-charts, sugar-table, candy-mdview, candy-vt, candy-vcr | Critical | Low | Low | P0 |
+| 1 | Add snapshot/golden file tests for ANSI output | sugar-forms, sugar-forms, sugar-widgets, sugar-charts, sugar-table, candy-mdview, sugar-vterm, candy-vcr | Critical | Low | Low | P0 |
 | 2 | Add `Simulator` + `Program::withInput()/withOutput()` test harness | All TEA-based packages | Critical | Medium | Low | P0 |
 | 3 | Add `flock()` to JSONL append operations | candy-codetime, sugar-animation | Critical | Low | Low | P0 |
 | 4 | Implement fuzzy matching with scored indices | candy-scriptui, sugar-forms, sugar-forms, sugar-widgets | High | Medium | Low | P0 |
@@ -351,11 +351,11 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 | 6 | Extract `DatabaseInterface` in candy-sql | candy-sql | Critical | Low | Low | P0 |
 | 7 | Fix `toSshArgv()` to emit ALL identity files | candy-ssh-launcher | High | Low | Low | P0 |
 | 8 | Wire `Mosaic::auto()` + `diagnose()` | sugar-image | High | Low | Low | P0 |
-| 9 | Implement Cassowary constraint solver | candy-sprinkles, candy-core, sugar-widgets, sugar-panels, sugar-dashboard | Critical | High | Medium | P1 |
-| 10 | Implement cell-based buffer model | candy-core, sugar-widgets, candy-sprinkles | Critical | High | Medium | P1 |
+| 9 | Implement Cassowary constraint solver | sugar-style, candy-core, sugar-widgets, sugar-panels, sugar-dashboard | Critical | High | Medium | P1 |
+| 10 | Implement cell-based buffer model | candy-core, sugar-widgets, sugar-style | Critical | High | Medium | P1 |
 | 11 | Implement buffer diffing / dirty-region tracking | sugar-panels, sugar-dashboard, sugar-crush, sugar-overlay, sugar-flexbox, sugar-treelist | High | Medium | Low | P1 |
 | 12 | Add input driver for terminal keypress decoding | sugar-readline | Critical | High | Medium | P1 |
-| 13 | Add `charmbracelet/x/ansi` state machine sharing | candy-ansi-inspect, sugar-quickpick, candy-codeshot, candy-vt | High | Medium | Low | P1 |
+| 13 | Add `charmbracelet/x/ansi` state machine sharing | candy-ansi-inspect, sugar-quickpick, candy-codeshot, sugar-vterm | High | Medium | Low | P1 |
 | 14 | Implement GitHub/GitLab README fetching | candy-mdview | High | Medium | Low | P1 |
 | 15 | Add debug visualization mode | sugar-mouse | High | Low | Low | P1 |
 | 16 | Add mouse event deduplication helpers | sugar-mouse | High | Low | Low | P1 |
@@ -394,7 +394,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 ### Medium-Term (2-8 weeks)
 
-1. **Implement Cassowary constraint solver** — Shared layout engine enabling responsive dashboards. 1000+ lines of algorithmic code; should be a shared `SugarCraft\Layout` package.
+1. **Implement Cassowary constraint solver** — Shared layout engine enabling responsive dashboards. 1000+ lines of algorithmic code; should be a shared `SugarCraft\Constraints` package.
 
 2. **Implement cell-based buffer model** — Shared `Buffer`/`Cell` value object hierarchy enabling per-cell diffing, canvas layering, animation efficiency.
 
@@ -404,7 +404,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 5. **Add input driver to sugar-readline** — Decode terminal escape sequences (Kitty keyboard protocol, SGR mouse). Unblock real-world interactive usage.
 
-6. **Share `charmbracelet/x/ansi` state machine** — Extract from candy-vt and share with candy-ansi-inspect, sugar-quickpick, candy-codeshot. Eliminates duplicate byte-loop parsers.
+6. **Share `charmbracelet/x/ansi` state machine** — Extract from sugar-vterm and share with candy-ansi-inspect, sugar-quickpick, candy-codeshot. Eliminates duplicate byte-loop parsers.
 
 7. **Implement SSH server mode in candy-git-server** — The defining upstream feature that is entirely absent.
 
@@ -418,7 +418,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 1. **Shared `Buffer`/`Cell` rendering foundation** — Architectural investment enabling all packages to benefit from cell-level diffing, per-cell styling, and animation efficiency in one change.
 
-2. **Shared layout engine with Cassowary** — `SugarCraft\Layout` package used by candy-sprinkles, sugar-widgets, sugar-panels, sugar-dashboard, sugar-forms.
+2. **Shared layout engine with Cassowary** — `SugarCraft\Layout` package used by sugar-style, sugar-widgets, sugar-panels, sugar-dashboard, sugar-forms. <!-- @rename-keep -->
 
 3. **Shared mouse hit-testing** — bubblezone-style Mark/Scan/Get pattern self-contained in each zone-aware package rather than external dependency.
 
@@ -438,13 +438,13 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 1. **`SugarCraft/Core`** — Already exists as candy-core; needs `ProgramOptions::builder()`, `Program::withLogger()`, `Program::withExceptionHandler()`, exposed `$lastFrameDuration`.
 
-2. **`SugarCraft/Layout`** — New package implementing Cassowary constraint solver. Consumed by candy-sprinkles, sugar-widgets, sugar-panels, sugar-dashboard, sugar-forms.
+2. **`SugarCraft/Layout`** — New package implementing Cassowary constraint solver. Consumed by sugar-style, sugar-widgets, sugar-panels, sugar-dashboard, sugar-forms.
 
-3. **`SugarCraft/Buffer`** — New package implementing `Buffer`/`Cell` grid model. Consumed by candy-core renderer, candy-sprinkles Canvas, sugar-markdown Renderer, sugar-widgets components, sugar-forms primitives.
+3. **`SugarCraft/Buffer`** — New package implementing `Buffer`/`Cell` grid model. Consumed by candy-core renderer, sugar-style Canvas, sugar-markdown Renderer, sugar-widgets components, sugar-forms primitives.
 
 4. **`SugarCraft/Testing`** — New package with `Simulator` class, `Program::withInput()/withOutput()`, snapshot assertion utilities, golden file management.
 
-5. **`SugarCraft/Ansi`** — Shared `charmbracelet/x/ansi` state machine port. Consumed by candy-ansi-inspect, sugar-quickpick, candy-codeshot, candy-vt.
+5. **`SugarCraft/Ansi`** — Shared `charmbracelet/x/ansi` state machine port. Consumed by candy-ansi-inspect, sugar-quickpick, candy-codeshot, sugar-vterm.
 
 6. **`SugarCraft/Mouse`** — Shared Mark/Scan/Get pattern for self-contained zone hit-testing. Consumed by sugar-mouse, sugar-overlay, sugar-navstack, and all zone-aware packages.
 
@@ -480,9 +480,9 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 1. **Merge sugar-forms and sugar-forms testing utilities** — Both have identical needs for ANSI byte assertions; share golden file utilities.
 
-2. **Extract shared state machine from candy-vt** — `charmbracelet/x/ansi` parser should be a standalone package consumed by all ANSI-inspection packages.
+2. **Extract shared state machine from sugar-vterm** — `charmbracelet/x/ansi` parser should be a standalone package consumed by all ANSI-inspection packages.
 
-3. **Consolidate layout solvers** — 5+ packages each have greedy layout code; a shared `SugarCraft\Layout` would eliminate duplication and enable constraint-based sizing.
+3. **Consolidate layout solvers** — 5+ packages each have greedy layout code; a shared `SugarCraft\Constraints` would eliminate duplication and enable constraint-based sizing.
 
 4. **Unify mouse hit-testing** — bubblezone-style Mark/Scan/Get should be shared infrastructure, not per-package with external wiring to sugar-mouse.
 
@@ -490,7 +490,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 6. **Consolidate async patterns** — ReactPHP integration is fragmented; a shared async utilities package would unify cancellation and subscription patterns.
 
-7. **Consolidate styling foundations** — sugar-markdown, candy-sprinkles, and ad-hoc styling across packages should share a common style inheritance system.
+7. **Consolidate styling foundations** — sugar-markdown, sugar-style, and ad-hoc styling across packages should share a common style inheritance system.
 
 ---
 
@@ -512,7 +512,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 8. **Snapshot test pattern** — Every package independently "should add" them; no shared infrastructure emerged despite universal acknowledgment of need.
 
-9. **Terminal capability probing** — sugar-image, candy-mdview, candy-wish each struggle with the same probing failure patterns independently.
+9. **Terminal capability probing** — sugar-image, candy-mdview, candy-wish each struggle with the same probing failure patterns independently. <!-- @rename-keep -->
 
 10. **God class construction** — super-candy Manager (915 lines), candy-sql App (12 args) represent the same architectural failure in different stages.
 
@@ -522,7 +522,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 *Cross-referenced from all stages*
 
-1. **candy-sprinkles > lipgloss** — Greedy constraint solver (handles 80% of cases vs lipgloss none), `Solver::SpaceBetween`/`SpaceAround`, 10 named themes vs fewer presets.
+1. **sugar-style > lipgloss** — Greedy constraint solver (handles 80% of cases vs lipgloss none), `Solver::SpaceBetween`/`SpaceAround`, 10 named themes vs fewer presets.
 
 2. **sugar-forms / sugar-forms > huh** — ReactPHP async suggestions (not in Go upstream at all), Vim mode, smooth scroll with lerp, 7 built-in themes vs 5.
 
@@ -540,7 +540,7 @@ The ecosystem is functionally mature — many packages already surpass their Go 
 
 9. **candy-codeshot > charmbracelet/freeze** — 5 window decoration styles (macOS-only upstream), TTF font embedding, line highlighting, language detection, pure PHP SVG (no WASM/FFI), immutable builders.
 
-10. **sugar-panels > treilik/bubbleboxer** — Immutable Node pattern, 9 border styles via candy-sprinkles, pure string renderer decoupled from tea runtime.
+10. **sugar-panels > treilik/bubbleboxer** — Immutable Node pattern, 9 border styles via sugar-style, pure string renderer decoupled from tea runtime.
 
 11. **sugar-overlay > rmhubbert/bubbletea-overlay** — 9-position anchor (vs upstream 5), multi-overlay z-index stacking, animation infrastructure, backdrop dimming, auto-size, click-outside dismissal, UTF-8 column tracking.
 

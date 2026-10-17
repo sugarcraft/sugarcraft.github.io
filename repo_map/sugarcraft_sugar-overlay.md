@@ -8,7 +8,7 @@
 
 - **Status:** v1 Ready
 
-- **Depends on:** `candy-core` (runtime), `candy-sprinkles` (Border/Style), `sugar-mouse` (Manager), `sugar-spring` (CubicBezier easing)
+- **Depends on:** `candy-core` (runtime), `sugar-style` (Border/Style), `sugar-mouse` (Manager), `sugar-spring` (CubicBezier easing)
 
 - **Namespace:** `SugarCraft\Overlay`
 
@@ -26,7 +26,7 @@
 | Animation | No | Yes (Slide/Fade/Scale + CubicBezier) | Yes — new |
 | Backdrop dimming | No | Yes (truecolor opacity blend 0–100) | Yes — new |
 | Auto-size | No | Yes (compute from bordered content) | Yes — new |
-| Border chrome | No | Yes (candy-sprinkles Border) | Yes — new |
+| Border chrome | No | Yes (sugar-style Border) | Yes — new |
 | Click-outside dismiss | No | Yes (sugar-mouse Manager hit testing) | Yes — new |
 | UTF-8 multibyte handling | Via `charmbracelet/x/ansi` | Via `mb_str_split` + byte-level replacement | Parity |
 | Immutable pattern | No (Go struct) | Yes (readonly props + mutate()) | Adapted |
@@ -398,7 +398,7 @@ return $veil->composite($fg, $bg, Position::CENTER, Position::CENTER);
 
 ---
 
-## Integration with candy-core, candy-sprinkles, sugar-mouse, sugar-spring
+## Integration with candy-core, sugar-style, sugar-mouse, sugar-spring
 
 ### candy-core
 
@@ -408,7 +408,7 @@ return $veil->composite($fg, $bg, Position::CENTER, Position::CENTER);
 
 - **Ansi** utility (`SugarCraft\Core\Util\Ansi`) for `applyBackdrop()` (SGR codes)
 
-### candy-sprinkles
+### sugar-style
 
 - **Border** — terminal border chrome (`withBorder()` accepts `Border` instance)
 
@@ -441,7 +441,7 @@ This replaced the old nested `Ansi::FAINT` passes, which only produced about two
 
 ### Diff Pen Colour Clamping (`Veil::penFromSgr()` / `Veil::xterm256ToHex()`)
 
-`composite()` re-encodes the pen into every delta it emits, so the pen must mean what the full frame meant. Out-of-range colour operands are clamped into 0–255, never bit-masked: truecolor components and `38;5` / `48;5` palette indices alike, the same rule candy-buffer's `styleFromSgr()` applies. Before the index clamp, `38;5;300` ran the grey-ramp formula to 688 per channel and produced `0x2b2b2b0`, a value wider than `0xRRGGBB`, and a negative index fell back to white.
+`composite()` re-encodes the pen into every delta it emits, so the pen must mean what the full frame meant. Out-of-range colour operands are clamped into 0–255, never bit-masked: truecolor components and `38;5` / `48;5` palette indices alike, the same rule sugar-cellbuffer's `styleFromSgr()` applies. Before the index clamp, `38;5;300` ran the grey-ramp formula to 688 per channel and produced `0x2b2b2b0`, a value wider than `0xRRGGBB`, and a negative index fell back to white.
 
 ### UTF-8 Character Replacement (`Veil::replaceCharAt()` at lines 461–521)
 
@@ -491,7 +491,7 @@ Without `autoSize`, foreground dimensions are measured raw and the border is NOT
 | Multi-overlay | No | Yes (VeilStack) |
 | Animation | No | Yes (Slide/Fade/Scale + CubicBezier) |
 | Backdrop dimming | No | Yes (ANSI SGR) |
-| Border chrome | No | Yes (candy-sprinkles) |
+| Border chrome | No | Yes (sugar-style) |
 | Click-outside dismiss | No | Yes (sugar-mouse) |
 | Auto-size | No | Yes |
 | Z-index | No | Yes (per-Veil int) |
@@ -672,11 +672,11 @@ The `Manager` is injected via `withManager()`, not created internally. This:
 | Library | Relationship |
 |---------|--------------|
 | `candy-core` | Provides `Model` interface + `MouseMsg` + `Width` + `Ansi` utilities |
-| `candy-sprinkles` | Provides `Border` and `Style` for border chrome |
+| `sugar-style` | Provides `Border` and `Style` for border chrome |
 | `sugar-mouse` | Provides `Manager` for spatial hit testing |
 | `sugar-spring` | Provides `CubicBezier` easing for animations |
 | `sugar-toast` | Uses sugar-overlay pattern for floating notifications |
-| `candy-sprinkles` Layer/Compositor | Related but more sophisticated cell-buffer approach |
+| `sugar-style` Layer/Compositor | Related but more sophisticated cell-buffer approach |
 
 ---
 

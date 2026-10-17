@@ -77,10 +77,10 @@ SSH client
     │
     │  ssh user@host          ← no command
     ▼
-candy-wish  Server               (existing — SSH listener + auth)
+sugar-ssh-server  Server               (existing — SSH listener + auth)
     │  PasswordAuth / PublicKeyAuth
     ▼
-candy-wish  Channel              (existing — pty-req, shell, window-change)
+sugar-ssh-server  Channel              (existing — pty-req, shell, window-change)
     │  Shell request
     ▼
 candy-git-server  TuiSession         (NEW — phase 1)
@@ -91,49 +91,49 @@ candy-core  Program             (existing — Bubble Tea runtime)
     ▼
 candy-git-server  RepoListModel ←→ ChildModels (NEW — phases 1–5)
     │
-    ├── candy-sprinkles  Style          (border, fg, bg, padding)
+    ├── sugar-style  Style          (border, fg, bg, padding)
     ├── sugar-panels      SugarPanels     (titled boxes / split panes)
     ├── sugar-flexbox   Viewport       (scrolling lists, scrollbar)
     ├── sugar-markdown      Renderer       (markdown → ANSI for README)
     ├── sugar-markdown      SyntaxHighlighter (file viewer colourisation)
     ├── candy-git      Git            (`log`, `show`, `cat-file`, `ls-tree`)
     ├── candy-core       Cmd::setClipboard()   (OSC 52 emitter, phase 5)
-    └── candy-vt         (terminal-state model used by candy-core writer)
+    └── sugar-vterm         (terminal-state model used by candy-core writer)
 ```
 
-### 2.1 SSH → TUI plumbing (candy-wish handles it)
+### 2.1 SSH → TUI plumbing (sugar-ssh-server handles it)
 
-candy-wish already has the pieces we need:
+sugar-ssh-server already has the pieces we need:
 
-| candy-wish surface | What it gives us |
+| sugar-ssh-server surface | What it gives us |
 |---|---|
-| `SugarCraft\Wish\Server` | accepts a connection, runs middleware chain |
-| `SugarCraft\Wish\Channel\ChannelHandler` interface | per-channel events (shell / exec / pty-req / window-change) |
-| `SugarCraft\Wish\Channel\DefaultChannelHandler` | default impl we wrap |
-| `SugarCraft\Wish\Transport\InProcessTransport` | runs in this PHP process (no host sshd) |
-| `SugarCraft\Wish\Transport\HostSshdTransport` | opt-in: shell out to host sshd |
+| `SugarCraft\SshServer\Server` | accepts a connection, runs middleware chain |
+| `SugarCraft\SshServer\Channel\ChannelHandler` interface | per-channel events (shell / exec / pty-req / window-change) |
+| `SugarCraft\SshServer\Channel\DefaultChannelHandler` | default impl we wrap |
+| `SugarCraft\SshServer\Transport\InProcessTransport` | runs in this PHP process (no host sshd) |
+| `SugarCraft\SshServer\Transport\HostSshdTransport` | opt-in: shell out to host sshd |
 
 candy-git-server's current `SSH/SSHServer.php` uses `ext-ssh2`'s sftp-style
 session model and only routes Git wire-protocol exec'd commands. The
-TUI plan **replaces this with candy-wish**:
+TUI plan **replaces this with sugar-ssh-server**:
 
 - Connection arrives.
-- candy-wish authenticates against `User::keys` (existing model).
+- sugar-ssh-server authenticates against `User::keys` (existing model).
 - If client sent `git-upload-pack` / `git-receive-pack` as the exec
   command, route to `UploadPack` / `ReceivePack` (unchanged behaviour).
 - If client sent **no exec command** (interactive `ssh user@host`),
   start a TUI session.
 
-This consolidates SSH on candy-wish and unblocks Window-change /
-PTY-resize handling for free (candy-wish ships those Msgs since step
+This consolidates SSH on sugar-ssh-server and unblocks Window-change /
+PTY-resize handling for free (sugar-ssh-server ships those Msgs since step
 06.09).
 
 > **Dependency note:** phase 1 implementer **must** evaluate whether to
-> keep `ext-ssh2`'s `SSHServer.php` for Git wire and only use candy-wish
+> keep `ext-ssh2`'s `SSHServer.php` for Git wire and only use sugar-ssh-server
 > for the TUI shell path, or rip out `ext-ssh2` entirely. The latter is
 > cleaner but ports of the wire-protocol handlers across two
 > transports doubles the surface area. Recommendation: **keep ext-ssh2
-> for `git-upload-pack` / `git-receive-pack`; introduce candy-wish
+> for `git-upload-pack` / `git-receive-pack`; introduce sugar-ssh-server
 > alongside it for the TUI path.** Both listeners can share the
 > same `User` / `AccessControl` registry.
 
@@ -170,14 +170,14 @@ in place; the TUI just composes them.
   around each pane.
 - **sugar-flexbox** — `Viewport` for the scrollable lists (repo list,
   file tree, commit log) and `Scrollbar` to render the indicator.
-- **candy-sprinkles** — `Style` for inline runs (highlight selected
+- **sugar-style** — `Style` for inline runs (highlight selected
   row, dim metadata text, brand colour for branch names).
 - **sugar-markdown** — `Renderer` for README markdown, `SyntaxHighlighter`
   for file blob view.
 
 ### 2.5 Theming
 
-Phase-5 polish only. Default theme = candy-sprinkles `Theme::dracula()`
+Phase-5 polish only. Default theme = sugar-style `Theme::dracula()`
 (or similar dark theme). User-side override deferred until upstream
 soft-serve ships theming primitives (it does not at time of writing).
 
@@ -341,7 +341,7 @@ goes back; `?` opens help.
 
 `enter` opens a sub-screen showing the commit's diff (text only —
 syntax highlighting per file, with `+`/`-` colourisation via
-candy-sprinkles).
+sugar-style).
 
 ### 4.6 Help panel (phase 5)
 
@@ -354,12 +354,12 @@ per-screen extras. Press `?` again or `Esc` to dismiss.
 
 ### Phase 1 — TUI session + repo list (≈ 2 weeks)
 
-Smallest shippable unit. Lands the candy-wish ↔ candy-git-server handshake
+Smallest shippable unit. Lands the sugar-ssh-server ↔ candy-git-server handshake
 and the repo-list screen.
 
 **New files:**
 
-- `candy-git-server/src/Tui/TuiSession.php` — bridge from candy-wish channel
+- `candy-git-server/src/Tui/TuiSession.php` — bridge from sugar-ssh-server channel
   to candy-core `Program`; resolves the authed user and starts a
   `RepoListModel`.
 - `candy-git-server/src/Tui/RepoListModel.php` — Bubble Tea Model returning
@@ -367,9 +367,9 @@ and the repo-list screen.
 - `candy-git-server/src/Tui/RepoListView.php` — pure render function called
   by `RepoListModel::view()`.
 - `candy-git-server/src/Tui/Theme.php` — palette wrapper around
-  candy-sprinkles `Theme`.
+  sugar-style `Theme`.
 - `candy-git-server/bin/candy-git-server-tui` — TUI entry-point script that opens
-  the TUI on stdin/stdout (used by candy-wish channel handler and as a
+  the TUI on stdin/stdout (used by sugar-ssh-server channel handler and as a
   standalone debug command). Lives under `bin/` next to the existing
   `bin/candy-git-server` per current candy-git-server precedent. (The original
   draft proposed a new top-level `cmd/` directory; review folded it
@@ -383,8 +383,8 @@ and the repo-list screen.
 
 **Changed files:**
 
-- `candy-git-server/composer.json` — add `sugarcraft/candy-wish`,
-  `sugarcraft/candy-core`, `sugarcraft/candy-sprinkles`,
+- `candy-git-server/composer.json` — add `sugarcraft/sugar-ssh-server`,
+  `sugarcraft/candy-core`, `sugarcraft/sugar-style`,
   `sugarcraft/candy-git`, `sugarcraft/sugar-panels`,
   `sugarcraft/sugar-flexbox`, `sugarcraft/sugar-markdown` as `@dev` plus
   matching path-repo entries (closure via `tools/check-path-repos.php
@@ -408,11 +408,11 @@ and the repo-list screen.
 **Acceptance:**
 
 - `ssh user@host` (with no command) starts the TUI and shows the repo
-  list rendered through candy-sprinkles + sugar-panels.
+  list rendered through sugar-style + sugar-panels.
 - `git clone ssh://user@host:23231/<repo>` still works (existing
   path).
 - `vendor/bin/phpunit` green in candy-git-server + all four consuming libs
-  (candy-wish, candy-core, candy-git, sugar-markdown).
+  (sugar-ssh-server, candy-core, candy-git, sugar-markdown).
 - `cd candy-git-server && composer validate` clean (drop `--strict`).
 
 ### Phase 2 — Repo detail view (≈ 1.5 weeks)
@@ -524,7 +524,7 @@ diff with file-level colourisation.
 - OSC 52 clipboard for the `c` keybind on both `RepoListView` and
   `RepoDetailView` — consume candy-core's existing
   `Cmd::setClipboard($url, 'c')` (`candy-core/src/Cmd.php:L267`,
-  shipped). No candy-vt prerequisite (candy-vt has OSC 52 *read*
+  shipped). No sugar-vterm prerequisite (sugar-vterm has OSC 52 *read*
   support; emit lives in candy-core via `Util/Ansi::setClipboard`).
 - HelpPanel modal (`?` keybind from any screen).
 - Theme polish — pick default theme; map keyboard cues consistently
@@ -550,9 +550,9 @@ Pre-conditions that **must** be true before phase-1 ships:
 
 | Dep | Status | Where it lives | Notes |
 |---|---|---|---|
-| candy-wish ChannelHandler API | ✅ landed step 06.09 (PR #607) | `candy-wish/src/Channel/` | needed for TUI vs exec routing |
-| candy-wish Session metadata | ✅ landed step 06.12 (PR #613) | `candy-wish/src/Session.php` | user-id, key-fingerprint surface |
-| candy-wish async Middleware | ✅ landed step 06.13 (PR #615) | `candy-wish/src/Middleware.php` | TUI session is long-lived |
+| sugar-ssh-server ChannelHandler API | ✅ landed step 06.09 (PR #607) | `sugar-ssh-server/src/Channel/` | needed for TUI vs exec routing |
+| sugar-ssh-server Session metadata | ✅ landed step 06.12 (PR #613) | `sugar-ssh-server/src/Session.php` | user-id, key-fingerprint surface |
+| sugar-ssh-server async Middleware | ✅ landed step 06.13 (PR #615) | `sugar-ssh-server/src/Middleware.php` | TUI session is long-lived |
 | candy-core ScreenStack | ✅ landed step 06.02 (PR #583) | `candy-core/src/ScreenStack.php` | TUI nav stack |
 | candy-core Component lifecycle | ✅ landed step 06.03 (PR #587) | `candy-core/src/Component.php` | onMount / onUnmount for modals |
 | candy-core OSC 52 emitter | ✅ shipped | `candy-core/src/Cmd.php` (`Cmd::setClipboard()`, L267) | clipboard for `c` keybind (phase 5) |
@@ -602,8 +602,8 @@ authored.
 `candy-core/src/Cmd.php:L267` already exposes
 `Cmd::setClipboard($text, $selection = 'c')`, which emits the OSC 52
 escape (via `candy-core/src/Util/Ansi.php:L400` `Ansi::setClipboard`).
-Phase 5 consumes this directly — there is **no candy-vt prerequisite**
-for the clipboard emitter. (candy-vt has OSC 52 *read* support; emit
+Phase 5 consumes this directly — there is **no sugar-vterm prerequisite**
+for the clipboard emitter. (sugar-vterm has OSC 52 *read* support; emit
 lives in candy-core.)
 
 ---
@@ -649,8 +649,8 @@ A phase is "done" when:
    16 locale files (placeholder English fallback is fine; real
    translations are a separate i18n carry-forward).
 6. `vendor/bin/phpunit` in **every** consumer lib that candy-git-server
-   pulls in (candy-wish, candy-core, candy-git, sugar-markdown,
-   candy-sprinkles, sugar-panels, sugar-flexbox) still green.
+   pulls in (sugar-ssh-server, candy-core, candy-git, sugar-markdown,
+   sugar-style, sugar-panels, sugar-flexbox) still green.
 7. `php tools/check-path-repos.php` reports closure clean.
 
 ---
@@ -666,31 +666,31 @@ main load point is the commit log on a large repo (10k+ commits);
 phase 4 addresses that with windowed loading. **No expected
 architectural blocker.**
 
-### 9.2 What about `ext-ssh2` vs candy-wish overlap?
+### 9.2 What about `ext-ssh2` vs sugar-ssh-server overlap?
 
-candy-git-server currently embeds `ext-ssh2`. candy-wish ships its own SSH
+candy-git-server currently embeds `ext-ssh2`. sugar-ssh-server ships its own SSH
 listener. Running both side-by-side (two listeners, two ports? Or two
 modes on one port?) is brittle.
 
 **Recommended resolution:** during phase-1 design, decide between:
 
 - **Option A — Dual-listener.** ext-ssh2 keeps port 23231 for
-  Git-over-SSH; candy-wish exposes a second port (e.g. 23232) for the
+  Git-over-SSH; sugar-ssh-server exposes a second port (e.g. 23232) for the
   TUI. Cleaner separation, but users hit a different port for clone vs
   TUI, which is ugly.
-- **Option B — Single candy-wish listener.** Port to candy-wish for
-  both Git wire and TUI. candy-wish exposes the channel; the channel
+- **Option B — Single sugar-ssh-server listener.** Port to sugar-ssh-server for
+  both Git wire and TUI. sugar-ssh-server exposes the channel; the channel
   handler branches on exec-command-or-not. Less code paths, but
-  doubles the candy-wish exec-routing surface area.
-- **Option C — Keep ext-ssh2 for Git wire; candy-wish for TUI only.**
+  doubles the sugar-ssh-server exec-routing surface area.
+- **Option C — Keep ext-ssh2 for Git wire; sugar-ssh-server for TUI only.**
   ext-ssh2 already routes `git-upload-pack` / `git-receive-pack`
-  correctly. Leave it alone. candy-wish handles only the non-exec
+  correctly. Leave it alone. sugar-ssh-server handles only the non-exec
   shell path on the same port (the two listen on the same socket via
   shared accept loop, or just plain side-by-side).
 
-**Provisional pick:** **Option B** (single candy-wish listener) — for
+**Provisional pick:** **Option B** (single sugar-ssh-server listener) — for
 maintainability. Phase 1 should formally validate this before writing
-code. If candy-wish can't carry the Git wire (it should be able to —
+code. If sugar-ssh-server can't carry the Git wire (it should be able to —
 the channel can write whatever bytes you want), fall back to Option C.
 
 Either way the user-facing port stays the same: `ssh -p 23231
@@ -726,7 +726,7 @@ phase-1 implementer must inherit the pattern explicitly.
 
 | Phase | Effort | Notes |
 |---|---|---|
-| 1 | ≈ 2 weeks | wires candy-wish ↔ candy-core, repo list |
+| 1 | ≈ 2 weeks | wires sugar-ssh-server ↔ candy-core, repo list |
 | 2 | ≈ 1.5 weeks | detail view |
 | 3 | ≈ 2 weeks | tree + viewer (chunkiest) |
 | 4 | ≈ 1.5 weeks | commit log + diff |
@@ -745,7 +745,7 @@ the wire-protocol port — the marquee TUI feature has not been built.
 1. User reviews + authorizes phase 1.
 2. Author drafts `plans/leftover/phase-12-candy-git-server-tui/step-{01..06}.md`
    (one step per phase-1 deliverable per §5.1 — TuiSession,
-   RepoListModel/View, candy-wish wiring, lang files, tests, docs).
+   RepoListModel/View, sugar-ssh-server wiring, lang files, tests, docs).
 3. Phase-1 step files ship ship-as-you-go per CLAUDE.md cadence (2–4
    related items per PR).
 4. After phase 5, update `MATCHUPS.md` row to 🚀 and
@@ -782,7 +782,7 @@ the wire-protocol port — the marquee TUI feature has not been built.
 
 ### Monorepo libs consumed by this plan
 
-- `candy-wish/src/Server.php` + `candy-wish/src/Channel/` —
+- `sugar-ssh-server/src/Server.php` + `sugar-ssh-server/src/Channel/` —
   SSH server + channel API.
 - `candy-core/src/Program.php` + `candy-core/src/Model.php` — Bubble
   Tea runtime.
@@ -792,7 +792,7 @@ the wire-protocol port — the marquee TUI feature has not been built.
 - `candy-core/src/Cmd.php` (`Cmd::setClipboard()`, L267) +
   `candy-core/src/Util/Ansi.php` (`Ansi::setClipboard()`, L400) —
   OSC 52 emitter helper used by phase-5 clipboard keybind.
-- `candy-sprinkles/src/Style.php` + `candy-sprinkles/src/Theme.php` —
+- `sugar-style/src/Style.php` + `sugar-style/src/Theme.php` —
   styling.
 - `sugar-panels/src/SugarPanels.php` — bordered titled boxes.
 - `sugar-flexbox/src/Viewport.php` + `sugar-flexbox/src/Scrollbar.php`

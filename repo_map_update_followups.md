@@ -8,10 +8,10 @@ _Items deferred from step-37 catch-all (PR #917). These libs were audited but no
 
 | Lib | Deferred rationale |
 |-----|-------------------|
-| **candy-metrics** | AsyncCounter/AsyncGauge use synchronous \Closure callbacks at observe() time — no manual Deferred to replace. Backend is pull-based with synchronous writers (InMemory, Prometheus, StatsD, JSON) with no string-rendering loop for Buffer. No minimal adoption found; revisit if async metric collection patterns are introduced. |
-| **candy-log** | Async hook dispatch (M effort) requires redesigning Hook interface to return futures and wrapping all backends. Buffer adoption touches all formatters. Both are larger than "minimal"; revisit in dedicated async-logging refactor. |
+| **sugar-metrics** | AsyncCounter/AsyncGauge use synchronous \Closure callbacks at observe() time — no manual Deferred to replace. Backend is pull-based with synchronous writers (InMemory, Prometheus, StatsD, JSON) with no string-rendering loop for Buffer. No minimal adoption found; revisit if async metric collection patterns are introduced. |
+| **sugar-log** | Async hook dispatch (M effort) requires redesigning Hook interface to return futures and wrapping all backends. Buffer adoption touches all formatters. Both are larger than "minimal"; revisit in dedicated async-logging refactor. |
 | **sugar-mouse** | Uses its own APC-marker encoding with manual grapheme-width iteration in Manager::scan(). Adopting sugar-mouse for hit-testing is not a drop-in (incompatible Zone abstractions, different MouseMsg types). Buffer for mark() output would replace simple string concatenation with APC markers — not a natural fit. Revisit if zone tracking API is refactored. |
-| **candy-starter** | TUI demo app (Counter Model driven by ↑/↓ keys), NOT a metric/increment utility. The followups description was a mischaracterization. No viable candy-async or candy-buffer adoption path exists for this template project. |
+| **candy-starter** | TUI demo app (Counter Model driven by ↑/↓ keys), NOT a metric/increment utility. The followups description was a mischaracterization. No viable candy-async or candy-buffer adoption path exists for this template project. | <!-- @rename-keep historical provenance -->
 
 _4 items total. All other 19 audited libs from step-30 were successfully migrated in steps 31–36._
 
@@ -20,14 +20,14 @@ _4 items total. All other 19 audited libs from step-30 were successfully migrate
 This document audits every SugarCraft lib **not** migrated in steps 9-29 (those are the "already-done" libs). It maps each remaining lib to the 8 shared packages it could adopt, with rationale and effort estimates.
 
 The 8 shared packages:
-- **candy-ansi** — byte-loop ANSI parsing (Parser, OscHandler, CsiHandler, SgrState)
-- **candy-buffer** — cell-grid rendering & string composition (Buffer, Cell, DiffOp, Style, Hyperlink)
-- **candy-layout** — constraint-based sizing (LayoutSolver, Region, Direction, Constraint*)
+- **sugar-ansi-parser** — byte-loop ANSI parsing (Parser, OscHandler, CsiHandler, SgrState)
+- **sugar-cellbuffer** — cell-grid rendering & string composition (Buffer, Cell, DiffOp, Style, Hyperlink)
+- **sugar-constraints** — constraint-based sizing (LayoutSolver, Region, Direction, Constraint*)
 - **sugar-mouse** — mouse hit-testing & decode (MouseMsg, Zone, Manager)
-- **candy-input** — input decode & KeyEvent (InputDriver, KeyEvent, SymbolicKey)
+- **sugar-input** — input decode & KeyEvent (InputDriver, KeyEvent, SymbolicKey)
 - **sugar-fuzzy** — filter/search via Smith-Waterman (Matcher, MatchResult)
-- **candy-async** — ReactPHP helpers (AsyncOps, CancellationSource, CancellationToken)
-- **candy-testing** — golden-file snapshot tests (assertGoldenAnsi, GoldenRenderTest)
+- **candy-async** — ReactPHP helpers (AsyncOps, CancellationSource, CancellationToken) <!-- @rename-keep historical provenance -->
+- **sugar-testing** — golden-file snapshot tests (assertGoldenAnsi, GoldenRenderTest)
 
 ---
 
@@ -35,26 +35,27 @@ The 8 shared packages:
 
 | Step | Primary libs | Shared packages to adopt |
 |------|-------------|--------------------------|
-| Step 31 | candy-pty | candy-async, candy-input |
-| Step 32 | candy-tetris, candy-minesweeper | candy-buffer, candy-input, candy-async |
-| Step 33 | candy-kv, candy-ssh-launcher, candy-git | candy-buffer, sugar-fuzzy, sugar-mouse, candy-testing |
-| Step 34 | sugar-datepicker, sugar-toast | candy-buffer, candy-layout, candy-testing |
-| Step 35 | candy-codetime, candy-mail, candy-git-server | candy-buffer, candy-async, candy-testing |
-| Step 36 | sugar-animation, sugar-cli, sugar-spring, candy-flappy | candy-buffer, candy-layout, candy-input, candy-async, candy-testing |
-| Step 37 | candy-metrics, candy-log, sugar-mouse, candy-starter | candy-async, sugar-mouse, candy-buffer, candy-testing |
+| Step 31 | candy-pty | candy-async, candy-input | <!-- @rename-keep historical provenance -->
+| Step 32 | candy-tetris, candy-minesweeper | candy-buffer, candy-input, candy-async | <!-- @rename-keep historical provenance -->
+| Step 33 | candy-kv, candy-ssh-launcher, candy-git | sugar-cellbuffer, sugar-fuzzy, sugar-mouse, sugar-testing |
+| Step 34 | sugar-datepicker, sugar-toast | sugar-cellbuffer, sugar-constraints, sugar-testing |
+| Step 35 | candy-codetime, candy-mail, candy-git-server | candy-buffer, candy-async, candy-testing | <!-- @rename-keep historical provenance -->
+| Step 36 | sugar-animation, sugar-cli, sugar-spring, candy-flappy | candy-buffer, candy-layout, candy-input, candy-async, candy-testing | <!-- @rename-keep historical provenance -->
+| Step 37 | candy-metrics, candy-log, sugar-mouse, candy-starter | candy-async, sugar-mouse, candy-buffer, candy-testing | <!-- @rename-keep historical provenance -->
+
 
 ---
 
 ## Per-lib opportunities
 
-### candy-pty
+### sugar-pty
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-async | PtyPool/MultiPump use manual Deferred/Timer loops — AsyncOps::withTimeout() + CancellationToken would simplify cancellation | M |
-| candy-input | Pty read/write dispatches raw bytes — StreamInputDriver/KeyEvent decode would standardize input path | M |
+| candy-async | PtyPool/MultiPump use manual Deferred/Timer loops — AsyncOps::withTimeout() + CancellationToken would simplify cancellation | M | <!-- @rename-keep historical provenance -->
+| sugar-input | Pty read/write dispatches raw bytes — StreamInputDriver/KeyEvent decode would standardize input path | M |
 
-**Notes:** candy-pty is the most foundational async PTY lib. It predates candy-async and manually wires Loop + Deferred for timeout/cancellation. Adopting candy-async would reduce boilerplate in MultiPump and PtyPool. Input decoding is currently raw byte-oriented; candy-input would provide symbolic key decode.
+**Notes:** candy-pty is the most foundational async PTY lib. It predates candy-async and manually wires Loop + Deferred for timeout/cancellation. Adopting candy-async would reduce boilerplate in MultiPump and PtyPool. Input decoding is currently raw byte-oriented; candy-input would provide symbolic key decode. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -62,11 +63,11 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Board.php renders 10×20 cell grid via string concatenation — Buffer::Cell would give per-cell style + diff-friendly rendering | S |
-| candy-input | Input/Computer use raw key bytes — SymbolicKey decode would standardize key handling | S |
-| candy-async | Game loop uses manual Timer loops — AsyncOps::raf() or CancellationToken would simplify tick loop | S |
+| sugar-cellbuffer | Board.php renders 10×20 cell grid via string concatenation — Buffer::Cell would give per-cell style + diff-friendly rendering | S |
+| sugar-input | Input/Computer use raw key bytes — SymbolicKey decode would standardize key handling | S |
+| candy-async | Game loop uses manual Timer loops — AsyncOps::raf() or CancellationToken would simplify tick loop | S | <!-- @rename-keep historical provenance -->
 
-**Notes:** Tetromino rendering is currently string-based; Buffer-based rendering would enable diff-optimized redraws and per-cell ANSI styling. The game loop is a natural fit for candy-async's cancellation model.
+**Notes:** Tetromino rendering is currently string-based; Buffer-based rendering would enable diff-optimized redraws and per-cell ANSI styling. The game loop is a natural fit for candy-async's cancellation model. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -74,10 +75,10 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Board.php + Renderer.php render cell grid via string concat — Buffer would give diff-optimized redraw | S |
-| candy-input | Game input uses raw coordinates — SymbolicKey/mouse decode via candy-input would standardize | S |
+| sugar-cellbuffer | Board.php + Renderer.php render cell grid via string concat — Buffer would give diff-optimized redraw | S |
+| sugar-input | Game input uses raw coordinates — SymbolicKey/mouse decode via sugar-input would standardize | S |
 
-**Notes:** Minesweeper board is a classic cell-grid use case. Adopting candy-buffer would allow per-cell styles (revealed/hidden/flagged) and frame diffing. Mouse click coordinates currently handled manually.
+**Notes:** Minesweeper board is a classic cell-grid use case. Adopting sugar-cellbuffer would allow per-cell styles (revealed/hidden/flagged) and frame diffing. Mouse click coordinates currently handled manually.
 
 ---
 
@@ -85,8 +86,8 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Frame.php + Renderer.php compose video frames via string — Buffer would give per-cell styling + diff | M |
-| candy-async | Player.php uses Timer loops for frame advancement — CancellationToken would simplify pause/cancel | M |
+| sugar-cellbuffer | Frame.php + Renderer.php compose video frames via string — Buffer would give per-cell styling + diff | M |
+| candy-async | Player.php uses Timer loops for frame advancement — CancellationToken would simplify pause/cancel | M | <!-- @rename-keep historical provenance -->
 
 **Notes:** Frame rendering is currently FloydSteinberg dithering + string concat. Buffer would enable diff-optimized frame updates (only changed cells get re-rendered).
 
@@ -96,8 +97,8 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Banner.php/Logo.php/Section.php render via string concat — Buffer would give uniform ANSI composition | S |
-| candy-layout | Stage.php + Section.php use manual width calc — LayoutSolver would handle constraint-based sizing | S |
+| sugar-cellbuffer | Banner.php/Logo.php/Section.php render via string concat — Buffer would give uniform ANSI composition | S |
+| sugar-constraints | Stage.php + Section.php use manual width calc — LayoutSolver would handle constraint-based sizing | S |
 
 **Notes:** sugar-cli is a TUI component library (banners, help text, status lines). All rendering is string-based. Buffer adoption would make output diff-friendly; LayoutSolver adoption would replace ad-hoc width arithmetic.
 
@@ -108,7 +109,7 @@ The 8 shared packages:
 | Package | Benefit | Effort |
 |---------|---------|--------|
 | sugar-mouse | Manager.php + Zone.php track mouse zones — Zone class is conceptually similar to sugar-mouse Zone, but hit-testing is manual | S |
-| candy-buffer | Zone rendering is string-based — Buffer would give cell-level style per zone | S |
+| sugar-cellbuffer | Zone rendering is string-based — Buffer would give cell-level style per zone | S |
 
 **Notes:** sugar-mouse is a mouse zone-tracking layer. It already has zone concepts similar to sugar-mouse but uses a custom Manager. Adopting sugar-mouse would standardize the Zone hit-testing API.
 
@@ -121,7 +122,7 @@ The 8 shared packages:
 | Package | Benefit | Effort |
 |---------|---------|--------|
 | sugar-fuzzy | Entry.php/Store.php filter/search database entries — SmithWatermanMatcher would replace ad-hoc string matching | S |
-| candy-buffer | Store.php renders list output via string — Buffer would give diff-friendly rendering | S |
+| sugar-cellbuffer | Store.php renders list output via string — Buffer would give diff-friendly rendering | S |
 
 **Notes:** candy-kv is a database-migration tool. Fuzzy entry lookup (search for a migration by partial name) is a natural fit for sugar-fuzzy.
 
@@ -131,7 +132,7 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Picker.php + Launcher.php render lists via string — Buffer would give per-cell styling + diff | M |
+| sugar-cellbuffer | Picker.php + Launcher.php render lists via string — Buffer would give per-cell styling + diff | M |
 | sugar-fuzzy | Launcher.php/Picker.php filter app list — SmithWatermanMatcher would improve fuzzy search quality | S |
 | sugar-mouse | Picker.php supports mouse selection — Zone-based hit-testing via sugar-mouse would help | S |
 
@@ -143,11 +144,11 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | DiffViewer.php renders git diff hunks via string — Buffer would enable per-cell diff coloring + redraw | M |
+| sugar-cellbuffer | DiffViewer.php renders git diff hunks via string — Buffer would enable per-cell diff coloring + redraw | M |
 | sugar-fuzzy | StashManager.php/HistoryManager.php filter stash entries — SmithWatermanMatcher would improve interactive search | S |
 | sugar-mouse | InteractiveRebase.php uses mouse for branch selection — sugar-mouse would standardize zone hit-testing | M |
 
-**Notes:** candy-git is a git stash TUI with diff viewing and interactive rebase. DiffViewer rendering is a direct use case for candy-buffer (git diff lines with syntax coloring). Interactive rebase uses mouse zone tracking that would benefit from sugar-mouse.
+**Notes:** candy-git is a git stash TUI with diff viewing and interactive rebase. DiffViewer rendering is a direct use case for sugar-cellbuffer (git diff lines with syntax coloring). Interactive rebase uses mouse zone tracking that would benefit from sugar-mouse.
 
 ---
 
@@ -155,9 +156,9 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | DatePicker.php renders calendar grid via string — Buffer would give per-cell styling (today, selected, event) + diff | M |
-| candy-layout | DatePicker.php/Navigation.php use manual grid sizing — LayoutSolver would handle week-row layout constraints | M |
-| candy-testing | DatePicker.php lacks golden render tests — assertGoldenAnsi would pin calendar ANSI output | S |
+| sugar-cellbuffer | DatePicker.php renders calendar grid via string — Buffer would give per-cell styling (today, selected, event) + diff | M |
+| sugar-constraints | DatePicker.php/Navigation.php use manual grid sizing — LayoutSolver would handle week-row layout constraints | M |
+| sugar-testing | DatePicker.php lacks golden render tests — assertGoldenAnsi would pin calendar ANSI output | S |
 
 **Notes:** Calendar rendering is a classic grid layout problem. Buffer would allow per-day cell styling (weekend color, event indicator, selected state). LayoutSolver would handle variable-width month displays.
 
@@ -167,9 +168,9 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Toast.php renders notification via string concat — Buffer would give per-cell positioning + diff | S |
-| candy-layout | Toast.php uses manual x/y positioning — LayoutSolver would handle multi-toast stacking constraints | M |
-| candy-testing | Toast.php lacks golden render tests — assertGoldenAnsi would pin toast ANSI output | S |
+| sugar-cellbuffer | Toast.php renders notification via string concat — Buffer would give per-cell positioning + diff | S |
+| sugar-constraints | Toast.php uses manual x/y positioning — LayoutSolver would handle multi-toast stacking constraints | M |
+| sugar-testing | Toast.php lacks golden render tests — assertGoldenAnsi would pin toast ANSI output | S |
 
 **Notes:** Toast notifications are positioned views with variable content width. Buffer would enable precise cell-level control; LayoutSolver would replace ad-hoc stacking logic.
 
@@ -179,11 +180,11 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Renderer.php renders dashboard via string — Buffer would give diff-friendly dashboard redraw | M |
-| candy-async | Heartbeat.php uses Timer loops for background ping — CancellationToken would simplify worker cancellation | M |
-| candy-testing | Renderer.php lacks golden tests — assertGoldenAnsi would pin dashboard ANSI output | S |
+| sugar-cellbuffer | Renderer.php renders dashboard via string — Buffer would give diff-friendly dashboard redraw | M |
+| candy-async | Heartbeat.php uses Timer loops for background ping — CancellationToken would simplify worker cancellation | M | <!-- @rename-keep historical provenance -->
+| sugar-testing | Renderer.php lacks golden tests — assertGoldenAnsi would pin dashboard ANSI output | S |
 
-**Notes:** candy-codetime is a time-tracking tool with a dashboard. Background heartbeat workers use manual timer loops; candy-async would provide structured cancellation. Dashboard rendering is a good candidate for Buffer-based diff.
+**Notes:** candy-codetime is a time-tracking tool with a dashboard. Background heartbeat workers use manual timer loops; candy-async would provide structured cancellation. Dashboard rendering is a good candidate for Buffer-based diff. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -191,10 +192,10 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-async | SmtpTransport.php + ResendTransport.php use blocking I/O — AsyncOps::withTimeout() would add async sending with cancellation | M |
-| candy-testing | Transport.php + Mailer.php lack integration tests — candy-testing would provide fixture + golden test harness | M |
+| candy-async | SmtpTransport.php + ResendTransport.php use blocking I/O — AsyncOps::withTimeout() would add async sending with cancellation | M | <!-- @rename-keep historical provenance -->
+| sugar-testing | Transport.php + Mailer.php lack integration tests — sugar-testing would provide fixture + golden test harness | M |
 
-**Notes:** candy-mail is an email-sending library. Currently all I/O is synchronous. Adopting candy-async would enable non-blocking SMTP sends with proper timeout/cancellation handling.
+**Notes:** candy-mail is an email-sending library. Currently all I/O is synchronous. Adopting candy-async would enable non-blocking SMTP sends with proper timeout/cancellation handling. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -202,9 +203,9 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-async | HttpSmartProtocol.php uses blocking I/O — AsyncOps would enable async HTTP handling | M |
-| candy-buffer | Repo.php renders git serve status via string — Buffer would give diff-friendly status display | S |
-| candy-testing | Repo.php/AccessControl.php lack integration tests — candy-testing fixture harness | S |
+| candy-async | HttpSmartProtocol.php uses blocking I/O — AsyncOps would enable async HTTP handling | M | <!-- @rename-keep historical provenance -->
+| sugar-cellbuffer | Repo.php renders git serve status via string — Buffer would give diff-friendly status display | S |
+| sugar-testing | Repo.php/AccessControl.php lack integration tests — sugar-testing fixture harness | S |
 
 **Notes:** candy-git-server is a git network serve tool. HTTP protocol handling currently uses blocking I/O. Async adoption would improve concurrency. Buffer would make status rendering diff-friendly.
 
@@ -214,8 +215,8 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Renderer.php composes video frames via string concat — Buffer would enable per-cell frame diff | M |
-| candy-async | Player.php uses Timer loops for playback — CancellationToken would simplify seek/pause | M |
+| sugar-cellbuffer | Renderer.php composes video frames via string concat — Buffer would enable per-cell frame diff | M |
+| candy-async | Player.php uses Timer loops for playback — CancellationToken would simplify seek/pause | M | <!-- @rename-keep historical provenance -->
 
 **Notes:** sugar-animation is a GIF/frame player with dithering. Frame rendering is a direct Buffer use case. See also candy-tetris/candy-minesweeper which share the same buffer-adoption pattern.
 
@@ -225,8 +226,8 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Banner/Logo/Section/StatusLine render via string — Buffer would standardize ANSI composition | S |
-| candy-layout | Stage.php constrains section widths manually — LayoutSolver would replace ad-hoc sizing | S |
+| sugar-cellbuffer | Banner/Logo/Section/StatusLine render via string — Buffer would standardize ANSI composition | S |
+| sugar-constraints | Stage.php constrains section widths manually — LayoutSolver would replace ad-hoc sizing | S |
 
 **Notes:** Already listed above under step 36. Note: sugar-cli ships components that other libs (sugar-datepicker, sugar-toast) will build on — buffer/layout adoption here propagates downstream benefit.
 
@@ -236,10 +237,10 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Physics visualization: point positions rendered via string — Buffer would enable diff-optimized frame rendering | M |
-| candy-async | SpringChain.php uses Timer loops for animation — CancellationToken would simplify animation cancellation | M |
+| sugar-cellbuffer | Physics visualization: point positions rendered via string — Buffer would enable diff-optimized frame rendering | M |
+| candy-async | SpringChain.php uses Timer loops for animation — CancellationToken would simplify animation cancellation | M | <!-- @rename-keep historical provenance -->
 
-**Notes:** sugar-spring is a physics simulation library. Visualizing spring animations as ANSI frames is a natural buffer use case. Animation timing loops are a good fit for candy-async.
+**Notes:** sugar-spring is a physics simulation library. Visualizing spring animations as ANSI frames is a natural buffer use case. Animation timing loops are a good fit for candy-async. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -247,35 +248,35 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-buffer | Bird.php + Pipe.php + Renderer.php render via string — Buffer would give per-cell bird/pipe rendering + diff | S |
-| candy-input | Game.php uses raw key bytes — SymbolicKey decode via candy-input would standardize controls | S |
-| candy-async | Game loop uses Timer for gravity/collision ticks — CancellationToken would simplify pause/restart | S |
+| sugar-cellbuffer | Bird.php + Pipe.php + Renderer.php render via string — Buffer would give per-cell bird/pipe rendering + diff | S |
+| sugar-input | Game.php uses raw key bytes — SymbolicKey decode via sugar-input would standardize controls | S |
+| candy-async | Game loop uses Timer for gravity/collision ticks — CancellationToken would simplify pause/restart | S | <!-- @rename-keep historical provenance -->
 
-**Notes:** candy-flappy is a Flappy Bird clone. Classic cell-grid game — Buffer would replace string-based rendering. Game loop uses manual tick timing, well-suited for candy-async cancellation.
+**Notes:** candy-flappy is a Flappy Bird clone. Classic cell-grid game — Buffer would replace string-based rendering. Game loop uses manual tick timing, well-suited for candy-async cancellation. <!-- @rename-keep historical provenance -->
 
 ---
 
-### candy-metrics
+### sugar-metrics
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-async | AsyncCounter.php + AsyncGauge.php use manual Deferred — CancellationToken would simplify async metric recording | S |
-| candy-buffer | Backend.php renders metrics output via string — Buffer would give diff-friendly status display | S |
+| candy-async | AsyncCounter.php + AsyncGauge.php use manual Deferred — CancellationToken would simplify async metric recording | S | <!-- @rename-keep historical provenance -->
+| sugar-cellbuffer | Backend.php renders metrics output via string — Buffer would give diff-friendly status display | S |
 
-**Notes:** candy-metrics has async counter/gauge wrappers that use manual ReactPHP Deferred. Adopting candy-async would reduce boilerplate. Metrics rendering could use Buffer for diff-friendly output.
+**Notes:** candy-metrics has async counter/gauge wrappers that use manual ReactPHP Deferred. Adopting candy-async would reduce boilerplate. Metrics rendering could use Buffer for diff-friendly output. <!-- @rename-keep historical provenance -->
 
 **Step 37 status:** ⚠️ DEFERRED — source inspection shows AsyncCounter/AsyncGauge do NOT use manual Deferred (they call synchronous \Closure() callbacks at observe() time). Backend is a pull-based interface; backends (InMemory, Prometheus, StatsD, JSON) are synchronous writers with no string-rendering loop for Buffer to simplify. No minimal adoption found; revisit if async metric collection patterns are introduced.
 
 ---
 
-### candy-log
+### sugar-log
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-async | Hook.php + HookRegistry.php dispatch logs synchronously — async hook dispatch via candy-async would improve throughput | M |
-| candy-buffer | Logger.php renders log lines via string — Buffer would give structured log-line composition | S |
+| candy-async | Hook.php + HookRegistry.php dispatch logs synchronously — async hook dispatch via candy-async would improve throughput | M | <!-- @rename-keep historical provenance -->
+| sugar-cellbuffer | Logger.php renders log lines via string — Buffer would give structured log-line composition | S |
 
-**Notes:** candy-log is a logging library. Async hook dispatch is the primary opportunity — non-blocking log delivery to multiple hooks (especially network-based ones like StatsdBackend). Buffer adoption is lower priority.
+**Notes:** sugar-log is a logging library. Async hook dispatch is the primary opportunity — non-blocking log delivery to multiple hooks (especially network-based ones like StatsdBackend). Buffer adoption is lower priority.
 
 **Step 37 status:** ⚠️ DEFERRED — async hook dispatch (M effort) requires redesigning Hook interface to return futures and wrapping all backends; Buffer adoption touches all formatters. Both are larger than "minimal". Revisit in dedicated async-logging refactor.
 
@@ -285,12 +286,12 @@ The 8 shared packages:
 
 | Package | Benefit | Effort |
 |---------|---------|--------|
-| candy-async | Counter.php uses in-memory increments — AsyncCounter wrapper via candy-async would provide async increment API | S |
-| candy-buffer | Counter.php renders via string — Buffer would give formatted output with diff | S |
+| candy-async | Counter.php uses in-memory increments — AsyncCounter wrapper via candy-async would provide async increment API | S | <!-- @rename-keep historical provenance -->
+| sugar-cellbuffer | Counter.php renders via string — Buffer would give formatted output with diff | S |
 
-**Notes:** candy-starter is a minimal counter utility. Very small surface area — low-effort adoption candidate for both candy-async and candy-buffer.
+**Notes:** candy-starter is a minimal counter utility. Very small surface area — low-effort adoption candidate for both candy-async and candy-buffer. <!-- @rename-keep historical provenance -->
 
-**Step 37 status:** ⚠️ DEFERRED — candy-starter is a TUI demo app (Counter Model driven by ↑/↓ keys), NOT a metric/increment utility. The followups description was a mischaracterization. No viable candy-async or candy-buffer adoption path exists for this template project.
+**Step 37 status:** ⚠️ DEFERRED — candy-starter is a TUI demo app (Counter Model driven by ↑/↓ keys), NOT a metric/increment utility. The followups description was a mischaracterization. No viable candy-async or candy-buffer adoption path exists for this template project. <!-- @rename-keep historical provenance -->
 
 ---
 
@@ -299,7 +300,7 @@ The 8 shared packages:
 | Effort | libs |
 |--------|------|
 | **S** (1 shared pkg, straightforward) | candy-tetris, candy-minesweeper, sugar-cli (buffer+layout), sugar-mouse, candy-kv, candy-ssh-launcher (fuzzy), candy-git (fuzzy), sugar-toast (buffer+layout), sugar-datepicker (testing), candy-codetime (testing), candy-starter, sugar-animation (buffer+async), candy-flappy (all 3) |
-| **M** (multiple pkgs or larger surface) | candy-pty, sugar-animation, candy-git (buffer+mouse), sugar-datepicker (buffer+layout), candy-codetime (buffer+async), candy-mail, candy-git-server, sugar-spring, candy-metrics, candy-log |
+| **M** (multiple pkgs or larger surface) | sugar-pty, sugar-animation, candy-git (buffer+mouse), sugar-datepicker (buffer+layout), candy-codetime (buffer+async), candy-mail, candy-git-server, sugar-spring, sugar-metrics, sugar-log |
 
 ---
 

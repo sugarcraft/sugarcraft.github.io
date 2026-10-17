@@ -6,7 +6,7 @@
 - **Upstream**: `charmbracelet/freeze` (Go, ~4.6k stars)
 - **Status**: 🟢 v1 ready
 - **PHP**: `^8.3`
-- **Dependencies**: `sugarcraft/candy-core`, `sugarcraft/candy-sprinkles`, `sugarcraft/sugar-markdown`
+- **Dependencies**: `sugarcraft/candy-core`, `sugarcraft/sugar-style`, `sugarcraft/sugar-markdown`
 - **CLI**: `bin/candy-codeshot` (stdin/stdout, theme flags, window controls)
 - **Docs**: https://sugarcraft.github.io/lib/candy-codeshot.html
 
@@ -310,7 +310,7 @@ Coverage runs via `cd candy-codeshot && composer install && vendor/bin/phpunit`.
 
 ## SugarCraft Ecosystem Position
 
-- **Depends on**: `candy-core` (Ansi::strip), `candy-sprinkles` (?), `sugar-markdown` (?)
+- **Depends on**: `candy-core` (Ansi::strip), `sugar-style` (?), `sugar-markdown` (?)
 - **Consumed by**: Not yet used by other packages in the monorepo (verified by searching composer.json files for sugarcraft/candy-codeshot)
 - **sugar-colorprofile** (ColorProfile) is consumed by candy-codeshot for color profile detection in terminals, but the dependency is not declared in composer.json — ColorProfile is accessed through candy-core
 
@@ -324,7 +324,7 @@ The package is at the **output edge** of the rendering pipeline — it produces 
 
 2. **WebP support** — Add `WebpRenderer` using `imagewebp()` (ext-gd) or an external `cwebp` binary invocation.
 
-3. **Interactive CLI** — Build a `candy-codeshot --interactive` TUI using `candy-sprinkles` form components for live theme/preview configuration.
+3. **Interactive CLI** — Build a `candy-codeshot --interactive` TUI using `sugar-style` form components for live theme/preview configuration.
 
 4. **PNG CLI** — Add `--format svg|png` flag to CLI, wiring in `PngRenderer`.
 
@@ -332,7 +332,7 @@ The package is at the **output edge** of the rendering pipeline — it produces 
 
 6. **User config** — Persist last-used settings to `$XDG_CONFIG_HOME/candy-codeshot/user.json`.
 
-7. **PTY capture** — Integrate `candy-pty` for `--execute` flag functionality.
+7. **PTY capture** — Integrate `sugar-pty` for `--execute` flag functionality.
 
 8. **Background color fix for PngRenderer** — Investigate using `imagettftext()` with a background rect per character to enable per-segment background in PNG output (currently only frame background works).
 

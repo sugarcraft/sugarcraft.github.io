@@ -1,6 +1,6 @@
 # Overview
 
-SugarCli (`sugar-cli`) is a PHP port of `charmbracelet/fang` providing opinionated CLI presentation helpers (StatusLine, Banner, Section, Stage, HelpText, Logo, Theme) that turn ordinary command-line output into branded terminal output. It's library-only, framework-agnostic, and integrates with the SugarCraft ecosystem via `candy-sprinkles` (styling) and `candy-core` (utilities).
+SugarCli (`sugar-cli`) is a PHP port of `charmbracelet/fang` providing opinionated CLI presentation helpers (StatusLine, Banner, Section, Stage, HelpText, Logo, Theme) that turn ordinary command-line output into branded terminal output. It's library-only, framework-agnostic, and integrates with the SugarCraft ecosystem via `sugar-style` (styling) and `candy-core` (utilities).
 
 **Biggest opportunity areas:**
 
@@ -37,7 +37,7 @@ SugarCli (`sugar-cli`) is a PHP port of `charmbracelet/fang` providing opinionat
 ```
 sugar-cli/
 ├── depends on: candy-core (Width utility, Color utilities)
-├── depends on: candy-sprinkles (Style, Border)
+├── depends on: sugar-style (Style, Border)
 └── provides: CLI presentation helpers
 ```
 
@@ -208,7 +208,7 @@ foreach (array_keys($rows) as $k) {
 
 - Use lipgloss-style border title pattern
 
-- Reuse `candy-sprinkles` BorderTitle system
+- Reuse `sugar-style` BorderTitle system
 
 **Estimated complexity:** Medium
 
@@ -534,9 +534,9 @@ Show how to:
 Show sugar-cli integration with:
 - `candy-scriptui` (CLI application framework)
 
-- `candy-log` (logging integration)
+- `sugar-log` (logging integration)
 
-- `candy-sprinkles` (advanced styling)
+- `sugar-style` (advanced styling)
 
 ---
 
@@ -629,13 +629,13 @@ class MyApp extends Application {
 }
 ```
 
-## 2. candy-log Integration
+## 2. sugar-log Integration
 
 sugar-cli's StatusLine is visually similar to log levels but lacks log semantics. Document when to use which:
 
 - **StatusLine:** User-facing single messages, one-shot output
 
-- **candy-log:** Time-stamped, leveled, potentially high-volume logging
+- **sugar-log:** Time-stamped, leveled, potentially high-volume logging
 
 ## 3. sugar-widgets Progress Integration
 
@@ -744,7 +744,7 @@ PHP-based completion generation with ZshGenerator/BashGenerator emitting `compde
 
 ## Experimental Ideas (future)
 
-12. **Interactive prompts** — Confirm, Select, Multi-select (requires candy-pty integration)
+12. **Interactive prompts** — Confirm, Select, Multi-select (requires sugar-pty integration)
 13. **Manpage generation** — Integrate roff rendering
 14. **Auto-version wiring** — CLI framework integration point
 

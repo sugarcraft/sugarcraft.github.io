@@ -36,15 +36,15 @@ SugarCraft ports. Use this to prioritize the next port wave.
 | [#163](https://github.com/charmbracelet/bubbletea/issues/163) (17c) | Displaying images | ⚪ | Covered by `sugar-image` plan |
 | [#1590](https://github.com/charmbracelet/bubbletea/issues/1590) (13c) | If tea program quits too early, garbage chars are printed | 🔴 | **Effort**: 1-2h **Benefit**: Fixes confusing terminal state on early exit **Downside**: May be renderer-specific |
 | [#573](https://github.com/charmbracelet/bubbletea/issues/573) (13c) | Altscreen: rendering artifacts when resizing window | 🟡 | Likely renderer internal — may need review |
-| [#1225](https://github.com/charmbracelet/bubbletea/issues/1225) (12c) | lipgloss styles rendered incorrectly when `.Width()` applied | ⚪ | Lipgloss issue — candy-sprinkles may have similar behavior |
+| [#1225](https://github.com/charmbracelet/bubbletea/issues/1225) (12c) | lipgloss styles rendered incorrectly when `.Width()` applied | ⚪ | Lipgloss issue — sugar-style may have similar behavior |
 
 ---
 
-## charmbracelet/lipgloss → candy-sprinkles
+## charmbracelet/lipgloss → sugar-style
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-sprinkles | Notes |
+| Upstream | Title | Status in sugar-style | Notes |
 |---|---|:--:|---|
 | [#636](https://github.com/charmbracelet/lipgloss/pull/636) (2026-04-13) | fix: Avoid background color query hang | 🟡 |确认 PHP `queryTerminal()` 实现没有相同问题 |
 | [#592](https://github.com/charmbracelet/lipgloss/pull/592) (2026-01-05) | perf: improve performance of maxRuneWidth | 🟡 | Width 计算性能改进 — 确认 PHP 实现相似 |
@@ -190,11 +190,11 @@ No high-comment open issues.
 
 ---
 
-## charmbracelet/wish → candy-wish
+## charmbracelet/wish → sugar-ssh-server
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-wish | Notes |
+| Upstream | Title | Status in sugar-ssh-server | Notes |
 |---|---|:--:|---|
 | [#392](https://github.com/charmbracelet/wish/pull/392) (2026-03-09) | feat!: v2 | ⚪ | v2 work — deferred |
 | [#281](https://github.com/charmbracelet/wish/pull/281) (2025-10-02) | fix: respect $TERM and force colors | 🟡 | TERM handling — verify PHP respects FORCE_COLOR |
@@ -208,14 +208,14 @@ No high-comment open issues.
 
 ---
 
-## charmbracelet/promwish → candy-metrics
+## charmbracelet/promwish → sugar-metrics
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-metrics | Notes |
+| Upstream | Title | Status in sugar-metrics | Notes |
 |---|---|:--:|---|
 | [#38](https://github.com/charmbracelet/promwish/pull/38) (2024-03-01) | feat: New, Start, Shutdown | 🟡 | Lifecycle methods — verify matches PHP pattern |
-| [#32](https://github.com/charmbracelet/promwish/pull/32) (2024-01-30) | Improve Logging | 🟡 | Logging improvements — review against candy-log |
+| [#32](https://github.com/charmbracelet/promwish/pull/32) (2024-01-30) | Improve Logging | 🟡 | Logging improvements — review against sugar-log |
 
 ### High-comment open issues
 
@@ -223,11 +223,11 @@ No high-comment open issues.
 
 ---
 
-## charmbracelet/log → candy-log
+## charmbracelet/log → sugar-log
 
 ### Recent merged PRs
 
-| Upstream | Title | Status in candy-log | Notes |
+| Upstream | Title | Status in sugar-log | Notes |
 |---|---|:--:|---|
 | [#207](https://github.com/charmbracelet/log/pull/207) (2026-04-20) | chore(deps): bump lipgloss/v2 | ⚪ | Dependency only |
 | [#143](https://github.com/charmbracelet/log/pull/143) (2026-03-09) | (v2) use v2 of libraries | ⚪ | v2 work — deferred |
@@ -383,7 +383,7 @@ No high-comment open issues.
    - **Effort**: 2-3h **Benefit**: Medium — better key detection for special keys
    - **Downside**: May interact with existing key handling
 
-5. **lipgloss flexbox layout** → candy-sprinkles
+5. **lipgloss flexbox layout** → sugar-style
    - **Effort**: 4-6h **Benefit**: High — CSS-like flex for TUIs is powerful
    - **Downside**: Significant API addition, could be backward compatible
 

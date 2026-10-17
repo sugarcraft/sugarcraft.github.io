@@ -268,7 +268,7 @@ super-candy is a dual-pane terminal file manager built on the SugarCraft TUI sta
 
 - Extract row formatting to private helper methods: `formatCursorMarker()`, `formatSelectionMarker()`, `formatSize()`, `formatName()`
 - Use early returns instead of nested ternaries
-- Consider using `candy-sprinkles` `Style` objects for composed styling rather than inline conditionals
+- Consider using `sugar-style` `Style` objects for composed styling rather than inline conditionals
 
 **Complexity:** Low — pure refactor, no behavior change
 **Impact:** Low — code quality improvement
@@ -725,7 +725,7 @@ public function testUndoReversesAllDeleteActions(): void
 
 **Implementation:**
 
-- Use `candy-pty` to spawn `git status --porcelain`
+- Use `sugar-pty` to spawn `git status --porcelain`
 - Parse output and annotate entries with status marker (`M`, `A`, `D`, `??`)
 - Color code: green for added, red for modified, cyan for untracked
 

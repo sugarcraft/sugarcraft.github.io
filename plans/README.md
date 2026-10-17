@@ -35,10 +35,10 @@ in [`UPSTREAM_OPPORTUNITIES.md`](./UPSTREAM_OPPORTUNITIES.md).
 | [x-editor](./x-editor.md) | `x/editor` | `candy-core/Util/Editor.php` + `sugar-widgets/TextArea` | half day | drafted |
 | [x-ansi](./x-ansi.md) | `x/ansi` | `candy-core/Util/Ansi.php` (rolling) | rolling | drafted |
 | [x-mosaic](./x-mosaic.md) | `x/mosaic` + `blacktop/go-termimg` + `ratatui/ratatui-image` | new lib `sugar-image` | 5 d (v1) + 5 d (v1.5) | drafted |
-| [x-vt](./x-vt.md) | `x/vt` | new lib `candy-vt` | 1-2 w | drafted |
+| [x-vt](./x-vt.md) | `x/vt` | new lib `sugar-vterm` | 1-2 w | drafted |
 | [x-vcr](./x-vcr.md) | `x/vcr` | new lib `candy-vcr` | 3-5 d | drafted |
-| [x-xpty](./x-xpty.md) | `x/xpty` | new lib `candy-pty` (Linux/macOS) | 4-6 d | drafted |
-| [ratatui-widget-mining](./ratatui-widget-mining.md) | `ratatui/ratatui` (mined, not ported) | individual feature additions across candy-sprinkles / sugar-widgets / sugar-cli / candy-log | ~9 d total | drafted |
+| [x-xpty](./x-xpty.md) | `x/xpty` | new lib `sugar-pty` (Linux/macOS) | 4-6 d | drafted |
+| [ratatui-widget-mining](./ratatui-widget-mining.md) | `ratatui/ratatui` (mined, not ported) | individual feature additions across sugar-style / sugar-widgets / sugar-cli / sugar-log | ~9 d total | drafted |
 
 ## Skipped (no plan)
 
@@ -66,7 +66,7 @@ x-mosaic ──────────────┤   (consumes x-ansi sixel/
                        │
 x-vt   ─────┬─────►  x-vcr   (vcr asserts on vt grid)
             │
-x-xpty ─────┴─────►  candy-wish upgrade (separate PR, not in this wave)
+x-xpty ─────┴─────►  sugar-ssh-server upgrade (separate PR, not in this wave)
 ```
 
 ## Recommended sequencing
@@ -87,13 +87,13 @@ For a continuous ship-as-you-go cadence per `AGENTS.md`:
 5. **Wave 5 — recording (3-5 days)**
    - PR set: `x-vcr` lib, blocked on `x-vt` PR3 (basic SGR support)
 6. **Wave 6 — PTY (4-6 days, conditional)**
-   - PR set: `x-xpty` lib. Only if we want to upgrade candy-wish away from host-sshd.
+   - PR set: `x-xpty` lib. Only if we want to upgrade sugar-ssh-server away from host-sshd.
 
 ## Cross-cutting touch-ups
 
 When each plan ships, the following must update:
 
-- `MATCHUPS.md` — new row in the libraries table for `sugar-image`, `candy-vt`, `candy-vcr`, `candy-pty`
+- `MATCHUPS.md` — new row in the libraries table for `sugar-image`, `sugar-vterm`, `candy-vcr`, `sugar-pty`
 - `PROJECT_NAMES.md` — naming-decision entry per new lib
 - `CONVERSION.md` — phase row per new lib
 - `UPSTREAM_OPPORTUNITIES.md` — flip the `x/*` row from 🔴 to 🟡/🟢/🚀 as it lands

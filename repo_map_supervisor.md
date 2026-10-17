@@ -71,52 +71,52 @@ Mark `[x]` only after the shipper returns clean and master is updated.
 - [x] [Step 00 — Bootstrap & smoke-check](repo_map_step_00.md) — branch: `ai/plan-bootstrap`
 
 ### Phase 1 — New shared foundation packages (8)
-- [x] [Step 01 — Create candy-ansi](repo_map_step_01.md) — branch: `ai/candy-ansi-new`
-- [x] [Step 02 — Create candy-buffer](repo_map_step_02.md) — branch: `ai/candy-buffer-new`
-- [x] [Step 03 — Create candy-layout](repo_map_step_03.md) — branch: `ai/candy-layout-new`
-- [x] [Step 04 — Create candy-testing](repo_map_step_04.md) — branch: `ai/candy-testing-new`
+- [x] [Step 01 — Create sugar-ansi-parser](repo_map_step_01.md) — branch: `ai/sugar-ansi-parser-new`
+- [x] [Step 02 — Create sugar-cellbuffer](repo_map_step_02.md) — branch: `ai/candy-buffer-new` <!-- @rename-keep -->
+- [x] [Step 03 — Create sugar-constraints](repo_map_step_03.md) — branch: `ai/sugar-constraints-new`
+- [x] [Step 04 — Create sugar-testing](repo_map_step_04.md) — branch: `ai/candy-testing-new` <!-- @rename-keep -->
 - [x] [Step 05 — Create sugar-mouse](repo_map_step_05.md) — branch: `ai/sugar-mouse-new`
-- [x] [Step 06 — Create candy-input](repo_map_step_06.md) — branch: `ai/candy-input-new`
+- [x] [Step 06 — Create sugar-input](repo_map_step_06.md) — branch: `ai/sugar-input-new`
 - [x] [Step 07 — Create sugar-fuzzy](repo_map_step_07.md) — branch: `ai/sugar-fuzzy-new`
-- [x] [Step 08 — Create candy-async](repo_map_step_08.md) — branch: `ai/candy-async-new`
+- [x] [Step 08 — Create candy-async](repo_map_step_08.md) — branch: `ai/candy-async-new` <!-- @rename-keep historical provenance -->
 
 ### Phase 2 — Enhance existing foundation packages (5)
 - [x] [Step 09 — candy-core enhancements](repo_map_step_09.md) — branch: `ai/candy-core-foundations`
-- [x] [Step 10 — candy-sprinkles uses candy-layout](repo_map_step_10.md) — branch: `ai/candy-sprinkles-layout`
+- [x] [Step 10 — sugar-style uses sugar-constraints](repo_map_step_10.md) — branch: `ai/sugar-style-layout`
 - [x] [Step 11 — sugar-markdown StyleSheet + BlockStack](repo_map_step_11.md) — branch: `ai/sugar-markdown-blockstack`
-- [x] [Step 12 — candy-vt delegates to candy-ansi](repo_map_step_12.md) — branch: `ai/candy-vt-uses-ansi`
+- [x] [Step 12 — sugar-vterm delegates to sugar-ansi-parser](repo_map_step_12.md) — branch: `ai/sugar-vterm-uses-ansi`
 - [x] [Step 13 — sugar-image + sugar-colorprofile TerminalProbe](repo_map_step_13.md) — branch: `ai/probe-consolidation`
 
 ### Phase 3 — Migrate UI components onto shared foundations (6)
 - [x] [Step 14 — sugar-widgets onto shared foundations](repo_map_step_14.md) — branch: `ai/sugar-widgets-shared`
 - [x] [Step 15 — sugar-forms onto shared foundations](repo_map_step_15.md) — branch: `ai/sugar-forms-shared`
 - [x] [Step 16 — sugar-forms onto shared foundations](repo_map_step_16.md) — branch: `ai/sugar-forms-shared`
-- [x] [Step 17 — sugar-charts onto candy-buffer](repo_map_step_17.md) — branch: `ai/sugar-charts-shared`
-- [x] [Step 18 — sugar-table onto candy-buffer](repo_map_step_18.md) — branch: `ai/sugar-table-shared`
+- [x] [Step 17 — sugar-charts onto sugar-cellbuffer](repo_map_step_17.md) — branch: `ai/sugar-charts-shared`
+- [x] [Step 18 — sugar-table onto sugar-cellbuffer](repo_map_step_18.md) — branch: `ai/sugar-table-shared`
 - [x] [Step 19 — candy-scriptui onto sugar-fuzzy](repo_map_step_19.md) — branch: `ai/candy-scriptui-shared`
 
 ### Phase 4 — Replace reinventions (6)
 - [x] [Step 20 — ANSI parsers replaced (candy-ansi-inspect, sugar-quickpick, candy-codeshot)](repo_map_step_20.md) — branch: `ai/ansi-consumers`, PR #899
-- [x] [Step 21 — sugar-readline onto candy-input](repo_map_step_21.md) — branch: `ai/sugar-readline-input`, PR #900
+- [x] [Step 21 — sugar-readline onto sugar-input](repo_map_step_21.md) — branch: `ai/sugar-readline-input`, PR #900
 - [x] [Step 22 — Mouse hit-test consumers onto sugar-mouse](repo_map_step_22.md) — branch: `ai/mouse-consumers`, PR #901
-- [x] [Step 23 — Async consumers onto candy-async](repo_map_step_23.md) — branch: `ai/async-consumers`, PR #902
+- [x] [Step 23 — Async consumers onto candy-async](repo_map_step_23.md) — branch: `ai/async-consumers`, PR #902 <!-- @rename-keep historical provenance -->
 - [x] [Step 24 — Vim mode consolidation](repo_map_step_24.md) — branch: `ai/vim-mode-shared`, PR #903
 - [x] [Step 25 — God-class refactors (super-candy + candy-sql)](repo_map_step_25.md) — branch: `ai/god-class-builders`, PR #904
 
 ### Phase 5 — Cross-cutting via shared packages (4)
-- [x] [Step 26 — candy-buffer::diff() delta ANSI](repo_map_step_26.md) — branch: `ai/buffer-diff-impl`, PR #905
+- [x] [Step 26 — sugar-cellbuffer::diff() delta ANSI](repo_map_step_26.md) — branch: `ai/buffer-diff-impl`, PR #905
 - [x] [Step 27 — Wire buffer-diff into renderers](repo_map_step_27.md) — branch: `ai/buffer-diff-consumers`, PR #906
-- [x] [Step 28 — Golden-file snapshot rollout via candy-testing](repo_map_step_28.md) — branch: `ai/golden-file-rollout`, PR #907
-- [x] [Step 29 — Terminal-probe consumers (candy-mdview, candy-wish)](repo_map_step_29.md) — branch: `ai/probe-consumers`, PR #908
+- [x] [Step 28 — Golden-file snapshot rollout via sugar-testing](repo_map_step_28.md) — branch: `ai/golden-file-rollout`, PR #907
+- [x] [Step 29 — Terminal-probe consumers (candy-mdview, candy-wish)](repo_map_step_29.md) — branch: `ai/probe-consumers`, PR #908 <!-- @rename-keep -->
 
 ### Phase 6 — Ecosystem-wide adoption sweep (8)
 - [x] [Step 30 — Ecosystem audit (no code, produces roadmap)](repo_map_step_30.md) — branch: `ai/ecosystem-audit`, PR #909
-- [x] [Step 31 — candy-pty adopts candy-input + candy-ansi](repo_map_step_31.md) — branch: `ai/candy-pty-shared`, PR #910
-- [x] [Step 32 — candy-tetris + candy-minesweeper adopt candy-buffer/mouse/testing](repo_map_step_32.md) — branch: `ai/games-shared`, PR #911
+- [x] [Step 31 — sugar-pty adopts sugar-input + sugar-ansi-parser](repo_map_step_31.md) — branch: `ai/sugar-pty-shared`, PR #910
+- [x] [Step 32 — candy-tetris + candy-minesweeper adopt sugar-cellbuffer/mouse/testing](repo_map_step_32.md) — branch: `ai/games-shared`, PR #911
 - [x] [Step 33 — candy-kv + candy-ssh-launcher + candy-git adopt sugar-fuzzy](repo_map_step_33.md) — branch: `ai/filter-consumers`, PR #912 *(hotfix PR #913: SmithWatermanMatcher usort callback returning array instead of scalar int)*
-- [x] [Step 34 — sugar-datepicker + sugar-toast adopt candy-buffer + candy-testing](repo_map_step_34.md) — branch: `ai/widget-shared`, PR #914
-- [x] [Step 35 — candy-codetime + candy-mail + candy-git-server adopt candy-async](repo_map_step_35.md) — branch: `ai/async-adopters`, PR #915
-- [x] [Step 36 — sugar-animation + sugar-cli + sugar-spring + candy-flappy adopt candy-testing](repo_map_step_36.md) — branch: `ai/testing-rollout`, PR #916
+- [x] [Step 34 — sugar-datepicker + sugar-toast adopt sugar-cellbuffer + sugar-testing](repo_map_step_34.md) — branch: `ai/widget-shared`, PR #914
+- [x] [Step 35 — candy-codetime + candy-mail + candy-git-server adopt candy-async](repo_map_step_35.md) — branch: `ai/async-adopters`, PR #915 <!-- @rename-keep historical provenance -->
+- [x] [Step 36 — sugar-animation + sugar-cli + sugar-spring + candy-flappy adopt sugar-testing](repo_map_step_36.md) — branch: `ai/testing-rollout`, PR #916
 - [x] [Step 37 — Catch-all: any remaining lib from the audit](repo_map_step_37.md) — branch: `ai/sweep-catchall`, PR #917
 
 ### Phase 7 — Final documentation & CI (3)
@@ -136,9 +136,9 @@ Mark `[x]` only after the shipper returns clean and master is updated.
 The shared-foundation refactor is **complete**. Summary:
 
 - **PRs merged**: 39 PRs (PRs #882–#920, excluding the step-15 sugar-forms migration which was not completed)
-- **8 new foundation packages created**: candy-ansi, candy-buffer, candy-layout, candy-testing, sugar-mouse, candy-input, sugar-fuzzy, candy-async
-- **15 consumer libs migrated** in Phase 6: candy-pty, candy-tetris, candy-minesweeper, candy-kv, candy-ssh-launcher, candy-git, sugar-datepicker, sugar-toast, candy-codetime, candy-mail, candy-git-server, sugar-animation, sugar-cli, sugar-spring, candy-flappy
-- **4 items deferred** to future plan (candy-metrics, candy-log, sugar-mouse, candy-starter — see docs/repo_map_update_followups.md)
+- **8 new foundation packages created**: candy-ansi, candy-buffer, candy-layout, candy-testing, sugar-mouse, candy-input, sugar-fuzzy, candy-async <!-- @rename-keep historical provenance -->
+- **15 consumer libs migrated** in Phase 6: sugar-pty, candy-tetris, candy-minesweeper, candy-kv, candy-ssh-launcher, candy-git, sugar-datepicker, sugar-toast, candy-codetime, candy-mail, candy-git-server, sugar-animation, sugar-cli, sugar-spring, candy-flappy
+- **4 items deferred** to future plan (sugar-metrics, sugar-log, sugar-mouse, candy-starter — see docs/repo_map_update_followups.md)
 - **1 step not completed** (step-15 sugar-forms — FuzzyMatcher API incompatibility; deferred)
 - Retrospective: docs/repo_map_update.md § Plan retrospective
 - All Active Items drained to docs/repo_map_updates.md Resolved section

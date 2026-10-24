@@ -21,6 +21,10 @@
 <nav class="nav"><div class="nav-inner">
     <a class="brand" href="../"><span class="logo-mark"></span>SugarCraft</a>
     <div class="nav-links">
+        <button id="search-trigger" class="search-trigger" type="button" aria-haspopup="dialog">
+            <svg class="search-trigger-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>Search</span>
+        </button>
         <a href="../#libraries">Libraries</a>
         <a href="../#apps">Apps</a>
         <a href="../#demos">Demos</a>
@@ -110,7 +114,7 @@ $ansi = $mosaic->render($image, 60);      // explicit width wins; height from as
       <div class="feature"><strong>Sixel 256-color fallback</strong><span>Pass <code>maxColors</code> (1–256) to <code>SixelRenderer</code> constructor to limit palette size for terminals with limited truecolor support.</span></div>
       <div class="feature"><strong>Symbol-map engine (chafa parity)</strong><span>Unicode braille/sextant/octant/block glyph cells chosen by Hamming-distance candidate search — pure inline SGR, so it always works. <code>Mosaic::symbols(canvas:, workFactor:, symbols:)</code> selects the colour canvas, candidate budget, and chafa's <code>--symbols=</code> tag grammar over the 1,251-glyph effective corpus (1,260 parsed, nine AMBIGUOUS-tagged misc-narrow glyphs BAD-vetoed even by <code>all</code>); the default 676-glyph corpus is byte-frozen. A double-width wide-glyph engine carries the opt-in kana tier.</span></div>
       <div class="feature"><strong>ASCII character ramp</strong><span><code>Mosaic::ascii()</code> maps one luminance sample per cell onto a character ramp; <code>AsciiColorMode::Ansi16 | Ansi256 | TrueColor</code> carries pixel colours on the characters themselves.</span></div>
-      <div class="feature"><strong>chafa CLI tier</strong><span><code>ChafaRenderer</code> shells out to the <code>chafa</code> command with option passthrough — output is bounded and the child is reaped on a TERM→KILL ladder. Opt-in only; the pure-PHP tiers above never shell out.</span></div>
+      <div class="feature"><strong>chafa CLI tier</strong><span><code>ChafaRenderer</code> shells out to the <code>chafa</code> command with option passthrough — output is bounded and the child is reaped on a TERM→KILL ladder. Binary discovery is gated (InfocmpBinary precedent): a fixed absolute roster or the explicit <code>SUGAR_IMAGE_CHAFA</code> override, never an implicit PATH search. Opt-in only; the pure-PHP tiers above never shell out.</span></div>
       <div class="feature"><strong>Remote images</strong><span><code>ImageSource::fromUrl()</code> / <code>fromUrlAsync()</code> (ReactPHP) with a security floor: scheme allowlist re-checked every redirect hop, and any host resolving to a private/loopback/link-local/reserved address (including cloud metadata) is refused.</span></div>
       <div class="feature"><strong>Render caches</strong><span><code>DiskCache</code> stores finished bytes keyed by URL + size + protocol(+ mode detail) for cross-process redraws; <code>AdaptiveImage</code> is the in-session LRU; <code>ImageLayer</code> reserves marker blocks so images ride inside a text frame without wrecking layout.</span></div>
       <div class="feature"><strong>tmux passthrough automation</strong><span>tmux panes swallow DCS/APC/OSC graphics unless <code>allow-passthrough</code> is on; <code>TmuxPassthrough</code> flips it pane-scoped for the render and restores (or unsets) it on retire — fail-soft, never a throw, opt-out via <code>Detect::setAutoPassthrough(false)</code>.</span></div>
@@ -167,7 +171,7 @@ $ansi = $mosaic->render($image, 60);      // explicit width wins; height from as
         <p class="lede">VHS-recorded GIFs of every example shipped with the library. Regenerated automatically on every push that touches the source.</p>
         <div class="demo-grid">
             <div class="demo-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-image/.vhs/inline-image.gif" alt="Inline Image">
+                <img loading="lazy" src="https://raw.githubusercontent.com/detain/sugarcraft/master/sugar-image/.vhs/inline-image.gif" alt="Inline Image" onerror="this.parentElement.style.display='none'">
                 <h3>Inline Image</h3>
                 <span class="demo-caption">Renders a PNG to the terminal via the best available protocol.</span>
             </div>

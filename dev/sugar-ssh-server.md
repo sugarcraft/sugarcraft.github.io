@@ -163,6 +163,16 @@ pty-req, window-change, shell, exec, signal, env, break) to a
 to customise channel-level behaviour — replacing PTY allocation, signal
 delivery, shell spawning, etc.
 
+Only one of those messages is produced by anything in this library today:
+`WindowChangeMsg`, from the `SIGWINCH` the kernel raises when sshd's PTY is
+resized. The rest need a wire decoder this library does not have (it speaks
+no SSH), so a custom handler's `handleExec()` is reached only by code you
+write yourself - typically by decoding `SSH_ORIGINAL_COMMAND` and handing the
+result to the public `DefaultChannelHandler::decodeCommandString()`. The
+default handler is default-closed for exec either way: nothing spawns unless
+the program is in its `$allowedExec` list and the optional `$execGate` returns
+exactly `true`.
+
 ```php
 use SugarCraft\SshServer\Channel\Msg\PtyReqMsg;
 use SugarCraft\SshServer\Channel\Msg\WindowChangeMsg;
@@ -195,7 +205,7 @@ Pass a custom handler to `InProcessTransport`:
 ```php
 use SugarCraft\SshServer\Transport\InProcessTransport;
 
-$transport = new InProcessTransport($ptySystem);
+$transport = new InProcessTransport();
 $transport->setChannelHandler(new MyCustomChannelHandler());
 Server::new()->withTransport($transport)->serve();
 ```
@@ -293,20 +303,25 @@ environment variables (`USER`, `SSH_CONNECTION`, `TERM`, `SSH_TTY`, etc.):
 `user`, `clientHost`, `clientPort`, `serverHost`, `serverPort`, `term`,
 `cols`, `rows`, `tty`, `command`, `lang`.
 
-**Protocol fields** — populated by `withProtocolMetadata()` (called by
-transports after the SSH handshake completes):
+**Protocol fields** — populated by `withProtocolMetadata()`, which the
+transports call on the way *into* the stack with values they derived
+locally. There is no handshake behind them: this library speaks no SSH
+(audit MAJORS 3 and 21).
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `sessionId` | `?string` | SSH session ID (hex string assigned by the transport) |
-| `authMethod` | `?string` | Auth method used — `publickey`, `password`, `keyboard-interactive`, etc. |
-| `keyFingerprint` | `?string` | SHA256 fingerprint of the client's host key |
-| `clientVersion` | `?string` | SSH client version string (e.g. `SSH-2.0-OpenSSH_9.0`) |
-| `serverVersion` | `?string` | SSH server version string (e.g. `SSH-2.0-OpenSSH_9.0`) |
+| `sessionId` | `?string` | Hex id **minted per process** (`bin2hex(random_bytes(16))`) — correlates this run's own lines, never another host's log |
+| `authMethod` | `?string` | Sniffed from `SSH_USER_AUTH` where a wrapper exported it: a hint about what sshd used, not proof of anything |
+| `keyFingerprint` | `?string` | No producer in this library today; pairing a key to a name is `Auth`'s job, so expect `null` |
+| `clientVersion` | `?string` | Read from `SSH_CLIENT_VERSION`, which stock OpenSSH does not export — usually `null` |
+| `serverVersion` | `?string` | Read from `SSH_SERVER_VERSION`, same story — usually `null` |
 
 Middleware that needs protocol-level information (e.g. audit logging,
-anomaly detection, rate-limiting per session ID) reads these fields after
-`withProtocolMetadata()` has been called by the transport.
+anomaly detection) reads these fields after `withProtocolMetadata()` has
+been called, and should treat an empty one as the normal case rather than
+a bug: the column says what sshd did not deliver. A plain `Logger` writes
+all of them, because `Session::toLogContext()` carries the nine fields the
+audit trail is made of.
 
 ```php
 use SugarCraft\SshServer\Context;
@@ -397,7 +412,7 @@ The `Middleware\Auth\*` classes provide pluggable SSH authentication:
 |-------|--------------|-----------------------|
 | `PasswordAuth` | Validates `(user, password)` against a callback; reads `SSH_PASSWORD` env var | Inject any `callable(string, string): bool` |
 | `CertificateAuth` | Validates X.509 PEM cert from `SSL_CLIENT_CERT` / `SSH_CLIENT_CERT` / `CERTIFICATE` env vars | Inject any `callable(string, Session): bool`; `$required` flag controls behaviour when no cert is present |
-| `AuthMethods` | Writes `SSH_AUTH_METHODS <list>` banner to STDOUT and stores the method list in Context under `auth.methods` | `AuthMethods::fromContext($ctx)` lets downstream middleware inspect which method succeeded |
+| `AuthMethods` | Stores the method list in Context under `auth.methods`; the `SSH_AUTH_METHODS <list>` STDOUT line is opt-in (`announce: true`) because that text lands in the user's terminal, not in a protocol field | `AuthMethods::fromContext($ctx)` reports what the operator declared -- never what authenticated |
 | `KeyboardInteractive` | Sends challenge prompts to STDOUT, reads newline-delimited responses from STDIN (RFC 4256 format) | Inject `callable(list<string>): bool|null` to validate responses |
 
 **AuthMethods usage pattern:**
